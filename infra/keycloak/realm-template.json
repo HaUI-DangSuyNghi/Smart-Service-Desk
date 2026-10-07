@@ -1,0 +1,44 @@
+{
+  "realm": "dx-lab",
+  "enabled": true,
+  "sslRequired": "none",
+  "accessTokenLifespan": 300,
+  "registrationAllowed": false,
+  "roles": {
+    "realm": [{"name": "core-reader"}, {"name": "core-writer"}, {"name": "core-reviewer"}]
+  },
+  "groups": [{"name": "lab-a"}, {"name": "lab-b"}],
+  "clients": [{
+    "clientId": "core-probe",
+    "publicClient": true,
+    "protocol": "openid-connect",
+    "directAccessGrantsEnabled": true,
+    "standardFlowEnabled": false,
+    "protocolMappers": [
+      {
+        "name": "core-audience", "protocol": "openid-connect", "protocolMapper": "oidc-audience-mapper",
+        "config": {"included.custom.audience": "dx-core", "access.token.claim": "true"}
+      },
+      {
+        "name": "workspaces", "protocol": "openid-connect", "protocolMapper": "oidc-group-membership-mapper",
+        "config": {"claim.name": "groups", "full.path": "true", "access.token.claim": "true"}
+      }
+    ]
+  }],
+  "users": [
+    {
+      "username": "alice", "enabled": true, "email": "alice@example.invalid", "emailVerified": true,
+      "firstName": "Alice", "lastName": "Demo", "groups": ["/lab-a"],
+      "realmRoles": ["core-reader", "core-writer", "core-reviewer"]
+    },
+    {
+      "username": "bob", "enabled": true, "email": "bob@example.invalid", "emailVerified": true,
+      "firstName": "Bob", "lastName": "Demo", "groups": ["/lab-a"], "realmRoles": ["core-reader"]
+    },
+    {
+      "username": "mallory", "enabled": true, "email": "mallory@example.invalid", "emailVerified": true,
+      "firstName": "Mallory", "lastName": "Demo", "groups": ["/lab-b"],
+      "realmRoles": ["core-reader", "core-writer", "core-reviewer"]
+    }
+  ]
+}

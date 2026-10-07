@@ -1,0 +1,233 @@
+openapi: 3.0.3
+info:
+  title: DX-Lab Headless Core
+  version: 0.1.0
+  description: Local baseline. File upload/download and audit read APIs are not implemented.
+servers:
+  - url: http://localhost:9080/api/core/v1
+security:
+  - bearer: []
+paths:
+  /me:
+    get:
+      operationId: me
+      responses:
+        '200':
+          description: Verified identity
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [sub, groups, realmAccess]
+                properties:
+                  sub: {type: string}
+                  groups: {type: array, items: {type: string}}
+                  realmAccess: {type: object, additionalProperties: true}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+  /workspaces/{workspace}/metadata:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+    post:
+      operationId: createMetadata
+      description: Requires core-writer, core-reader and workspace membership.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/MetadataInput'}
+      responses:
+        '201':
+          description: Persisted metadata
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Metadata'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+  /workspaces/{workspace}/metadata/{id}:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+      - name: id
+        in: path
+        required: true
+        schema: {type: string, format: uuid}
+    get:
+      operationId: getMetadata
+      description: Workspace-shared data; requires core-reader and membership.
+      responses:
+        '200':
+          description: Metadata record
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Metadata'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+  /workspaces/{workspace}/processes/{processKey}/instances:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+      - name: processKey
+        in: path
+        required: true
+        schema: {type: string, enum: [document-review, equipment-approval]}
+    post:
+      operationId: startProcess
+      description: Requires core-writer and membership. Initiator/workspace variables are server-derived.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [businessKey, title]
+              properties:
+                businessKey: {type: string, minLength: 1, maxLength: 200}
+                title: {type: string, minLength: 1, maxLength: 200}
+      responses:
+        '201':
+          description: Engine instance with committed scope and audit
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id, processKey, businessKey, workspace]
+                properties:
+                  id: {type: string}
+                  processKey: {type: string}
+                  businessKey: {type: string}
+                  workspace: {type: string}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /workspaces/{workspace}/instances/{id}/tasks:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+      - {$ref: '#/components/parameters/Instance'}
+    get:
+      operationId: listTasks
+      description: Requires core-reader, membership and process ownership.
+      responses:
+        '200':
+          description: Active engine tasks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required: [id, key, name]
+                  properties:
+                    id: {type: string}
+                    key: {type: string}
+                    name: {type: string}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+  /workspaces/{workspace}/instances/{id}/tasks/{taskId}/complete:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+      - {$ref: '#/components/parameters/Instance'}
+      - name: taskId
+        in: path
+        required: true
+        schema: {type: string}
+    post:
+      operationId: completeTask
+      description: Requires reader, reviewer, membership, process owner and task assignee. Serialized per instance.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [expectedTaskKey]
+              properties:
+                expectedTaskKey: {type: string, minLength: 1, maxLength: 100}
+      responses:
+        '204': {description: Task completed and audit committed}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /workspaces/{workspace}/instances/{id}/history:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+      - {$ref: '#/components/parameters/Instance'}
+    get:
+      operationId: history
+      description: Requires core-reader, membership and ownership. History comes from Flowable.
+      responses:
+        '200':
+          description: Engine process and task history
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id, ended, tasks]
+                properties:
+                  id: {type: string}
+                  ended: {type: boolean}
+                  tasks:
+                    type: array
+                    items:
+                      type: object
+                      required: [id, key, actor, startedAt, endedAt]
+                      properties:
+                        id: {type: string}
+                        key: {type: string}
+                        actor: {type: string}
+                        startedAt: {type: string, format: date-time}
+                        endedAt: {type: string, format: date-time, nullable: true}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+components:
+  securitySchemes:
+    bearer: {type: http, scheme: bearer, bearerFormat: JWT}
+  parameters:
+    Workspace:
+      name: workspace
+      in: path
+      required: true
+      schema: {type: string, example: lab-a}
+    Instance:
+      name: id
+      in: path
+      required: true
+      schema: {type: string}
+  responses:
+    Unauthorized: {description: Missing or invalid JWT}
+    Forbidden: {description: Missing role or workspace membership}
+    NotFound: {description: Resource not found in caller scope}
+    Conflict: {description: Duplicate business key or task transition is no longer valid}
+    BadRequest: {description: Invalid input or unknown JSON property}
+  schemas:
+    MetadataInput:
+      type: object
+      additionalProperties: false
+      required: [title, source, version, usageRights, checksum]
+      properties:
+        title: {type: string, minLength: 1, maxLength: 200}
+        source: {type: string, minLength: 1, maxLength: 1000}
+        version: {type: string, minLength: 1, maxLength: 100}
+        usageRights: {type: string, minLength: 1, maxLength: 200}
+        checksum: {type: string, pattern: '^[a-f0-9]{64}$'}
+    Metadata:
+      type: object
+      required: [id, workspace, title, source, version, usage_rights, checksum, owner, created_at]
+      properties:
+        id: {type: string, format: uuid}
+        workspace: {type: string}
+        title: {type: string}
+        source: {type: string}
+        version: {type: string}
+        usage_rights: {type: string}
+        checksum: {type: string}
+        owner: {type: string}
+        created_at: {type: string, format: date-time}
