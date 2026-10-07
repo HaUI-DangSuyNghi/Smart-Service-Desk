@@ -13,7 +13,7 @@ Metadata creation does not upload a file or prove its existence/integrity.
 
 | Field | Authority | Meaning / consumer rule |
 | --- | --- | --- |
-| `id` | Core | Server-generated UUID; stable provenance/citation identity. Never use title, filename or URL as identity. |
+| `id` | Core | Server-generated UUID; stable identity of one metadata record, not a logical document across versions. Never use title, filename or URL as identity. |
 | `workspace` | Core authorization | Route workspace after signed JWT membership check; corpus partition, never accepted in body. |
 | `title` | Caller | Display label, nonblank, at most 200 characters. |
 | `source` | Caller | Declared origin, nonblank, at most 1000 characters; may be URL, repository path or team-authored identifier. Not automatically fetched or verified. |

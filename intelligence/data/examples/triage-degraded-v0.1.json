@@ -1,0 +1,15 @@
+{
+  "contract_version": "0.1.0",
+  "request_id": "fixture-degraded-001",
+  "profile": "service-desk",
+  "workspace_id": "lab-a",
+  "status": "DEGRADED",
+  "result": null,
+  "evidence": [],
+  "explanation": null,
+  "runtime": null,
+  "needs_review": true,
+  "error": {
+    "code": "INTELLIGENCE_UNAVAILABLE"
+  }
+}

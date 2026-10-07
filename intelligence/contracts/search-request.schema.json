@@ -1,0 +1,53 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Proposed Intelligence logical search request 0.1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_version",
+    "request_id",
+    "profile",
+    "context",
+    "query",
+    "top_k"
+  ],
+  "properties": {
+    "contract_version": {
+      "const": "0.1.0"
+    },
+    "request_id": {
+      "$ref": "#/$defs/nonblank"
+    },
+    "profile": {
+      "$ref": "#/$defs/nonblank"
+    },
+    "context": {
+      "description": "SERVER-INJECTED / TRUSTED ADAPTER CONTEXT. Construct only after Core/Application authorization succeeds; never trust client context. No request value grants authorization.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "workspace_id"
+      ],
+      "properties": {
+        "workspace_id": {
+          "$ref": "#/$defs/nonblank"
+        }
+      }
+    },
+    "query": {
+      "$ref": "#/$defs/nonblank"
+    },
+    "top_k": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 10
+    }
+  },
+  "$defs": {
+    "nonblank": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    }
+  }
+}

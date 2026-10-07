@@ -1,0 +1,61 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Proposed Intelligence logical triage request 0.1.0",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract_version",
+    "request_id",
+    "profile",
+    "context",
+    "input"
+  ],
+  "properties": {
+    "contract_version": {
+      "const": "0.1.0"
+    },
+    "request_id": {
+      "$ref": "#/$defs/nonblank"
+    },
+    "profile": {
+      "$ref": "#/$defs/nonblank"
+    },
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "title",
+        "description"
+      ],
+      "properties": {
+        "title": {
+          "$ref": "#/$defs/nonblank"
+        },
+        "description": {
+          "$ref": "#/$defs/nonblank"
+        }
+      },
+      "description": "Untrusted user content only; no owner, role, permission, credential or authorization grant."
+    },
+    "context": {
+      "description": "SERVER-INJECTED / TRUSTED ADAPTER CONTEXT. Construct only after Core/Application authorization succeeds; never trust client context. No request value grants authorization.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "workspace_id"
+      ],
+      "properties": {
+        "workspace_id": {
+          "$ref": "#/$defs/nonblank"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "nonblank": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    }
+  }
+}

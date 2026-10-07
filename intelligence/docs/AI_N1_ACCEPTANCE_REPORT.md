@@ -1,112 +1,112 @@
-# Báo cáo AI-01 / N1 — Data & Provenance
+# AI-01 / N1 — Core Data & Provenance Acceptance Report
 
-Ngày thực hiện: **07/10/2026, Asia/Saigon**.
-Baseline: `c92b38733d00c77bd90b96318f8c70d7b19be5c0`.
+Acceptance thực hiện: **07/10/2026, Asia/Saigon**.
+Báo cáo chuẩn hóa: **08/10/2026, Asia/Saigon**.
 Branch: `feature/ai01-data-provenance`.
-Kế hoạch tham chiếu: `intelligence/.backup/AI_N1_DATA_PROVENANCE_DETAILED_PLAN.md`
-(tài liệu local, không đưa vào Git).
+Trạng thái: Core baseline đã được kiểm chứng trong phạm vi AI được phép;
+N1 chưa DONE. Foundation hiện **READY FOR BE REVIEW**, xem
+[foundation report](AI_N1_INTELLIGENCE_FOUNDATION_REPORT.md) và
+[BE review brief](AI_N1_BE_REVIEW_BRIEF.md).
 
-**Kết quả: hoàn thành tài liệu và kiểm chứng trong phạm vi AI được phép;
-chưa đạt toàn bộ Definition of Done N1 vì còn thay đổi DX core và review của team.**
-Theo yêu cầu của chủ repository, không sửa trực tiếp DX core trước review. Các điểm
-cần trao đổi nằm trong báo cáo này; không tạo thư mục/tài liệu review riêng.
+Core acceptance baseline: `c92b38733d00c77bd90b96318f8c70d7b19be5c0`.
+Branch HEAD before current foundation edits: `c006278af18e3d29b0f8d542e9cddc199d516695`.
+Foundation package state: **COMMITTED** — commit containing this package/report;
+resolve with `git log -1 --format="%H %s" -- intelligence/docs/AI_N1_INTELLIGENCE_FOUNDATION_REPORT.md`.
+Core smoke/API evidence: historical run on **07/10/2026 +07:00**, against the Core
+acceptance baseline above; API **23:19:54–23:19:59 +07:00**. Not rerun during hardening.
+Foundation validator evidence: local design-artifact validation on **08/10/2026
++07:00**, against the foundation working tree before package commit; exact run
+timestamp and coverage in the foundation report.
 
-## Phần đã bàn giao
+## Phạm vi evidence
 
-| Artifact | Kết quả |
+Đây là **historical Core runtime evidence**, không phải lần chạy mới sau hardening.
+Core source/config được giữ nguyên từ baseline; branch có các commit tài liệu/probe
+AI nhưng không có Core alignment. Chủ repository yêu cầu review trước DX-Core edits.
+Kế hoạch acceptance local: `intelligence/.backup/AI_N1_DATA_PROVENANCE_DETAILED_PLAN.md`.
+
+| Artifact | Bàn giao |
 | --- | --- |
-| [Data/provenance contract](data-provenance-contract.md) | Quyền sở hữu từng field, identity ổn định, immutable API, source/version/rights/checksum, workspace isolation, audit và ranh giới Intelligence. Là dự thảo, chưa có BE ratify. |
-| [API acceptance probe](../tests/metadata-provenance.ps1) | 53 assertion chạy thật qua APISIX, dùng JWT của demo account hiện có; không sửa Core/realm. |
-| [Audit acceptance SQL](../tests/check-metadata-audit.sql) | Transaction read-only; đối chiếu đúng một audit với metadata và request ID từ HTTP response. |
-| [Hướng dẫn chạy](../README.md) | Lệnh tái chạy, vị trí evidence, tác động tạo dữ liệu synthetic qua API. |
+| [Data/provenance contract](data-provenance-contract.md) | Field authority, identity, immutable public API, source/version/rights/checksum, isolation, audit; draft chưa ratify. |
+| [API probe](../tests/metadata-provenance.ps1) | 53 assertion chạy qua APISIX với JWT demo accounts hiện có. |
+| [Audit SQL](../tests/check-metadata-audit.sql) | Read-only transaction; đối chiếu metadata/audit/request ID. |
+| [README](../README.md) | Cách chạy, tác động tạo synthetic data và vị trí evidence. |
 
-Không thêm model, FastAPI, parser, chunking, vector/index, File I/O hay dependency
-ứng dụng. Không sửa backend, migration V1, OpenAPI, Compose, infra, script Core hay
-requirements mapping. File `intelligence/.gitignore` có sẵn được giữ nguyên,
-không đưa vào các commit của công việc này.
+## Kết quả lần chạy Core ngày 07/10/2026
 
-## Kiểm tra đã chạy
-
-| Lệnh / kiểm tra | Kết quả thực tế |
+| Lệnh / kiểm tra | Kết quả lịch sử và giới hạn |
 | --- | --- |
-| `git status --short` trước triển khai | Chỉ có `intelligence/.gitignore` untracked; nội dung `.backup/`, nguồn gốc rõ, giữ nguyên. |
-| `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start.ps1` | PASS, exit 0; build từ backend hiện tại, bốn container healthy. Các bước Maven trong build dùng cache. |
-| `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/smoke.ps1` | PASS, exit 0; identity, metadata, isolation, hai workflow thực và concurrent completion. |
-| `powershell -NoProfile -ExecutionPolicy Bypass -File intelligence/tests/metadata-provenance.ps1` | PASS, exit 0; **53/53 assertion**. |
-| SQL audit mới, truyền ID/owner/workspace/request ID từ JSON evidence | PASS, đúng một `metadata.create`, đầy đủ timestamp và khớp context. |
-| SQL audit mới với request ID cố ý sai | PASS kiểm tra nhánh lỗi: từ chối và trả exit code khác 0. Đã sửa cách thoát lỗi của checker trước commit vì psql 16 bỏ qua tham số `\quit 1`. |
-| `Get-Content scripts/check-db.sql -Raw \| docker compose exec -T postgres psql -U core -d core -v ON_ERROR_STOP=1` | PASS consistency metadata/audit và engine/scope. |
-| `docker build --target build -t dx-core-ai-n1-test:0.1.0 backend` | PASS; build stage hiện có, không thay dependency/source. |
-| `docker run --rm dx-core-ai-n1-test:0.1.0 mvn -B -o test` | PASS; **3 tests, 0 failures/errors/skips**. Test được chạy lại trong container; đây là Security helper tests có sẵn, không phải MetadataApi regression tests. |
-| OpenAPI validation | SKIP: cả Python mặc định và Python311 được ghi trong baseline cũ đều thiếu module `openapi_spec_validator`. Không cài thêm; không đổi OpenAPI. |
-| `git diff --check` và staged diff check | PASS. |
-| Diff baseline với `backend`, `contracts`, `infra`, `scripts`, `docs`, `compose.yaml` | Không có thay đổi. |
+| `scripts/start.ps1` | PASS, exit 0; build backend baseline, 4 container healthy; Maven build dùng cache. |
+| `scripts/smoke.ps1` | PASS, exit 0; identity, metadata, isolation, 2 workflow thực và concurrent completion. |
+| `intelligence/tests/metadata-provenance.ps1` | PASS, exit 0; **53/53 assertion**. |
+| Audit SQL với ID/owner/workspace/request ID từ evidence | PASS, đúng 1 `metadata.create`, timestamp/context khớp. |
+| Audit SQL với request ID cố ý sai | Từ chối, exit khác 0; đã sửa checker vì psql 16 bỏ qua `\quit 1`. |
+| `scripts/check-db.sql` qua psql, `ON_ERROR_STOP=1` | PASS metadata/audit consistency và engine/scope. |
+| `docker build --target build -t dx-core-ai-n1-test:0.1.0 backend` | PASS build stage hiện có, không sửa dependency/source. |
+| `docker run --rm dx-core-ai-n1-test:0.1.0 mvn -B -o test` | PASS: **3 tests, 0 failures/errors/skips**; Security helper tests có sẵn, không phải MetadataApi regression tests. |
+| OpenAPI validation | SKIP: host Python mặc định và Python311 thiếu `openapi_spec_validator`; không cài thêm, không đổi OpenAPI. |
+| Git hygiene / Core scope | Diff check PASS; không có thay đổi backend/Core contracts/infra/scripts/docs Core/Compose. |
 
-Không có `mvn` trên PATH của host; Maven được chạy trong build container Java 17
-theo Dockerfile hiện có. Đây là kiểm chứng local trên dữ liệu/volume đang có,
-không phải clean clone hoặc independent clean run.
+Host không có `mvn` trên PATH; Maven chạy trong build container Java 17 hiện có.
+Đây là kiểm chứng local với volume/data đang có, không phải clean clone hoặc
+independent clean run. Bảng giữ kết quả đã ghi nhận trong acceptance report commit
+`c006278`; hardening không chạy lại các lệnh Core này.
 
 ## Coverage provenance / security
 
-| Matrix kế hoạch | Evidence / giới hạn |
+| Case | Evidence / giới hạn |
 | --- | --- |
-| META-01 | POST 201 bằng member có cả writer + reader. **Writer-only chưa kiểm thử** vì realm hiện tại không có account đó; không tự sửa realm để tạo fixture. |
+| META-01 | POST 201 bằng member writer + reader. **Chưa kiểm thử writer-only**: realm không có account tương ứng, không tự sửa realm. |
 | META-02/03 | Owner khớp `/me.sub`, workspace khớp route; body owner/workspace/id/created_at bị từ chối 400. |
 | META-04/05/06 | Reader write 403; foreign workspace write và direct read 403. |
-| META-07 | Member lab-b lookup ID của lab-a trong route lab-b nhận 404; ID không tồn tại cũng 404. |
-| META-08 | Blank, missing, oversized title/source/version/usageRights đều 400. |
-| META-09/10 | Checksum thiếu, blank, ngắn/dài, uppercase, non-hex đều 400. |
+| META-07 | Member lab-b lookup ID lab-a trong route lab-b nhận 404; ID không tồn tại cũng 404. |
+| META-08 | Blank/missing/oversized title/source/version/usageRights đều 400. |
+| META-09/10 | Checksum missing/blank/sai length/uppercase/non-hex đều 400. |
 | META-11 | Owner và unknown property bị từ chối 400. |
-| META-12 | DB read-only xác nhận đúng một audit cho record thành công và request ID khớp HTTP. **Chưa có failure-injection chứng minh rollback khi audit lỗi hoặc writer-only bị từ chối.** |
-| META-13 | Create/read giữ nguyên cả 9 field response và toàn bộ 5 giá trị caller cung cấp; reader khác trong cùng workspace đọc được. |
+| META-12 | DB read-only xác nhận đúng 1 audit, request ID khớp HTTP. **Chưa có failure-injection chứng minh rollback khi audit lỗi hoặc writer-only bị từ chối.** |
+| META-13 | Create/read giữ nguyên 9 response fields và 5 caller values; reader khác trong cùng workspace đọc được. |
 
-JWT thiếu/sai nhận 401. Checksum N1 chỉ là **caller-declared SHA-256 trên exact
-source bytes**, Core chưa xác minh file integrity. Metadata UUID là identity ổn
-định; title/source/checksum không thay thế identity. API chỉ create/read, không có
-update; immutability ở đây là ở public API, không phải database-level enforcement.
+JWT thiếu/sai nhận 401. SHA-256 là caller-declared trên exact source bytes, chưa
+Core-verified file integrity. Metadata UUID là identity một record; title/source/
+checksum không thay thế identity. Immutability ở public API create/read, không
+phải database-level enforcement.
 
-Evidence chi tiết không chứa token/password:
-`.local/ai-n1/metadata-provenance.json` (Git ignored).
-Lần chạy API: **23:19:54–23:19:59 +07:00**.
-Metadata synthetic: `529e4be2-53f5-4b45-84f4-aed6c2d82c0c` trong `lab-a`.
+Evidence API: `.local/ai-n1/metadata-provenance.json` (Git ignored, không token/password).
+Started: `2026-10-07T23:19:54.4219097+07:00`.
+Finished: `2026-10-07T23:19:59.5975911+07:00`.
+Metadata: `529e4be2-53f5-4b45-84f4-aed6c2d82c0c`, workspace `lab-a`.
 Request ID: `55c22e0e-1fa2-425b-9847-f053c70b9ff5`.
-Một record synthetic được tạo bởi probe và giữ lại để team kiểm tra; smoke baseline
-cũng tạo dữ liệu demo như thiết kế của script. Không xóa/reset dữ liệu.
+Probe tạo 1 synthetic record và giữ lại để audit; smoke cũng tạo demo data theo
+script. Không xóa/reset dữ liệu. Không tạo thêm record trong hardening.
 
-## Phần DX core cần team trao đổi trước khi triển khai
+## Core implementation gate còn chờ
 
-1. **POST đang phụ thuộc quyền GET.** Trong `MetadataApi.java`, `create()` gọi
-   `get()` sau insert/audit, nên cần thêm `core-reader`. Đề xuất chốt POST = member
-   + writer, GET = member + reader; tách private loader dùng nội bộ, giữ transaction.
-   Hiện OpenAPI ghi cả hai role là đúng với baseline, chưa đổi sang policy đề xuất.
-2. **Response đang là raw DB row.** Thay `SELECT *` bằng đúng 9 cột explicit và
-   response DTO/mapper. Giữ nguyên `usage_rights`, `created_at` trên wire; UUID và
-   timezone timestamp do server cung cấp. Không cần sửa schema/V1.
-3. **Core regression tests còn thiếu.** Thêm `MetadataApiTest.java` bằng dependency
-   có sẵn: MVC validation/unknown fields, workspace/role, provenance round trip,
-   stable response fields. Bổ sung real-service evidence cho rollback; mock tests
-   không chứng minh transaction DB.
-4. **Đồng bộ sau thay đổi.** BE tích hợp OpenAPI, FE phối hợp smoke/signed writer-only
-   fixture; promote contract sang `docs/architecture/data-provenance-contract.md`
-   và cập nhật requirements mapping đúng phạm vi Data/File/Audit vẫn thuộc Core.
+1. **Role policy (D1):** POST hiện gián tiếp cần reader vì `create()` gọi public GET.
+   Đề xuất member + writer cho POST, member + reader cho GET; tách internal loader,
+   giữ transaction, bổ sung signed writer-only fixture và rollback evidence.
+2. **Response boundary (D2):** Thay `SELECT *`/raw DB row bằng 9 explicit columns
+   và DTO/mapper, giữ `usage_rights`, `created_at`; không cần migration V1.
+3. **Core regression:** MetadataApi tests cho validation/unknown fields, roles/
+   workspaces, provenance round trip và stable fields; real-service rollback
+   evidence. Mock tests không chứng minh transaction DB.
+4. **Alignment sau review:** Đồng bộ OpenAPI/requirements mapping; BE có thể
+   promote draft contract vào `docs/architecture/`. D3–D5 (trusted context,
+   citation identity, audit path) cần ratify theo BE brief trước implementation.
 
-Đây là các thay đổi chưa thực hiện. Team tự trao đổi review; báo cáo không ghi nhận
-BE/FE đã phê duyệt. Không merge/push, không đánh dấu N1 completed hoặc chuyển N2.
+Các thay đổi này chưa thực hiện; báo cáo không ghi nhận BE/FE/business approval.
+Không merge/push. N1 chỉ DONE sau ratification, Core alignment, regression và
+acceptance chạy lại xanh. File I/O, server checksum verification, metadata
+list/search/update, audit read/retention và AI runtime thuộc phase sau.
 
-## Commit từng phần
+## Commit evidence
 
 | Commit | Nội dung |
 | --- | --- |
-| `1cf9465` — `docs(ai-n1): define metadata provenance contract` | Contract draft. |
-| `049bb95` — `test(ai-n1): verify metadata provenance and audit through core APIs` | API/SQL acceptance probes và hướng dẫn chạy. |
-| `docs(ai-n1): report acceptance evidence and remaining core work` | Báo cáo này; hash xem trong Git log. |
+| `1cf9465` | Data/provenance contract draft. |
+| `049bb95` | API/SQL acceptance probes và hướng dẫn. |
+| `c006278` | Historical Core acceptance report. |
+| Commit chứa foundation report hiện tại | Foundation + pre-BE hardening, chuẩn hóa báo cáo; hash tra theo lệnh ở metadata header. |
 
-## Gate còn lại và công việc deferred
-
-N1 chỉ DONE khi team ratify contract/role, Core hardening và Metadata regression
-tests được triển khai, acceptance chạy lại xanh và BE review hoàn tất. Các field
-AI không được thêm vào Core; future Intelligence chỉ consume dữ liệu Core đã
-authorize và giữ derived state có thể rebuild từ Core + AI configuration version.
-
-File upload/download, server checksum verification, metadata list/search/update,
-audit read/retention và Intelligence runtime vẫn thuộc ngày/phase sau.
+`intelligence/.gitignore` giữ rule `.backup/` và được đưa vào foundation commit;
+các plan local không stage. Không thêm AI fields/dependencies hoặc direct Core DB
+access vào runtime; SQL hiện có chỉ là acceptance inspection.

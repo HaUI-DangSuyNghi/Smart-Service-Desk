@@ -1,20 +1,89 @@
-# Intelligence (reserved)
+# Intelligence foundation
 
-Owner: AI member. Future tier 2 Intelligence code; no model, framework, runtime or separate service is initialized.
+Owner: AI member. Branch: `feature/ai01-data-provenance`.
+Updated: **08/10/2026, Asia/Saigon**.
+Status: **READY FOR BE REVIEW — design freeze candidate, PROPOSED**.
+N1 DONE still requires BE ratification, Core alignment and Core regression evidence.
 
-During the Core phase, work in `backend/src/main/java/vn/haui/dx/core/data/`, `audit/`, migrations and Core tests. Create the `core/file/` package when real File I/O is implemented.
+Core acceptance baseline: `c92b38733d00c77bd90b96318f8c70d7b19be5c0`.
+Branch HEAD before current foundation edits: `c006278af18e3d29b0f8d542e9cddc199d516695`.
+Foundation package state: **COMMITTED** — commit containing this package/report;
+resolve with `git log -1 --format="%H %s" -- intelligence/docs/AI_N1_INTELLIGENCE_FOUNDATION_REPORT.md`.
+Core smoke/API evidence: historical run on **07/10/2026 +07:00**, against the Core
+acceptance baseline above; API **23:19:54–23:19:59 +07:00**. Not rerun during hardening.
+Foundation validator evidence: local design-artifact validation on **08/10/2026
++07:00**, against the foundation working tree before package commit; exact run
+timestamp and coverage in the foundation report.
 
-Intelligence must consume authorized Core data without taking ownership of metadata, files or audit. Decide whether a separate service is justified when its implementation begins.
+## Review entry point
 
-## AI-01 / N1
+Start with the [BE review brief](docs/AI_N1_BE_REVIEW_BRIEF.md): five decisions on
+metadata role policy, explicit response mapping, trusted context, citation identity
+and audit ownership. The [foundation report](docs/AI_N1_INTELLIGENCE_FOUNDATION_REPORT.md)
+records current local checks; the [Core acceptance report](docs/AI_N1_ACCEPTANCE_REPORT.md)
+preserves historical runtime evidence and its limitations.
 
-The current owner instruction requires team review before direct DX core changes.
-N1 therefore delivers a [provenance contract](docs/data-provenance-contract.md),
-external acceptance probes and an [overall report](docs/AI_N1_ACCEPTANCE_REPORT.md).
-The contract is a draft; team review and the remaining Core hardening are pending.
-No Intelligence runtime or framework is initialized.
+This package changes `intelligence/` only. Core owns authorization, metadata,
+canonical files and audit. Intelligence consumes authorized Core data and owns
+rebuildable derived state. Direct DX-Core changes still require team review.
 
-Run from the repository root with the existing local baseline running:
+## Design artifacts
+
+* [Data/provenance contract](docs/data-provenance-contract.md): field authority,
+  immutable public API, exact-byte checksum trust and workspace isolation.
+* [Capability contract](contracts/intelligence-contract-v0.1.md): replaceable
+  triage/search engines, server-injected trusted context and manual fallback.
+  [Triage request](contracts/triage-request.schema.json) /
+  [result](contracts/triage-result.schema.json) and
+  [search request](contracts/search-request.schema.json) /
+  [result](contracts/search-result.schema.json) are machine-readable.
+* [Service Desk taxonomy](contracts/taxonomy-v0.1.yaml) and
+  [priority policy](contracts/priority-policy-v0.1.md): 5 categories, root-cause
+  conflicts, 16 Impact × Urgency cells. Service Desk / Process Owner owns the
+  proposed policy; `service-desk@0.1.0` pins `priority-policy@0.1.0`.
+* [12 ticket fixtures](data/examples/tickets-v0.1.jsonl),
+  [dataset manifest](data/examples/tickets-v0.1.manifest.json) and
+  [DEGRADED example](data/examples/triage-degraded-v0.1.json): synthetic manual
+  expected suggestions, including known OTHER and ambiguous input. Ambiguous
+  MEDIUM is a review fallback with null impact/urgency, not a matrix result.
+* Five `knowledge/` documents and [manifest](data/knowledge-manifest-v0.1.json):
+  exact-byte SHA-256, rights pending, null Core bindings, not ingested. Local
+  `kb-*` artifact IDs are not runtime citations.
+* [Retrieval gold draft](data/examples/retrieval-gold-v0.1.json): MANUAL_EXPECTED,
+  NOT BENCHMARK, NOT ENGINE OUTPUT; no accuracy claim.
+  [Normalization draft](contracts/text-normalization-v0.1.md) preserves Vietnamese
+  diacritics and extracts INPUT evidence from original input.
+* [Inventory](inventory/AI_DEPENDENCY_CANDIDATES.md): runtime candidates PROPOSED;
+  no dependency/model adoption or verified license claim.
+
+Triage v0.1 emits INPUT evidence only. Search carries authorized Core provenance
+hits; Application may compose the two results. No request value grants access;
+App/Core authorization runs before corpus/cache/engine access. Authorization denial
+is not DEGRADED. Ranking score is engine-specific, not confidence/probability.
+
+## Local artifact validation
+
+Use existing host Python with PyYAML and jsonschema (authoring tools only):
+
+```powershell
+python intelligence/tests/validate-foundation.py
+```
+
+The validator reads artifacts only: 4 schemas, annotations, trusted-context echoes,
+evidence separation, routing/rule/policy versions, priority matrix, manifests,
+retrieval-gold references and 70 negative cases. It does not call API/DB, ingest,
+execute an engine or prove adapter authorization/citation issuance. No runtime
+service, FastAPI, TF-IDF, embedding, vector DB or model is initialized.
+
+Scoped `.gitattributes` preserves LF for checksum-sensitive source assets. Hash
+exact bytes, never normalized text. Semantic knowledge edits require version,
+checksum and byte-size updates followed by validation. Rights remain
+`PENDING_OWNER_APPROVAL`, `usage_rights=null`; ingest/release requires owner approval.
+The local `.backup/` plans remain Git ignored by `intelligence/.gitignore`.
+
+## Core acceptance probe
+
+For an explicitly requested future rerun with the baseline services running:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File intelligence/tests/metadata-provenance.ps1
@@ -26,9 +95,8 @@ Get-Content intelligence/tests/check-metadata-audit.sql -Raw |
 if ($LASTEXITCODE -ne 0) { throw 'AI-N1 audit check failed' }
 ```
 
-The API probe uses the existing synthetic demo accounts and `.env` password without
-printing credentials. It creates one synthetic metadata record via the public API
-per successful run and preserves it for audit inspection; it does not delete data
-or change Core source, schema, realm or API contracts. Evidence is saved under the
-Git-ignored `.local/ai-n1/` directory without tokens/passwords. The SQL probe is a
-read-only acceptance inspection, not an Intelligence data-access implementation.
+The API probe uses existing synthetic demo accounts and `.env` credentials without
+printing them. Each successful run creates one synthetic metadata record via the
+public API and retains it for audit inspection. Evidence under `.local/ai-n1/` is
+Git ignored and contains no tokens/passwords. SQL inspection is read-only acceptance
+evidence, not an Intelligence runtime data-access path.
