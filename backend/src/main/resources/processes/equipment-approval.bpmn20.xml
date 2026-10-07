@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:flowable="http://flowable.org/bpmn" targetNamespace="https://haui.vn/dx/core">
+  <process id="equipment-approval" name="Equipment approval probe" isExecutable="true">
+    <startEvent id="start"/><sequenceFlow id="s1" sourceRef="start" targetRef="approve"/>
+    <userTask id="approve" name="Approve request" flowable:assignee="${initiator}"/>
+    <sequenceFlow id="s2" sourceRef="approve" targetRef="handover"/>
+    <userTask id="handover" name="Confirm handover" flowable:assignee="${initiator}"/>
+    <sequenceFlow id="s3" sourceRef="handover" targetRef="end"/><endEvent id="end"/>
+  </process>
+</definitions>

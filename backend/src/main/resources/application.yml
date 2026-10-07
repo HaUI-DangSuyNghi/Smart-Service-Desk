@@ -1,0 +1,30 @@
+spring:
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/core}
+    username: core
+    password: ${POSTGRES_PASSWORD}
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: true
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${JWT_ISSUER:http://localhost:8081/realms/dx-lab}
+          jwk-set-uri: ${JWT_JWKS:http://localhost:8081/realms/dx-lab/protocol/openid-connect/certs}
+          audiences: dx-core
+flowable:
+  database-schema-update: true
+  async-executor-activate: false
+  history-level: full
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+server:
+  error:
+    include-message: never
