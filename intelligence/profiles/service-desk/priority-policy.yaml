@@ -1,0 +1,46 @@
+status: PROPOSED
+policy_version: priority-policy@0.1.0
+owner: Service Desk / Process Owner
+technical_implementer: Intelligence
+required_reviewers:
+- BE
+- Process/Service Owner
+impact:
+  I1: One user or device
+  I2: Small group / several devices; not the whole room/class
+  I3: Entire room, class or lab
+  I4: Several rooms, shared service or widespread impact
+urgency:
+  U1: Workaround available, no material immediate impact
+  U2: Work affected but can wait
+  U3: Current activity blocked
+  U4: Critical/time-sensitive activity blocked, immediate response needed
+matrix:
+  I1:
+    U1: LOW
+    U2: LOW
+    U3: MEDIUM
+    U4: HIGH
+  I2:
+    U1: LOW
+    U2: MEDIUM
+    U3: HIGH
+    U4: HIGH
+  I3:
+    U1: MEDIUM
+    U2: HIGH
+    U3: HIGH
+    U4: CRITICAL
+  I4:
+    U1: HIGH
+    U2: HIGH
+    U3: CRITICAL
+    U4: CRITICAL
+review_fallback:
+  category: OTHER
+  priority: MEDIUM
+  suggested_group: GENERAL-SUPPORT
+  impact: null
+  urgency: null
+  needs_review: true
+  reason_code: INSUFFICIENT_INFORMATION

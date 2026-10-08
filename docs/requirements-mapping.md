@@ -19,7 +19,7 @@ Missing: `de-xuat-dx-lab-haui-smart-service-desk(1).pdf` or equivalent in the re
 | p3 section 4.1 | Mandatory: gateway/API intermediary | APISIX routes, rate limit; backend still authorizes | Compose topology and gateway smoke |
 | p3 section 4.1 | Mandatory: structured and/or unstructured data | PostgreSQL immutable metadata; File I/O deferred | Flyway migration; metadata round trip; File schema not full feature |
 | p3 section 4.1 | Mandatory: workflow engine/state/history | Embedded Flowable, two definitions, engine history | Start/task/complete/history smoke |
-| p3-4 section 4.2 | Mandatory for final product: all H-P-D-I | Establish identity/workflow/data contracts now | Human interfaces, search/dashboard/Intelligence deferred; not claimed complete |
+| p3-4 section 4.2 | Mandatory for final product: all H-P-D-I | Establish identity/workflow/data contracts now | Human interfaces, search/dashboard/Intelligence runtime deferred; [Intelligence foundation](../intelligence/docs/architecture/overview.md) is proposed design/fixtures, not completed runtime |
 | p4 section 4.3 | Mandatory for final product: one useful app | Future Smart Service Desk owns its domain | No app implemented in this scope |
 | p4 section 5; p5 section 10 | Mandatory: public repo, license, release, source build, docs, CHANGELOG, issue tracker | Source/config/docs supplied; no auto-publish/tag/commit | License decision, public repo/release/issue tracker still team actions |
 | p4 section 5; p5 section 7 | Mandatory: secret hygiene, core tests, RBAC | Local generated secrets ignored by Git; protected backend | `.env.example`, setup, tests/smoke |

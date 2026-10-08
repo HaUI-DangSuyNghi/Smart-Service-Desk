@@ -4,13 +4,13 @@ Cập nhật: **08/10/2026, Asia/Saigon**. Branch: `feature/ai01-data-provenance
 Trạng thái: **READY FOR BE REVIEW — design freeze candidate, PROPOSED**.
 Pre-BE hardening đã hoàn tất; N1 chưa DONE vì BE ratification, Core alignment và
 Core regression evidence còn chờ. Commit package không thay thế approval.
-Kế hoạch local: `intelligence/.backup/AI_N1_PRE_BE_REVIEW_HARDENING_PLAN.md`;
+Kế hoạch local: `.local/ai-n1/plans/AI_N1_PRE_BE_REVIEW_HARDENING_PLAN.md`;
 file kế hoạch không đưa vào Git.
 
 Core acceptance baseline: `c92b38733d00c77bd90b96318f8c70d7b19be5c0`.
 Branch HEAD before current foundation edits: `c006278af18e3d29b0f8d542e9cddc199d516695`.
-Foundation package state: **COMMITTED** — commit containing this package/report;
-resolve with `git log -1 --format="%H %s" -- intelligence/docs/AI_N1_INTELLIGENCE_FOUNDATION_REPORT.md`.
+Foundation package state: **COMMITTED** — original package before layout refactor;
+inspect with `git show --no-patch --format="%H %s" 430416cf0accedb8f34e94a613583e14e8ad3fea`.
 Core smoke/API evidence: historical run on **07/10/2026 +07:00**, against the Core
 acceptance baseline above; API **23:19:54–23:19:59 +07:00**. Not rerun during hardening.
 Foundation validator evidence: local design-artifact validation on **08/10/2026
@@ -21,15 +21,15 @@ timestamp and coverage in the foundation report.
 
 | Nhóm | Artifact / kết quả |
 | --- | --- |
-| Data/provenance | [Contract](data-provenance-contract.md): metadata UUID định danh một record, không phải logical document xuyên version; Core sở hữu authorization/files/audit. |
-| Triage + retrieval | [Capability contract](../contracts/intelligence-contract-v0.1.md), [triage request](../contracts/triage-request.schema.json) / [result](../contracts/triage-result.schema.json), [search request](../contracts/search-request.schema.json) / [result](../contracts/search-result.schema.json); đủ 4 machine-readable schema. |
+| Data/provenance | [Contract](../../architecture/data-provenance-contract.md): metadata UUID định danh một record, không phải logical document xuyên version; Core sở hữu authorization/files/audit. |
+| Triage + retrieval | [Capability contract](../../../../contracts/intelligence/v1/contract.md), [triage request](../../../../contracts/intelligence/v1/triage-request.schema.json) / [result](../../../../contracts/intelligence/v1/triage-result.schema.json), [search request](../../../../contracts/intelligence/v1/search-request.schema.json) / [result](../../../../contracts/intelligence/v1/search-result.schema.json); đủ 4 machine-readable schema. |
 | Trusted context | `context.workspace_id` là server-injected adapter context, không phải user grant. AUTH-INV-01..04: authorize trước corpus/cache/engine; auth failure không phải DEGRADED. |
 | Evidence | Triage v0.1 chỉ INPUT từ original title/description; search trả Core provenance hits. Application compose; unified envelope cần contract revision có review. |
-| Domain policy | [Taxonomy](../contracts/taxonomy-v0.1.yaml), [priority policy](../contracts/priority-policy-v0.1.md): 5 categories, root cause > symptom, OTHER khác uncertainty, 16 ô priority; Service Desk / Process Owner sở hữu policy. |
-| Ticket fixtures | [12 JSONL](../data/examples/tickets-v0.1.jsonl), [manifest](../data/examples/tickets-v0.1.manifest.json), [DEGRADED](../data/examples/triage-degraded-v0.1.json). Chuyển workspace request vào trusted context; giữ nguyên input và expected labels. Recompute exact-byte dataset digest/size. |
-| Knowledge | 5 team-authored Markdown, [manifest](../data/knowledge-manifest-v0.1.json): nội dung/bytes giữ nguyên, exact-byte SHA-256/size hợp lệ; pending rights, null Core bindings, chưa ingest. |
-| Draft bổ sung | [Retrieval gold](../data/examples/retrieval-gold-v0.1.json): 12 local associations, MANUAL_EXPECTED / NOT BENCHMARK / NOT ENGINE OUTPUT. [Normalization](../contracts/text-normalization-v0.1.md): NFC, giữ dấu tiếng Việt, versioned case folding/whitespace/alias Wi-Fi. |
-| Inventory + handover | [Inventory](../inventory/AI_DEPENDENCY_CANDIDATES.md), [BE brief](AI_N1_BE_REVIEW_BRIEF.md), [README](../README.md). Candidate/adoption/install/transitive/rejected được phân biệt; license chưa verified. |
+| Domain policy | [Taxonomy](../../../profiles/service-desk/taxonomy.yaml), [priority policy](../../architecture/priority-policy.md): 5 categories, root cause > symptom, OTHER khác uncertainty, 16 ô priority; Service Desk / Process Owner sở hữu policy. |
+| Ticket fixtures | [12 JSONL](../../../../fixtures/intelligence/service-desk/tickets/tickets-v0.1.jsonl), [manifest](../../../../fixtures/intelligence/service-desk/tickets/manifest.json), [DEGRADED](../../../../fixtures/intelligence/service-desk/tickets/triage-degraded-v0.1.json). Chuyển workspace request vào trusted context; giữ nguyên input và expected labels. Recompute exact-byte dataset digest/size. |
+| Knowledge | 5 team-authored Markdown, [manifest](../../../../fixtures/intelligence/service-desk/knowledge/manifest.json): nội dung/bytes giữ nguyên, exact-byte SHA-256/size hợp lệ; pending rights, null Core bindings, chưa ingest. |
+| Draft bổ sung | [Retrieval gold](../../../../fixtures/intelligence/service-desk/retrieval/gold-v0.1.json): 12 local associations, MANUAL_EXPECTED / NOT BENCHMARK / NOT ENGINE OUTPUT. [Normalization](../../../profiles/service-desk/normalization.md): NFC, giữ dấu tiếng Việt, versioned case folding/whitespace/alias Wi-Fi. |
+| Inventory + handover | [Inventory](../../governance/intelligence-dependency-candidates.md), [BE brief](BE_REVIEW_BRIEF.md), [README](../../../README.md). Candidate/adoption/install/transitive/rejected được phân biệt; license chưa verified. |
 
 Các artifact 0.1.0 là proposal trước lần freeze đầu tiên; chưa có runtime consumer.
 Profile `service-desk@0.1.0` pin `priority-policy@0.1.0`; sửa matrix/review fallback
@@ -38,7 +38,7 @@ override là quyết định nghiệp vụ do App/Core lưu và audit.
 
 ## Kiểm chứng local hiện tại
 
-Lệnh: `python intelligence/tests/validate-foundation.py` — **PASS, exit 0**.
+Lệnh: `python scripts/intelligence/validate-foundation.py` — **PASS, exit 0**.
 Timestamp UTC của lần kiểm tra artifact: **2026-10-07T17:17:01+00:00**
 (08/10/2026, **00:17:01 +07:00**).
 Tools có sẵn: Python `3.12.7`, PyYAML `6.0.1`, jsonschema `4.23.0`.
@@ -63,7 +63,7 @@ chứng minh UUID issuance, authorization, artifact resolution hoặc adapter se
 Các kiểm tra này cần implementation tests sau BE ratification.
 
 Không tái chạy Maven/Docker/smoke: không thay Core code/config. Evidence Core ở
-[acceptance report](AI_N1_ACCEPTANCE_REPORT.md) là lần chạy baseline trước;
+[acceptance report](ACCEPTANCE_REPORT.md) là lần chạy baseline trước;
 không dùng kết quả đó như regression evidence cho code mới. Local validator không
 đánh giá engine accuracy; retrieval gold chỉ chuẩn bị future Hit@1/Hit@3/MRR.
 
@@ -77,7 +77,7 @@ không dùng kết quả đó như regression evidence cho code mới. Local val
 | Inventory, normalization/gold drafts, review brief, evidence metadata sạch | Hoàn tất; chưa adopted runtime dependency/model. |
 | Core source/API/schema/infra scope | Không thay đổi. |
 
-BE cần ratify **D1–D5** trong [brief](AI_N1_BE_REVIEW_BRIEF.md): POST/GET role
+BE cần ratify **D1–D5** trong [brief](BE_REVIEW_BRIEF.md): POST/GET role
 policy, explicit response mapping, trusted adapter context, Core citation identity
 và App/Core audit path. Process/Service Owner duyệt priority policy; Repository
 Owner duyệt usage rights/license trước ingest/release.

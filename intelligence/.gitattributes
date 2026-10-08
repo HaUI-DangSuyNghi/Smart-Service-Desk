@@ -1,11 +1,5 @@
-knowledge/*.md text eol=lf
-data/examples/*.jsonl text eol=lf
 *.md text eol=lf
-docs/*.md text eol=lf
-contracts/*.md text eol=lf
-contracts/*.json text eol=lf
-contracts/*.yaml text eol=lf
-data/*.json text eol=lf
-data/examples/*.json text eol=lf
-inventory/*.md text eol=lf
-tests/*.py text eol=lf
+.gitattributes text eol=lf
+profiles/**/*.yaml text eol=lf
+profiles/**/*.md text eol=lf
+docs/**/*.md text eol=lf

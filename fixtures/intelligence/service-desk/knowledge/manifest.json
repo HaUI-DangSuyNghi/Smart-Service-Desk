@@ -4,7 +4,7 @@
   "artifacts": [
     {
       "artifact_id": "kb-network-001",
-      "path": "knowledge/wifi-troubleshooting.md",
+      "path": "fixtures/intelligence/service-desk/knowledge/sources/wifi-troubleshooting.md",
       "title": "Hướng dẫn xử lý nhanh sự cố Wi-Fi phòng thực hành",
       "source": "team-authored:knowledge/wifi-troubleshooting",
       "version": "0.1.0",
@@ -20,7 +20,7 @@
     },
     {
       "artifact_id": "kb-account-001",
-      "path": "knowledge/account-access-guide.md",
+      "path": "fixtures/intelligence/service-desk/knowledge/sources/account-access-guide.md",
       "title": "Hướng dẫn sự cố tài khoản và đăng nhập",
       "source": "team-authored:knowledge/account-access-guide",
       "version": "0.1.0",
@@ -36,7 +36,7 @@
     },
     {
       "artifact_id": "kb-software-hardware-001",
-      "path": "knowledge/software-hardware-first-check.md",
+      "path": "fixtures/intelligence/service-desk/knowledge/sources/software-hardware-first-check.md",
       "title": "Phân biệt lỗi phần mềm và phần cứng",
       "source": "team-authored:knowledge/software-hardware-first-check",
       "version": "0.1.0",
@@ -52,7 +52,7 @@
     },
     {
       "artifact_id": "kb-priority-001",
-      "path": "knowledge/priority-policy.md",
+      "path": "fixtures/intelligence/service-desk/knowledge/sources/priority-policy.md",
       "title": "Chính sách đánh giá Impact và Urgency",
       "source": "team-authored:knowledge/priority-policy",
       "version": "0.1.0",
@@ -68,7 +68,7 @@
     },
     {
       "artifact_id": "kb-escalation-001",
-      "path": "knowledge/service-desk-escalation.md",
+      "path": "fixtures/intelligence/service-desk/knowledge/sources/service-desk-escalation.md",
       "title": "Quy tắc evidence và escalation cho Service Desk",
       "source": "team-authored:knowledge/service-desk-escalation",
       "version": "0.1.0",

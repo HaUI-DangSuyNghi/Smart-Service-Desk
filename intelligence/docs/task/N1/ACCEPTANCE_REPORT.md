@@ -5,13 +5,13 @@ Báo cáo chuẩn hóa: **08/10/2026, Asia/Saigon**.
 Branch: `feature/ai01-data-provenance`.
 Trạng thái: Core baseline đã được kiểm chứng trong phạm vi AI được phép;
 N1 chưa DONE. Foundation hiện **READY FOR BE REVIEW**, xem
-[foundation report](AI_N1_INTELLIGENCE_FOUNDATION_REPORT.md) và
-[BE review brief](AI_N1_BE_REVIEW_BRIEF.md).
+[foundation report](FOUNDATION_REPORT.md) và
+[BE review brief](BE_REVIEW_BRIEF.md).
 
 Core acceptance baseline: `c92b38733d00c77bd90b96318f8c70d7b19be5c0`.
 Branch HEAD before current foundation edits: `c006278af18e3d29b0f8d542e9cddc199d516695`.
-Foundation package state: **COMMITTED** — commit containing this package/report;
-resolve with `git log -1 --format="%H %s" -- intelligence/docs/AI_N1_INTELLIGENCE_FOUNDATION_REPORT.md`.
+Foundation package state: **COMMITTED** — original package before layout refactor;
+inspect with `git show --no-patch --format="%H %s" 430416cf0accedb8f34e94a613583e14e8ad3fea`.
 Core smoke/API evidence: historical run on **07/10/2026 +07:00**, against the Core
 acceptance baseline above; API **23:19:54–23:19:59 +07:00**. Not rerun during hardening.
 Foundation validator evidence: local design-artifact validation on **08/10/2026
@@ -23,14 +23,14 @@ timestamp and coverage in the foundation report.
 Đây là **historical Core runtime evidence**, không phải lần chạy mới sau hardening.
 Core source/config được giữ nguyên từ baseline; branch có các commit tài liệu/probe
 AI nhưng không có Core alignment. Chủ repository yêu cầu review trước DX-Core edits.
-Kế hoạch acceptance local: `intelligence/.backup/AI_N1_DATA_PROVENANCE_DETAILED_PLAN.md`.
+Kế hoạch acceptance local: `.local/ai-n1/plans/AI_N1_DATA_PROVENANCE_DETAILED_PLAN.md`.
 
 | Artifact | Bàn giao |
 | --- | --- |
-| [Data/provenance contract](data-provenance-contract.md) | Field authority, identity, immutable public API, source/version/rights/checksum, isolation, audit; draft chưa ratify. |
-| [API probe](../tests/metadata-provenance.ps1) | 53 assertion chạy qua APISIX với JWT demo accounts hiện có. |
-| [Audit SQL](../tests/check-metadata-audit.sql) | Read-only transaction; đối chiếu metadata/audit/request ID. |
-| [README](../README.md) | Cách chạy, tác động tạo synthetic data và vị trí evidence. |
+| [Data/provenance contract](../../architecture/data-provenance-contract.md) | Field authority, identity, immutable public API, source/version/rights/checksum, isolation, audit; draft chưa ratify. |
+| [API probe](../../../../scripts/acceptance/core/metadata-provenance.ps1) | 53 assertion chạy qua APISIX với JWT demo accounts hiện có. |
+| [Audit SQL](../../../../scripts/acceptance/core/check-metadata-audit.sql) | Read-only transaction; đối chiếu metadata/audit/request ID. |
+| [README](../../../README.md) | Cách chạy, tác động tạo synthetic data và vị trí evidence. |
 
 ## Kết quả lần chạy Core ngày 07/10/2026
 
@@ -38,7 +38,7 @@ Kế hoạch acceptance local: `intelligence/.backup/AI_N1_DATA_PROVENANCE_DETAI
 | --- | --- |
 | `scripts/start.ps1` | PASS, exit 0; build backend baseline, 4 container healthy; Maven build dùng cache. |
 | `scripts/smoke.ps1` | PASS, exit 0; identity, metadata, isolation, 2 workflow thực và concurrent completion. |
-| `intelligence/tests/metadata-provenance.ps1` | PASS, exit 0; **53/53 assertion**. |
+| `scripts/acceptance/core/metadata-provenance.ps1` | PASS, exit 0; **53/53 assertion**. |
 | Audit SQL với ID/owner/workspace/request ID từ evidence | PASS, đúng 1 `metadata.create`, timestamp/context khớp. |
 | Audit SQL với request ID cố ý sai | Từ chối, exit khác 0; đã sửa checker vì psql 16 bỏ qua `\quit 1`. |
 | `scripts/check-db.sql` qua psql, `ON_ERROR_STOP=1` | PASS metadata/audit consistency và engine/scope. |

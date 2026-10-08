@@ -6,41 +6,21 @@ Technical implementer: Intelligence.
 Required reviewers: BE + Process/Service Owner.
 Policy version: `priority-policy@0.1.0`.
 Profile/taxonomy/rules versions: `0.1.0`.
-Machine-readable matrix, rule IDs and routing live in [taxonomy](taxonomy-v0.1.yaml).
+The [priority policy](../../profiles/service-desk/priority-policy.yaml) is the sole machine-readable source of impact/urgency levels, matrix and review fallback.
+Rule IDs live in [rules](../../profiles/service-desk/rules.yaml); routing lives in [taxonomy](../../profiles/service-desk/taxonomy.yaml).
 
 Intelligence does not define business SLA or final priority authority. The engine
 applies policy approved by the Process/Service Owner, explains the suggestion and
 allows human override. This proposal is not evidence of business approval.
 For MVP output tracing, `profile_version=service-desk@0.1.0` pins
-`priority_policy_version=priority-policy@0.1.0` in the taxonomy; no extra generic
+`priority_policy_version=priority-policy@0.1.0` in the profile manifest; no extra generic
 response field is introduced. Matrix or fallback changes require business review
 and a new profile version, or an explicit policy version in a reviewed later
 contract. An override/accepted business decision is persisted and audited by
 Application/Core, never by direct Intelligence writes to Core tables.
 
-| Impact | Meaning |
-| --- | --- |
-| I1 | One user or device |
-| I2 | Small group / several devices; not the whole room/class |
-| I3 | Entire room, class or lab |
-| I4 | Several rooms, shared service or widespread impact |
-
 Counts alone do not establish impact: 15 affected people in a larger class can be
 I2; an entire 25-device lab is I3. Ask whether the whole room/class is blocked.
-
-| Urgency | Meaning |
-| --- | --- |
-| U1 | Workaround available, no material immediate impact |
-| U2 | Work affected but can wait |
-| U3 | Current activity blocked |
-| U4 | Critical/time-sensitive activity blocked, immediate response needed |
-
-| Impact / urgency | U1 | U2 | U3 | U4 |
-| --- | --- | --- | --- | --- |
-| I1 | LOW | LOW | MEDIUM | HIGH |
-| I2 | LOW | MEDIUM | HIGH | HIGH |
-| I3 | MEDIUM | HIGH | HIGH | CRITICAL |
-| I4 | HIGH | HIGH | CRITICAL | CRITICAL |
 
 Priority comes from supported impact/urgency, never category or a keyword alone.
 Explicit root cause outranks symptom: locked account affecting Wi-Fi is ACCOUNT;

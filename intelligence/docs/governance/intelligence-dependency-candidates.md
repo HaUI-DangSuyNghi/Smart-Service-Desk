@@ -62,7 +62,7 @@ from the supplied package, without copying external content. Rights remain
 the assistant to choose a license. Internal fixtures are not a public/release
 corpus. Do not ingest/publish before rights are decided.
 
-Local [knowledge manifest](../data/knowledge-manifest-v0.1.json) records source,
+Local [knowledge manifest](../../../fixtures/intelligence/service-desk/knowledge/manifest.json) records source,
 version, exact bytes/checksum and null Core bindings. Once approved, prepare Core
 metadata requests with the decided usageRights and artifact digest; Core generates
 the UUID/owner/time and authorizes the workspace. N3 upload verifies received bytes.
