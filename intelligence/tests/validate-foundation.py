@@ -223,7 +223,7 @@ def main():
     validate_taxonomy(taxonomy)
     validators = []
     for filename in ("triage-request.schema.json", "triage-result.schema.json", "search-request.schema.json", "search-result.schema.json"):
-        schema = read_json(ROOT / "contracts" / filename)
+        schema = read_json(ROOT.parent / "contracts/intelligence/v1" / filename)
         Draft202012Validator.check_schema(schema)
         validators.append(Draft202012Validator(schema))
         if filename.endswith("request.schema.json"):

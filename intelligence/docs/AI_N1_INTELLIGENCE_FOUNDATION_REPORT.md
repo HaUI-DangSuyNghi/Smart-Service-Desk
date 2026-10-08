@@ -22,7 +22,7 @@ timestamp and coverage in the foundation report.
 | Nhóm | Artifact / kết quả |
 | --- | --- |
 | Data/provenance | [Contract](data-provenance-contract.md): metadata UUID định danh một record, không phải logical document xuyên version; Core sở hữu authorization/files/audit. |
-| Triage + retrieval | [Capability contract](../contracts/intelligence-contract-v0.1.md), [triage request](../contracts/triage-request.schema.json) / [result](../contracts/triage-result.schema.json), [search request](../contracts/search-request.schema.json) / [result](../contracts/search-result.schema.json); đủ 4 machine-readable schema. |
+| Triage + retrieval | [Capability contract](../../contracts/intelligence/v1/contract.md), [triage request](../../contracts/intelligence/v1/triage-request.schema.json) / [result](../../contracts/intelligence/v1/triage-result.schema.json), [search request](../../contracts/intelligence/v1/search-request.schema.json) / [result](../../contracts/intelligence/v1/search-result.schema.json); đủ 4 machine-readable schema. |
 | Trusted context | `context.workspace_id` là server-injected adapter context, không phải user grant. AUTH-INV-01..04: authorize trước corpus/cache/engine; auth failure không phải DEGRADED. |
 | Evidence | Triage v0.1 chỉ INPUT từ original title/description; search trả Core provenance hits. Application compose; unified envelope cần contract revision có review. |
 | Domain policy | [Taxonomy](../contracts/taxonomy-v0.1.yaml), [priority policy](../contracts/priority-policy-v0.1.md): 5 categories, root cause > symptom, OTHER khác uncertainty, 16 ô priority; Service Desk / Process Owner sở hữu policy. |

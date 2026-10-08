@@ -59,8 +59,8 @@ The [result schema](triage-result.schema.json) defines a generic response envelo
 Every result echoes `contract_version`, `request_id`, `profile`, and the trusted
 `context.workspace_id` as top-level `workspace_id`.
 Category values are profile-defined rather than hard-coded in the generic schema.
-For this package, fixtures use [taxonomy](taxonomy-v0.1.yaml) and
-[priority policy](priority-policy-v0.1.md). `SUCCESS` means suggestion produced,
+For this package, fixtures use [taxonomy](../../../intelligence/contracts/taxonomy-v0.1.yaml) and
+[priority policy](../../../intelligence/contracts/priority-policy-v0.1.md). `SUCCESS` means suggestion produced,
 not a confirmed business decision. Ambiguous input can be SUCCESS with review.
 
 Contract v0.1 intentionally restricts triage evidence to `INPUT`. Evidence identifies
@@ -136,9 +136,9 @@ Deleting any index/cache leaves Core records valid. Rebuild derived state from
 authorized Core data plus versioned AI configuration, keeping source bytes and
 provenance separate from normalized text. Synthetic examples are authoring fixtures,
 not a holdout set; split future evaluation by scenario/template to prevent leakage.
-The [normalization draft](text-normalization-v0.1.md) preserves original evidence
+The [normalization draft](../../../intelligence/contracts/text-normalization-v0.1.md) preserves original evidence
 and Vietnamese diacritics; future normalization behavior must be versioned.
 
 Dependency/model/data adoption and corpus release remain pending. See
-[inventory](../inventory/AI_DEPENDENCY_CANDIDATES.md) and the
-[package report](../docs/AI_N1_INTELLIGENCE_FOUNDATION_REPORT.md).
+[inventory](../../../intelligence/inventory/AI_DEPENDENCY_CANDIDATES.md) and the
+[package report](../../../intelligence/docs/AI_N1_INTELLIGENCE_FOUNDATION_REPORT.md).

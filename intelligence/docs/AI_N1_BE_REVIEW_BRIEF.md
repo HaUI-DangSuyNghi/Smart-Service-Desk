@@ -9,7 +9,7 @@ N1 chưa DONE; cần BE ratification, Core alignment và Core regression evidenc
 | Nội dung | Contract / evidence |
 | --- | --- |
 | Data/provenance | [Field authority, immutable API, checksum trust](data-provenance-contract.md); Core sở hữu metadata/files/auth/audit, Intelligence chỉ giữ derived state rebuildable. |
-| Triage + retrieval | [Capability contract](../contracts/intelligence-contract-v0.1.md); 4 JSON Schema, trusted server-injected context; auth denial trước corpus/cache/engine, không phải DEGRADED. |
+| Triage + retrieval | [Capability contract](../../contracts/intelligence/v1/contract.md); 4 JSON Schema, trusted server-injected context; auth denial trước corpus/cache/engine, không phải DEGRADED. |
 | Evidence + fallback | Triage v0.1 chỉ INPUT từ original input; search trả Core provenance hits; Application compose kết quả. DEGRADED yêu cầu manual review. |
 | Service Desk profile | [5 categories](../contracts/taxonomy-v0.1.yaml), root cause ưu tiên symptom; OTHER không đồng nghĩa uncertainty. |
 | Priority proposal | [Impact × Urgency](../contracts/priority-policy-v0.1.md); Service Desk / Process Owner sở hữu policy, Intelligence thực thi/giải thích; approval nghiệp vụ còn chờ. |

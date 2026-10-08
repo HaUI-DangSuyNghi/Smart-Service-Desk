@@ -31,12 +31,12 @@ rebuildable derived state. Direct DX-Core changes still require team review.
 
 * [Data/provenance contract](docs/data-provenance-contract.md): field authority,
   immutable public API, exact-byte checksum trust and workspace isolation.
-* [Capability contract](contracts/intelligence-contract-v0.1.md): replaceable
+* [Capability contract](../contracts/intelligence/v1/contract.md): replaceable
   triage/search engines, server-injected trusted context and manual fallback.
-  [Triage request](contracts/triage-request.schema.json) /
-  [result](contracts/triage-result.schema.json) and
-  [search request](contracts/search-request.schema.json) /
-  [result](contracts/search-result.schema.json) are machine-readable.
+  [Triage request](../contracts/intelligence/v1/triage-request.schema.json) /
+  [result](../contracts/intelligence/v1/triage-result.schema.json) and
+  [search request](../contracts/intelligence/v1/search-request.schema.json) /
+  [result](../contracts/intelligence/v1/search-result.schema.json) are machine-readable.
 * [Service Desk taxonomy](contracts/taxonomy-v0.1.yaml) and
   [priority policy](contracts/priority-policy-v0.1.md): 5 categories, root-cause
   conflicts, 16 Impact × Urgency cells. Service Desk / Process Owner owns the
