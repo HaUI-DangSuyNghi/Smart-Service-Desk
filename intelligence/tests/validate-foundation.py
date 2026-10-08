@@ -20,7 +20,9 @@ except ImportError:
         "Use an authoring environment with these tools; they are not AI runtime dependencies."
     )
 
-ROOT = Path(__file__).resolve().parents[1]
+REPO_ROOT = Path(__file__).resolve().parents[2]
+ROOT = REPO_ROOT / "intelligence"
+PROFILE_DIR = REPO_ROOT / "intelligence/profiles/service-desk"
 
 
 def ensure(condition, message):
@@ -77,54 +79,79 @@ def validate_digest(record, path, checksum_key):
     ensure(record["byte_size"] == len(raw), f"Wrong byte size: {path.name}")
 
 
-def validate_taxonomy(taxonomy):
-    ensure(taxonomy["status"] == "PROPOSED", "Taxonomy must remain proposed")
-    ensure(taxonomy["profile"] == "service-desk", "Wrong profile")
-    ensure(taxonomy["taxonomy_version"] == taxonomy["rules_version"] == "0.1.0", "Version drift")
-    ensure(taxonomy["profile_version"] == "service-desk@0.1.0", "Profile version drift")
-    ensure(taxonomy["priority_policy_version"] == "priority-policy@0.1.0", "Priority policy version drift")
-    ensure(taxonomy["priority_policy_owner"] == "Service Desk / Process Owner", "Priority business ownership drift")
-    policy = (ROOT / "contracts/priority-policy-v0.1.md").read_text(encoding="utf-8")
-    for line in ("Policy status: PROPOSED.", "Policy owner: Service Desk / Process Owner.",
-                 "Technical implementer: Intelligence.", "Required reviewers: BE + Process/Service Owner.",
-                 f"Policy version: `{taxonomy['priority_policy_version']}`."):
-        ensure(line in policy, "Policy metadata differs from profile")
-    ensure(set(taxonomy["categories"]) == {"NETWORK", "ACCOUNT", "SOFTWARE", "HARDWARE", "OTHER"}, "Expected five categories")
-    for name, category in taxonomy["categories"].items():
-        ensure(category["definition"].strip(), f"Missing definition: {name}")
-        for field in ("positive_signals", "exclusions"):
-            ensure(isinstance(category[field], list) and category[field], f"Missing {field}: {name}")
-            ensure(all(isinstance(item, str) and item.strip() for item in category[field]), f"Blank {field}: {name}")
-        ensure(category["suggested_group"].strip() and category["rule_id"].strip(), f"Missing routing/rule: {name}")
-    ensure(set(taxonomy["impact_rules"]) == set(taxonomy["priority_matrix"]) == {"I1", "I2", "I3", "I4"}, "Incomplete impact matrix")
-    ensure(set(taxonomy["urgency_rules"]) == {"U1", "U2", "U3", "U4"}, "Incomplete urgency rules")
-    ensure(set(taxonomy["priority_rules"]) == {"LOW", "MEDIUM", "HIGH", "CRITICAL"}, "Incomplete priorities")
-    for row in taxonomy["priority_matrix"].values():
-        ensure(set(row) == set(taxonomy["urgency_rules"]), "Incomplete urgency matrix")
-        ensure(set(row.values()) <= set(taxonomy["priority_rules"]), "Unknown matrix priority")
+def read_yaml(path):
+    return yaml.load(path.read_text(encoding="utf-8"), Loader=UniqueYamlLoader)
+
+
+def validate_profile(profile, taxonomy, rules, policy):
+    ensure(set(profile) == {"status", "profile", "taxonomy", "rules", "priority_policy", "normalization"}, "Unexpected profile fields")
+    ensure(all(document["status"] == "PROPOSED" for document in (profile, taxonomy, rules, policy)), "Profile artifacts must remain proposed")
+    ensure(profile["profile"] == {"id": "service-desk", "version": "service-desk@0.1.0"}, "Profile identity/version drift")
+    pins = {
+        "taxonomy": {"version": taxonomy["taxonomy_version"], "file": "taxonomy.yaml"},
+        "rules": {"version": rules["rules_version"], "file": "rules.yaml"},
+        "priority_policy": {"version": policy["policy_version"], "file": "priority-policy.yaml", "owner": policy["owner"]},
+        "normalization": {"version": "text-normalization@0.1.0", "file": "normalization.md"},
+    }
+    for section, pin in pins.items():
+        ensure(profile[section] == pin, f"Profile file/version pin drift: {section}")
+        ensure((PROFILE_DIR / pin["file"]).is_file(), f"Missing profile file: {section}")
+    ensure(taxonomy["taxonomy_version"] == rules["rules_version"] == "0.1.0", "Taxonomy/rules version drift")
+    ensure(policy["policy_version"] == "priority-policy@0.1.0", "Priority policy version drift")
+    ensure(policy["owner"] == "Service Desk / Process Owner", "Priority business ownership drift")
+    ensure(policy["technical_implementer"] == "Intelligence" and policy["required_reviewers"] == ["BE", "Process/Service Owner"], "Priority review ownership drift")
+    normalization = (PROFILE_DIR / "normalization.md").read_text(encoding="utf-8")
+    ensure(f"Proposed version: `{profile['normalization']['version']}`." in normalization, "Normalization version drift")
+    ensure(set(taxonomy) == {"status", "taxonomy_version", "categories"}, "Mixed concern in taxonomy")
+    ensure(set(rules) == {"status", "rules_version", "category_rules", "conflict_rules", "review_rules", "impact_rules", "urgency_rules", "priority_rule_ids"}, "Mixed concern in rules")
+    categories = taxonomy["categories"]
+    ensure(set(categories) == {"NETWORK", "ACCOUNT", "SOFTWARE", "HARDWARE", "OTHER"}, "Expected five categories")
+    for name, category in categories.items():
+        ensure(set(category) == {"definition", "exclusions", "suggested_group"}, f"Mixed category concern: {name}")
+        ensure(isinstance(category["definition"], str) and category["definition"].strip(), f"Missing definition: {name}")
+        ensure(isinstance(category["suggested_group"], str) and category["suggested_group"].strip(), f"Missing routing: {name}")
+        exclusions = category["exclusions"]
+        ensure(isinstance(exclusions, list) and exclusions and all(isinstance(item, str) and item.strip() for item in exclusions), f"Missing exclusions: {name}")
+    matched_categories = []
+    for rule_id, rule in rules["category_rules"].items():
+        ensure(set(rule) == {"category", "positive_signals"}, f"Unexpected category rule fields: {rule_id}")
+        ensure(rule["category"] in categories, f"Unknown rule category: {rule_id}")
+        signals = rule["positive_signals"]
+        ensure(isinstance(signals, list) and signals and all(isinstance(item, str) and item.strip() for item in signals), f"Missing positive signals: {rule_id}")
+        matched_categories.append(rule["category"])
+    ensure(len(matched_categories) == len(categories) and set(matched_categories) == set(categories), "Category rule coverage/uniqueness drift")
+    ensure(rules["conflict_rules"] == {"CONFLICT-ROOT-001": {"principle": "Root cause có evidence rõ ưu tiên hơn symptom; không dùng thứ tự category để đoán."}}, "Conflict rule drift")
+    ensure(rules["review_rules"] == {"REVIEW-INSUFFICIENT-001": {"policy_ref": "priority-policy.yaml#/review_fallback"}}, "Review rule must reference policy fallback")
+    ensure(policy["review_fallback"] == {
+        "category": "OTHER", "priority": "MEDIUM", "suggested_group": "GENERAL-SUPPORT",
+        "impact": None, "urgency": None, "needs_review": True, "reason_code": "INSUFFICIENT_INFORMATION",
+    }, "Ambiguous fallback drift")
+    ensure(set(rules["impact_rules"]) == set(policy["impact"]) == set(policy["matrix"]) == {"I1", "I2", "I3", "I4"}, "Incomplete impact matrix")
+    ensure(set(rules["urgency_rules"]) == set(policy["urgency"]) == {"U1", "U2", "U3", "U4"}, "Incomplete urgency rules")
+    ensure(set(rules["priority_rule_ids"]) == {"LOW", "MEDIUM", "HIGH", "CRITICAL"}, "Incomplete priorities")
+    for mapping in (policy["impact"], policy["urgency"]):
+        ensure(all(isinstance(value, str) and value.strip() for value in mapping.values()), "Missing impact/urgency definitions")
     expected_rows = {
         "I1": ["LOW", "LOW", "MEDIUM", "HIGH"],
         "I2": ["LOW", "MEDIUM", "HIGH", "HIGH"],
         "I3": ["MEDIUM", "HIGH", "HIGH", "CRITICAL"],
         "I4": ["HIGH", "HIGH", "CRITICAL", "CRITICAL"],
     }
-    expected_matrix = {
-        impact: dict(zip(["U1", "U2", "U3", "U4"], priorities))
-        for impact, priorities in expected_rows.items()
-    }
-    ensure(taxonomy["priority_matrix"] == expected_matrix, "Priority matrix differs from supplied N1 policy")
-    for filename in ("contracts/priority-policy-v0.1.md", "knowledge/priority-policy.md"):
-        text = (ROOT / filename).read_text(encoding="utf-8")
-        rows = re.findall(r"^\| (I[1-4]) \| (LOW|MEDIUM|HIGH|CRITICAL) \| (LOW|MEDIUM|HIGH|CRITICAL) \| (LOW|MEDIUM|HIGH|CRITICAL) \| (LOW|MEDIUM|HIGH|CRITICAL) \|$", text, re.MULTILINE)
-        ensure({row[0]: list(row[1:]) for row in rows} == expected_rows, f"Document matrix drift: {filename}")
-    rules = [item["rule_id"] for item in taxonomy["categories"].values()]
-    for mapping in ("impact_rules", "urgency_rules", "priority_rules"):
-        rules.extend(taxonomy[mapping].values())
-    rules.extend([taxonomy["conflict_policy"]["rule_id"], taxonomy["conflict_policy"]["ambiguous"]["rule_id"]])
-    ensure(len(set(rules)) == len(rules), "Duplicate rule IDs")
+    expected_matrix = {impact: dict(zip(["U1", "U2", "U3", "U4"], priorities)) for impact, priorities in expected_rows.items()}
+    ensure(policy["matrix"] == expected_matrix, "Priority matrix differs from supplied N1 policy")
+    # Historical knowledge is an immutable fixture, not another policy authority.
+    source = ROOT / "knowledge/priority-policy.md"
+    rows = re.findall(r"^\| (I[1-4]) \| (LOW|MEDIUM|HIGH|CRITICAL) \| (LOW|MEDIUM|HIGH|CRITICAL) \| (LOW|MEDIUM|HIGH|CRITICAL) \| (LOW|MEDIUM|HIGH|CRITICAL) \|$", source.read_text(encoding="utf-8"), re.MULTILINE)
+    ensure({row[0]: list(row[1:]) for row in rows} == expected_rows, "Knowledge fixture matrix drift")
+    rule_ids = list(rules["category_rules"]) + list(rules["conflict_rules"]) + list(rules["review_rules"])
+    for field in ("impact_rules", "urgency_rules", "priority_rule_ids"):
+        rule_ids.extend(rules[field].values())
+    ensure(all(isinstance(rule_id, str) and rule_id.strip() for rule_id in rule_ids), "Blank rule IDs")
+    ensure(len(set(rule_ids)) == len(rule_ids), "Duplicate rule IDs")
 
 
-def validate_fixture(fixture, taxonomy, request_validator, response_validator):
+
+def validate_fixture(fixture, profile, taxonomy, rules, policy, request_validator, response_validator):
     ensure(set(fixture) == {"id", "dataset_version", "annotation_kind", "scenario", "request", "expected"}, "Unexpected fixture fields")
     ensure(fixture["dataset_version"] == "0.1.0" and fixture["annotation_kind"] == "MANUAL_EXPECTED", "Expected manual annotation")
     request, response = fixture["request"], fixture["expected"]
@@ -132,31 +159,32 @@ def validate_fixture(fixture, taxonomy, request_validator, response_validator):
     response_validator.validate(response)
     ensure(response["status"] == "SUCCESS", "Ticket fixture must contain expected suggestion")
     validate_echo(request, response)
-    ensure(request["profile"] == taxonomy["profile"] and request["context"]["workspace_id"] == "lab-a", "Fixture context drift")
+    ensure(request["profile"] == profile["profile"]["id"] and request["context"]["workspace_id"] == "lab-a", "Fixture context drift")
     result, explanation = response["result"], response["explanation"]
     category = taxonomy["categories"][result["category"]]
+    category_rule_id = next(rule_id for rule_id, rule in rules["category_rules"].items() if rule["category"] == result["category"])
     ensure(result["suggested_group"] == category["suggested_group"], "Routing mismatch")
     for evidence in response["evidence"]:
         ensure(evidence["type"] == "INPUT", "Triage must not contain knowledge evidence")
         ensure(evidence["text"] in request["input"][evidence["field"]], "Fabricated input evidence")
-    ensure(response["runtime"] == {"engine": "rules", "profile_version": taxonomy["profile_version"], "rules_version": taxonomy["rules_version"]}, "Runtime annotation version drift")
-    required_rules = {category["rule_id"]}
+    ensure(response["runtime"] == {"engine": "rules", "profile_version": profile["profile"]["version"], "rules_version": rules["rules_version"]}, "Runtime annotation version drift")
+    required_rules = {category_rule_id}
     if fixture["scenario"] == "ambiguous":
-        fallback = taxonomy["conflict_policy"]["ambiguous"]
+        fallback = policy["review_fallback"]
         ensure(result == {field: fallback[field] for field in ("category", "priority", "suggested_group")}, "Wrong review fallback")
         ensure(response["needs_review"] is True and explanation["reason_code"] == fallback["reason_code"], "Missing insufficient-information review")
         ensure(explanation["impact"] is None and explanation["urgency"] is None, "Ambiguous fixture invents impact/urgency")
-        required_rules.add(fallback["rule_id"])
+        required_rules.add(next(iter(rules["review_rules"])))
     else:
         ensure(fixture["scenario"] in {"clear", "root-cause-conflict"}, "Unknown fixture scenario")
         ensure(response["needs_review"] is False, "Clear scenario has unexpected review")
         impact, urgency = explanation["impact"], explanation["urgency"]
-        ensure(result["priority"] == taxonomy["priority_matrix"][impact][urgency], "Priority differs from impact x urgency")
-        required_rules.update([taxonomy["impact_rules"][impact], taxonomy["urgency_rules"][urgency], taxonomy["priority_rules"][result["priority"]]])
+        ensure(result["priority"] == policy["matrix"][impact][urgency], "Priority differs from impact x urgency")
+        required_rules.update([rules["impact_rules"][impact], rules["urgency_rules"][urgency], rules["priority_rule_ids"][result["priority"]]])
         conflict = fixture["scenario"] == "root-cause-conflict"
         ensure(explanation["reason_code"] == ("ROOT_CAUSE_CONFLICT" if conflict else "CLASSIFIED"), "Reason/scenario mismatch")
         if conflict:
-            required_rules.add(taxonomy["conflict_policy"]["rule_id"])
+            required_rules.add(next(iter(rules["conflict_rules"])))
     ensure(set(explanation["matched_rules"]) == required_rules, "Missing/unknown/misapplied rule IDs")
 
 
@@ -219,8 +247,9 @@ def reject_mutation(label, value, validator):
 
 def main():
     print("Validation time (UTC):", datetime.now(timezone.utc).isoformat(timespec="seconds"))
-    taxonomy = yaml.load((ROOT / "contracts/taxonomy-v0.1.yaml").read_text(encoding="utf-8"), Loader=UniqueYamlLoader)
-    validate_taxonomy(taxonomy)
+    profile, taxonomy, rules, policy = [read_yaml(PROFILE_DIR / filename) for filename in
+        ("profile.yaml", "taxonomy.yaml", "rules.yaml", "priority-policy.yaml")]
+    validate_profile(profile, taxonomy, rules, policy)
     validators = []
     for filename in ("triage-request.schema.json", "triage-result.schema.json", "search-request.schema.json", "search-result.schema.json"):
         schema = read_json(ROOT.parent / "contracts/intelligence/v1" / filename)
@@ -234,9 +263,9 @@ def main():
     ensure([item["id"] for item in fixtures] == [f"TICKET-{n:03}" for n in range(1, 13)], "Expected exactly TICKET-001..012")
     ensure(len({item["request"]["request_id"] for item in fixtures}) == 12, "Duplicate request IDs")
     for fixture in fixtures:
-        validate_fixture(fixture, taxonomy, request_validator, response_validator)
+        validate_fixture(fixture, profile, taxonomy, rules, policy, request_validator, response_validator)
     ensure({item["expected"]["result"]["category"] for item in fixtures} == set(taxonomy["categories"]), "Category coverage incomplete")
-    ensure({item["expected"]["result"]["priority"] for item in fixtures} == set(taxonomy["priority_rules"]), "Priority coverage incomplete")
+    ensure({item["expected"]["result"]["priority"] for item in fixtures} == set(rules["priority_rule_ids"]), "Priority coverage incomplete")
     manifest = read_json(ROOT / "data/examples/tickets-v0.1.manifest.json")
     ensure(local_artifact(manifest["artifact_path"]) == path, "Wrong dataset path")
     validate_digest(manifest, path, "sha256")
@@ -294,7 +323,7 @@ def main():
     print("PASS search SUCCESS/hit, empty SUCCESS, DEGRADED, top_k boundaries, ranking scales and 12 retrieval-gold associations (no engine run)")
 
     def fixture_check(value):
-        validate_fixture(value, taxonomy, request_validator, response_validator)
+        validate_fixture(value, profile, taxonomy, rules, policy, request_validator, response_validator)
 
     mutations = []
     bad = copy.deepcopy(fixtures[0]); bad["expected"]["evidence"][0]["text"] = "invented evidence"; mutations.append(("fabricated evidence", bad, fixture_check))
@@ -318,8 +347,8 @@ def main():
     bad = copy.deepcopy(fixtures[0]); bad["request"]["context"]["authorization_granted"] = True; mutations.append(("context permission grant", bad, fixture_check))
     bad = copy.deepcopy(fixtures[0]); bad["expected"]["evidence"][0]["type"] = "KNOWLEDGE"; mutations.append(("knowledge in triage evidence", bad, fixture_check))
     bad = copy.deepcopy(fixtures[0]); bad["expected"]["evidence"][0]["metadata_id"] = search["expected"]["results"][0]["metadata_id"]; mutations.append(("provenance in input evidence", bad, fixture_check))
-    bad = copy.deepcopy(taxonomy); bad["priority_policy_version"] = "priority-policy@9.0.0"; mutations.append(("priority policy version drift", bad, validate_taxonomy))
-    bad = copy.deepcopy(taxonomy); bad["priority_policy_owner"] = "Intelligence"; mutations.append(("priority policy owner drift", bad, validate_taxonomy))
+    bad = copy.deepcopy(policy); bad["policy_version"] = "priority-policy@9.0.0"; mutations.append(("priority policy version drift", bad, lambda value: validate_profile(profile, taxonomy, rules, value)))
+    bad = copy.deepcopy(policy); bad["owner"] = "Intelligence"; mutations.append(("priority policy owner drift", bad, lambda value: validate_profile(profile, taxonomy, rules, value)))
     bad = copy.deepcopy(search); bad["request"]["query"] = "   "; mutations.append(("blank search query", bad, search_check))
     for top_k in (0, 11, 1.5, True):
         bad = copy.deepcopy(search); bad["request"]["top_k"] = top_k; mutations.append((f"invalid top_k {top_k}", bad, search_check))

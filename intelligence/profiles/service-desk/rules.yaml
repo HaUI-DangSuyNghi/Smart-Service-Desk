@@ -1,0 +1,84 @@
+status: PROPOSED
+rules_version: 0.1.0
+category_rules:
+  CAT-NET-001:
+    category: NETWORK
+    positive_signals:
+    - wifi
+    - wi-fi
+    - mạng
+    - internet
+    - không vào mạng
+    - mất mạng
+    - chập chờn
+    - dns
+    - ip
+    - access point
+    - lan
+  CAT-ACC-001:
+    category: ACCOUNT
+    positive_signals:
+    - đăng nhập
+    - mật khẩu
+    - password
+    - tài khoản
+    - account
+    - bị khóa
+    - không có quyền
+    - permission
+    - authentication
+  CAT-SW-001:
+    category: SOFTWARE
+    positive_signals:
+    - ứng dụng
+    - phần mềm
+    - software
+    - windows
+    - linux
+    - crash
+    - không mở được
+    - cài đặt
+    - update
+    - version
+  CAT-HW-001:
+    category: HARDWARE
+    positive_signals:
+    - không lên nguồn
+    - không bật
+    - màn hình
+    - bàn phím
+    - chuột
+    - ổ cứng
+    - ram
+    - nguồn
+    - hỏng
+    - cháy
+    - vỡ
+  CAT-OTHER-001:
+    category: OTHER
+    positive_signals:
+    - điều hòa
+    - chiếu sáng
+    - bàn ghế
+    - cơ sở vật chất
+conflict_rules:
+  CONFLICT-ROOT-001:
+    principle: Root cause có evidence rõ ưu tiên hơn symptom; không dùng thứ tự category để đoán.
+review_rules:
+  REVIEW-INSUFFICIENT-001:
+    policy_ref: priority-policy.yaml#/review_fallback
+impact_rules:
+  I1: IMPACT-USER-001
+  I2: IMPACT-GROUP-001
+  I3: IMPACT-ROOM-001
+  I4: IMPACT-WIDE-001
+urgency_rules:
+  U1: URGENCY-WORKAROUND-001
+  U2: URGENCY-DEFERRED-001
+  U3: URGENCY-BLOCKING-001
+  U4: URGENCY-CRITICAL-001
+priority_rule_ids:
+  LOW: PRI-001
+  MEDIUM: PRI-002
+  HIGH: PRI-003
+  CRITICAL: PRI-004

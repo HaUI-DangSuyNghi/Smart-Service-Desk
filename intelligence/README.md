@@ -37,8 +37,8 @@ rebuildable derived state. Direct DX-Core changes still require team review.
   [result](../contracts/intelligence/v1/triage-result.schema.json) and
   [search request](../contracts/intelligence/v1/search-request.schema.json) /
   [result](../contracts/intelligence/v1/search-result.schema.json) are machine-readable.
-* [Service Desk taxonomy](contracts/taxonomy-v0.1.yaml) and
-  [priority policy](contracts/priority-policy-v0.1.md): 5 categories, root-cause
+* [Service Desk taxonomy](profiles/service-desk/taxonomy.yaml) and
+  [priority policy](../docs/architecture/intelligence/priority-policy.md): 5 categories, root-cause
   conflicts, 16 Impact × Urgency cells. Service Desk / Process Owner owns the
   proposed policy; `service-desk@0.1.0` pins `priority-policy@0.1.0`.
 * [12 ticket fixtures](data/examples/tickets-v0.1.jsonl),
@@ -51,7 +51,7 @@ rebuildable derived state. Direct DX-Core changes still require team review.
   `kb-*` artifact IDs are not runtime citations.
 * [Retrieval gold draft](data/examples/retrieval-gold-v0.1.json): MANUAL_EXPECTED,
   NOT BENCHMARK, NOT ENGINE OUTPUT; no accuracy claim.
-  [Normalization draft](contracts/text-normalization-v0.1.md) preserves Vietnamese
+  [Normalization draft](profiles/service-desk/normalization.md) preserves Vietnamese
   diacritics and extracts INPUT evidence from original input.
 * [Inventory](inventory/AI_DEPENDENCY_CANDIDATES.md): runtime candidates PROPOSED;
   no dependency/model adoption or verified license claim.
