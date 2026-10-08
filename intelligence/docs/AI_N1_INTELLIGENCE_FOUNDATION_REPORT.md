@@ -38,7 +38,7 @@ override là quyết định nghiệp vụ do App/Core lưu và audit.
 
 ## Kiểm chứng local hiện tại
 
-Lệnh: `python intelligence/tests/validate-foundation.py` — **PASS, exit 0**.
+Lệnh: `python scripts/intelligence/validate-foundation.py` — **PASS, exit 0**.
 Timestamp UTC của lần kiểm tra artifact: **2026-10-07T17:17:01+00:00**
 (08/10/2026, **00:17:01 +07:00**).
 Tools có sẵn: Python `3.12.7`, PyYAML `6.0.1`, jsonschema `4.23.0`.

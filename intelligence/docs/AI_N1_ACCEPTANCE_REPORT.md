@@ -28,8 +28,8 @@ Kế hoạch acceptance local: `intelligence/.backup/AI_N1_DATA_PROVENANCE_DETAI
 | Artifact | Bàn giao |
 | --- | --- |
 | [Data/provenance contract](data-provenance-contract.md) | Field authority, identity, immutable public API, source/version/rights/checksum, isolation, audit; draft chưa ratify. |
-| [API probe](../tests/metadata-provenance.ps1) | 53 assertion chạy qua APISIX với JWT demo accounts hiện có. |
-| [Audit SQL](../tests/check-metadata-audit.sql) | Read-only transaction; đối chiếu metadata/audit/request ID. |
+| [API probe](../../scripts/acceptance/core/metadata-provenance.ps1) | 53 assertion chạy qua APISIX với JWT demo accounts hiện có. |
+| [Audit SQL](../../scripts/acceptance/core/check-metadata-audit.sql) | Read-only transaction; đối chiếu metadata/audit/request ID. |
 | [README](../README.md) | Cách chạy, tác động tạo synthetic data và vị trí evidence. |
 
 ## Kết quả lần chạy Core ngày 07/10/2026
@@ -38,7 +38,7 @@ Kế hoạch acceptance local: `intelligence/.backup/AI_N1_DATA_PROVENANCE_DETAI
 | --- | --- |
 | `scripts/start.ps1` | PASS, exit 0; build backend baseline, 4 container healthy; Maven build dùng cache. |
 | `scripts/smoke.ps1` | PASS, exit 0; identity, metadata, isolation, 2 workflow thực và concurrent completion. |
-| `intelligence/tests/metadata-provenance.ps1` | PASS, exit 0; **53/53 assertion**. |
+| `scripts/acceptance/core/metadata-provenance.ps1` | PASS, exit 0; **53/53 assertion**. |
 | Audit SQL với ID/owner/workspace/request ID từ evidence | PASS, đúng 1 `metadata.create`, timestamp/context khớp. |
 | Audit SQL với request ID cố ý sai | Từ chối, exit khác 0; đã sửa checker vì psql 16 bỏ qua `\quit 1`. |
 | `scripts/check-db.sql` qua psql, `ON_ERROR_STOP=1` | PASS metadata/audit consistency và engine/scope. |

@@ -1,7 +1,7 @@
 # External acceptance probe against unchanged local Core; no source/config edits.
 # Creates one synthetic metadata record through the public API per successful run.
 $ErrorActionPreference = 'Stop'
-$root = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
+$root = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../../..'))
 Add-Type -AssemblyName System.Net.Http
 $client = New-Object System.Net.Http.HttpClient
 $client.Timeout = [TimeSpan]::FromSeconds(30)

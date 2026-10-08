@@ -66,7 +66,7 @@ is not DEGRADED. Ranking score is engine-specific, not confidence/probability.
 Use existing host Python with PyYAML and jsonschema (authoring tools only):
 
 ```powershell
-python intelligence/tests/validate-foundation.py
+python scripts/intelligence/validate-foundation.py
 ```
 
 The validator reads artifacts only: 4 schemas, annotations, trusted-context echoes,
@@ -86,9 +86,9 @@ The local `.backup/` plans remain Git ignored by `intelligence/.gitignore`.
 For an explicitly requested future rerun with the baseline services running:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File intelligence/tests/metadata-provenance.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/acceptance/core/metadata-provenance.ps1
 $proof = Get-Content .local/ai-n1/metadata-provenance.json -Raw | ConvertFrom-Json
-Get-Content intelligence/tests/check-metadata-audit.sql -Raw |
+Get-Content scripts/acceptance/core/check-metadata-audit.sql -Raw |
   docker compose exec -T postgres psql -U core -d core -v ON_ERROR_STOP=1 `
     -v "metadata_id=$($proof.record.id)" -v "owner=$($proof.record.owner)" `
     -v "workspace=$($proof.record.workspace)" -v "request_id=$($proof.record.requestId)"
