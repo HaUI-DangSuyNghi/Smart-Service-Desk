@@ -25,6 +25,13 @@ CONTRACT_DIR = REPO_ROOT / "contracts/intelligence/v1"
 PROFILE_DIR = REPO_ROOT / "intelligence/profiles/service-desk"
 FIXTURE_DIR = REPO_ROOT / "fixtures/intelligence/service-desk"
 KNOWLEDGE_DIR = FIXTURE_DIR / "knowledge/sources"
+SCHEMA_FILENAMES = (
+    "triage-request.schema.json",
+    "triage-result.schema.json",
+    "search-request.schema.json",
+    "search-result.schema.json",
+)
+DRAFT_URI = "https://json-schema.org/draft/2020-12/schema"
 
 
 def ensure(condition, message):
@@ -85,6 +92,33 @@ def read_yaml(path):
     return yaml.load(path.read_text(encoding="utf-8"), Loader=UniqueYamlLoader)
 
 
+def validate_shared_schema(schema, domain_literals):
+    ensure(schema.get("$schema") == DRAFT_URI, "Shared schemas must declare Draft 2020-12")
+    Draft202012Validator.check_schema(schema)
+
+    def reject_domain_literal(value):
+        if isinstance(value, str):
+            ensure(value not in domain_literals, f"Domain-specific literal in shared schema: {value}")
+        elif isinstance(value, list):
+            for item in value:
+                reject_domain_literal(item)
+        elif isinstance(value, dict):
+            for item in value.values():
+                reject_domain_literal(item)
+
+    def visit(node):
+        if isinstance(node, dict):
+            for key, value in node.items():
+                if key in {"enum", "const", "default"}:
+                    reject_domain_literal(value)
+                visit(value)
+        elif isinstance(node, list):
+            for value in node:
+                visit(value)
+
+    visit(schema)
+
+
 def validate_profile(profile, taxonomy, rules, policy):
     ensure(set(profile) == {"status", "profile", "taxonomy", "rules", "priority_policy", "normalization"}, "Unexpected profile fields")
     ensure(all(document["status"] == "PROPOSED" for document in (profile, taxonomy, rules, policy)), "Profile artifacts must remain proposed")
@@ -128,6 +162,7 @@ def validate_profile(profile, taxonomy, rules, policy):
         "category": "OTHER", "priority": "MEDIUM", "suggested_group": "GENERAL-SUPPORT",
         "impact": None, "urgency": None, "needs_review": True, "reason_code": "INSUFFICIENT_INFORMATION",
     }, "Ambiguous fallback drift")
+    ensure(policy["review_fallback"]["needs_review"] is True, "Review fallback must require review")
     ensure(set(rules["impact_rules"]) == set(policy["impact"]) == set(policy["matrix"]) == {"I1", "I2", "I3", "I4"}, "Incomplete impact matrix")
     ensure(set(rules["urgency_rules"]) == set(policy["urgency"]) == {"U1", "U2", "U3", "U4"}, "Incomplete urgency rules")
     ensure(set(rules["priority_rule_ids"]) == {"LOW", "MEDIUM", "HIGH", "CRITICAL"}, "Incomplete priorities")
@@ -150,7 +185,6 @@ def validate_profile(profile, taxonomy, rules, policy):
         rule_ids.extend(rules[field].values())
     ensure(all(isinstance(rule_id, str) and rule_id.strip() for rule_id in rule_ids), "Blank rule IDs")
     ensure(len(set(rule_ids)) == len(rule_ids), "Duplicate rule IDs")
-
 
 
 def validate_fixture(fixture, profile, taxonomy, rules, policy, request_validator, response_validator):
@@ -252,10 +286,23 @@ def main():
     profile, taxonomy, rules, policy = [read_yaml(PROFILE_DIR / filename) for filename in
         ("profile.yaml", "taxonomy.yaml", "rules.yaml", "priority-policy.yaml")]
     validate_profile(profile, taxonomy, rules, policy)
+    ensure((CONTRACT_DIR / "contract.md").is_file(), "Missing shared capability contract")
+    ensure(
+        {path.name for path in CONTRACT_DIR.glob("*.schema.json")} == set(SCHEMA_FILENAMES),
+        "Expected exactly four shared capability schemas",
+    )
+    domain_literals = (
+        set(taxonomy["categories"])
+        | {category["suggested_group"] for category in taxonomy["categories"].values()}
+        | set(rules["priority_rule_ids"])
+        | {profile["profile"]["id"]}
+    )
     validators = []
-    for filename in ("triage-request.schema.json", "triage-result.schema.json", "search-request.schema.json", "search-result.schema.json"):
+    schemas = {}
+    for filename in SCHEMA_FILENAMES:
         schema = read_json(CONTRACT_DIR / filename)
-        Draft202012Validator.check_schema(schema)
+        validate_shared_schema(schema, domain_literals)
+        schemas[filename] = schema
         validators.append(Draft202012Validator(schema))
         if filename.endswith("request.schema.json"):
             ensure("SERVER-INJECTED / TRUSTED ADAPTER CONTEXT" in schema["properties"]["context"]["description"], "Trusted context description missing")
@@ -322,6 +369,7 @@ def main():
     replacement["expected"]["runtime"].update(engine="illustrative-bm25", engine_version="illustrative@0.2.0", profile_version="room-request@0.1.0")
     search_check(replacement)
     print("PASS 4 schemas, 5 categories, 16 priority cells, 12 annotated tickets, triage degraded, 5 knowledge digests and dataset digest")
+    print("PASS shared contract domain isolation, profile file/version pins and single policy matrix/fallback authority")
     print("PASS search SUCCESS/hit, empty SUCCESS, DEGRADED, top_k boundaries, ranking scales and 12 retrieval-gold associations (no engine run)")
 
     def fixture_check(value):
@@ -380,6 +428,96 @@ def main():
     bad = copy.deepcopy(search); bad["request"]["top_k"] = 1; bad["expected"]["results"] *= 2; mutations.append(("search hit count exceeds top_k", bad, search_check))
     bad = copy.deepcopy(gold); bad["cases"][0]["expected_relevant_local_artifacts"] = ["kb-unknown-001"]; mutations.append(("unknown retrieval-gold artifact", bad, lambda value: validate_retrieval_gold(value, fixtures, knowledge)))
     bad = copy.deepcopy(gold); bad["benchmark_status"] = "BENCHMARK"; mutations.append(("retrieval-gold benchmark claim", bad, lambda value: validate_retrieval_gold(value, fixtures, knowledge)))
+
+    # Structural regression cases for the repository-level contracts and split profile.
+    def schema_check(value):
+        validate_shared_schema(value, domain_literals)
+
+    for dialect in (None, "http://json-schema.org/draft-07/schema#"):
+        bad = copy.deepcopy(schemas["triage-result.schema.json"])
+        if dialect is None:
+            del bad["$schema"]
+        else:
+            bad["$schema"] = dialect
+        mutations.append(("missing/wrong schema dialect", bad, schema_check))
+    for literal in sorted(domain_literals):
+        for keyword in ("enum", "const", "default"):
+            bad = copy.deepcopy(schemas["triage-result.schema.json"])
+            bad["$defs"]["domain_leak"] = {keyword: [literal] if keyword == "enum" else literal}
+            mutations.append((f"shared schema {keyword} {literal}", bad, schema_check))
+    bad = copy.deepcopy(schemas["search-result.schema.json"])
+    bad["$defs"]["domain_leak"] = {"const": {"category": "NETWORK"}}
+    mutations.append(("shared schema object constant domain leak", bad, schema_check))
+
+    def profile_check(value):
+        validate_profile(value, taxonomy, rules, policy)
+
+    def taxonomy_check(value):
+        validate_profile(profile, value, rules, policy)
+
+    def rules_check(value):
+        validate_profile(profile, taxonomy, value, policy)
+
+    def policy_check(value):
+        validate_profile(profile, taxonomy, rules, value)
+
+    for section in ("taxonomy", "rules", "priority_policy", "normalization"):
+        bad = copy.deepcopy(profile)
+        bad[section]["file"] = "../outside-profile.yaml"
+        mutations.append((f"profile {section} file escape", bad, profile_check))
+        bad = copy.deepcopy(profile)
+        bad[section]["version"] = "9.0.0"
+        mutations.append((f"profile {section} version pin drift", bad, profile_check))
+    bad = copy.deepcopy(profile)
+    bad["engine"] = "tfidf"
+    mutations.append(("unimplemented engine in profile", bad, profile_check))
+    bad = copy.deepcopy(taxonomy)
+    bad["categories"].pop("NETWORK")
+    mutations.append(("missing taxonomy category", bad, taxonomy_check))
+    bad = copy.deepcopy(taxonomy)
+    bad["priority_matrix"] = policy["matrix"]
+    mutations.append(("policy concern in taxonomy", bad, taxonomy_check))
+    bad = copy.deepcopy(rules)
+    bad["category_rules"]["CAT-NET-001"]["category"] = "UNKNOWN"
+    mutations.append(("rule references unknown category", bad, rules_check))
+    bad = copy.deepcopy(rules)
+    bad["category_rules"]["CAT-NET-001"]["positive_signals"] = []
+    mutations.append(("empty category signals", bad, rules_check))
+    bad = copy.deepcopy(rules)
+    bad["impact_rules"]["I1"] = "CAT-NET-001"
+    mutations.append(("duplicate catalogue rule ID", bad, rules_check))
+    bad = copy.deepcopy(rules)
+    bad["review_rules"]["REVIEW-INSUFFICIENT-001"]["policy_ref"] = "taxonomy.yaml#/fallback"
+    mutations.append(("review rule points outside policy fallback", bad, rules_check))
+    bad = copy.deepcopy(policy)
+    bad["matrix"]["I1"].pop("U1")
+    mutations.append(("incomplete priority matrix", bad, policy_check))
+    bad = copy.deepcopy(policy)
+    bad["matrix"]["I1"]["U1"] = "CRITICAL"
+    mutations.append(("changed priority matrix cell", bad, policy_check))
+    bad = copy.deepcopy(policy)
+    bad["review_fallback"]["impact"] = "I1"
+    mutations.append(("invented impact in review fallback", bad, policy_check))
+    bad = copy.deepcopy(policy)
+    bad["review_fallback"]["needs_review"] = False
+    mutations.append(("policy fallback disables review", bad, policy_check))
+    bad = copy.deepcopy(knowledge)
+    bad["artifacts"][0]["byte_size"] += 1
+    mutations.append(("wrong exact-byte source size", bad, validate_knowledge))
+    bad = copy.deepcopy(knowledge)
+    bad["artifacts"][0]["workspace_id"] = "lab-a"
+    mutations.append(("fabricated fixture workspace binding", bad, validate_knowledge))
+    bad = copy.deepcopy(knowledge)
+    bad["artifacts"][0]["ingestion_status"] = "INGESTED"
+    mutations.append(("fixture claims ingestion", bad, validate_knowledge))
+    mutations.append(("artifact outside fixture boundary", "README.md", local_artifact))
+    mutations.append(("artifact traversal outside repository", "../outside.md", local_artifact))
+    mutations.append(("duplicate JSON key", '{"id": 1, "id": 2}',
+                      lambda value: json.loads(value, object_pairs_hook=unique_pairs)))
+    mutations.append(("duplicate YAML key", "status: PROPOSED\nstatus: ADOPTED\n",
+                      lambda value: yaml.load(value, Loader=UniqueYamlLoader)))
+    mutations.append(("non-JSON numeric constant", '{"score": NaN}',
+                      lambda value: json.loads(value, parse_constant=reject_json_constant)))
     for label, value, validator in mutations:
         reject_mutation(label, value, validator)
     # Generic schema must permit another profile without Service Desk enums.
