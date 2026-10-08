@@ -38,7 +38,7 @@ backend/                  Spring Boot build, Dockerfile and src/
     core/                 Identity, Workflow, Data, Audit
     apps/                 Future app boundary (README only)
 frontend/                 FE's future UI boundary (README only)
-intelligence/             Intelligence-owned domain profiles (no runtime)
+intelligence/             Domain profiles and Intelligence documentation (no runtime)
 contracts/intelligence/   Shared proposed triage/search contracts
 fixtures/intelligence/    Profile-scoped synthetic/test fixtures
 infra/                    Keycloak template, APISIX and PostgreSQL config
@@ -80,6 +80,6 @@ If Docker cannot connect, start Docker Desktop (`docker desktop start`). For 401
 - `docs/core-team-plan.md`: N1-N4 task assignments for all three members within the existing 14-day plan.
 - `docs/core-baseline-status.md`: commands actually run, pass/fail and unverified items.
 - `docs/dependency-licenses.md`: pinned dependencies, provenance, release/security gates.
-- [Intelligence architecture](docs/architecture/intelligence/overview.md) and [N1 review brief](docs/reviews/intelligence/N1/BE_REVIEW_BRIEF.md): proposed contracts/profiles, ownership and remaining review gates.
+- [Intelligence architecture](intelligence/docs/architecture/overview.md) and [N1 review brief](intelligence/docs/task/N1/BE_REVIEW_BRIEF.md): proposed contracts/profiles, ownership and remaining review gates.
 
 Project license requires team approval before publication; upstream licenses do not license this team's code automatically. No repository publication, commit or release/tag is performed by setup.

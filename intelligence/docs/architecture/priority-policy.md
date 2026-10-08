@@ -6,8 +6,8 @@ Technical implementer: Intelligence.
 Required reviewers: BE + Process/Service Owner.
 Policy version: `priority-policy@0.1.0`.
 Profile/taxonomy/rules versions: `0.1.0`.
-The [priority policy](../../../intelligence/profiles/service-desk/priority-policy.yaml) is the sole machine-readable source of impact/urgency levels, matrix and review fallback.
-Rule IDs live in [rules](../../../intelligence/profiles/service-desk/rules.yaml); routing lives in [taxonomy](../../../intelligence/profiles/service-desk/taxonomy.yaml).
+The [priority policy](../../profiles/service-desk/priority-policy.yaml) is the sole machine-readable source of impact/urgency levels, matrix and review fallback.
+Rule IDs live in [rules](../../profiles/service-desk/rules.yaml); routing lives in [taxonomy](../../profiles/service-desk/taxonomy.yaml).
 
 Intelligence does not define business SLA or final priority authority. The engine
 applies policy approved by the Process/Service Owner, explains the suggestion and

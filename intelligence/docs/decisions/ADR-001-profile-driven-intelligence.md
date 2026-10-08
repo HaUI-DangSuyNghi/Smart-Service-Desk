@@ -11,7 +11,7 @@ them in shared schemas or Core would couple new domains to Service Desk behavior
 ## Decision
 
 Place generic [contracts](../../../contracts/intelligence/v1/contract.md) at repository
-level. Intelligence owns a versioned [profile manifest](../../../intelligence/profiles/service-desk/profile.yaml)
+level. Intelligence owns a versioned [profile manifest](../../profiles/service-desk/profile.yaml)
 that composes taxonomy, rules, priority policy and normalization. Keep one
 machine-readable priority matrix/fallback in `priority-policy.yaml`; the review
 rule references that fallback. The Process Owner owns policy approval.

@@ -60,7 +60,7 @@ Every result echoes `contract_version`, `request_id`, `profile`, and the trusted
 `context.workspace_id` as top-level `workspace_id`.
 Category values are profile-defined rather than hard-coded in the generic schema.
 For this package, fixtures use [taxonomy](../../../intelligence/profiles/service-desk/taxonomy.yaml) and
-[priority policy](../../../docs/architecture/intelligence/priority-policy.md). `SUCCESS` means suggestion produced,
+[priority policy](../../../intelligence/docs/architecture/priority-policy.md). `SUCCESS` means suggestion produced,
 not a confirmed business decision. Ambiguous input can be SUCCESS with review.
 
 Contract v0.1 intentionally restricts triage evidence to `INPUT`. Evidence identifies
@@ -140,5 +140,5 @@ The [normalization draft](../../../intelligence/profiles/service-desk/normalizat
 and Vietnamese diacritics; future normalization behavior must be versioned.
 
 Dependency/model/data adoption and corpus release remain pending. See
-[inventory](../../../docs/governance/intelligence-dependency-candidates.md) and the
-[package report](../../../docs/reviews/intelligence/N1/FOUNDATION_REPORT.md).
+[inventory](../../../intelligence/docs/governance/intelligence-dependency-candidates.md) and the
+[package report](../../../intelligence/docs/task/N1/FOUNDATION_REPORT.md).

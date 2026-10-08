@@ -13,7 +13,7 @@ live at repository level for all consumers. The `v1` directory is a capability
 family; its current proposed wire contract version remains `0.1.0`. Engine changes
 do not require Core changes when capability/evidence semantics remain compatible.
 
-The [Service Desk profile](../../../intelligence/profiles/service-desk/profile.yaml)
+The [Service Desk profile](../../profiles/service-desk/profile.yaml)
 pins taxonomy, rules, business priority policy and normalization files/versions.
 Taxonomy defines categories/exclusions/routing; rules define signals and rule IDs;
 priority policy defines impact/urgency, the 16-cell matrix and review fallback.
@@ -38,5 +38,5 @@ Additional domains such as Room Request add their own profile and fixtures.
 Generic contracts and Core remain reusable. Rules and TF-IDF are proposed MVP
 candidates, replaceable behind capability interfaces; no engine is adopted here.
 See [Core boundary](core-intelligence-boundary.md), [data/provenance](data-provenance-contract.md),
-[decisions](../../decisions/intelligence/ADR-001-profile-driven-intelligence.md) and
-[N1 review brief](../../reviews/intelligence/N1/BE_REVIEW_BRIEF.md).
+[decisions](../decisions/ADR-001-profile-driven-intelligence.md) and
+[N1 review brief](../task/N1/BE_REVIEW_BRIEF.md).

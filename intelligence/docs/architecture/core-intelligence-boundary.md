@@ -35,6 +35,6 @@ records and files intact. Changing a retrieval/classification engine preserves
 Core ownership and compatible capability envelopes. Adding a domain adds a profile
 and fixtures; domain categories/groups do not enter generic Core metadata.
 
-The existing [Core acceptance evidence](../../reviews/intelligence/N1/ACCEPTANCE_REPORT.md)
+The existing [Core acceptance evidence](../task/N1/ACCEPTANCE_REPORT.md)
 is historical. Role policy, response mapping, adapter/citation checks and Core
-regression evidence remain subject to the [BE review gate](../../reviews/intelligence/N1/BE_REVIEW_BRIEF.md).
+regression evidence remain subject to the [BE review gate](../task/N1/BE_REVIEW_BRIEF.md).

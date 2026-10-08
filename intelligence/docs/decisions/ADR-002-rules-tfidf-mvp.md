@@ -13,7 +13,7 @@ execution, ranking quality, accuracy or benchmark performance.
 Retain the existing proposal: rules for the first triage approach and TF-IDF/cosine
 as the first retrieval candidate. Neither is implemented, installed as a project
 dependency or pinned by the profile manifest. See the
-[candidate inventory](../../governance/intelligence-dependency-candidates.md).
+[candidate inventory](../governance/intelligence-dependency-candidates.md).
 
 Use shared [capability contracts](../../../contracts/intelligence/v1/contract.md)
 so BM25, classifiers, embeddings, hybrid or LLM engines can replace an approach

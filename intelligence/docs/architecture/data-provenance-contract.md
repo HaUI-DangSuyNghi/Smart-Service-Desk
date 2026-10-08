@@ -3,7 +3,7 @@
 Status: **proposed for BE / repository owner review**, not ratified. Baseline:
 `c92b38733d00c77bd90b96318f8c70d7b19be5c0`, branch `feature/ai01-data-provenance`.
 The owner requested no direct DX core edits before review. This document lives in
-`docs/architecture/intelligence/` as a review artifact; authoritative Core API/schema remain unchanged.
+`intelligence/docs/architecture/` as a review artifact; authoritative Core API/schema remain unchanged.
 
 ## Purpose and authority
 
@@ -103,7 +103,7 @@ confidence or chunk fields in Core metadata. This N1 work adds no AI runtime.
 
 ## Handover and gate
 
-See the [acceptance report](../../reviews/intelligence/N1/ACCEPTANCE_REPORT.md) for findings and the
+See the [acceptance report](../task/N1/ACCEPTANCE_REPORT.md) for findings and the
 remaining Core changes. The team will discuss and review those changes. BE may ratify this
 contract, align `docs/requirements-mapping.md`, and implement the separately
 reviewed Core changes. Moving this draft into architecture documentation does

@@ -21,7 +21,7 @@ BE = Backend member; FE = Frontend member (infra/identity now); AI = AI member (
 
 Only owner edits shared manifest during a work block; others hand over a patch/PR. API changes require consumer review before merge. Append new Flyway migrations after shared DB initialization, never rewrite an applied migration.
 
-Java module paths now live under `backend/src/main/java/vn/haui/dx/core/`; migration paths under `backend/src/main/resources/db/migration/`. FE's `frontend/` remains a scope README boundary. AI's `intelligence/` now contains proposed domain profiles; shared contracts, synthetic fixtures, review docs and utilities live at repository level (see [Intelligence navigation](../intelligence/README.md)). These design artifacts do not replace current Core-phase responsibilities or imply runtime implementation. Original source documents are preserved under `docs/references/`.
+Java module paths now live under `backend/src/main/java/vn/haui/dx/core/`; migration paths under `backend/src/main/resources/db/migration/`. FE's `frontend/` remains a scope README boundary. AI's `intelligence/` contains proposed domain profiles and their documentation; shared contracts, synthetic fixtures and utilities live at repository level (see [Intelligence navigation](../intelligence/README.md)). These design artifacts do not replace current Core-phase responsibilities or imply runtime implementation. Original source documents are preserved under `docs/references/`.
 
 ## Assignable work packages
 

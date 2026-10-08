@@ -27,10 +27,10 @@ Kế hoạch acceptance local: `.local/ai-n1/plans/AI_N1_DATA_PROVENANCE_DETAILE
 
 | Artifact | Bàn giao |
 | --- | --- |
-| [Data/provenance contract](../../../architecture/intelligence/data-provenance-contract.md) | Field authority, identity, immutable public API, source/version/rights/checksum, isolation, audit; draft chưa ratify. |
+| [Data/provenance contract](../../architecture/data-provenance-contract.md) | Field authority, identity, immutable public API, source/version/rights/checksum, isolation, audit; draft chưa ratify. |
 | [API probe](../../../../scripts/acceptance/core/metadata-provenance.ps1) | 53 assertion chạy qua APISIX với JWT demo accounts hiện có. |
 | [Audit SQL](../../../../scripts/acceptance/core/check-metadata-audit.sql) | Read-only transaction; đối chiếu metadata/audit/request ID. |
-| [README](../../../../intelligence/README.md) | Cách chạy, tác động tạo synthetic data và vị trí evidence. |
+| [README](../../../README.md) | Cách chạy, tác động tạo synthetic data và vị trí evidence. |
 
 ## Kết quả lần chạy Core ngày 07/10/2026
 

@@ -21,15 +21,15 @@ timestamp and coverage in the foundation report.
 
 | Nhóm | Artifact / kết quả |
 | --- | --- |
-| Data/provenance | [Contract](../../../architecture/intelligence/data-provenance-contract.md): metadata UUID định danh một record, không phải logical document xuyên version; Core sở hữu authorization/files/audit. |
+| Data/provenance | [Contract](../../architecture/data-provenance-contract.md): metadata UUID định danh một record, không phải logical document xuyên version; Core sở hữu authorization/files/audit. |
 | Triage + retrieval | [Capability contract](../../../../contracts/intelligence/v1/contract.md), [triage request](../../../../contracts/intelligence/v1/triage-request.schema.json) / [result](../../../../contracts/intelligence/v1/triage-result.schema.json), [search request](../../../../contracts/intelligence/v1/search-request.schema.json) / [result](../../../../contracts/intelligence/v1/search-result.schema.json); đủ 4 machine-readable schema. |
 | Trusted context | `context.workspace_id` là server-injected adapter context, không phải user grant. AUTH-INV-01..04: authorize trước corpus/cache/engine; auth failure không phải DEGRADED. |
 | Evidence | Triage v0.1 chỉ INPUT từ original title/description; search trả Core provenance hits. Application compose; unified envelope cần contract revision có review. |
-| Domain policy | [Taxonomy](../../../../intelligence/profiles/service-desk/taxonomy.yaml), [priority policy](../../../architecture/intelligence/priority-policy.md): 5 categories, root cause > symptom, OTHER khác uncertainty, 16 ô priority; Service Desk / Process Owner sở hữu policy. |
+| Domain policy | [Taxonomy](../../../profiles/service-desk/taxonomy.yaml), [priority policy](../../architecture/priority-policy.md): 5 categories, root cause > symptom, OTHER khác uncertainty, 16 ô priority; Service Desk / Process Owner sở hữu policy. |
 | Ticket fixtures | [12 JSONL](../../../../fixtures/intelligence/service-desk/tickets/tickets-v0.1.jsonl), [manifest](../../../../fixtures/intelligence/service-desk/tickets/manifest.json), [DEGRADED](../../../../fixtures/intelligence/service-desk/tickets/triage-degraded-v0.1.json). Chuyển workspace request vào trusted context; giữ nguyên input và expected labels. Recompute exact-byte dataset digest/size. |
 | Knowledge | 5 team-authored Markdown, [manifest](../../../../fixtures/intelligence/service-desk/knowledge/manifest.json): nội dung/bytes giữ nguyên, exact-byte SHA-256/size hợp lệ; pending rights, null Core bindings, chưa ingest. |
-| Draft bổ sung | [Retrieval gold](../../../../fixtures/intelligence/service-desk/retrieval/gold-v0.1.json): 12 local associations, MANUAL_EXPECTED / NOT BENCHMARK / NOT ENGINE OUTPUT. [Normalization](../../../../intelligence/profiles/service-desk/normalization.md): NFC, giữ dấu tiếng Việt, versioned case folding/whitespace/alias Wi-Fi. |
-| Inventory + handover | [Inventory](../../../governance/intelligence-dependency-candidates.md), [BE brief](BE_REVIEW_BRIEF.md), [README](../../../../intelligence/README.md). Candidate/adoption/install/transitive/rejected được phân biệt; license chưa verified. |
+| Draft bổ sung | [Retrieval gold](../../../../fixtures/intelligence/service-desk/retrieval/gold-v0.1.json): 12 local associations, MANUAL_EXPECTED / NOT BENCHMARK / NOT ENGINE OUTPUT. [Normalization](../../../profiles/service-desk/normalization.md): NFC, giữ dấu tiếng Việt, versioned case folding/whitespace/alias Wi-Fi. |
+| Inventory + handover | [Inventory](../../governance/intelligence-dependency-candidates.md), [BE brief](BE_REVIEW_BRIEF.md), [README](../../../README.md). Candidate/adoption/install/transitive/rejected được phân biệt; license chưa verified. |
 
 Các artifact 0.1.0 là proposal trước lần freeze đầu tiên; chưa có runtime consumer.
 Profile `service-desk@0.1.0` pin `priority-policy@0.1.0`; sửa matrix/review fallback

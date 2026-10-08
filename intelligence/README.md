@@ -16,10 +16,10 @@ remain authoritative. Applications can use Core independently of Intelligence.
 | Shared capability contracts | [contracts/intelligence/v1](../contracts/intelligence/v1/contract.md): generic triage/search envelopes for Application and Intelligence consumers |
 | Service Desk profile | [profile.yaml](profiles/service-desk/profile.yaml) pins [taxonomy](profiles/service-desk/taxonomy.yaml), [rules](profiles/service-desk/rules.yaml), [priority policy](profiles/service-desk/priority-policy.yaml) and [normalization](profiles/service-desk/normalization.md) |
 | Synthetic fixtures | [tickets](../fixtures/intelligence/service-desk/tickets/manifest.json), [retrieval gold](../fixtures/intelligence/service-desk/retrieval/gold-v0.1.json) and [knowledge sources](../fixtures/intelligence/service-desk/knowledge/manifest.json) |
-| Architecture | [Overview](../docs/architecture/intelligence/overview.md), [Core boundary](../docs/architecture/intelligence/core-intelligence-boundary.md), [data/provenance](../docs/architecture/intelligence/data-provenance-contract.md) and [policy rationale](../docs/architecture/intelligence/priority-policy.md) |
-| Decisions | [Profile composition](../docs/decisions/intelligence/ADR-001-profile-driven-intelligence.md), [Rules + TF-IDF proposal](../docs/decisions/intelligence/ADR-002-rules-tfidf-mvp.md), [evidence separation](../docs/decisions/intelligence/ADR-003-evidence-separation.md) |
-| N1 review evidence | Start with the [BE review brief](../docs/reviews/intelligence/N1/BE_REVIEW_BRIEF.md); see [foundation](../docs/reviews/intelligence/N1/FOUNDATION_REPORT.md) and historical [Core acceptance](../docs/reviews/intelligence/N1/ACCEPTANCE_REPORT.md) reports |
-| Dependency governance | [Candidate inventory](../docs/governance/intelligence-dependency-candidates.md): proposals awaiting adoption/license review |
+| Architecture | [Overview](docs/architecture/overview.md), [Core boundary](docs/architecture/core-intelligence-boundary.md), [data/provenance](docs/architecture/data-provenance-contract.md) and [policy rationale](docs/architecture/priority-policy.md) |
+| Decisions | [Profile composition](docs/decisions/ADR-001-profile-driven-intelligence.md), [Rules + TF-IDF proposal](docs/decisions/ADR-002-rules-tfidf-mvp.md), [evidence separation](docs/decisions/ADR-003-evidence-separation.md) |
+| N1 review evidence | Start with the [BE review brief](docs/task/N1/BE_REVIEW_BRIEF.md); see [foundation](docs/task/N1/FOUNDATION_REPORT.md) and historical [Core acceptance](docs/task/N1/ACCEPTANCE_REPORT.md) reports |
+| Dependency governance | [Candidate inventory](docs/governance/intelligence-dependency-candidates.md): proposals awaiting adoption/license review |
 | Utilities | [Foundation validator](../scripts/intelligence/validate-foundation.py) and [Core acceptance probe](../scripts/acceptance/core/metadata-provenance.ps1) / [audit SQL](../scripts/acceptance/core/check-metadata-audit.sql) |
 
 The directory `contracts/intelligence/v1/` groups the v1 capability family;
@@ -58,7 +58,7 @@ domains add profiles and fixtures without adding Service Desk semantics to Core.
 
 ## Core acceptance utilities
 
-The [acceptance report](../docs/reviews/intelligence/N1/ACCEPTANCE_REPORT.md)
+The [acceptance report](docs/task/N1/ACCEPTANCE_REPORT.md)
 preserves the historical run of 07/10/2026 against baseline
 `c92b38733d00c77bd90b96318f8c70d7b19be5c0`. The structural refactor does not rerun
 that acceptance or claim new Core regression evidence.

@@ -1,5 +1,9 @@
 # Changelog
 
+## Intelligence documentation location (unreleased)
+
+- Keep Intelligence architecture, decisions, governance and N1 reports under `intelligence/docs/`, with N1 evidence in `task/N1/`; update repository links and LF attributes.
+
 ## Intelligence foundation layout (unreleased)
 
 - Promote proposed triage/search schemas to shared `contracts/intelligence/v1/`; keep wire contract version `0.1.0`.
