@@ -8,17 +8,17 @@ N1 chưa DONE; cần BE ratification, Core alignment và Core regression evidenc
 
 | Nội dung | Contract / evidence |
 | --- | --- |
-| Data/provenance | [Field authority, immutable API, checksum trust](data-provenance-contract.md); Core sở hữu metadata/files/auth/audit, Intelligence chỉ giữ derived state rebuildable. |
-| Triage + retrieval | [Capability contract](../../contracts/intelligence/v1/contract.md); 4 JSON Schema, trusted server-injected context; auth denial trước corpus/cache/engine, không phải DEGRADED. |
+| Data/provenance | [Field authority, immutable API, checksum trust](../../../architecture/intelligence/data-provenance-contract.md); Core sở hữu metadata/files/auth/audit, Intelligence chỉ giữ derived state rebuildable. |
+| Triage + retrieval | [Capability contract](../../../../contracts/intelligence/v1/contract.md); 4 JSON Schema, trusted server-injected context; auth denial trước corpus/cache/engine, không phải DEGRADED. |
 | Evidence + fallback | Triage v0.1 chỉ INPUT từ original input; search trả Core provenance hits; Application compose kết quả. DEGRADED yêu cầu manual review. |
-| Service Desk profile | [5 categories](../profiles/service-desk/taxonomy.yaml), root cause ưu tiên symptom; OTHER không đồng nghĩa uncertainty. |
-| Priority proposal | [Impact × Urgency](../../docs/architecture/intelligence/priority-policy.md); Service Desk / Process Owner sở hữu policy, Intelligence thực thi/giải thích; approval nghiệp vụ còn chờ. |
+| Service Desk profile | [5 categories](../../../../intelligence/profiles/service-desk/taxonomy.yaml), root cause ưu tiên symptom; OTHER không đồng nghĩa uncertainty. |
+| Priority proposal | [Impact × Urgency](../../../architecture/intelligence/priority-policy.md); Service Desk / Process Owner sở hữu policy, Intelligence thực thi/giải thích; approval nghiệp vụ còn chờ. |
 | Dữ liệu và inventory | 12 synthetic MANUAL_EXPECTED ticket; 5 knowledge document với exact-byte SHA-256, rights pending, null Core bindings; dependency/model chưa adopted. Retrieval gold và normalization chỉ là draft. |
-| Kiểm chứng local | [Foundation report](AI_N1_INTELLIGENCE_FOUNDATION_REPORT.md): 4 schema, 16 ô priority, manifests và 70 negative cases PASS; không chạy engine hay đo accuracy. |
+| Kiểm chứng local | [Foundation report](FOUNDATION_REPORT.md): 4 schema, 16 ô priority, manifests và 70 negative cases PASS; không chạy engine hay đo accuracy. |
 
 Core runtime evidence ngày 07/10/2026 thuộc baseline
 `c92b38733d00c77bd90b96318f8c70d7b19be5c0`, được giữ riêng trong
-[acceptance report](AI_N1_ACCEPTANCE_REPORT.md); đợt hardening không tái chạy Core.
+[acceptance report](ACCEPTANCE_REPORT.md); đợt hardening không tái chạy Core.
 
 ## Năm quyết định cần BE / Repository Owner ratify
 

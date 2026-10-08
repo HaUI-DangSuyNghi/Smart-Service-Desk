@@ -140,5 +140,5 @@ The [normalization draft](../../../intelligence/profiles/service-desk/normalizat
 and Vietnamese diacritics; future normalization behavior must be versioned.
 
 Dependency/model/data adoption and corpus release remain pending. See
-[inventory](../../../intelligence/inventory/AI_DEPENDENCY_CANDIDATES.md) and the
-[package report](../../../intelligence/docs/AI_N1_INTELLIGENCE_FOUNDATION_REPORT.md).
+[inventory](../../../docs/governance/intelligence-dependency-candidates.md) and the
+[package report](../../../docs/reviews/intelligence/N1/FOUNDATION_REPORT.md).

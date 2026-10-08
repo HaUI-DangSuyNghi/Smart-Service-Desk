@@ -38,7 +38,9 @@ backend/                  Spring Boot build, Dockerfile and src/
     core/                 Identity, Workflow, Data, Audit
     apps/                 Future app boundary (README only)
 frontend/                 FE's future UI boundary (README only)
-intelligence/             AI's future Intelligence boundary (README only)
+intelligence/             Intelligence-owned domain profiles (no runtime)
+contracts/intelligence/   Shared proposed triage/search contracts
+fixtures/intelligence/    Profile-scoped synthetic/test fixtures
 infra/                    Keycloak template, APISIX and PostgreSQL config
 scripts/                  Setup, startup and integration checks
 contracts/openapi/        Implemented Core API contract
@@ -47,7 +49,7 @@ docs/                     Architecture, team plan and verification
 compose.yaml              Run all services from the repository root
 ```
 
-Backend owns assembly/workflow and API contracts. FE owns infrastructure and startup/smoke scripts during the Core phase. AI owns Core data/audit and future File I/O. The `core/file/` package is created only when that implementation begins. No business UI, Intelligence service or Service Desk package has been initialized.
+Backend owns assembly/workflow and API contracts. FE owns infrastructure and startup/smoke scripts during the Core phase. AI owns Core data/audit and future File I/O. The `core/file/` package is created only when that implementation begins. No business UI, Intelligence runtime service or Service Desk application has been initialized. The proposed Intelligence foundation contains shared contracts, a Service Desk profile and synthetic fixtures; see [Intelligence navigation](intelligence/README.md).
 
 Keycloak's secret-free source template is `infra/keycloak/realm-template.json`. Setup injects local credentials into ignored `.local/dx-lab-realm.json`; do not edit generated files. Compose builds with `backend/` as its Docker context. For a manual Maven build use `mvn -f backend/pom.xml verify`; the Docker builder remains the default with no host Maven requirement.
 
@@ -78,5 +80,6 @@ If Docker cannot connect, start Docker Desktop (`docker desktop start`). For 401
 - `docs/core-team-plan.md`: N1-N4 task assignments for all three members within the existing 14-day plan.
 - `docs/core-baseline-status.md`: commands actually run, pass/fail and unverified items.
 - `docs/dependency-licenses.md`: pinned dependencies, provenance, release/security gates.
+- [Intelligence architecture](docs/architecture/intelligence/overview.md) and [N1 review brief](docs/reviews/intelligence/N1/BE_REVIEW_BRIEF.md): proposed contracts/profiles, ownership and remaining review gates.
 
 Project license requires team approval before publication; upstream licenses do not license this team's code automatically. No repository publication, commit or release/tag is performed by setup.
