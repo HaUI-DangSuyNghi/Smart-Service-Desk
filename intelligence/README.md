@@ -41,15 +41,15 @@ rebuildable derived state. Direct DX-Core changes still require team review.
   [priority policy](../docs/architecture/intelligence/priority-policy.md): 5 categories, root-cause
   conflicts, 16 Impact × Urgency cells. Service Desk / Process Owner owns the
   proposed policy; `service-desk@0.1.0` pins `priority-policy@0.1.0`.
-* [12 ticket fixtures](data/examples/tickets-v0.1.jsonl),
-  [dataset manifest](data/examples/tickets-v0.1.manifest.json) and
-  [DEGRADED example](data/examples/triage-degraded-v0.1.json): synthetic manual
+* [12 ticket fixtures](../fixtures/intelligence/service-desk/tickets/tickets-v0.1.jsonl),
+  [dataset manifest](../fixtures/intelligence/service-desk/tickets/manifest.json) and
+  [DEGRADED example](../fixtures/intelligence/service-desk/tickets/triage-degraded-v0.1.json): synthetic manual
   expected suggestions, including known OTHER and ambiguous input. Ambiguous
   MEDIUM is a review fallback with null impact/urgency, not a matrix result.
-* Five `knowledge/` documents and [manifest](data/knowledge-manifest-v0.1.json):
+* Five `knowledge/` documents and [manifest](../fixtures/intelligence/service-desk/knowledge/manifest.json):
   exact-byte SHA-256, rights pending, null Core bindings, not ingested. Local
   `kb-*` artifact IDs are not runtime citations.
-* [Retrieval gold draft](data/examples/retrieval-gold-v0.1.json): MANUAL_EXPECTED,
+* [Retrieval gold draft](../fixtures/intelligence/service-desk/retrieval/gold-v0.1.json): MANUAL_EXPECTED,
   NOT BENCHMARK, NOT ENGINE OUTPUT; no accuracy claim.
   [Normalization draft](profiles/service-desk/normalization.md) preserves Vietnamese
   diacritics and extracts INPUT evidence from original input.

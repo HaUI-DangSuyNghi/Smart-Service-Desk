@@ -1,6 +1,6 @@
 {
   "dataset_version": "0.1.0",
-  "artifact_path": "data/examples/tickets-v0.1.jsonl",
+  "artifact_path": "fixtures/intelligence/service-desk/tickets/tickets-v0.1.jsonl",
   "record_count": 12,
   "source": "team-authored:examples/service-desk-n1",
   "data_kind": "SYNTHETIC",

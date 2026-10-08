@@ -1,0 +1,15 @@
+# Preserve exact bytes for Intelligence contracts, fixtures and supporting artifacts.
+.gitattributes text eol=lf
+**/.gitattributes text eol=lf
+contracts/intelligence/**/*.md text eol=lf
+contracts/intelligence/**/*.json text eol=lf
+fixtures/intelligence/**/*.md text eol=lf
+fixtures/intelligence/**/*.json text eol=lf
+fixtures/intelligence/**/*.jsonl text eol=lf
+docs/architecture/intelligence/*.md text eol=lf
+docs/decisions/intelligence/*.md text eol=lf
+docs/reviews/intelligence/**/*.md text eol=lf
+docs/governance/intelligence-*.md text eol=lf
+scripts/intelligence/*.py text eol=lf
+scripts/acceptance/core/*.ps1 text eol=lf
+scripts/acceptance/core/*.sql text eol=lf

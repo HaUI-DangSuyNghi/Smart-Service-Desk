@@ -21,8 +21,10 @@ except ImportError:
     )
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-ROOT = REPO_ROOT / "intelligence"
+CONTRACT_DIR = REPO_ROOT / "contracts/intelligence/v1"
 PROFILE_DIR = REPO_ROOT / "intelligence/profiles/service-desk"
+FIXTURE_DIR = REPO_ROOT / "fixtures/intelligence/service-desk"
+KNOWLEDGE_DIR = FIXTURE_DIR / "knowledge/sources"
 
 
 def ensure(condition, message):
@@ -63,8 +65,8 @@ def reject_json_constant(value):
 
 
 def local_artifact(relative):
-    path = (ROOT / relative).resolve()
-    ensure(path.is_relative_to(ROOT), f"Artifact escapes intelligence/: {relative}")
+    path = (REPO_ROOT / relative).resolve()
+    ensure(path.is_relative_to(FIXTURE_DIR), f"Artifact escapes Service Desk fixtures/: {relative}")
     ensure(path.is_file(), f"Missing artifact: {relative}")
     return path
 
@@ -140,7 +142,7 @@ def validate_profile(profile, taxonomy, rules, policy):
     expected_matrix = {impact: dict(zip(["U1", "U2", "U3", "U4"], priorities)) for impact, priorities in expected_rows.items()}
     ensure(policy["matrix"] == expected_matrix, "Priority matrix differs from supplied N1 policy")
     # Historical knowledge is an immutable fixture, not another policy authority.
-    source = ROOT / "knowledge/priority-policy.md"
+    source = KNOWLEDGE_DIR / "priority-policy.md"
     rows = re.findall(r"^\| (I[1-4]) \| (LOW|MEDIUM|HIGH|CRITICAL) \| (LOW|MEDIUM|HIGH|CRITICAL) \| (LOW|MEDIUM|HIGH|CRITICAL) \| (LOW|MEDIUM|HIGH|CRITICAL) \|$", source.read_text(encoding="utf-8"), re.MULTILINE)
     ensure({row[0]: list(row[1:]) for row in rows} == expected_rows, "Knowledge fixture matrix drift")
     rule_ids = list(rules["category_rules"]) + list(rules["conflict_rules"]) + list(rules["review_rules"])
@@ -192,7 +194,7 @@ def validate_knowledge(manifest):
     ensure(manifest["manifest_version"] == "0.1.0" and manifest["status"] == "DRAFT_NOT_INGESTED", "Knowledge state drift")
     artifacts = manifest["artifacts"]
     ensure(len(artifacts) == 5 and len({item["artifact_id"] for item in artifacts}) == 5, "Expected five distinct knowledge documents")
-    ensure({item["path"] for item in artifacts} == {path.relative_to(ROOT).as_posix() for path in (ROOT / "knowledge").glob("*.md")}, "Knowledge manifest/file mismatch")
+    ensure({item["path"] for item in artifacts} == {path.relative_to(REPO_ROOT).as_posix() for path in KNOWLEDGE_DIR.glob("*.md")}, "Knowledge manifest/file mismatch")
     for item in artifacts:
         path = local_artifact(item["path"])
         validate_digest(item, path, "checksum")
@@ -252,13 +254,13 @@ def main():
     validate_profile(profile, taxonomy, rules, policy)
     validators = []
     for filename in ("triage-request.schema.json", "triage-result.schema.json", "search-request.schema.json", "search-result.schema.json"):
-        schema = read_json(ROOT.parent / "contracts/intelligence/v1" / filename)
+        schema = read_json(CONTRACT_DIR / filename)
         Draft202012Validator.check_schema(schema)
         validators.append(Draft202012Validator(schema))
         if filename.endswith("request.schema.json"):
             ensure("SERVER-INJECTED / TRUSTED ADAPTER CONTEXT" in schema["properties"]["context"]["description"], "Trusted context description missing")
     request_validator, response_validator, search_request_validator, search_response_validator = validators
-    path = ROOT / "data/examples/tickets-v0.1.jsonl"
+    path = FIXTURE_DIR / "tickets/tickets-v0.1.jsonl"
     fixtures = [json.loads(line, object_pairs_hook=unique_pairs, parse_constant=reject_json_constant) for line in path.read_text(encoding="utf-8").splitlines()]
     ensure([item["id"] for item in fixtures] == [f"TICKET-{n:03}" for n in range(1, 13)], "Expected exactly TICKET-001..012")
     ensure(len({item["request"]["request_id"] for item in fixtures}) == 12, "Duplicate request IDs")
@@ -266,19 +268,19 @@ def main():
         validate_fixture(fixture, profile, taxonomy, rules, policy, request_validator, response_validator)
     ensure({item["expected"]["result"]["category"] for item in fixtures} == set(taxonomy["categories"]), "Category coverage incomplete")
     ensure({item["expected"]["result"]["priority"] for item in fixtures} == set(rules["priority_rule_ids"]), "Priority coverage incomplete")
-    manifest = read_json(ROOT / "data/examples/tickets-v0.1.manifest.json")
+    manifest = read_json(FIXTURE_DIR / "tickets/manifest.json")
     ensure(local_artifact(manifest["artifact_path"]) == path, "Wrong dataset path")
     validate_digest(manifest, path, "sha256")
     ensure(manifest["record_count"] == len(fixtures) and manifest["dataset_version"] == "0.1.0", "Dataset manifest count/version mismatch")
     ensure(manifest["data_kind"] == "SYNTHETIC" and manifest["annotation_kind"] == "MANUAL_EXPECTED", "Dataset must be synthetic expected annotations")
     ensure(manifest["rights_status"] == "PENDING_OWNER_APPROVAL" and manifest["usage_rights"] is None, "Unapproved dataset rights")
-    knowledge = read_json(ROOT / "data/knowledge-manifest-v0.1.json")
+    knowledge = read_json(FIXTURE_DIR / "knowledge/manifest.json")
     validate_knowledge(knowledge)
-    degraded = read_json(ROOT / "data/examples/triage-degraded-v0.1.json")
+    degraded = read_json(FIXTURE_DIR / "tickets/triage-degraded-v0.1.json")
     response_validator.validate(degraded)
     ensure(degraded["status"] == "DEGRADED", "Expected degraded example")
     validate_echo(fixtures[0]["request"], {**degraded, "request_id": fixtures[0]["request"]["request_id"]})
-    gold = read_json(ROOT / "data/examples/retrieval-gold-v0.1.json")
+    gold = read_json(FIXTURE_DIR / "retrieval/gold-v0.1.json")
     validate_retrieval_gold(gold, fixtures, knowledge)
     # Shape-only probe using the real synthetic Core record documented in the
     # 2026-10-07 acceptance run. No UUID is invented or assigned to local knowledge.
