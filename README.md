@@ -16,13 +16,25 @@ docker compose ps
 
 Gateway: `http://localhost:9080`; health: `http://localhost:9080/health`; Keycloak: `http://localhost:8081`. Backend/database are not exposed on host ports. All published ports bind loopback. Keep ports 8081 and 9080 free; changing the IdP address also requires changing the JWT issuer, realm config and probes consistently.
 
-`setup.ps1` generates random secrets in ignored `.env`, and an ignored `.local/dx-lab-realm.json`. It preserves existing `.env`; copying the blank `.env.example` requires filling all three values first. Never commit or share those generated files. Keycloak hashes imported passwords internally. Demo users: `alice` (reader/writer/reviewer in lab-a), `bob` (reader in lab-a), `mallory` (reader/writer/reviewer in lab-b). Their locally generated password is `DEMO_PASSWORD` in `.env`; admin uses `KC_ADMIN_PASSWORD`. No password is embedded in source. Use only synthetic data.
+`setup.ps1` generates random secrets in ignored `.env`, and an ignored `.local/dx-lab-realm.json`. It preserves existing `.env`; copying the blank `.env.example` requires filling all three values first. Never commit or share those generated files. Keycloak hashes imported passwords internally. Demo users are listed below. Their locally generated password is `DEMO_PASSWORD` in `.env`; admin uses `KC_ADMIN_PASSWORD`. No password is embedded in source. Use only synthetic data.
+
+| Username | Membership (Keycloak group) |
+| --- | --- |
+| `user1` | `/workspaces/lab-a/requester` |
+| `user2` | `/workspaces/lab-a/agent` |
+| `user3` | `/workspaces/lab-a/coordinator` |
+| `user4` | `/workspaces/lab-b/requester` |
+| `user5` | `/workspaces/lab-b/agent` |
+| `user6` | `/workspaces/lab-b/coordinator` |
+| `user7` | realm role `platform-admin`, no workspace |
+
+Keycloak imports the realm only when it does not exist. After `realm-template.json` changes, run `docker compose down -v` then `scripts/start.ps1` (this deletes local data), or apply the change in the admin console. To add a workspace or role, create groups `/workspaces/<workspace>/<role>` in Keycloak; no Core code change is needed.
 
 The probe client uses password grant strictly for local automated checks. It is not the future UI login design. Browser integration must use Authorization Code + PKCE. Keycloak `start-dev`, HTTP, shared DB role and older pinned compatibility versions are not production-ready. See the security/release gates in the architecture and inventory.
 
 ## Implemented
 
-- Keycloak identity, protected `/api/core/v1/me`, backend JWT issuer/audience validation, role and workspace guards.
+- Keycloak identity with per-workspace roles from groups `/workspaces/{workspace}/{role}`, `/api/core/v1/me` with memberships, backend JWT issuer/audience validation; 401/403 return Problem Details with `code` and `requestId`.
 - APISIX standalone routing and rate limits, no public Admin API.
 - PostgreSQL metadata create/read: source, usage rights, version, checksum, workspace, owner and timestamp.
 - Real embedded Flowable start/tasks/complete/history; two distinct process keys: `document-review` and `equipment-approval`.

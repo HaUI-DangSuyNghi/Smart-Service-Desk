@@ -11,25 +11,20 @@ paths:
   /me:
     get:
       operationId: me
+      description: Người dùng hiện tại; membership đọc từ group /workspaces/{workspace}/{role}.
       responses:
         '200':
           description: Verified identity
           content:
             application/json:
-              schema:
-                type: object
-                required: [sub, groups, realmAccess]
-                properties:
-                  sub: {type: string}
-                  groups: {type: array, items: {type: string}}
-                  realmAccess: {type: object, additionalProperties: true}
+              schema: {$ref: '#/components/schemas/Me'}
         '401': {$ref: '#/components/responses/Unauthorized'}
   /workspaces/{workspace}/metadata:
     parameters:
       - {$ref: '#/components/parameters/Workspace'}
     post:
       operationId: createMetadata
-      description: Requires core-writer, core-reader and workspace membership.
+      description: Vai trò agent hoặc coordinator của workspace.
       requestBody:
         required: true
         content:
@@ -53,7 +48,7 @@ paths:
         schema: {type: string, format: uuid}
     get:
       operationId: getMetadata
-      description: Workspace-shared data; requires core-reader and membership.
+      description: Thành viên bất kỳ của workspace.
       responses:
         '200':
           description: Metadata record
@@ -73,7 +68,7 @@ paths:
         schema: {type: string, enum: [document-review, equipment-approval]}
     post:
       operationId: startProcess
-      description: Requires core-writer and membership. Initiator/workspace variables are server-derived.
+      description: Thành viên của workspace (tạm thời, chờ starterRoles). Biến initiator/workspace do server đặt.
       requestBody:
         required: true
         content:
@@ -109,7 +104,7 @@ paths:
       - {$ref: '#/components/parameters/Instance'}
     get:
       operationId: listTasks
-      description: Requires core-reader, membership and process ownership.
+      description: Thành viên của workspace và là người khởi tạo quy trình.
       responses:
         '200':
           description: Active engine tasks
@@ -137,7 +132,7 @@ paths:
         schema: {type: string}
     post:
       operationId: completeTask
-      description: Requires reader, reviewer, membership, process owner and task assignee. Serialized per instance.
+      description: Thành viên, người khởi tạo và người đang giữ task. Tuần tự theo từng quy trình.
       requestBody:
         required: true
         content:
@@ -161,7 +156,7 @@ paths:
       - {$ref: '#/components/parameters/Instance'}
     get:
       operationId: history
-      description: Requires core-reader, membership and ownership. History comes from Flowable.
+      description: Thành viên và người khởi tạo. Lịch sử lấy từ Flowable.
       responses:
         '200':
           description: Engine process and task history
@@ -211,8 +206,12 @@ components:
       in: query
       schema: {type: integer, minimum: 1, maximum: 100, default: 20}
   responses:
-    Unauthorized: {description: Missing or invalid JWT}
-    Forbidden: {description: Missing role or workspace membership}
+    Unauthorized:
+      description: UNAUTHENTICATED – thiếu/sai/hết hạn token
+      content: {application/problem+json: {schema: {$ref: '#/components/schemas/Problem'}}}
+    Forbidden:
+      description: FORBIDDEN – không thuộc workspace hoặc thiếu vai trò
+      content: {application/problem+json: {schema: {$ref: '#/components/schemas/Problem'}}}
     NotFound: {description: Resource not found in caller scope}
     Conflict: {description: Duplicate business key or task transition is no longer valid}
     BadRequest: {description: Invalid input or unknown JSON property}
@@ -240,7 +239,26 @@ components:
         checksum: {type: string}
         owner: {type: string}
         created_at: {type: string, format: date-time}
-    # Body lỗi chuẩn RFC 9457 (CoreException). Endpoint baseline ở trên chưa trả định dạng này.
+    Me:
+      type: object
+      required: [sub, username, memberships, platformAdmin]
+      properties:
+        sub: {type: string}
+        username: {type: string}
+        memberships: {type: array, items: {$ref: '#/components/schemas/Membership'}}
+        platformAdmin: {type: boolean}
+    Membership:
+      type: object
+      required: [workspace, role]
+      properties:
+        workspace: {type: string, pattern: '^[a-z0-9-]{1,50}$'}
+        role: {$ref: '#/components/schemas/WorkspaceRole'}
+    # Mặc định requester/agent/coordinator; thêm role = thêm group Keycloak, không sửa Core
+    WorkspaceRole:
+      type: string
+      pattern: '^[a-z0-9-]{1,30}$'
+      example: coordinator
+    # Body lỗi chuẩn RFC 9457. 401/403 đã dùng; 400/404/409 của endpoint baseline chưa dùng.
     Problem:
       type: object
       required: [title, status, code]

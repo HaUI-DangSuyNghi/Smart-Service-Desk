@@ -13,7 +13,9 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import vn.haui.dx.core.audit.Audit;
-import vn.haui.dx.core.identity.Security;
+import vn.haui.dx.core.identity.api.WorkspaceAccess;
+import static vn.haui.dx.core.identity.api.WorkspaceRole.AGENT;
+import static vn.haui.dx.core.identity.api.WorkspaceRole.COORDINATOR;
 import static org.springframework.http.HttpStatus.NOT_FOUND;
 
 @RestController
@@ -21,7 +23,8 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 public class MetadataApi {
     private final JdbcTemplate jdbc;
     private final Audit audit;
-    public MetadataApi(JdbcTemplate jdbc, Audit audit) { this.jdbc = jdbc; this.audit = audit; }
+    private final WorkspaceAccess access;
+    public MetadataApi(JdbcTemplate jdbc, Audit audit, WorkspaceAccess access) { this.jdbc = jdbc; this.audit = audit; this.access = access; }
     public record Input(@NotBlank @Size(max=200) String title, @NotBlank @Size(max=1000) String source,
                         @NotBlank @Size(max=100) String version, @NotBlank @Size(max=200) String usageRights,
                         @NotBlank @Pattern(regexp="[a-f0-9]{64}") String checksum) {}
@@ -30,8 +33,7 @@ public class MetadataApi {
     @Transactional
     public Map<String, Object> create(@PathVariable String workspace, @Valid @RequestBody Input input,
         @AuthenticationPrincipal Jwt jwt, @RequestAttribute String requestId) {
-        Security.workspace(jwt, workspace);
-        Security.role(jwt, "core-writer");
+        access.requireRole(workspace, AGENT, COORDINATOR);
         UUID id = UUID.randomUUID();
         jdbc.update("insert into metadata(id,workspace,title,source,version,usage_rights,checksum,owner) values (?,?,?,?,?,?,?,?)",
             id, workspace, input.title(), input.source(), input.version(), input.usageRights(), input.checksum(), jwt.getSubject());
@@ -40,8 +42,7 @@ public class MetadataApi {
     }
     @GetMapping("/{id}")
     public Map<String, Object> get(@PathVariable String workspace, @PathVariable UUID id, @AuthenticationPrincipal Jwt jwt) {
-        Security.workspace(jwt, workspace);
-        Security.role(jwt, "core-reader");
+        access.requireMember(workspace);
         var rows = jdbc.queryForList("select * from metadata where id=? and workspace=?", id, workspace);
         if (rows.isEmpty()) throw new ResponseStatusException(NOT_FOUND);
         return rows.get(0);
