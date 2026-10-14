@@ -201,6 +201,15 @@ components:
       in: path
       required: true
       schema: {type: string}
+    # Phân trang dùng chung: ?page=0&size=20
+    Page:
+      name: page
+      in: query
+      schema: {type: integer, minimum: 0, default: 0}
+    Size:
+      name: size
+      in: query
+      schema: {type: integer, minimum: 1, maximum: 100, default: 20}
   responses:
     Unauthorized: {description: Missing or invalid JWT}
     Forbidden: {description: Missing role or workspace membership}
@@ -231,3 +240,25 @@ components:
         checksum: {type: string}
         owner: {type: string}
         created_at: {type: string, format: date-time}
+    # Body lỗi chuẩn RFC 9457 (CoreException). Endpoint baseline ở trên chưa trả định dạng này.
+    Problem:
+      type: object
+      required: [title, status, code]
+      properties:
+        type: {type: string, example: about:blank}
+        title: {type: string, example: Forbidden}
+        status: {type: integer, example: 403}
+        detail: {type: string, example: Workspace access denied}
+        instance: {type: string}
+        code:
+          type: string
+          enum: [VALIDATION_FAILED, UNAUTHENTICATED, FORBIDDEN, NOT_FOUND, CONFLICT, PAYLOAD_TOO_LARGE, UNSUPPORTED_MEDIA_TYPE]
+        requestId: {type: string, description: Trùng header X-Request-ID}
+    # Phần thông tin trang; schema danh sách = allOf [PageMeta, {items: [...]}]
+    PageMeta:
+      type: object
+      required: [page, size, total]
+      properties:
+        page: {type: integer, minimum: 0}
+        size: {type: integer, minimum: 1, maximum: 100}
+        total: {type: integer, format: int64, minimum: 0}
