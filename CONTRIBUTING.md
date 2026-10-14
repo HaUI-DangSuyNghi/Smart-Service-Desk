@@ -7,6 +7,7 @@
 | `main` | Approved releases only; initial README until the first release | Existing branch | No feature commits directly |
 | `develop` | Shared integration baseline for all three members | `main` | `release/*` when ready |
 | `feature/<task-id>-<description>` | One scoped task | `develop` | `develop` |
+| `refactor/<scope>-<description>` | Scoped structural change preserving behavior | Accepted task baseline | `develop` via reviewed PR |
 | `release/<version>` | Stabilization, documentation and release fixes | `develop` | `main` and back into `develop` |
 | `hotfix/<version>-<description>` | Urgent fix to an existing release | `main` | `main` and `develop`; active release branch too if applicable |
 
@@ -48,6 +49,7 @@ No force pushes or history rewrites on shared branches. Do not commit to `develo
 - State task ID, scope, changed contracts/migrations, test commands/results and known limits. Do not call a mock/unit test integrated-service evidence.
 - Backend/config changes: run `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start.ps1` and `scripts/smoke.ps1`. Build runs Maven tests. Run the DB consistency check in README when workflow/data behavior changes.
 - Documentation-only changes: check paths/contracts and `git diff --check`; no need to rebuild unchanged services.
+- Intelligence foundation changes: run `python scripts/intelligence/validate-foundation.py` and `git diff --check`. Preserve fixture exact-byte hashes and manifest provenance, update all moved links and keep review status proposed. Core acceptance utilities live in `scripts/acceptance/core/`; runtime/API claims require separate acceptance evidence.
 - Review `git diff --cached` before committing. Never stage `.env`, `.local/`, real passwords/tokens, private keys, personal data, logs or build output. Add explicit paths; avoid blind `git add .`.
 - Do not edit an already-applied migration; add the next migration. Core must not depend on application packages.
 
