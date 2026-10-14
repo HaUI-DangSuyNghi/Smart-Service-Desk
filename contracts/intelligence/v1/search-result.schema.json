@@ -1,0 +1,197 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Proposed Intelligence search response 0.1.0",
+  "description": "Logical response only. Echo request context, cap hits at topK and verify every citation via authorized Core records in the adapter; UUID shape cannot prove Core issuance.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contractVersion",
+    "requestId",
+    "profile",
+    "workspaceId",
+    "status",
+    "results",
+    "runtime",
+    "needsReview",
+    "error"
+  ],
+  "properties": {
+    "contractVersion": {
+      "const": "0.1.0"
+    },
+    "requestId": {
+      "$ref": "#/$defs/nonblank"
+    },
+    "profile": {
+      "$ref": "#/$defs/nonblank"
+    },
+    "workspaceId": {
+      "$ref": "#/$defs/nonblank"
+    },
+    "status": {
+      "enum": [
+        "SUCCESS",
+        "DEGRADED"
+      ]
+    },
+    "results": {
+      "type": "array",
+      "maxItems": 10,
+      "items": {
+        "$ref": "#/$defs/hit"
+      }
+    },
+    "runtime": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/$defs/runtime"
+        }
+      ]
+    },
+    "needsReview": {
+      "type": "boolean"
+    },
+    "error": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "$ref": "#/$defs/error"
+        }
+      ]
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "SUCCESS"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "runtime": {
+            "$ref": "#/$defs/runtime"
+          },
+          "error": {
+            "type": "null"
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "results": {
+            "maxItems": 0
+          },
+          "runtime": {
+            "type": "null"
+          },
+          "needsReview": {
+            "const": true
+          },
+          "error": {
+            "$ref": "#/$defs/error"
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "nonblank": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "\\S"
+    },
+    "hit": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "workspaceId",
+        "metadataId",
+        "sourceVersion",
+        "sourceChecksum",
+        "chunkId",
+        "score",
+        "excerpt"
+      ],
+      "properties": {
+        "workspaceId": {
+          "$ref": "#/$defs/nonblank"
+        },
+        "metadataId": {
+          "type": "string",
+          "minLength": 36,
+          "maxLength": 36,
+          "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
+          "description": "Core-issued UUID, resolved with authorized workspace; local kb-* IDs cannot serve as citations."
+        },
+        "sourceVersion": {
+          "$ref": "#/$defs/nonblank"
+        },
+        "sourceChecksum": {
+          "type": "string",
+          "minLength": 64,
+          "maxLength": 64,
+          "pattern": "^[a-f0-9]{64}$",
+          "description": "Exact source-byte SHA-256; format alone does not attest Core file-integrity verification."
+        },
+        "chunkId": {
+          "$ref": "#/$defs/nonblank"
+        },
+        "score": {
+          "type": "number",
+          "description": "Finite engine-specific ranking score; not probability/confidence and not calibrated across engines. Adapter rejects NaN/Infinity."
+        },
+        "excerpt": {
+          "$ref": "#/$defs/nonblank"
+        }
+      }
+    },
+    "runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "engine",
+        "engineVersion",
+        "profileVersion",
+        "corpusVersion",
+        "indexVersion"
+      ],
+      "properties": {
+        "engine": {
+          "$ref": "#/$defs/nonblank"
+        },
+        "engineVersion": {
+          "$ref": "#/$defs/nonblank"
+        },
+        "profileVersion": {
+          "$ref": "#/$defs/nonblank"
+        },
+        "corpusVersion": {
+          "$ref": "#/$defs/nonblank"
+        },
+        "indexVersion": {
+          "$ref": "#/$defs/nonblank"
+        }
+      }
+    },
+    "error": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "code"
+      ],
+      "properties": {
+        "code": {
+          "const": "INTELLIGENCE_UNAVAILABLE"
+        }
+      }
+    }
+  }
+}

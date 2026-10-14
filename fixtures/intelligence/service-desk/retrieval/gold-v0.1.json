@@ -1,0 +1,89 @@
+{
+  "datasetVersion": "0.1.0",
+  "status": "DRAFT",
+  "annotationKind": "MANUAL_EXPECTED",
+  "benchmarkStatus": "NOT BENCHMARK",
+  "outputKind": "NOT ENGINE OUTPUT",
+  "rightsStatus": "PENDING_OWNER_APPROVAL",
+  "usageRights": null,
+  "notes": "Local authoring/evaluation associations only, unordered and not exhaustive. kb-* IDs are not runtime citations. Future Hit@1/Hit@3/MRR require an implemented engine and separately reviewed evaluation data; no N1 accuracy claim.",
+  "cases": [
+    {
+      "ticketId": "TICKET-001",
+      "expectedRelevantLocalArtifacts": [
+        "kb-network-001",
+        "kb-priority-001"
+      ]
+    },
+    {
+      "ticketId": "TICKET-002",
+      "expectedRelevantLocalArtifacts": [
+        "kb-network-001"
+      ]
+    },
+    {
+      "ticketId": "TICKET-003",
+      "expectedRelevantLocalArtifacts": [
+        "kb-account-001"
+      ]
+    },
+    {
+      "ticketId": "TICKET-004",
+      "expectedRelevantLocalArtifacts": [
+        "kb-account-001",
+        "kb-priority-001"
+      ]
+    },
+    {
+      "ticketId": "TICKET-005",
+      "expectedRelevantLocalArtifacts": [
+        "kb-software-hardware-001"
+      ]
+    },
+    {
+      "ticketId": "TICKET-006",
+      "expectedRelevantLocalArtifacts": [
+        "kb-software-hardware-001",
+        "kb-priority-001"
+      ]
+    },
+    {
+      "ticketId": "TICKET-007",
+      "expectedRelevantLocalArtifacts": [
+        "kb-software-hardware-001"
+      ]
+    },
+    {
+      "ticketId": "TICKET-008",
+      "expectedRelevantLocalArtifacts": [
+        "kb-software-hardware-001"
+      ]
+    },
+    {
+      "ticketId": "TICKET-009",
+      "expectedRelevantLocalArtifacts": [
+        "kb-escalation-001",
+        "kb-priority-001"
+      ]
+    },
+    {
+      "ticketId": "TICKET-010",
+      "expectedRelevantLocalArtifacts": [
+        "kb-account-001",
+        "kb-network-001"
+      ]
+    },
+    {
+      "ticketId": "TICKET-011",
+      "expectedRelevantLocalArtifacts": [
+        "kb-escalation-001"
+      ]
+    },
+    {
+      "ticketId": "TICKET-012",
+      "expectedRelevantLocalArtifacts": [
+        "kb-software-hardware-001"
+      ]
+    }
+  ]
+}
