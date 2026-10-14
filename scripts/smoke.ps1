@@ -51,6 +51,7 @@ try {
     $agentA = Token 'user2'
     $coordinatorA = Token 'user3'
     $agentB = Token 'user5'
+    $coordinatorB = Token 'user6'
     $platformAdmin = Token 'user7'
     $unauthenticated = Call GET '/me' '' $null 401
     if ($unauthenticated.code -ne 'UNAUTHENTICATED' -or !$unauthenticated.requestId) { throw '401 body must carry code and requestId' }
@@ -59,6 +60,15 @@ try {
     if ($me.username -ne 'user1' -or $me.platformAdmin -or @($me.memberships).Count -ne 1 -or
         $me.memberships[0].workspace -ne 'lab-a' -or $me.memberships[0].role -ne 'requester') { throw 'Unexpected /me memberships' }
     $adminMe = Call GET '/me' $platformAdmin $null 200
+    # Request ID: giữ X-Request-ID hợp lệ từ client/gateway, thay thế giá trị không hợp lệ
+    $traceId = [guid]::NewGuid().ToString()
+    foreach ($sent in @($traceId, 'not-a-uuid')) {
+        $echo = Invoke-WebRequest -UseBasicParsing 'http://localhost:9080/api/core/v1/me' -Headers @{Authorization="Bearer $requesterA"; 'X-Request-ID'=$sent}
+        $returned = [string]$echo.Headers['X-Request-ID']
+        $returnedGuid = [guid]::Empty
+        if (![guid]::TryParse($returned, [ref]$returnedGuid) -or (($sent -eq $traceId) -ne ($returned -eq $traceId))) { throw "Unexpected X-Request-ID $returned for $sent" }
+    }
+    Write-Host 'PASS X-Request-ID propagation'
     if (!$adminMe.platformAdmin -or @($adminMe.memberships).Count -ne 0) { throw 'Unexpected platform admin identity' }
     $sha = [Security.Cryptography.SHA256]::Create()
     $checksum = [BitConverter]::ToString($sha.ComputeHash([Text.Encoding]::UTF8.GetBytes('Synthetic Core probe document.'))).Replace('-', '').ToLowerInvariant()
@@ -76,6 +86,14 @@ try {
     Call GET "/workspaces/lab-a/metadata/$($record.id)" $agentB $null 403 | Out-Null
     Call GET "/workspaces/lab-b/metadata/$($record.id)" $agentB $null 404 | Out-Null
     Call GET "/workspaces/lab-a/metadata/$($record.id)" $platformAdmin $null 403 | Out-Null
+    $auditPath = '/workspaces/lab-a/audit'
+    Call GET $auditPath $agentA $null 403 | Out-Null
+    Call GET $auditPath $coordinatorB $null 403 | Out-Null
+    Call GET "$auditPath`?size=101" $coordinatorA $null 400 | Out-Null
+    Call GET $auditPath $platformAdmin $null 200 | Out-Null
+    $agentSub = (Call GET '/me' $agentA $null 200).sub
+    $created = @((Call GET "$auditPath`?action=metadata.create&actor=$agentSub&size=100" $coordinatorA $null 200).items | Where-Object { $_.resource -eq $record.id })
+    if ($created.Count -ne 1 -or $created[0].resourceType -ne 'metadata' -or $created[0].workspace -ne 'lab-a' -or !$created[0].requestId) { throw 'metadata.create audit mismatch' }
     foreach ($key in @('document-review','equipment-approval')) {
         $input = @{businessKey="probe-$([guid]::NewGuid())"; title='Core reuse probe'}
         $base = '/workspaces/lab-a'
@@ -84,6 +102,8 @@ try {
         $instance = Call POST "$base/processes/$key/instances" $requesterA $input 201
         Call POST "$base/processes/$key/instances" $requesterA $input 409 | Out-Null
         $path = "$base/instances/$($instance.id)"
+        $started = @((Call GET "$auditPath`?action=process.start&size=100" $coordinatorA $null 200).items | Where-Object { $_.resource -eq $instance.id })
+        if ($started.Count -ne 1 -or $started[0].details.processKey -ne $key -or $started[0].actor -ne $me.sub) { throw 'process.start audit mismatch' }
         Call GET "$path/history" $agentA $null 404 | Out-Null
         Call GET "$path/tasks" $agentB $null 403 | Out-Null
         $steps = 0
@@ -106,5 +126,5 @@ try {
             if (!$task.endedAt -or $task.actor -ne $me.sub) { throw 'Missing task actor/time' }
         }
     }
-    Write-Host 'PASS headless identity, workspace roles, metadata, isolation and two real workflow definitions'
+    Write-Host 'PASS headless identity, workspace roles, metadata, audit, isolation and two real workflow definitions'
 } finally { $client.Dispose() }

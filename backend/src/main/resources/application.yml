@@ -28,3 +28,7 @@ management:
 server:
   error:
     include-message: never
+logging:
+  pattern:
+    # Mỗi dòng log kèm requestId (đặt bởi RequestIdFilter) để tra theo X-Request-ID
+    level: "%5p [%X{requestId:-}]"
