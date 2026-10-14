@@ -3,18 +3,18 @@
   "title": "Proposed Intelligence triage response 0.1.0",
   "type": "object",
   "additionalProperties": false,
-  "required": ["contract_version", "request_id", "profile", "workspace_id", "status", "result", "evidence", "explanation", "runtime", "needs_review", "error"],
+  "required": ["contractVersion", "requestId", "profile", "workspaceId", "status", "result", "evidence", "explanation", "runtime", "needsReview", "error"],
   "properties": {
-    "contract_version": {"const": "0.1.0"},
-    "request_id": {"$ref": "#/$defs/nonblank"},
+    "contractVersion": {"const": "0.1.0"},
+    "requestId": {"$ref": "#/$defs/nonblank"},
     "profile": {"$ref": "#/$defs/nonblank"},
-    "workspace_id": {"$ref": "#/$defs/nonblank"},
+    "workspaceId": {"$ref": "#/$defs/nonblank"},
     "status": {"enum": ["SUCCESS", "DEGRADED"]},
     "result": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/result"}]},
     "evidence": {"type": "array", "items": {"$ref": "#/$defs/evidence"}},
     "explanation": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/explanation"}]},
     "runtime": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/runtime"}]},
-    "needs_review": {"type": "boolean"},
+    "needsReview": {"type": "boolean"},
     "error": {"oneOf": [{"type": "null"}, {"$ref": "#/$defs/error"}]}
   },
   "allOf": [
@@ -30,31 +30,31 @@
       "else": {"properties": {
         "result": {"type": "null"}, "evidence": {"maxItems": 0},
         "explanation": {"type": "null"}, "runtime": {"type": "null"},
-        "needs_review": {"const": true}, "error": {"$ref": "#/$defs/error"}
+        "needsReview": {"const": true}, "error": {"$ref": "#/$defs/error"}
       }}
     },
     {
-      "if": {"properties": {"explanation": {"type": "object", "properties": {"reason_code": {"const": "INSUFFICIENT_INFORMATION"}}, "required": ["reason_code"]}}, "required": ["explanation"]},
-      "then": {"properties": {"needs_review": {"const": true}}}
+      "if": {"properties": {"explanation": {"type": "object", "properties": {"reasonCode": {"const": "INSUFFICIENT_INFORMATION"}}, "required": ["reasonCode"]}}, "required": ["explanation"]},
+      "then": {"properties": {"needsReview": {"const": true}}}
     },
     {
-      "if": {"properties": {"runtime": {"type": "object", "required": ["rules_version"]}}, "required": ["runtime"]},
-      "then": {"properties": {"explanation": {"type": "object", "properties": {"matched_rules": {"minItems": 1}}}}}
+      "if": {"properties": {"runtime": {"type": "object", "required": ["rulesVersion"]}}, "required": ["runtime"]},
+      "then": {"properties": {"explanation": {"type": "object", "properties": {"matchedRules": {"minItems": 1}}}}}
     },
     {
-      "if": {"properties": {"explanation": {"type": "object", "properties": {"matched_rules": {"minItems": 1}}, "required": ["matched_rules"]}}, "required": ["explanation"]},
-      "then": {"properties": {"runtime": {"type": "object", "required": ["rules_version"]}}}
+      "if": {"properties": {"explanation": {"type": "object", "properties": {"matchedRules": {"minItems": 1}}, "required": ["matchedRules"]}}, "required": ["explanation"]},
+      "then": {"properties": {"runtime": {"type": "object", "required": ["rulesVersion"]}}}
     }
   ],
   "$defs": {
     "nonblank": {"type": "string", "minLength": 1, "pattern": "\\S"},
     "result": {
       "type": "object", "additionalProperties": false,
-      "required": ["category", "priority", "suggested_group"],
+      "required": ["category", "priority", "suggestedGroup"],
       "properties": {
         "category": {"$ref": "#/$defs/nonblank"},
         "priority": {"$ref": "#/$defs/nonblank"},
-        "suggested_group": {"$ref": "#/$defs/nonblank"}
+        "suggestedGroup": {"$ref": "#/$defs/nonblank"}
       }
     },
     "evidence": {
@@ -67,23 +67,23 @@
     },
     "explanation": {
       "type": "object", "additionalProperties": false,
-      "required": ["matched_rules", "impact", "urgency", "reason_code", "text"],
+      "required": ["matchedRules", "impact", "urgency", "reasonCode", "text"],
       "properties": {
-        "matched_rules": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/nonblank"}},
+        "matchedRules": {"type": "array", "uniqueItems": true, "items": {"$ref": "#/$defs/nonblank"}},
         "impact": {"type": ["string", "null"]}, "urgency": {"type": ["string", "null"]},
-        "reason_code": {"enum": ["CLASSIFIED", "ROOT_CAUSE_CONFLICT", "INSUFFICIENT_INFORMATION"]},
+        "reasonCode": {"enum": ["CLASSIFIED", "ROOT_CAUSE_CONFLICT", "INSUFFICIENT_INFORMATION"]},
         "text": {"$ref": "#/$defs/nonblank"}
       }
     },
     "runtime": {
       "type": "object", "additionalProperties": false,
-      "required": ["engine", "profile_version"],
-      "anyOf": [{"required": ["rules_version"]}, {"required": ["model_version"]}],
+      "required": ["engine", "profileVersion"],
+      "anyOf": [{"required": ["rulesVersion"]}, {"required": ["modelVersion"]}],
       "properties": {
         "engine": {"$ref": "#/$defs/nonblank"},
-        "profile_version": {"$ref": "#/$defs/nonblank"},
-        "rules_version": {"$ref": "#/$defs/nonblank"},
-        "model_version": {"$ref": "#/$defs/nonblank"}
+        "profileVersion": {"$ref": "#/$defs/nonblank"},
+        "rulesVersion": {"$ref": "#/$defs/nonblank"},
+        "modelVersion": {"$ref": "#/$defs/nonblank"}
       }
     },
     "error": {

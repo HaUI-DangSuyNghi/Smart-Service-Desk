@@ -1,31 +1,31 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "title": "Proposed Intelligence search response 0.1.0",
-  "description": "Logical response only. Echo request context, cap hits at top_k and verify every citation via authorized Core records in the adapter; UUID shape cannot prove Core issuance.",
+  "description": "Logical response only. Echo request context, cap hits at topK and verify every citation via authorized Core records in the adapter; UUID shape cannot prove Core issuance.",
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "contract_version",
-    "request_id",
+    "contractVersion",
+    "requestId",
     "profile",
-    "workspace_id",
+    "workspaceId",
     "status",
     "results",
     "runtime",
-    "needs_review",
+    "needsReview",
     "error"
   ],
   "properties": {
-    "contract_version": {
+    "contractVersion": {
       "const": "0.1.0"
     },
-    "request_id": {
+    "requestId": {
       "$ref": "#/$defs/nonblank"
     },
     "profile": {
       "$ref": "#/$defs/nonblank"
     },
-    "workspace_id": {
+    "workspaceId": {
       "$ref": "#/$defs/nonblank"
     },
     "status": {
@@ -51,7 +51,7 @@
         }
       ]
     },
-    "needs_review": {
+    "needsReview": {
       "type": "boolean"
     },
     "error": {
@@ -92,7 +92,7 @@
           "runtime": {
             "type": "null"
           },
-          "needs_review": {
+          "needsReview": {
             "const": true
           },
           "error": {
@@ -112,36 +112,36 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "workspace_id",
-        "metadata_id",
-        "source_version",
-        "source_checksum",
-        "chunk_id",
+        "workspaceId",
+        "metadataId",
+        "sourceVersion",
+        "sourceChecksum",
+        "chunkId",
         "score",
         "excerpt"
       ],
       "properties": {
-        "workspace_id": {
+        "workspaceId": {
           "$ref": "#/$defs/nonblank"
         },
-        "metadata_id": {
+        "metadataId": {
           "type": "string",
           "minLength": 36,
           "maxLength": 36,
           "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$",
           "description": "Core-issued UUID, resolved with authorized workspace; local kb-* IDs cannot serve as citations."
         },
-        "source_version": {
+        "sourceVersion": {
           "$ref": "#/$defs/nonblank"
         },
-        "source_checksum": {
+        "sourceChecksum": {
           "type": "string",
           "minLength": 64,
           "maxLength": 64,
           "pattern": "^[a-f0-9]{64}$",
           "description": "Exact source-byte SHA-256; format alone does not attest Core file-integrity verification."
         },
-        "chunk_id": {
+        "chunkId": {
           "$ref": "#/$defs/nonblank"
         },
         "score": {
@@ -158,25 +158,25 @@
       "additionalProperties": false,
       "required": [
         "engine",
-        "engine_version",
-        "profile_version",
-        "corpus_version",
-        "index_version"
+        "engineVersion",
+        "profileVersion",
+        "corpusVersion",
+        "indexVersion"
       ],
       "properties": {
         "engine": {
           "$ref": "#/$defs/nonblank"
         },
-        "engine_version": {
+        "engineVersion": {
           "$ref": "#/$defs/nonblank"
         },
-        "profile_version": {
+        "profileVersion": {
           "$ref": "#/$defs/nonblank"
         },
-        "corpus_version": {
+        "corpusVersion": {
           "$ref": "#/$defs/nonblank"
         },
-        "index_version": {
+        "indexVersion": {
           "$ref": "#/$defs/nonblank"
         }
       }

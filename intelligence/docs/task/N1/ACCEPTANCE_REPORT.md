@@ -57,7 +57,7 @@ independent clean run. Bảng giữ kết quả đã ghi nhận trong acceptance
 | Case | Evidence / giới hạn |
 | --- | --- |
 | META-01 | POST 201 bằng member writer + reader. **Chưa kiểm thử writer-only**: realm không có account tương ứng, không tự sửa realm. |
-| META-02/03 | Owner khớp `/me.sub`, workspace khớp route; body owner/workspace/id/created_at bị từ chối 400. |
+| META-02/03 | Owner khớp `/me.sub`, workspace khớp route; body owner/workspace/id/createdAt bị từ chối 400. |
 | META-04/05/06 | Reader write 403; foreign workspace write và direct read 403. |
 | META-07 | Member lab-b lookup ID lab-a trong route lab-b nhận 404; ID không tồn tại cũng 404. |
 | META-08 | Blank/missing/oversized title/source/version/usageRights đều 400. |
@@ -85,7 +85,7 @@ script. Không xóa/reset dữ liệu. Không tạo thêm record trong hardening
    Đề xuất member + writer cho POST, member + reader cho GET; tách internal loader,
    giữ transaction, bổ sung signed writer-only fixture và rollback evidence.
 2. **Response boundary (D2):** Thay `SELECT *`/raw DB row bằng 9 explicit columns
-   và DTO/mapper, giữ `usage_rights`, `created_at`; không cần migration V1.
+   và DTO/mapper, giữ `usageRights`, `createdAt`; không cần migration V1.
 3. **Core regression:** MetadataApi tests cho validation/unknown fields, roles/
    workspaces, provenance round trip và stable fields; real-service rollback
    evidence. Mock tests không chứng minh transaction DB.

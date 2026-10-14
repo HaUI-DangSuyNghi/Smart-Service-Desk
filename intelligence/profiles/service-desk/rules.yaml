@@ -1,9 +1,9 @@
 status: PROPOSED
-rules_version: 0.1.0
-category_rules:
+rulesVersion: 0.1.0
+categoryRules:
   CAT-NET-001:
     category: NETWORK
-    positive_signals:
+    positiveSignals:
     - wifi
     - wi-fi
     - mạng
@@ -17,7 +17,7 @@ category_rules:
     - lan
   CAT-ACC-001:
     category: ACCOUNT
-    positive_signals:
+    positiveSignals:
     - đăng nhập
     - mật khẩu
     - password
@@ -29,7 +29,7 @@ category_rules:
     - authentication
   CAT-SW-001:
     category: SOFTWARE
-    positive_signals:
+    positiveSignals:
     - ứng dụng
     - phần mềm
     - software
@@ -42,7 +42,7 @@ category_rules:
     - version
   CAT-HW-001:
     category: HARDWARE
-    positive_signals:
+    positiveSignals:
     - không lên nguồn
     - không bật
     - màn hình
@@ -56,28 +56,28 @@ category_rules:
     - vỡ
   CAT-OTHER-001:
     category: OTHER
-    positive_signals:
+    positiveSignals:
     - điều hòa
     - chiếu sáng
     - bàn ghế
     - cơ sở vật chất
-conflict_rules:
+conflictRules:
   CONFLICT-ROOT-001:
     principle: Root cause có evidence rõ ưu tiên hơn symptom; không dùng thứ tự category để đoán.
-review_rules:
+reviewRules:
   REVIEW-INSUFFICIENT-001:
-    policy_ref: priority-policy.yaml#/review_fallback
-impact_rules:
+    policyRef: priority-policy.yaml#/reviewFallback
+impactRules:
   I1: IMPACT-USER-001
   I2: IMPACT-GROUP-001
   I3: IMPACT-ROOM-001
   I4: IMPACT-WIDE-001
-urgency_rules:
+urgencyRules:
   U1: URGENCY-WORKAROUND-001
   U2: URGENCY-DEFERRED-001
   U3: URGENCY-BLOCKING-001
   U4: URGENCY-CRITICAL-001
-priority_rule_ids:
+priorityRuleIds:
   LOW: PRI-001
   MEDIUM: PRI-002
   HIGH: PRI-003

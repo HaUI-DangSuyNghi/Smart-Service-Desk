@@ -1,5 +1,5 @@
 status: PROPOSED
-taxonomy_version: 0.1.0
+taxonomyVersion: 0.1.0
 categories:
   NETWORK:
     definition: Sự cố Wi-Fi, LAN, Internet, IP, DNS hoặc access point.
@@ -7,30 +7,30 @@ categories:
     - Tài khoản bị khóa hoặc sai mật khẩu
     - Chỉ một ứng dụng lỗi khi Internet bình thường
     - Thiết bị vật lý không bật
-    suggested_group: IT-NETWORK
+    suggestedGroup: IT-NETWORK
   ACCOUNT:
     definition: Sự cố đăng nhập, mật khẩu, khóa tài khoản, xác thực hoặc quyền user.
     exclusions:
     - Đăng nhập được nhưng mất mạng
     - Ứng dụng crash sau đăng nhập
     - Máy không khởi động
-    suggested_group: IT-ACCOUNT
+    suggestedGroup: IT-ACCOUNT
   SOFTWARE:
     definition: Lỗi ứng dụng, hệ điều hành, cài đặt, crash, cập nhật hoặc cấu hình phần mềm.
     exclusions:
     - Mất nguồn hoặc hư hỏng vật lý rõ ràng
     - Lỗi chỉ do account bị khóa
     - Nhiều dịch vụ không truy cập do mất mạng
-    suggested_group: IT-SOFTWARE
+    suggestedGroup: IT-SOFTWARE
   HARDWARE:
     definition: Sự cố nguồn, màn hình, bàn phím, chuột, ổ đĩa, RAM hoặc thiết bị ngoại vi vật lý.
     exclusions:
     - Chỉ một ứng dụng crash khi OS hoạt động
     - Chỉ lỗi đăng nhập
     - Mô tả máy không dùng được chưa có dấu hiệu vật lý
-    suggested_group: IT-HARDWARE
+    suggestedGroup: IT-HARDWARE
   OTHER:
     definition: Sự cố hợp lệ ngoài taxonomy CNTT, như điều hòa, chiếu sáng, bàn ghế.
     exclusions:
     - Root cause NETWORK ACCOUNT SOFTWARE HARDWARE đã rõ
-    suggested_group: GENERAL-SUPPORT
+    suggestedGroup: GENERAL-SUPPORT

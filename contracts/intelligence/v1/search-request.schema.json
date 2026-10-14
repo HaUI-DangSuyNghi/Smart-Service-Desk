@@ -4,18 +4,18 @@
   "type": "object",
   "additionalProperties": false,
   "required": [
-    "contract_version",
-    "request_id",
+    "contractVersion",
+    "requestId",
     "profile",
     "context",
     "query",
-    "top_k"
+    "topK"
   ],
   "properties": {
-    "contract_version": {
+    "contractVersion": {
       "const": "0.1.0"
     },
-    "request_id": {
+    "requestId": {
       "$ref": "#/$defs/nonblank"
     },
     "profile": {
@@ -26,10 +26,10 @@
       "type": "object",
       "additionalProperties": false,
       "required": [
-        "workspace_id"
+        "workspaceId"
       ],
       "properties": {
-        "workspace_id": {
+        "workspaceId": {
           "$ref": "#/$defs/nonblank"
         }
       }
@@ -37,7 +37,7 @@
     "query": {
       "$ref": "#/$defs/nonblank"
     },
-    "top_k": {
+    "topK": {
       "type": "integer",
       "minimum": 1,
       "maximum": 10

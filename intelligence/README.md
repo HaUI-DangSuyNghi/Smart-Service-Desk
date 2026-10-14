@@ -23,7 +23,7 @@ remain authoritative. Applications can use Core independently of Intelligence.
 | Utilities | [Foundation validator](../scripts/intelligence/validate-foundation.py) and [Core acceptance probe](../scripts/acceptance/core/metadata-provenance.ps1) / [audit SQL](../scripts/acceptance/core/check-metadata-audit.sql) |
 
 The directory `contracts/intelligence/v1/` groups the v1 capability family;
-the unchanged N1 wire contract is still **`contract_version=0.1.0`**, proposed.
+the unchanged N1 wire contract is still **`contractVersion=0.1.0`**, proposed.
 The profile manifest pins `service-desk@0.1.0` and `priority-policy@0.1.0`.
 `priority-policy.yaml` is the machine-readable authority for the matrix and review
 fallback. The review rule references that fallback. The immutable knowledge policy
@@ -70,8 +70,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/acceptance/core/meta
 $proof = Get-Content .local/ai-n1/metadata-provenance.json -Raw | ConvertFrom-Json
 Get-Content scripts/acceptance/core/check-metadata-audit.sql -Raw |
   docker compose exec -T postgres psql -U core -d core -v ON_ERROR_STOP=1 `
-    -v "metadata_id=$($proof.record.id)" -v "owner=$($proof.record.owner)" `
-    -v "workspace=$($proof.record.workspace)" -v "request_id=$($proof.record.requestId)"
+    -v "metadataId=$($proof.record.id)" -v "owner=$($proof.record.owner)" `
+    -v "workspace=$($proof.record.workspace)" -v "requestId=$($proof.record.requestId)"
 if ($LASTEXITCODE -ne 0) { throw 'Core metadata audit check failed' }
 ```
 

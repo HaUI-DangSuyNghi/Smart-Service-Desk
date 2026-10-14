@@ -23,7 +23,7 @@ timestamp and coverage in the foundation report.
 | --- | --- |
 | Data/provenance | [Contract](../../architecture/data-provenance-contract.md): metadata UUID định danh một record, không phải logical document xuyên version; Core sở hữu authorization/files/audit. |
 | Triage + retrieval | [Capability contract](../../../../contracts/intelligence/v1/contract.md), [triage request](../../../../contracts/intelligence/v1/triage-request.schema.json) / [result](../../../../contracts/intelligence/v1/triage-result.schema.json), [search request](../../../../contracts/intelligence/v1/search-request.schema.json) / [result](../../../../contracts/intelligence/v1/search-result.schema.json); đủ 4 machine-readable schema. |
-| Trusted context | `context.workspace_id` là server-injected adapter context, không phải user grant. AUTH-INV-01..04: authorize trước corpus/cache/engine; auth failure không phải DEGRADED. |
+| Trusted context | `context.workspaceId` là server-injected adapter context, không phải user grant. AUTH-INV-01..04: authorize trước corpus/cache/engine; auth failure không phải DEGRADED. |
 | Evidence | Triage v0.1 chỉ INPUT từ original title/description; search trả Core provenance hits. Application compose; unified envelope cần contract revision có review. |
 | Domain policy | [Taxonomy](../../../profiles/service-desk/taxonomy.yaml), [priority policy](../../architecture/priority-policy.md): 5 categories, root cause > symptom, OTHER khác uncertainty, 16 ô priority; Service Desk / Process Owner sở hữu policy. |
 | Ticket fixtures | [12 JSONL](../../../../fixtures/intelligence/service-desk/tickets/tickets-v0.1.jsonl), [manifest](../../../../fixtures/intelligence/service-desk/tickets/manifest.json), [DEGRADED](../../../../fixtures/intelligence/service-desk/tickets/triage-degraded-v0.1.json). Chuyển workspace request vào trusted context; giữ nguyên input và expected labels. Recompute exact-byte dataset digest/size. |
@@ -48,10 +48,10 @@ Không cài thêm hay khai báo tool thành dependency runtime.
 | --- | --- |
 | JSON Schema Draft 2020-12 | 4 schema hợp lệ; 12 triage request/result, triage DEGRADED và search SUCCESS có hit / rỗng / DEGRADED hợp lệ. |
 | Domain/annotation | Đủ 5 category, 4 priority level, 16 ô matrix; routing/rule IDs/profile/rules/policy versions khớp. Ambiguous dùng null I/U và MEDIUM review fallback. |
-| Evidence/context | INPUT là exact substring của original input; response workspace khớp trusted context. Search hit workspace/correlation khớp request; hit count ≤ top_k. |
-| Retrieval semantics | top_k biên 1/10; score hữu hạn, cho phép giá trị ngoài [0,1] theo engine scale. Corpus/index/engine versions bắt buộc. |
+| Evidence/context | INPUT là exact substring của original input; response workspace khớp trusted context. Search hit workspace/correlation khớp request; hit count ≤ topK. |
+| Retrieval semantics | topK biên 1/10; score hữu hạn, cho phép giá trị ngoài [0,1] theo engine scale. Corpus/index/engine versions bắt buộc. |
 | Provenance/rights | 5 knowledge checksum/size/header và dataset digest PASS; local Core binding null, rights pending. Gold chỉ tham chiếu local artifact có thật. |
-| Negative validation | **70 trường hợp bị từ chối**: evidence giả/trộn INPUT–knowledge, context/grants sai, priority/routing/version sai, blank input/query, top_k sai, DEGRADED sai, workspace/citation/checksum sai, thiếu runtime versions, confidence ngoài contract, NaN/Infinity và gold benchmark claim. |
+| Negative validation | **70 trường hợp bị từ chối**: evidence giả/trộn INPUT–knowledge, context/grants sai, priority/routing/version sai, blank input/query, topK sai, DEGRADED sai, workspace/citation/checksum sai, thiếu runtime versions, confidence ngoài contract, NaN/Infinity và gold benchmark claim. |
 | Replaceability | Generic profile reuse, model-version triage và search engine substitution PASS; chỉ kiểm tra schema, không chạy/chọn engine/model. |
 | Repository hygiene | `git diff --check`, staged diff check và local Markdown links PASS; scope commit chỉ `intelligence/`, `.backup/` và `.local/` không stage. |
 

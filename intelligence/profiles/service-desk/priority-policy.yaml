@@ -1,8 +1,8 @@
 status: PROPOSED
-policy_version: priority-policy@0.1.0
+policyVersion: priority-policy@0.1.0
 owner: Service Desk / Process Owner
-technical_implementer: Intelligence
-required_reviewers:
+technicalImplementer: Intelligence
+requiredReviewers:
 - BE
 - Process/Service Owner
 impact:
@@ -36,11 +36,11 @@ matrix:
     U2: HIGH
     U3: CRITICAL
     U4: CRITICAL
-review_fallback:
+reviewFallback:
   category: OTHER
   priority: MEDIUM
-  suggested_group: GENERAL-SUPPORT
+  suggestedGroup: GENERAL-SUPPORT
   impact: null
   urgency: null
-  needs_review: true
-  reason_code: INSUFFICIENT_INFORMATION
+  needsReview: true
+  reasonCode: INSUFFICIENT_INFORMATION

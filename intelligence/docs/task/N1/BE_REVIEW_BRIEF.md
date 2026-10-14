@@ -25,8 +25,8 @@ Core runtime evidence ngày 07/10/2026 thuộc baseline
 | Decision | Hiện trạng / đề xuất cần review |
 | --- | --- |
 | **D1 — Metadata role policy** | POST hiện cần writer + reader vì `create()` gọi GET. Đề xuất POST = workspace member + writer; GET = member + reader, tách internal loader và giữ transaction. Cần signed writer-only fixture và rollback evidence. |
-| **D2 — Metadata response** | Thay raw DB row / `SELECT *` bằng explicit columns và DTO/mapper. Giữ nguyên 9 wire field, đặc biệt `usage_rights`, `created_at`; không cần migration V1. |
-| **D3 — Trusted context** | App/Core authorize workspace/profile trước; adapter construct `context.workspace_id`, rồi mới cache/corpus/engine. Intelligence không grant access. Cần implementation tests; JSON Schema không chứng minh authorization. |
+| **D2 — Metadata response** | Thay raw DB row / `SELECT *` bằng explicit columns và DTO/mapper. Giữ nguyên 9 wire field, đặc biệt `usageRights`, `createdAt`; không cần migration V1. |
+| **D3 — Trusted context** | App/Core authorize workspace/profile trước; adapter construct `context.workspaceId`, rồi mới cache/corpus/engine. Intelligence không grant access. Cần implementation tests; JSON Schema không chứng minh authorization. |
 | **D4 — Citation identity** | Identity = authorized workspace + Core-issued `metadata.id`; artifact state = version + exact-byte checksum. Không dùng title/URL/local `kb-*` làm authority; UUID shape không chứng minh Core issuance. |
 | **D5 — Audit path** | Intelligence trả suggestion metadata; App/Core ghi accepted decision / human override qua Core audit. Intelligence không ghi trực tiếp Core DB. |
 

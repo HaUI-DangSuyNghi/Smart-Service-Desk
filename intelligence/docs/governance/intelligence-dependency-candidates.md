@@ -34,10 +34,10 @@ license names in the master draft as verification.
 
 | Artifact | Owner / state | Version and provenance |
 | --- | --- | --- |
-| Taxonomy/routing | Intelligence Service Desk profile, proposed | `taxonomy_version=0.1.0`, `profile_version=service-desk@0.1.0`; team-authored |
+| Taxonomy/routing | Intelligence Service Desk profile, proposed | `taxonomyVersion=0.1.0`, `profileVersion=service-desk@0.1.0`; team-authored |
 | Priority policy | Service Desk / Process Owner; PROPOSED; Intelligence implements | `priority_policy_version=priority-policy@0.1.0`, pinned by `service-desk@0.1.0`; business approval pending |
-| Conflict/rule catalogue | Intelligence profile, PROPOSED; no executor | `rules_version=0.1.0`; team-authored |
-| 12 tickets with expected suggestions | Intelligence authoring/evaluation fixtures | `dataset_version=0.1.0`; synthetic, manually annotated, rights pending |
+| Conflict/rule catalogue | Intelligence profile, PROPOSED; no executor | `rulesVersion=0.1.0`; team-authored |
+| 12 tickets with expected suggestions | Intelligence authoring/evaluation fixtures | `datasetVersion=0.1.0`; synthetic, manually annotated, rights pending |
 | 5 knowledge Markdown documents | Team-authored source assets; canonical ownership belongs to Core after future ingest | Artifact versions `0.1.0`; exact-byte SHA-256 in local manifest; rights pending |
 | Core binding | Core exclusively | No workspace/metadata UUID binding yet; no metadata created for this package |
 | Retrieval gold associations | Intelligence authoring fixtures, PROPOSED | 12 MANUAL_EXPECTED associations; NOT BENCHMARK / NOT ENGINE OUTPUT; rights pending |
@@ -58,7 +58,7 @@ planned first approaches, not proof that any engine currently exists.
 
 All 12 tickets are synthetic; all 5 knowledge documents are authored in this repo
 from the supplied package, without copying external content. Rights remain
-`PENDING_OWNER_APPROVAL`, `usage_rights=null`; being self-authored does not authorize
+`PENDING_OWNER_APPROVAL`, `usageRights=null`; being self-authored does not authorize
 the assistant to choose a license. Internal fixtures are not a public/release
 corpus. Do not ingest/publish before rights are decided.
 

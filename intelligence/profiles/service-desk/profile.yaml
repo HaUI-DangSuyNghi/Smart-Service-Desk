@@ -8,7 +8,7 @@ taxonomy:
 rules:
   version: 0.1.0
   file: rules.yaml
-priority_policy:
+priorityPolicy:
   version: priority-policy@0.1.0
   file: priority-policy.yaml
   owner: Service Desk / Process Owner

@@ -1,13 +1,13 @@
 {
-  "dataset_version": "0.1.0",
-  "artifact_path": "fixtures/intelligence/service-desk/tickets/tickets-v0.1.jsonl",
-  "record_count": 12,
+  "datasetVersion": "0.1.0",
+  "artifactPath": "fixtures/intelligence/service-desk/tickets/tickets-v0.1.jsonl",
+  "recordCount": 12,
   "source": "team-authored:examples/service-desk-n1",
-  "data_kind": "SYNTHETIC",
-  "annotation_kind": "MANUAL_EXPECTED",
-  "rights_status": "PENDING_OWNER_APPROVAL",
-  "usage_rights": null,
-  "sha256": "222ac50d3fdf825b33f71a0db41e1b12f196ba90e2a6dea2f409e64b6765814f",
-  "byte_size": 16292,
+  "dataKind": "SYNTHETIC",
+  "annotationKind": "MANUAL_EXPECTED",
+  "rightsStatus": "PENDING_OWNER_APPROVAL",
+  "usageRights": null,
+  "sha256": "317a844338ae12e6c0cde109f8d7cc15879f8bf4c5d2f1a02e71a4e0cbf692f5",
+  "byteSize": 16124,
   "notes": "Original 12 scenarios retained; added contextual sentences to make intended impact/urgency evidence explicit. Not runtime predictions, holdout data or an accuracy report. Pre-review envelope revision: workspace moved to server-injected trusted context; labels and original input unchanged."
 }

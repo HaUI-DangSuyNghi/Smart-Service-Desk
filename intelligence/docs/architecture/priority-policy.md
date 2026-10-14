@@ -12,8 +12,8 @@ Rule IDs live in [rules](../../profiles/service-desk/rules.yaml); routing lives 
 Intelligence does not define business SLA or final priority authority. The engine
 applies policy approved by the Process/Service Owner, explains the suggestion and
 allows human override. This proposal is not evidence of business approval.
-For MVP output tracing, `profile_version=service-desk@0.1.0` pins
-`priority_policy_version=priority-policy@0.1.0` in the profile manifest; no extra generic
+For MVP output tracing, `profileVersion=service-desk@0.1.0` pins
+`priorityPolicyVersion=priority-policy@0.1.0` in the profile manifest; no extra generic
 response field is introduced. Matrix or fallback changes require business review
 and a new profile version, or an explicit policy version in a reviewed later
 contract. An override/accepted business decision is persisted and audited by
@@ -26,7 +26,7 @@ Priority comes from supported impact/urgency, never category or a keyword alone.
 Explicit root cause outranks symptom: locked account affecting Wi-Fi is ACCOUNT;
 one updated application failing while other sites work is SOFTWARE.
 
-If category, impact or urgency lacks evidence, set `needs_review=true` and request
+If category, impact or urgency lacks evidence, set `needsReview=true` and request
 the missing facts. For the N1 ambiguous fixture, use `OTHER`, null impact/urgency,
 provisional `MEDIUM`, `GENERAL-SUPPORT`, and `INSUFFICIENT_INFORMATION`. This MEDIUM
 is a **review fallback**, not a matrix result. Do not invent I/U levels to justify it.

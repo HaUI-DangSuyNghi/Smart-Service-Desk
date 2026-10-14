@@ -28,8 +28,8 @@ state. Reading a fixture directory as a production corpus is outside this design
 The knowledge fixture's policy table preserves historical source bytes; it is not
 another policy authority.
 
-Future corpus/index partitions include `workspace_id`, `profile_id` and
-`corpus_version`, with authorization/visibility scope reflected in cache keys.
+Future corpus/index partitions include `workspaceId`, `profileId` and
+`corpusVersion`, with authorization/visibility scope reflected in cache keys.
 Authorize before accessing/scoring corpus data and recheck citations on resolution.
 Deleting an index cannot delete canonical Core data. Runtime implementation and
 partition enforcement remain future work.

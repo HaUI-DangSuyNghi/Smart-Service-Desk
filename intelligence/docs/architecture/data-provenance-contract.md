@@ -18,14 +18,14 @@ Metadata creation does not upload a file or prove its existence/integrity.
 | `title` | Caller | Display label, nonblank, at most 200 characters. |
 | `source` | Caller | Declared origin, nonblank, at most 1000 characters; may be URL, repository path or team-authored identifier. Not automatically fetched or verified. |
 | `version` | Caller | Artifact version, nonblank, at most 100 characters; not API version, no SemVer requirement. |
-| `usageRights` (input), `usage_rights` (response) | Caller | Declared usage / redistribution rights, nonblank, at most 200 characters. Prefer a known SPDX identifier/expression when applicable; no N1 SPDX validator. |
+| `usageRights` | Caller | Declared usage / redistribution rights, nonblank, at most 200 characters. Prefer a known SPDX identifier/expression when applicable; no N1 SPDX validator. |
 | `checksum` | Caller in N1 | Exactly 64 lowercase hex characters; SHA-256 claim about exact source bytes. |
 | `owner` | Core authorization | Verified JWT `sub`; never a body property. |
-| `created_at` | Core / database | Server timestamp with timezone; never accepted from caller. |
+| `createdAt` | Core / database | Server timestamp with timezone; never accepted from caller. |
 
 Input has exactly `title`, `source`, `version`, `usageRights`, `checksum`.
-Unknown properties, including `id`, `workspace`, `owner`, `created_at`, return 400.
-Keep existing public response names, especially `usage_rights` and `created_at`.
+Unknown properties, including `id`, `workspace`, `owner`, `createdAt`, return 400.
+Core REST request/response fields consistently use camelCase, including `usageRights` and `createdAt`.
 
 Examples of source: `team-authored:core-probe`,
 `repository:docs/knowledge/network-guide.md`, or an actual source URL.
