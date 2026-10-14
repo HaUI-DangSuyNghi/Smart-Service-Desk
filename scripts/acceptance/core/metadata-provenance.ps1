@@ -53,11 +53,14 @@ function Call($name, $method, $path, $token, $body, $expected) {
 try {
     $password = (Get-Content -LiteralPath (Join-Path $root '.env') | Where-Object { $_ -match '^DEMO_PASSWORD=' }) -replace '^DEMO_PASSWORD=', ''
     if (!$password) { throw 'Missing local DEMO_PASSWORD; run existing setup/start first.' }
-    $alice = Token 'alice' $password
-    $bob = Token 'bob' $password
-    $mallory = Token 'mallory' $password
+    # Identity demo users (infra/keycloak/realm-template.json):
+    # user2 = lab-a agent (may create), user1 = lab-a requester (read-only),
+    # user5 = lab-b agent (must be denied access to lab-a).
+    $agentA = Token 'user2' $password
+    $requesterA = Token 'user1' $password
+    $agentB = Token 'user5' $password
     $password = $null
-    $me = (Call 'identity' GET '/me' $alice $null 200).body
+    $me = (Call 'identity' GET '/me' $agentA $null 200).body
     $sha = [Security.Cryptography.SHA256]::Create()
     try {
         $checksum = [BitConverter]::ToString($sha.ComputeHash([Text.Encoding]::UTF8.GetBytes('AI-N1 synthetic provenance probe.'))).Replace('-', '').ToLowerInvariant()
@@ -66,16 +69,16 @@ try {
     $path = '/workspaces/lab-a/metadata'
     Call 'missing JWT' POST $path '' $data 401 | Out-Null
     Call 'invalid JWT' POST $path 'invalid' $data 401 | Out-Null
-    Call 'META-04 reader write denied' POST $path $bob $data 403 | Out-Null
-    Call 'META-05 foreign write denied' POST $path $mallory $data 403 | Out-Null
+    Call 'META-04 reader write denied' POST $path $requesterA $data 403 | Out-Null
+    Call 'META-05 foreign write denied' POST $path $agentB $data 403 | Out-Null
     $limits = @{title=200; source=1000; version=100; usageRights=200}
     foreach ($field in @('title', 'source', 'version', 'usageRights')) {
         $bad = $data.Clone(); $bad[$field] = '   '
-        Call "META-08 blank $field" POST $path $alice $bad 400 | Out-Null
+        Call "META-08 blank $field" POST $path $agentA $bad 400 | Out-Null
         $bad = $data.Clone(); $bad.Remove($field)
-        Call "META-08 missing $field" POST $path $alice $bad 400 | Out-Null
+        Call "META-08 missing $field" POST $path $agentA $bad 400 | Out-Null
         $bad = $data.Clone(); $bad[$field] = 'x' * ($limits[$field] + 1)
-        Call "META-08 oversized $field" POST $path $alice $bad 400 | Out-Null
+        Call "META-08 oversized $field" POST $path $agentA $bad 400 | Out-Null
     }
     $invalidChecksums = [ordered]@{
         short=('a' * 63); long=('a' * 65); uppercase=('A' * 64)
@@ -83,15 +86,15 @@ try {
     }
     foreach ($label in $invalidChecksums.Keys) {
         $bad = $data.Clone(); $bad.checksum = $invalidChecksums[$label]
-        Call "META-09/10 checksum $label" POST $path $alice $bad 400 | Out-Null
+        Call "META-09/10 checksum $label" POST $path $agentA $bad 400 | Out-Null
     }
     $bad = $data.Clone(); $bad.Remove('checksum')
-    Call 'META-09 missing checksum' POST $path $alice $bad 400 | Out-Null
+    Call 'META-09 missing checksum' POST $path $agentA $bad 400 | Out-Null
     foreach ($field in @('owner', 'workspace', 'id', 'created_at', 'unexpected')) {
         $bad = $data.Clone(); $bad[$field] = 'client-controlled'
-        Call "META-02/03/11 reject body $field" POST $path $alice $bad 400 | Out-Null
+        Call "META-02/03/11 reject body $field" POST $path $agentA $bad 400 | Out-Null
     }
-    $created = Call 'META-01 baseline writer+reader create' POST $path $alice $data 201
+    $created = Call 'META-01 lab-a agent create' POST $path $agentA $data 201
     $record = $created.body
     # Save identifiers immediately so partial failures can still be inspected.
     $evidence.record = [ordered]@{id=$record.id; workspace=$record.workspace; owner=$record.owner; requestId=$created.requestId}
@@ -103,7 +106,7 @@ try {
     Check 'server timestamp' ([DateTimeOffset]::TryParse([string]$record.created_at, [ref]$createdAt))
     $requestGuid = [guid]::Empty
     Check 'audit response request ID' ([guid]::TryParse([string]$created.requestId, [ref]$requestGuid))
-    $read = (Call 'META-13 workspace reader round trip' GET "$path/$($record.id)" $bob $null 200).body
+    $read = (Call 'META-13 workspace reader round trip' GET "$path/$($record.id)" $requesterA $null 200).body
     $wireFields = @('id', 'workspace', 'title', 'source', 'version', 'usage_rights', 'checksum', 'owner', 'created_at')
     Check 'explicit expected wire field set' ((@($read.PSObject.Properties.Name | Sort-Object) -join ',') -ceq (@($wireFields | Sort-Object) -join ','))
     foreach ($field in $wireFields) {
@@ -112,14 +115,14 @@ try {
     foreach ($pair in @(@('title','title'), @('source','source'), @('version','version'), @('usageRights','usage_rights'), @('checksum','checksum'))) {
         Check "META-13 caller $($pair[0]) preserved" ($data[$pair[0]] -ceq $read.($pair[1]))
     }
-    Call 'META-06 foreign direct read denied' GET "$path/$($record.id)" $mallory $null 403 | Out-Null
-    Call 'META-07 scoped foreign ID hidden' GET "/workspaces/lab-b/metadata/$($record.id)" $mallory $null 404 | Out-Null
-    Call 'unknown ID within workspace' GET "$path/$([guid]::NewGuid())" $bob $null 404 | Out-Null
+    Call 'META-06 foreign direct read denied' GET "$path/$($record.id)" $agentB $null 403 | Out-Null
+    Call 'META-07 scoped foreign ID hidden' GET "/workspaces/lab-b/metadata/$($record.id)" $agentB $null 404 | Out-Null
+    Call 'unknown ID within workspace' GET "$path/$([guid]::NewGuid())" $requesterA $null 404 | Out-Null
     $evidence.success = $true
-    Write-Host "PASS $($checks.Count) API assertions; writer-only policy remains pending."
+    Write-Host "PASS $($checks.Count) API assertions; role-policy regression remains pending."
 } finally {
     $client.Dispose()
-    $alice = $null; $bob = $null; $mallory = $null
+    $agentA = $null; $requesterA = $null; $agentB = $null
     $evidence.finishedAt = [DateTimeOffset]::Now.ToString('o')
     $directory = Join-Path $root '.local/ai-n1'
     New-Item -ItemType Directory -Path $directory -Force | Out-Null
