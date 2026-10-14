@@ -11,18 +11,6 @@ servers:
 security:
   - bearer: []
 paths:
-  /me:
-    get:
-      operationId: me
-      description: Người dùng hiện tại và các membership. (P0)
-      responses:
-        '200':
-          description: Danh tính đã xác thực
-          content:
-            application/json:
-              schema: {$ref: '#/components/schemas/Me'}
-        '401': {$ref: '#/components/responses/Unauthorized'}
-
   /process-definitions:
     get:
       operationId: listProcessDefinitions
@@ -405,29 +393,12 @@ components:
       description: UNSUPPORTED_MEDIA_TYPE – loại file không cho phép
       content: {application/problem+json: {schema: {$ref: 'core.yaml#/components/schemas/Problem'}}}
   schemas:
-    Me:
-      type: object
-      required: [sub, username, memberships, platformAdmin]
-      properties:
-        sub: {type: string}
-        username: {type: string}
-        memberships: {type: array, items: {$ref: '#/components/schemas/Membership'}}
-        platformAdmin: {type: boolean}
-    Membership:
-      type: object
-      required: [workspace, role]
-      properties:
-        workspace: {type: string, pattern: '^[a-z0-9-]{1,50}$'}
-        role: {$ref: '#/components/schemas/WorkspaceRole'}
-    WorkspaceRole:
-      type: string
-      enum: [requester, agent, coordinator]
     ProcessDefinition:
       type: object
       required: [processKey, starterRoles, allowedStartVariables, outcomesByTask]
       properties:
         processKey: {type: string}
-        starterRoles: {type: array, items: {$ref: '#/components/schemas/WorkspaceRole'}}
+        starterRoles: {type: array, items: {$ref: 'core.yaml#/components/schemas/WorkspaceRole'}}
         allowedStartVariables: {type: array, items: {type: string}}
         # taskKey → các outcome hợp lệ
         outcomesByTask:

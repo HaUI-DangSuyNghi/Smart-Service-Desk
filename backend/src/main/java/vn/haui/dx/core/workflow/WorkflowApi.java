@@ -16,7 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import vn.haui.dx.core.audit.Audit;
-import vn.haui.dx.core.identity.Security;
+import vn.haui.dx.core.identity.api.WorkspaceAccess;
 import static org.springframework.http.HttpStatus.*;
 
 @RestController
@@ -27,8 +27,10 @@ public class WorkflowApi {
     private final HistoryService history;
     private final JdbcTemplate jdbc;
     private final Audit audit;
-    public WorkflowApi(RuntimeService runtime, TaskService tasks, HistoryService history, JdbcTemplate jdbc, Audit audit) {
-        this.runtime = runtime; this.tasks = tasks; this.history = history; this.jdbc = jdbc; this.audit = audit;
+    private final WorkspaceAccess access;
+    public WorkflowApi(RuntimeService runtime, TaskService tasks, HistoryService history, JdbcTemplate jdbc, Audit audit,
+                       WorkspaceAccess access) {
+        this.runtime = runtime; this.tasks = tasks; this.history = history; this.jdbc = jdbc; this.audit = audit; this.access = access;
     }
     public record Start(@NotBlank @Size(max=200) String businessKey, @NotBlank @Size(max=200) String title) {}
     public record Complete(@NotBlank @Size(max=100) String expectedTaskKey) {}
@@ -38,8 +40,8 @@ public class WorkflowApi {
     @Transactional
     public Map<String, String> start(@PathVariable String workspace, @PathVariable String processKey,
         @Valid @RequestBody Start input, @AuthenticationPrincipal Jwt jwt, @RequestAttribute String requestId) {
-        Security.workspace(jwt, workspace);
-        Security.role(jwt, "core-writer");
+        // Tạm thời: mọi thành viên được khởi tạo; quyền theo starterRoles làm ở nhánh workflow
+        access.requireMember(workspace);
         if (!Set.of("document-review", "equipment-approval").contains(processKey)) throw new ResponseStatusException(NOT_FOUND);
         var process = runtime.startProcessInstanceByKey(processKey, input.businessKey(),
             Map.of("initiator", jwt.getSubject(), "workspace", workspace, "title", input.title()));
@@ -49,8 +51,7 @@ public class WorkflowApi {
         return Map.of("id", process.getId(), "processKey", processKey, "businessKey", input.businessKey(), "workspace", workspace);
     }
     private void authorize(String workspace, String id, Jwt jwt) {
-        Security.workspace(jwt, workspace);
-        Security.role(jwt, "core-reader");
+        access.requireMember(workspace);
         var rows = jdbc.queryForList("select owner from process_scope where id=? and workspace=?", id, workspace);
         if (rows.isEmpty() || !jwt.getSubject().equals(rows.get(0).get("owner"))) throw new ResponseStatusException(NOT_FOUND);
     }
@@ -66,7 +67,6 @@ public class WorkflowApi {
     public void complete(@PathVariable String workspace, @PathVariable String id, @PathVariable String taskId,
         @Valid @RequestBody Complete input, @AuthenticationPrincipal Jwt jwt, @RequestAttribute String requestId) {
         authorize(workspace, id, jwt);
-        Security.role(jwt, "core-reviewer");
         jdbc.queryForList("select id from process_scope where id=? for update", id);
         var task = tasks.createTaskQuery().taskId(taskId).processInstanceId(id).singleResult();
         if (task == null || !task.getTaskDefinitionKey().equals(input.expectedTaskKey())) throw new ResponseStatusException(CONFLICT);

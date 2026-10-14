@@ -34,22 +34,22 @@ flowchart TD
 
 ## Authorization contract
 
-Keycloak signs `sub`, `groups` and `realm_access.roles`; Spring verifies signature, expiry, issuer and `dx-core` audience. Workspace is an exact group path (`/lab-a`), not an arbitrary client header. Group changes become effective on token refresh/expiry (five-minute access tokens). Immediate revocation is backlog.
+Keycloak signs `sub`, `groups` and `realm_access.roles`; Spring verifies signature, expiry, issuer and `dx-core` audience. Workspace and role come from group paths `/workspaces/{workspace}/{role}` (other group strings are ignored), not from an arbitrary client header. `requester`, `agent` and `coordinator` are defaults; new roles are new Keycloak groups. `platform-admin` is a realm role without implicit workspace access. Group changes become effective on token refresh/expiry (five-minute access tokens). Immediate revocation is backlog.
 
 | Operation | Required authorization |
 | --- | --- |
 | `/me` | Valid JWT |
-| Metadata create | Workspace membership + core-writer + core-reader |
-| Metadata read | Workspace membership + core-reader |
-| Start process | Workspace membership + core-writer |
-| Tasks/history | Workspace membership + core-reader + process creator |
-| Complete task | Above + core-reviewer + task assignee + expected task key |
+| Metadata create | `agent` or `coordinator` in the workspace |
+| Metadata read | Any role in the workspace |
+| Start process | Any role in the workspace (interim until per-process starter roles) |
+| Tasks/history | Any role in the workspace + process creator |
+| Complete task | Above + task assignee + expected task key |
 
-Missing/invalid JWT: 401. Missing role/workspace: 403. Resource absent or process owned by another user: 404. Duplicate start or invalid/replayed transition: 409. Invalid body: 400. No admin bypass. A user needs both membership and role; names such as `appId`, `resourceId`, `owner` or `initiator` cannot grant rights. Unknown JSON fields are rejected.
+Missing/invalid JWT: 401. Missing role/workspace: 403. Resource absent or process owned by another user: 404. Duplicate start or invalid/replayed transition: 409. Invalid body: 400. No admin bypass. Workspace and role are checked together; names such as `appId`, `resourceId`, `owner` or `initiator` cannot grant rights. Unknown JSON fields are rejected.
 
 ## Workflow and transactions
 
-Two allowlisted definitions are intentionally small: `document-review` has one user task; `equipment-approval` has approval then handover. Both are probes, NOT finished business workflows. Their assignee is the authenticated initiator, with reviewer permission required for completion. Group inbox, independent approver, claim/delegate/cancel and deployment API are backlog.
+Two allowlisted definitions are intentionally small: `document-review` has one user task; `equipment-approval` has approval then handover. Both are probes, NOT finished business workflows. Their assignee is the authenticated initiator. Group inbox, independent approver, claim/delegate/cancel and deployment API are backlog.
 
 Input variables are deliberately bounded: `title` is caller input; `initiator` and `workspace` are server-derived. No arbitrary engine variables or client-supplied expressions. Adding definitions requires code/config review and task permission tests. The adapter remains independent of business-domain types.
 
