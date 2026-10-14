@@ -12,7 +12,7 @@ import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
-import vn.haui.dx.core.audit.Audit;
+import vn.haui.dx.core.audit.api.AuditService;
 import vn.haui.dx.core.identity.api.WorkspaceAccess;
 import static vn.haui.dx.core.identity.api.WorkspaceRole.AGENT;
 import static vn.haui.dx.core.identity.api.WorkspaceRole.COORDINATOR;
@@ -22,9 +22,9 @@ import static org.springframework.http.HttpStatus.NOT_FOUND;
 @RequestMapping("/api/core/v1/workspaces/{workspace}/metadata")
 public class MetadataApi {
     private final JdbcTemplate jdbc;
-    private final Audit audit;
+    private final AuditService audit;
     private final WorkspaceAccess access;
-    public MetadataApi(JdbcTemplate jdbc, Audit audit, WorkspaceAccess access) { this.jdbc = jdbc; this.audit = audit; this.access = access; }
+    public MetadataApi(JdbcTemplate jdbc, AuditService audit, WorkspaceAccess access) { this.jdbc = jdbc; this.audit = audit; this.access = access; }
     public record Input(@NotBlank @Size(max=200) String title, @NotBlank @Size(max=1000) String source,
                         @NotBlank @Size(max=100) String version, @NotBlank @Size(max=200) String usageRights,
                         @NotBlank @Pattern(regexp="[a-f0-9]{64}") String checksum) {}
@@ -32,12 +32,12 @@ public class MetadataApi {
     @ResponseStatus(org.springframework.http.HttpStatus.CREATED)
     @Transactional
     public Map<String, Object> create(@PathVariable String workspace, @Valid @RequestBody Input input,
-        @AuthenticationPrincipal Jwt jwt, @RequestAttribute String requestId) {
+        @AuthenticationPrincipal Jwt jwt) {
         access.requireRole(workspace, AGENT, COORDINATOR);
         UUID id = UUID.randomUUID();
         jdbc.update("insert into metadata(id,workspace,title,source,version,usage_rights,checksum,owner) values (?,?,?,?,?,?,?,?)",
             id, workspace, input.title(), input.source(), input.version(), input.usageRights(), input.checksum(), jwt.getSubject());
-        audit.record(jwt.getSubject(), "metadata.create", id.toString(), workspace, requestId);
+        audit.record("metadata.create", "metadata", id.toString(), workspace, Map.of());
         return get(workspace, id, jwt);
     }
     @GetMapping("/{id}")

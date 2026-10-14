@@ -38,8 +38,8 @@ The probe client uses password grant strictly for local automated checks. It is 
 - APISIX standalone routing and rate limits, no public Admin API.
 - PostgreSQL metadata create/read: source, usage rights, version, checksum, workspace, owner and timestamp.
 - Real embedded Flowable start/tasks/complete/history; two distinct process keys: `document-review` and `equipment-approval`.
-- Transactional audit for writes/transitions; server-generated request IDs; unique scoped business keys; replay protection.
-- File schema/link contract and volume only. Upload/download, audit read/export and richer task assignment remain backlog.
+- Transactional audit for writes/transitions (`AuditService`, with `resourceType` and JSON `details`); audit read `GET /workspaces/{workspace}/audit` for coordinators and `platform-admin`; `X-Request-ID` kept from client/gateway when it is a UUID, otherwise generated, and logged; unique scoped business keys; replay protection.
+- File schema/link contract and volume only. Upload/download, audit export and richer task assignment remain backlog.
 
 ## API and structure
 

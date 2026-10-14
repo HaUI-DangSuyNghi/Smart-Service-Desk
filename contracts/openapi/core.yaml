@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: DX-Lab Headless Core
   version: 0.1.0
-  description: Local baseline. File upload/download and audit read APIs are not implemented.
+  description: Local baseline. File upload/download is not implemented. Every response carries X-Request-ID (client/gateway UUID kept, otherwise generated).
 servers:
   - url: http://localhost:9080/api/core/v1
 security:
@@ -182,6 +182,34 @@ paths:
         '401': {$ref: '#/components/responses/Unauthorized'}
         '403': {$ref: '#/components/responses/Forbidden'}
         '404': {$ref: '#/components/responses/NotFound'}
+  /workspaces/{workspace}/audit:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+    get:
+      operationId: searchAudit
+      description: Đọc audit, mới nhất trước; coordinator của workspace hoặc platform-admin.
+      parameters:
+        - {name: from, in: query, schema: {type: string, format: date-time}}
+        - {name: to, in: query, schema: {type: string, format: date-time}}
+        - {name: action, in: query, schema: {type: string}}
+        - {name: actor, in: query, schema: {type: string}}
+        - {$ref: '#/components/parameters/Page'}
+        - {$ref: '#/components/parameters/Size'}
+      responses:
+        '200':
+          description: Một trang audit
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - {$ref: '#/components/schemas/PageMeta'}
+                  - type: object
+                    required: [items]
+                    properties:
+                      items: {type: array, items: {$ref: '#/components/schemas/AuditEntry'}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
 components:
   securitySchemes:
     bearer: {type: http, scheme: bearer, bearerFormat: JWT}
@@ -280,3 +308,16 @@ components:
         page: {type: integer, minimum: 0}
         size: {type: integer, minimum: 1, maximum: 100}
         total: {type: integer, format: int64, minimum: 0}
+    AuditEntry:
+      type: object
+      required: [id, occurredAt, actor, action, resourceType, resource, workspace, requestId, details]
+      properties:
+        id: {type: string, format: uuid}
+        occurredAt: {type: string, format: date-time}
+        actor: {type: string}
+        action: {type: string, example: task.complete}
+        resourceType: {type: string, example: task}
+        resource: {type: string}
+        workspace: {type: string}
+        requestId: {type: string}
+        details: {type: object, additionalProperties: true}

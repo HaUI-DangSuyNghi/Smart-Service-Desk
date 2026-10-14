@@ -35,6 +35,7 @@ python -m openapi_spec_validator contracts/openapi/core-target.yaml
 | Phân trang | `?page=0&size=20`, `size` tối đa 100. Trả `{"items":[...],"page":0,"size":20,"total":123}` |
 | Thời gian | ISO-8601 UTC |
 | Lỗi | Problem Details (RFC 9457) có thêm `code` và `requestId`, xem schema `Problem` |
+| Request ID | Mọi response có header `X-Request-ID`. Client/gateway gửi UUID thì giữ nguyên, không thì server tự sinh. Trùng `requestId` trong body lỗi và trong audit. |
 | Phiên bản | Thay đổi phá vỡ tương thích → `v2`. Thêm trường mới không phá vỡ. |
 
 ## Mã lỗi

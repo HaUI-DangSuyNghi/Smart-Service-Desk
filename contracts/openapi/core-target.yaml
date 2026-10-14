@@ -326,35 +326,6 @@ paths:
         '401': {$ref: '#/components/responses/Unauthorized'}
         '404': {$ref: '#/components/responses/NotFound'}
 
-  /workspaces/{workspace}/audit:
-    parameters:
-      - {$ref: 'core.yaml#/components/parameters/Workspace'}
-    get:
-      operationId: searchAudit
-      description: Đọc audit, mới nhất trước; coordinator hoặc platform-admin. (P0)
-      parameters:
-        - {name: from, in: query, schema: {type: string, format: date-time}}
-        - {name: to, in: query, schema: {type: string, format: date-time}}
-        - {name: action, in: query, schema: {type: string}}
-        - {name: actor, in: query, schema: {type: string}}
-        - {$ref: 'core.yaml#/components/parameters/Page'}
-        - {$ref: 'core.yaml#/components/parameters/Size'}
-      responses:
-        '200':
-          description: Một trang audit
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - {$ref: 'core.yaml#/components/schemas/PageMeta'}
-                  - type: object
-                    required: [items]
-                    properties:
-                      items: {type: array, items: {$ref: '#/components/schemas/AuditEntry'}}
-        '400': {$ref: '#/components/responses/BadRequest'}
-        '401': {$ref: '#/components/responses/Unauthorized'}
-        '403': {$ref: '#/components/responses/Forbidden'}
-
 components:
   securitySchemes:
     bearer: {type: http, scheme: bearer, bearerFormat: JWT}
@@ -486,16 +457,3 @@ components:
         checksum: {type: string}
         owner: {type: string}
         createdAt: {type: string, format: date-time}
-    AuditEntry:
-      type: object
-      required: [id, occurredAt, actor, action, resourceType, resource, workspace, requestId, details]
-      properties:
-        id: {type: string, format: uuid}
-        occurredAt: {type: string, format: date-time}
-        actor: {type: string}
-        action: {type: string, example: task.complete}
-        resourceType: {type: string, example: task}
-        resource: {type: string}
-        workspace: {type: string}
-        requestId: {type: string}
-        details: {type: object, additionalProperties: true}
