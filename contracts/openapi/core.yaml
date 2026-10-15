@@ -414,18 +414,18 @@ components:
         fileId: {type: string, format: uuid}
     Metadata:
       type: object
-      required: [id, workspace, title, source, version, usage_rights, checksum, file_id, owner, created_at]
+      required: [id, workspace, title, source, version, usageRights, checksum, fileId, owner, createdAt]
       properties:
         id: {type: string, format: uuid}
         workspace: {type: string}
         title: {type: string}
         source: {type: string}
         version: {type: string}
-        usage_rights: {type: string}
+        usageRights: {type: string}
         checksum: {type: string}
-        file_id: {type: string, format: uuid, nullable: true}
+        fileId: {type: string, format: uuid, nullable: true}
         owner: {type: string}
-        created_at: {type: string, format: date-time}
+        createdAt: {type: string, format: date-time}
     Me:
       type: object
       required: [sub, username, memberships, platformAdmin]

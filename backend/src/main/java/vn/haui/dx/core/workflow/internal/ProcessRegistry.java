@@ -37,10 +37,11 @@ public class ProcessRegistry {
         for (var definition : definitions) {
             var tasks = repository.getBpmnModel(definition.getId()).getMainProcess()
                 .findFlowElementsOfType(UserTask.class, true);
-            if (tasks.stream().anyMatch(task -> (task.getAssignee() != null && !task.getAssignee().isBlank())
-                    || task.getCandidateGroups().isEmpty()
-                    || task.getCandidateGroups().stream().anyMatch(group -> !group.matches("\\$\\{workspace\\}:[a-z0-9-]{1,30}"))))
-                throw new IllegalArgumentException("Approval tasks must use workspace-scoped candidate roles, not direct assignees");
+            if (tasks.stream().anyMatch(task -> !candidateTask(task) && !initiatorTask(task)))
+                throw new IllegalArgumentException("User tasks must use workspace-scoped candidate roles or assignee ${initiator}");
+            // Bước ${initiator} chỉ là bước phụ; phải có ít nhất một bước duyệt độc lập, chống tự duyệt
+            if (tasks.stream().noneMatch(ProcessRegistry::candidateTask))
+                throw new IllegalArgumentException("Process needs at least one independent candidate-group step");
             var taskKeys = tasks.stream().map(UserTask::getId).collect(Collectors.toSet());
             var outcomes = collected.get(definition.getKey()).outcomesByTask();
             if (!taskKeys.equals(outcomes.keySet()) || outcomes.values().stream().anyMatch(values ->
@@ -50,6 +51,18 @@ public class ProcessRegistry {
         policies = Map.copyOf(collected);
         definitionIds = definitions.stream().collect(Collectors.toUnmodifiableMap(
             definition -> definition.getKey(), definition -> definition.getId()));
+    }
+
+    /** Bước duyệt: giao cho nhóm ${workspace}:role, không có assignee cố định. */
+    private static boolean candidateTask(UserTask task) {
+        return (task.getAssignee() == null || task.getAssignee().isBlank()) && task.getCandidateUsers().isEmpty()
+            && !task.getCandidateGroups().isEmpty()
+            && task.getCandidateGroups().stream().allMatch(group -> group.matches("\\$\\{workspace\\}:[a-z0-9-]{1,30}"));
+    }
+
+    /** Bước của người khởi tạo (ví dụ xác nhận đã xong): assignee đúng ${initiator}, không có nhóm. */
+    private static boolean initiatorTask(UserTask task) {
+        return "${initiator}".equals(task.getAssignee()) && task.getCandidateGroups().isEmpty() && task.getCandidateUsers().isEmpty();
     }
 
     public ProcessPolicy require(String key) {

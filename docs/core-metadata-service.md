@@ -35,14 +35,14 @@ section 4.1 (p3) and section 4.2 D - Data (p4).
 - **P1 JSON contract mismatch:**
   - `MetadataApi.View` previously serialized `fileId` without `@JsonProperty("file_id")`,
     causing a mismatch against OpenAPI `core.yaml` schema `Metadata`.
-  - `View` now annotates `@JsonProperty("file_id") @JsonAlias("fileId")` and
-    `@JsonFormat(shape = JsonFormat.Shape.STRING)` on `createdAt`.
+  - Superseded (2026-10-15, `fix/core-pre-hpdi`): the team chose camelCase for all Core
+    responses. `View` now serializes `usageRights`, `fileId` and `createdAt` (ISO string).
   - Deserialization in `NewMetadata` supports both `fileId`/`file_id` and
     `usageRights`/`usage_rights` for backward compatibility.
   - `MetadataSpringIntegrationTest.mockMvcHttpResponseMatchesOpenApiMetadataSchemaExactly`
     verifies using `MockMvc` that the actual HTTP response JSON has exact fields
-    (`id`, `workspace`, `title`, `source`, `version`, `usage_rights`, `checksum`,
-    `file_id`, `owner`, `created_at`) matching OpenAPI `Metadata` schema.
+    (`id`, `workspace`, `title`, `source`, `version`, `usageRights`, `checksum`,
+    `fileId`, `owner`, `createdAt`) matching OpenAPI `Metadata` schema.
 - **P2 Spring transaction verification:**
   - Added `MetadataSpringIntegrationTest` creating an `AnnotationConfigApplicationContext`
     with `@EnableTransactionManagement`.

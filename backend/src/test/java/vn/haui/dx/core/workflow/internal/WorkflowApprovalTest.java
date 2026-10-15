@@ -326,6 +326,42 @@ class WorkflowApprovalTest {
         } finally { executor.shutdownNow(); }
     }
 
+    @Test void initiatorStepIsCompletedOnlyByInitiatorWithFlowableComment() {
+        var repository = engine.getRepositoryService();
+        var deployment = repository.createDeployment().addClasspathResource("workflow-test/initiator-confirm.bpmn20.xml").deploy();
+        try {
+            ProcessRegistration confirm = () -> List.of(new ProcessPolicy("initiator-confirm", Set.of(REQUESTER), Set.of("title"),
+                Map.of("review", Set.of("approved"), "confirm", Set.of("done"))));
+            var both = new ProcessRegistry(List.of(registration, confirm), repository);
+            java.util.function.Function<User, FlowableWorkflowService> as = user -> new FlowableWorkflowService(engine, jdbc, user, audit(user), both, manager);
+            var process = as.apply(requester).start("lab-a", "initiator-confirm", UUID.randomUUID().toString(), Map.of("title", "Example"));
+            var review = as.apply(requester).tasksOf("lab-a", process.processInstanceId()).get(0);
+            as.apply(reviewer).claim("lab-a", review.id());
+            // Người không giữ task không dò được tên bước: nhận 403 dù gửi sai tên bước
+            denied(ErrorCode.FORBIDDEN, () -> as.apply(agent).complete("lab-a", review.id(), "wrong", "approved", null));
+            as.apply(reviewer).complete("lab-a", review.id(), "review", "approved", "Looks fine");
+
+            var step = as.apply(requester).tasksOf("lab-a", process.processInstanceId()).get(0);
+            assertEquals("confirm", step.key());
+            assertEquals(requester.sub(), step.assignee());
+            assertTrue(step.candidateGroups().isEmpty());
+            assertEquals(1, as.apply(requester).inbox("lab-a", new InboxFilter(InboxFilter.Scope.ASSIGNED), PageRequest.of(null, null)).total());
+            // Bước đã giao sẵn cho người khởi tạo: người khác claim nhận 409 (đã có người giữ)
+            denied(ErrorCode.CONFLICT, () -> as.apply(reviewer).claim("lab-a", step.id()));
+            denied(ErrorCode.FORBIDDEN, () -> as.apply(reviewer).complete("lab-a", step.id(), "confirm", "done", null));
+            denied(ErrorCode.VALIDATION_FAILED, () -> as.apply(requester).complete("lab-a", step.id(), "confirm", "approved", null));
+            as.apply(requester).complete("lab-a", step.id(), "confirm", "done", "Received");
+
+            var history = as.apply(requester).history("lab-a", process.processInstanceId());
+            assertNotNull(history.endedAt());
+            assertEquals(List.of("Looks fine", "Received"), history.steps().stream().map(ProcessHistory.Step::comment).toList());
+            assertEquals("Received", engine.getTaskService().getTaskComments(step.id()).get(0).getFullMessage());
+            denied(ErrorCode.VALIDATION_FAILED, () -> as.apply(reviewer).complete("lab-a", review.id(), "review", "approved", "x".repeat(1001)));
+        } finally {
+            repository.deleteDeployment(deployment.getId(), true);
+        }
+    }
+
     @Test void registryRejectsMissingDuplicateAndReservedDefinitions() {
         assertThrows(IllegalArgumentException.class, () -> new ProcessRegistry(List.of(), engine.getRepositoryService()));
         assertThrows(IllegalArgumentException.class, () -> new ProcessRegistry(List.of(registration, registration), engine.getRepositoryService()));

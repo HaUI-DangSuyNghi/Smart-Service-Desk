@@ -1,5 +1,13 @@
 # Changelog
 
+## Core fixes before H-P-D-I (unreleased)
+
+- Fix startup on a fresh database: Flowable created its tables before Flyway, so Flyway refused the non-empty schema and Core exited. The engine now depends on Flyway (`EngineAfterMigrations`).
+- Metadata responses use camelCase (`usageRights`, `fileId`, `createdAt`) like every other Core API; snake_case is still accepted on input.
+- File upload audit action renamed `file.store` → `file.upload` to match the design.
+- Workflow: BPMN user tasks may be assigned to `${initiator}` (e.g. requester confirmation) and are completed only by the initiator; every process still needs at least one candidate-group step, so self-approval stays impossible. Completion checks the assignee before the task key; comments are stored as Flowable comments (max 1000 chars in API and service).
+- APISIX rejects request bodies over 6 MiB (`client-control`).
+
 ## Core acceptance (unreleased)
 
 - Add isolated PostgreSQL/E2E/security, restart, logical backup/restore and read-only blob inventory checks, plus a second application's headless reuse probe.

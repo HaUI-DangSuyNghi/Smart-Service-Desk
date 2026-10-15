@@ -207,20 +207,20 @@ class MetadataSpringIntegrationTest {
 
         JsonNode node = json.readTree(postResponse);
         // Verify exact fields according to OpenAPI core.yaml schema 'Metadata'
-        // required: [id, workspace, title, source, version, usage_rights, checksum, file_id, owner, created_at]
+        // required: [id, workspace, title, source, version, usageRights, checksum, fileId, owner, createdAt]
         assertTrue(node.hasNonNull("id"), "id required");
         assertEquals("lab-a", node.get("workspace").asText());
         assertEquals("OpenAPI Conformance Doc", node.get("title").asText());
         assertEquals("team-authored:test", node.get("source").asText());
         assertEquals("1.0", node.get("version").asText());
-        assertEquals("CC0-1.0", node.get("usage_rights").asText());
+        assertEquals("CC0-1.0", node.get("usageRights").asText());
         assertEquals(fixedSha, node.get("checksum").asText());
-        assertTrue(node.has("file_id"), "file_id must be present in JSON");
-        assertTrue(node.get("file_id").isNull(), "file_id is null when not file-backed");
-        assertFalse(node.has("fileId"), "fileId camelCase must NOT be serialized to output JSON");
+        assertTrue(node.has("fileId"), "fileId must be present in JSON");
+        assertTrue(node.get("fileId").isNull(), "fileId is null when not file-backed");
+        assertFalse(node.has("file_id"), "snake_case must NOT be serialized to output JSON");
         assertEquals("agent-spring", node.get("owner").asText());
-        assertTrue(node.hasNonNull("created_at"), "created_at required");
-        assertDoesNotThrow(() -> Instant.parse(node.get("created_at").asText()));
+        assertTrue(node.hasNonNull("createdAt"), "createdAt required");
+        assertDoesNotThrow(() -> Instant.parse(node.get("createdAt").asText()));
 
         UUID createdId = UUID.fromString(node.get("id").asText());
 
@@ -244,8 +244,8 @@ class MetadataSpringIntegrationTest {
         assertEquals(10, searchNode.get("size").asInt());
         assertTrue(searchNode.get("total").asLong() >= 1);
         JsonNode firstItem = searchNode.get("items").get(0);
-        assertTrue(firstItem.has("file_id"));
-        assertFalse(firstItem.has("fileId"));
+        assertTrue(firstItem.has("fileId"));
+        assertFalse(firstItem.has("file_id"));
 
         // 4. Request backward compatibility: accept snake_case in input
         String snakeBody = """

@@ -100,7 +100,7 @@ public final class LocalFileService implements FileService {
             write(storageKey, bytes);
             jdbc.update("insert into file_object(id,workspace,owner,storage_key,media_type,byte_size,checksum,original_name) values (?,?,?,?,?,?,?,?)",
                 id, workspace, user.sub(), storageKey, mediaType, bytes.length, checksum, name);
-            audit.record("file.store", "file", id.toString(), workspace,
+            audit.record("file.upload", "file", id.toString(), workspace,
                 Map.of("mediaType", mediaType, "size", bytes.length, "checksum", checksum));
             return row(workspace, id, "").file();
         });
