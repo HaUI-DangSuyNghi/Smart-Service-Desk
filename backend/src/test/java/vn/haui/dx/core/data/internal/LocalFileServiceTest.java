@@ -38,6 +38,11 @@ import vn.haui.dx.core.common.ErrorCode;
 import vn.haui.dx.core.data.api.FileAccessPolicy;
 import vn.haui.dx.core.data.api.FileService;
 import vn.haui.dx.core.data.api.StoredFile;
+import org.springframework.context.support.GenericApplicationContext;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
+import vn.haui.dx.core.identity.api.WorkspaceAccess;
 import vn.haui.dx.core.identity.api.CurrentUser;
 import vn.haui.dx.core.identity.api.Membership;
 import vn.haui.dx.core.identity.api.WorkspaceRole;
@@ -78,6 +83,55 @@ class LocalFileServiceTest {
         }
     }
 
+    private WorkspaceAccess access(User actor) {
+        var access = mock(WorkspaceAccess.class);
+        when(access.current()).thenReturn(actor);
+        return access;
+    }
+
+    private void authenticate(String subject, String workspace) {
+        var jwt = Jwt.withTokenValue("test").header("alg", "RS256").subject(subject)
+            .claim("groups", List.of("/workspaces/" + workspace + "/requester")).build();
+        SecurityContextHolder.getContext().setAuthentication(new JwtAuthenticationToken(jwt));
+    }
+
+    @Test void springSingletonResolvesIdentityPerCallAndThread() throws Exception {
+        try (var context = new GenericApplicationContext()) {
+            context.registerBean("workspaceAccess", Class.forName("vn.haui.dx.core.identity.internal.WorkspaceAccessImpl"));
+            context.registerBean(LocalFileService.class, () -> new LocalFileService(root, jdbc,
+                context.getBean(WorkspaceAccess.class), mock(AuditService.class), List.of(policy), manager));
+            context.refresh();
+            var files = context.getBean(LocalFileService.class);
+            authenticate("owner", "lab-a");
+            var stored = files.store("lab-a", "owner.txt", "text/plain", input("hello"));
+            files.link("lab-a", stored.id(), "test.resource", "R-1");
+            authenticate("peer", "lab-a");
+            assertEquals("peer", files.store("lab-a", "peer.txt", "text/plain", input("hello")).owner());
+            denied(ErrorCode.NOT_FOUND, () -> files.describe("lab-a", stored.id()));
+            denied(ErrorCode.NOT_FOUND, () -> files.open("lab-a", stored.id()));
+            denied(ErrorCode.NOT_FOUND, () -> files.link("lab-a", stored.id(), "test.resource", "R-2"));
+            SecurityContextHolder.clearContext();
+            denied(ErrorCode.UNAUTHENTICATED, () -> files.describe("lab-a", stored.id()));
+            authenticate("owner", "lab-a");
+            var executor = Executors.newSingleThreadExecutor();
+            try {
+                executor.submit(() -> {
+                    denied(ErrorCode.UNAUTHENTICATED, () -> files.describe("lab-a", stored.id()));
+                    authenticate("foreign", "lab-b");
+                    try {
+                        denied(ErrorCode.FORBIDDEN, () -> files.describe("lab-a", stored.id()));
+                        denied(ErrorCode.FORBIDDEN, () -> files.open("lab-a", stored.id()));
+                        denied(ErrorCode.FORBIDDEN, () -> files.link("lab-a", stored.id(), "test.resource", "R-2"));
+                        denied(ErrorCode.FORBIDDEN, () -> files.store("lab-a", "foreign.txt", "text/plain", input("hello")));
+                    } finally { SecurityContextHolder.clearContext(); }
+                }).get(10, TimeUnit.SECONDS);
+                executor.submit(() -> denied(ErrorCode.UNAUTHENTICATED,
+                    () -> files.describe("lab-a", stored.id()))).get(10, TimeUnit.SECONDS);
+                assertEquals("owner", files.describe("lab-a", stored.id()).owner());
+            } finally { executor.shutdownNow(); }
+        } finally { SecurityContextHolder.clearContext(); }
+    }
+
     @BeforeAll void migrate() {
         source = new DriverManagerDataSource(System.getenv("FILE_TEST_JDBC_URL"), "workflow", System.getenv("FILE_TEST_DB_PASSWORD"));
         jdbc = new JdbcTemplate(source);
@@ -100,7 +154,7 @@ class LocalFileServiceTest {
 
     private LocalFileService service(User actor) { return service(actor, audit(actor)); }
     private LocalFileService service(User actor, AuditService audit) {
-        return new LocalFileService(root, jdbc, actor, audit, List.of(policy), manager);
+        return new LocalFileService(root, jdbc, access(actor), audit, List.of(policy), manager);
     }
     private StoredFile store() { return service(owner).store("lab-a", "example.txt", "text/plain", input("hello")); }
     private static ByteArrayInputStream input(String text) { return new ByteArrayInputStream(text.getBytes(StandardCharsets.UTF_8)); }
@@ -226,7 +280,7 @@ class LocalFileServiceTest {
         denied(ErrorCode.NOT_FOUND, () -> service(reader).describe("lab-a", stored.id()));
         service(owner).link("lab-a", stored.id(), "test.resource", "R-2");
         assertEquals(stored, service(reader).describe("lab-a", stored.id()));
-        var withoutPolicy = new LocalFileService(root, jdbc, owner, audit(owner), List.of(), manager);
+        var withoutPolicy = new LocalFileService(root, jdbc, access(owner), audit(owner), List.of(), manager);
         denied(ErrorCode.NOT_FOUND, () -> withoutPolicy.describe("lab-a", stored.id()));
     }
 
@@ -236,7 +290,7 @@ class LocalFileServiceTest {
             public String resourceType() { return "legacy.resource"; }
             public boolean canRead(CurrentUser user, String workspace, String id) { return true; }
         };
-        var files = new LocalFileService(root, jdbc, owner, audit(owner), List.of(readOnly), manager);
+        var files = new LocalFileService(root, jdbc, access(owner), audit(owner), List.of(readOnly), manager);
         denied(ErrorCode.NOT_FOUND, () -> files.link("lab-a", stored.id(), "legacy.resource", "R-1"));
     }
 
@@ -297,6 +351,20 @@ class LocalFileServiceTest {
         assertEquals(0, jdbc.queryForObject("select count(*) from audit_event where resource=?", Integer.class, captured.get(0).id().toString()));
     }
 
+    @Test void nestedSavepointRollbackRemovesContentWhenOuterTransactionCommits() throws Exception {
+        var nested = new TransactionTemplate(manager);
+        nested.setPropagationBehavior(org.springframework.transaction.TransactionDefinition.PROPAGATION_NESTED);
+        int before = rowCount();
+        new TransactionTemplate(manager).executeWithoutResult(outer -> {
+            assertThrows(IllegalStateException.class, () -> nested.executeWithoutResult(inner -> {
+                store();
+                throw new IllegalStateException("Roll back to savepoint");
+            }));
+        });
+        assertEquals(before, rowCount());
+        assertEquals(0, blobCount());
+    }
+
     @Test void failedLinkAuditRollsBackLinkButKeepsExistingContent() throws Exception {
         var stored = store();
         var failing = mock(AuditService.class);
@@ -348,11 +416,11 @@ class LocalFileServiceTest {
         Path actual = Files.createDirectory(directory.resolve("actual"));
         Files.createSymbolicLink(root, actual);
         assertThrows(IllegalStateException.class, () -> service(owner));
-        assertThrows(IllegalArgumentException.class, () -> new LocalFileService(actual, jdbc, owner, audit(owner), List.of(policy, policy), manager));
+        assertThrows(IllegalArgumentException.class, () -> new LocalFileService(actual, jdbc, access(owner), audit(owner), List.of(policy, policy), manager));
         var wrongManager = new DataSourceTransactionManager(new DriverManagerDataSource());
-        assertThrows(IllegalArgumentException.class, () -> new LocalFileService(actual, jdbc, owner, audit(owner), List.of(policy), wrongManager));
+        assertThrows(IllegalArgumentException.class, () -> new LocalFileService(actual, jdbc, access(owner), audit(owner), List.of(policy), wrongManager));
         Files.setPosixFilePermissions(actual, PosixFilePermissions.fromString("rwxr-xr-x"));
-        assertThrows(IllegalStateException.class, () -> new LocalFileService(actual, jdbc, owner, audit(owner), List.of(policy), manager));
+        assertThrows(IllegalStateException.class, () -> new LocalFileService(actual, jdbc, access(owner), audit(owner), List.of(policy), manager));
     }
 
     @Test void unknownCommitOutcomeDoesNotDeletePossiblyCommittedContent() throws Exception {
@@ -362,7 +430,7 @@ class LocalFileServiceTest {
                 throw new TransactionSystemException("Connection lost after commit");
             }
         };
-        var files = new LocalFileService(root, jdbc, owner, audit(owner), List.of(policy), uncertain);
+        var files = new LocalFileService(root, jdbc, access(owner), audit(owner), List.of(policy), uncertain);
         String name = UUID.randomUUID() + ".txt";
         assertThrows(TransactionSystemException.class, () -> files.store("lab-a", name, "text/plain", input("hello")));
         UUID id = jdbc.queryForObject("select id from file_object where original_name=?", UUID.class, name);

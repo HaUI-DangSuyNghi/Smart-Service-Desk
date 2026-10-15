@@ -37,23 +37,24 @@ import vn.haui.dx.core.data.api.FileAccessPolicy;
 import vn.haui.dx.core.data.api.FileService;
 import vn.haui.dx.core.data.api.StoredFile;
 import vn.haui.dx.core.identity.api.CurrentUser;
+import vn.haui.dx.core.identity.api.WorkspaceAccess;
 
 public final class LocalFileService implements FileService {
     private static final Logger LOG = LoggerFactory.getLogger(LocalFileService.class);
     private final Path root;
     private final JdbcTemplate jdbc;
-    private final CurrentUser user;
+    private final WorkspaceAccess access;
     private final AuditService audit;
     private final Map<String, FileAccessPolicy> policies;
     private final TransactionTemplate transaction;
 
-    public LocalFileService(Path root, JdbcTemplate jdbc, CurrentUser user, AuditService audit,
+    public LocalFileService(Path root, JdbcTemplate jdbc, WorkspaceAccess access, AuditService audit,
             Collection<FileAccessPolicy> policies, PlatformTransactionManager manager) {
         if (!(manager instanceof DataSourceTransactionManager jdbcManager) || jdbcManager.getDataSource() != jdbc.getDataSource())
             throw new IllegalArgumentException("File metadata and transactions must share a JDBC datasource");
         this.root = root.toAbsolutePath().normalize();
         this.jdbc = jdbc;
-        this.user = user;
+        this.access = access;
         this.audit = audit;
         this.transaction = new TransactionTemplate(manager);
         Map<String, FileAccessPolicy> registered = new HashMap<>();
@@ -71,7 +72,7 @@ public final class LocalFileService implements FileService {
 
     @Override
     public StoredFile store(String workspace, String originalName, String mediaType, InputStream content) {
-        member(workspace);
+        var user = member(workspace);
         String name = filename(originalName);
         if (content == null) throw CoreException.validation("File content is required");
         if (mediaType == null || !ALLOWED_MEDIA_TYPES.contains(mediaType)) throw unsupported();
@@ -95,15 +96,15 @@ public final class LocalFileService implements FileService {
 
     @Override
     public StoredFile describe(String workspace, UUID fileId) {
-        member(workspace);
-        return transaction.execute(status -> readable(workspace, fileId, " for share").file());
+        var user = member(workspace);
+        return transaction.execute(status -> readable(user, workspace, fileId, " for share").file());
     }
 
     @Override
     public InputStream open(String workspace, UUID fileId) {
-        member(workspace);
+        var user = member(workspace);
         return transaction.execute(status -> {
-            var row = readable(workspace, fileId, " for share");
+            var row = readable(user, workspace, fileId, " for share");
             safeRoot();
             Path path = path(row.storageKey());
             if (!Files.isRegularFile(path, LinkOption.NOFOLLOW_LINKS))
@@ -119,11 +120,11 @@ public final class LocalFileService implements FileService {
 
     @Override
     public void link(String workspace, UUID fileId, String resourceType, String resourceId) {
-        member(workspace);
+        var user = member(workspace);
         resourceType(resourceType);
         text(resourceId, 200, "resourceId");
         transaction.executeWithoutResult(status -> {
-            var row = readable(workspace, fileId, " for update");
+            var row = readable(user, workspace, fileId, " for update");
             if (!user.sub().equals(row.file().owner())) throw CoreException.forbidden("Only the file owner may attach it");
             var policy = policies.get(resourceType);
             if (policy == null || !policy.canLink(user, workspace, resourceId))
@@ -147,7 +148,7 @@ public final class LocalFileService implements FileService {
         return rows.get(0);
     }
 
-    private Row readable(String workspace, UUID fileId, String lock) {
+    private Row readable(CurrentUser user, String workspace, UUID fileId, String lock) {
         var row = row(workspace, fileId, lock);
         var links = jdbc.queryForList("select resource_type,resource_id from file_link where file_id=?", fileId);
         if (!links.isEmpty() && links.stream().noneMatch(link -> {
@@ -163,13 +164,19 @@ public final class LocalFileService implements FileService {
                 Set.of(StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE, LinkOption.NOFOLLOW_LINKS), permissions("rw-------"))) {
             TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
                 @Override public void afterCompletion(int status) {
-                    if (status == STATUS_ROLLED_BACK) {
-                        try { safeRoot(); Files.deleteIfExists(path(key)); }
-                        catch (IOException | RuntimeException exception) {
-                            LOG.error("Failed to clean rolled-back file {}; reconcile private storage", key, exception);
-                        }
-                    } else if (status == STATUS_UNKNOWN) {
+                    if (status == STATUS_UNKNOWN) {
                         LOG.error("Unknown commit outcome for file {}; retain content for reconciliation", key);
+                    } else {
+                        try {
+                            if (status == STATUS_ROLLED_BACK || Boolean.FALSE.equals(jdbc.queryForObject(
+                                    "select exists(select 1 from file_object where storage_key=?)", Boolean.class, key))) {
+                                safeRoot();
+                                Files.deleteIfExists(path(key));
+                            }
+                        }
+                        catch (IOException | RuntimeException exception) {
+                            LOG.error("Failed to reconcile completed file {}; retain for private storage reconciliation", key, exception);
+                        }
                     }
                 }
             });
@@ -197,8 +204,10 @@ public final class LocalFileService implements FileService {
             : new FileAttribute<?>[0];
     }
 
-    private void member(String workspace) {
+    private CurrentUser member(String workspace) {
+        var user = access.current();
         if (workspace == null || !user.isMember(workspace)) throw CoreException.forbidden("Workspace membership required");
+        return user;
     }
 
     private static String filename(String name) {

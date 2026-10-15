@@ -10,8 +10,9 @@ is mandated by the exam. This is not a second web app or full Core acceptance.
 `LocalFileService` implements the existing `FileService` port using JDBC, Java NIO
 and a server-configured private directory. There is no new dependency or storage
 framework. All methods require trusted `CurrentUser` workspace membership.
-Runtime wiring must resolve that identity per request, not retain one user's
-snapshot in a shared singleton. Fixtures in this branch are not authentication.
+The service receives `WorkspaceAccess`, resolving one `CurrentUser` snapshot at
+each operation entry rather than retaining a user in a shared singleton. Runtime
+wiring must use the trusted request-context adapter; fixtures are not authentication.
 
 - Uploads accept at most 5 MiB, use generated UUID storage names, and compute SHA-256
   from the received bytes. The original filename is trimmed, bounded and validated
@@ -53,8 +54,11 @@ Metadata, links and `file.store`/`file.link` audit calls use one JDBC datasource
 transaction manager, checked at construction. File-row locks serialize linking
 and authorization checks. Blob bytes are fully written/forced before metadata
 commit. Transaction synchronizations remove new content on known rollback,
-including failure in a caller's outer transaction. Link failure never removes an
-already committed file. Reads do not grant a right to attach someone else's file.
+including failure in a caller's outer transaction. After a known commit, cleanup
+checks whether each new blob still has metadata, handling a nested savepoint
+rollback followed by outer commit. A failed lookup retains content and logs for
+reconciliation. Link failure never removes an already committed file. Reads do
+not grant a right to attach someone else's file.
 
 A filesystem and database cannot provide one native distributed transaction.
 Unknown DB commit outcomes retain content and log an error rather than delete a
@@ -116,3 +120,57 @@ enforce request/body limits, safe attachment headers and nosniff, configure volu
 ownership, and satisfy the architecture's content-scanning gate before exposing
 uploads. Full JWT/gateway/E2E, fresh deployment, backup/restore and dependency/image
 scans remain their documented acceptance gates. No release/main change is included.
+
+## Independent final review - 2026-10-15
+
+Review baseline: PR #9 head `3d067b4`, base `develop` at `ca2dc2a`.
+The review inspected the implementation, existing FileService contract, Identity
+and Audit adapters, V1/V2/V3, tests and the official exam PDF (sections 4.1, 4.2, 8).
+It did not treat the earlier acceptance report as fresh test evidence.
+
+Findings resolved on this feature branch:
+
+- P1 integration risk: retaining a constructor-injected `CurrentUser` snapshot
+  would reuse the wrong identity if wired as a singleton. No live File bean or
+  endpoint exists, so this was not an exposed HTTP exploit. The constructor now
+  accepts `WorkspaceAccess`; membership, ownership and resource checks use the
+  snapshot resolved at the beginning of each call. A Spring singleton regression
+  uses the real SecurityContext-backed identity adapter, switches users, clears
+  authentication and reuses a worker thread; another thread cannot inherit the
+  caller's identity. This does not substitute for HTTP filter/JWT verification.
+- P2 confirmed orphan: a nested JDBC savepoint rollback followed by outer commit
+  removed metadata but left one blob. The new regression failed before the fix
+  (`expected: <0> but was: <1>`). Completion now removes blobs whose metadata did
+  not survive a known commit, while unknown outcomes retain bytes. The regression
+  passes after the fix. Crash recovery remains an operational gate, not solved here.
+
+Authorization assessment: unlinked workspace sharing matches the pre-PR
+`FileService` contract. The official brief requires identity/authorization and
+controlled data access, but does not specify an owner-private upload lifecycle;
+it prohibits sensitive personal data in the demo. Workspace sharing is therefore
+not a new authorization regression, nor proof of business approval for private
+drafts. UUID secrecy is not an authorization boundary: any member with an unlinked
+file ID can read it. Do not use upload-then-link for confidential drafts without
+first approving/changing that contract. Linked reads require membership and any
+authorized resource link; attachments also require ownership and explicit target
+permission. Missing policies default deny; resource existence/workspace checks
+remain mandatory responsibilities of real app adapters before exposure.
+
+V3 assessment: fresh migration and V2 upgrade pass; the legacy name is backfilled
+as `download`, V1/V2 are unchanged. An old writer omitting `original_name` fails
+after V3 by design; no previous File writer is wired. Existing physical content
+is not recreated. This is not a claim of rolling-deployment compatibility for
+external SQL writers or a production migration rehearsal.
+
+Reproduction: `powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test-file.ps1`.
+The final clean offline Maven verify uses real PostgreSQL 16.6, separate disposable
+File/Workflow databases, real migrations and Linux storage. Result: **46 tests,
+0 failures, 0 errors, 0 skipped** (23 File, 12 Workflow, 6 Identity, 3 Audit,
+2 RequestId). Surefire XML totals are checked independently of the console summary.
+JAR packaging/repackaging and `git diff --check` pass.
+
+Final disposition: PASS / MERGE for this isolated capability after these fixes;
+no unresolved merge blocker found. This is not production/HTTP acceptance.
+Real policy/audit wiring, HTTP request lifecycle/body/header checks, content
+scanning and crash-orphan reconciliation/backup remain integration/release gates.
+No PR merge is performed by this review.
