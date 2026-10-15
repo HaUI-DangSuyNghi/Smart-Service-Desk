@@ -148,7 +148,7 @@ try {
     $linked = Call POST '/workspaces/lab-a/metadata' $agentA @{
         title='Linked runtime file'; source='team-authored:integration'; version='1'; usageRights='CC0-1.0'; fileId=$file.id
     } 201
-    if ($linked.file_id -ne $file.id -or $linked.checksum -ne $file.checksum -or $linked.PSObject.Properties.Name -contains 'fileId') { throw 'File-backed JSON contract mismatch' }
+    if ($linked.fileId -ne $file.id -or $linked.checksum -ne $file.checksum -or $linked.PSObject.Properties.Name -contains 'file_id') { throw 'File-backed JSON contract mismatch' }
     $matches = Call GET '/workspaces/lab-a/metadata?q=Linked%20runtime%20file&size=100' $requesterA $null 200
     if ($linked.id -notin @($matches.items.id)) { throw 'Linked metadata missing from search' }
     $foreignMatches = Call GET '/workspaces/lab-b/metadata?q=Linked%20runtime%20file&size=100' $agentB $null 200
@@ -163,7 +163,7 @@ try {
             ($response.Headers.GetValues('X-Content-Type-Options') -join '') -ne 'nosniff' -or
             [Convert]::ToBase64String($response.Content.ReadAsByteArrayAsync().Result) -ne [Convert]::ToBase64String($payload)) { throw 'File download headers/content mismatch' }
     } finally { $response.Dispose(); $download.Dispose() }
-    foreach ($action in @('file.store', 'file.link')) {
+    foreach ($action in @('file.upload', 'file.link')) {
         $entries = @((Call GET "$auditPath`?action=$action&size=100" $coordinatorA $null 200).items | Where-Object { $_.resource -eq $file.id })
         if ($entries.Count -ne 1 -or $entries[0].actor -ne $agentSub) { throw "$action audit mismatch" }
     }

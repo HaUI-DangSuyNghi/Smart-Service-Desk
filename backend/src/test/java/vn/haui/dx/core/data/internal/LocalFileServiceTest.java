@@ -183,7 +183,7 @@ class LocalFileServiceTest {
         assertNotEquals(stored.originalName(), blob(stored).getFileName().toString());
         assertEquals(PosixFilePermissions.fromString("rw-------"), Files.getPosixFilePermissions(blob(stored)));
         assertEquals(PosixFilePermissions.fromString("rwx------"), Files.getPosixFilePermissions(root));
-        assertEquals(1, jdbc.queryForObject("select count(*) from audit_event where resource=? and actor='owner' and workspace='lab-a' and action='file.store'",
+        assertEquals(1, jdbc.queryForObject("select count(*) from audit_event where resource=? and actor='owner' and workspace='lab-a' and action='file.upload'",
             Integer.class, stored.id().toString()));
     }
 

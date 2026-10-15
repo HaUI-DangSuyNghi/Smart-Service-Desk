@@ -90,7 +90,7 @@ try {
     }
     $bad = $data.Clone(); $bad.Remove('checksum')
     Call 'META-09 missing checksum' POST $path $agentA $bad 400 | Out-Null
-    foreach ($field in @('owner', 'workspace', 'id', 'created_at', 'unexpected')) {
+    foreach ($field in @('owner', 'workspace', 'id', 'createdAt', 'unexpected')) {
         $bad = $data.Clone(); $bad[$field] = 'client-controlled'
         Call "META-02/03/11 reject body $field" POST $path $agentA $bad 400 | Out-Null
     }
@@ -103,16 +103,16 @@ try {
     Check 'META-02 JWT owner' ($record.owner -ceq $me.sub)
     Check 'META-03 route workspace' ($record.workspace -ceq 'lab-a')
     $createdAt = [DateTimeOffset]::MinValue
-    Check 'server timestamp' ([DateTimeOffset]::TryParse([string]$record.created_at, [ref]$createdAt))
+    Check 'server timestamp' ([DateTimeOffset]::TryParse([string]$record.createdAt, [ref]$createdAt))
     $requestGuid = [guid]::Empty
     Check 'audit response request ID' ([guid]::TryParse([string]$created.requestId, [ref]$requestGuid))
     $read = (Call 'META-13 workspace reader round trip' GET "$path/$($record.id)" $requesterA $null 200).body
-    $wireFields = @('id', 'workspace', 'title', 'source', 'version', 'usage_rights', 'checksum', 'owner', 'created_at')
+    $wireFields = @('id', 'workspace', 'title', 'source', 'version', 'usageRights', 'checksum', 'fileId', 'owner', 'createdAt')
     Check 'explicit expected wire field set' ((@($read.PSObject.Properties.Name | Sort-Object) -join ',') -ceq (@($wireFields | Sort-Object) -join ','))
     foreach ($field in $wireFields) {
         Check "META-13 create/read $field preserved" ($record.$field -ceq $read.$field)
     }
-    foreach ($pair in @(@('title','title'), @('source','source'), @('version','version'), @('usageRights','usage_rights'), @('checksum','checksum'))) {
+    foreach ($pair in @(@('title','title'), @('source','source'), @('version','version'), @('usageRights','usageRights'), @('checksum','checksum'))) {
         Check "META-13 caller $($pair[0]) preserved" ($data[$pair[0]] -ceq $read.($pair[1]))
     }
     Call 'META-06 foreign direct read denied' GET "$path/$($record.id)" $agentB $null 403 | Out-Null

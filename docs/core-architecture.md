@@ -46,13 +46,13 @@ Keycloak signs `sub`, `groups` and `realm_access.roles`; Spring verifies signatu
 | Metadata read | Any role in the workspace |
 | Start process | Any role in the workspace (interim until per-process starter roles) |
 | Tasks/history | Any role in the workspace + process creator |
-| Complete task | Above + task assignee + expected task key |
+| Complete task | Task assignee (checked before the task key) + expected task key + allowed outcome; candidate steps also require a candidate group and forbid the initiator; `${initiator}` steps only the initiator |
 
 Missing/invalid JWT: 401. Missing role/workspace: 403. Resource absent or process owned by another user: 404. Duplicate start or invalid/replayed transition: 409. Invalid body: 400. No admin bypass. Workspace and role are checked together; names such as `appId`, `resourceId`, `owner` or `initiator` cannot grant rights. Unknown JSON fields are rejected.
 
 ## Workflow and transactions
 
-Two allowlisted definitions are intentionally small: `document-review` has one user task; `equipment-approval` has approval then handover. Both are probes, NOT finished business workflows. Their assignee is the authenticated initiator. Group inbox, independent approver, claim/delegate/cancel and deployment API are backlog.
+Two registered definitions are intentionally small: `document-review` has one coordinator review; `equipment-approval` has coordinator approval then agent handover. Both are probes, NOT finished business workflows. User tasks either go to workspace candidate groups `${workspace}:<role>` (claimed by someone other than the initiator) or are assigned to `${initiator}` for steps such as "requester confirms". Completion comments are stored as Flowable comments and returned in history. Delegate/cancel and a deployment API are backlog.
 
 Input variables are deliberately bounded: `title` is caller input; `initiator` and `workspace` are server-derived. No arbitrary engine variables or client-supplied expressions. Adding definitions requires code/config review and task permission tests. The adapter remains independent of business-domain types.
 

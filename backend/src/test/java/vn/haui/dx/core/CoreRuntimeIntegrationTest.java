@@ -162,8 +162,8 @@ class CoreRuntimeIntegrationTest {
         var metadata = body(mvc.perform(post(base + "/metadata").with(agent()).contentType("application/json")
             .content(json.writeValueAsString(java.util.Map.of("title", "Runtime file", "source", "synthetic", "version", "1",
                 "usageRights", "CC0", "fileId", fileId))))
-            .andExpect(status().isCreated()).andExpect(jsonPath("$.file_id").value(fileId))
-            .andExpect(jsonPath("$.fileId").doesNotExist()));
+            .andExpect(status().isCreated()).andExpect(jsonPath("$.fileId").value(fileId))
+            .andExpect(jsonPath("$.file_id").doesNotExist()));
         assertEquals(file.get("checksum"), metadata.get("checksum"));
         mvc.perform(get(base + "/files/" + fileId + "/content").with(requester())).andExpect(status().isOk());
         mvc.perform(get("/api/core/v1/workspaces/lab-b/files/" + fileId).with(actor("foreign", "lab-b", "agent")))

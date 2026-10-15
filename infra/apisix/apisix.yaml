@@ -8,6 +8,9 @@ routes:
         rejected_code: 429
         key: remote_addr
         policy: local
+      # Chặn body > 6 MiB ngay ở gateway (backend vẫn giới hạn file 5 MiB) → 413
+      client-control:
+        max_body_size: 6291456
     upstream:
       type: roundrobin
       nodes:

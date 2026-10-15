@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Quy trình chỉ dùng trong test: coordinator duyệt, sau đó chính người khởi tạo xác nhận -->
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:flowable="http://flowable.org/bpmn" targetNamespace="https://haui.vn/dx/core/test">
+  <process id="initiator-confirm" name="Initiator confirmation probe" isExecutable="true">
+    <startEvent id="start"/>
+    <sequenceFlow id="toReview" sourceRef="start" targetRef="review"/>
+    <userTask id="review" name="Review request" flowable:candidateGroups="${workspace}:coordinator"/>
+    <sequenceFlow id="toConfirm" sourceRef="review" targetRef="confirm"/>
+    <userTask id="confirm" name="Requester confirms" flowable:assignee="${initiator}"/>
+    <sequenceFlow id="toEnd" sourceRef="confirm" targetRef="end"/>
+    <endEvent id="end"/>
+  </process>
+</definitions>

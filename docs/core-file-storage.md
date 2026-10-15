@@ -50,7 +50,7 @@ default is removed so future writers must supply a name. V1/V2 are unchanged.
 Migration preserves metadata, not nonexistent legacy file bytes. No production
 database migration was executed during the isolated tests.
 
-Metadata, links and `file.store`/`file.link` audit calls use one JDBC datasource and
+Metadata, links and `file.upload`/`file.link` audit calls use one JDBC datasource and
 transaction manager, checked at construction. File-row locks serialize linking
 and authorization checks. Blob bytes are fully written/forced before metadata
 commit. Transaction synchronizations remove new content on known rollback,

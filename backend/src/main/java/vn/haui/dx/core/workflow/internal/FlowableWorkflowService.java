@@ -31,6 +31,7 @@ public final class FlowableWorkflowService implements WorkflowService {
     private final AuditService audit;
     private final ProcessRegistry registry;
     private final TransactionTemplate transaction;
+    static final int MAX_COMMENT = 1000;
 
     public FlowableWorkflowService(ProcessEngine engine, JdbcTemplate jdbc, CurrentUser user,
             AuditService audit, ProcessRegistry registry, PlatformTransactionManager manager) {
@@ -139,20 +140,29 @@ public final class FlowableWorkflowService implements WorkflowService {
         var user = member(workspace);
         text(expectedTaskKey, 100, "expectedTaskKey");
         text(outcome, 100, "outcome");
-        if (comment != null && comment.length() > 2000) throw CoreException.validation("Comment too long");
+        if (comment != null && comment.length() > MAX_COMMENT) throw CoreException.validation("Comment too long");
         transaction.executeWithoutResult(status -> {
             var task = lockedTask(workspace, taskId);
-            if (!task.getTaskDefinitionKey().equals(expectedTaskKey)) throw CoreException.conflict("Unexpected task key");
             var scope = scope(workspace, task.getProcessInstanceId());
-            if (!user.sub().equals(task.getAssignee()) || user.sub().equals(scope.get("owner")))
-                throw CoreException.forbidden("Independent assignee required");
-            candidate(user, workspace, task);
+            // Kiểm người làm trước tên bước, để người không giữ task không dò được bước hiện tại qua 409
+            if (!user.sub().equals(task.getAssignee())) throw CoreException.forbidden("Task assignee required");
+            if (initiatorStep(task)) {
+                // Bước BPMN giao cho người khởi tạo (assignee="${initiator}"), ví dụ xác nhận đã xong
+                if (!user.sub().equals(scope.get("owner"))) throw CoreException.forbidden("Initiator step");
+            } else {
+                if (user.sub().equals(scope.get("owner"))) throw CoreException.forbidden("Independent assignee required");
+                candidate(user, workspace, task);
+            }
+            if (!task.getTaskDefinitionKey().equals(expectedTaskKey)) throw CoreException.conflict("Unexpected task key");
             var allowed = registry.require((String) scope.get("process_key")).outcomesByTask().get(expectedTaskKey);
             if (allowed == null || !allowed.contains(outcome)) throw CoreException.validation("Invalid outcome");
-            Map<String, Object> local = new HashMap<>();
-            local.put("outcome", outcome);
-            if (comment != null) local.put("comment", comment);
-            engine.getTaskService().setVariablesLocal(taskId, local);
+            engine.getTaskService().setVariableLocal(taskId, "outcome", outcome);
+            if (comment != null) {
+                // Lưu bằng cơ chế comment của Flowable, người viết là người hoàn thành task
+                engine.getIdentityService().setAuthenticatedUserId(user.sub());
+                try { engine.getTaskService().addComment(taskId, task.getProcessInstanceId(), comment); }
+                finally { engine.getIdentityService().setAuthenticatedUserId(null); }
+            }
             engine.getTaskService().complete(taskId, Map.of("outcome_" + expectedTaskKey, outcome));
             audit.record("task.complete", "task", taskId, workspace,
                 Map.of("taskKey", expectedTaskKey, "processInstanceId", task.getProcessInstanceId(), "outcome", outcome));
@@ -167,7 +177,7 @@ public final class FlowableWorkflowService implements WorkflowService {
         var steps = engine.getHistoryService().createHistoricTaskInstanceQuery().processInstanceId(processInstanceId)
             .includeTaskLocalVariables().orderByHistoricTaskInstanceStartTime().asc().list().stream()
             .map(task -> new ProcessHistory.Step(task.getId(), task.getTaskDefinitionKey(), task.getName(), task.getAssignee(),
-                (String) task.getTaskLocalVariables().get("outcome"), (String) task.getTaskLocalVariables().get("comment"),
+                (String) task.getTaskLocalVariables().get("outcome"), comment(task.getId(), task.getTaskLocalVariables()),
                 instant(task.getStartTime()), instant(task.getClaimTime()), instant(task.getEndTime()))).toList();
         return new ProcessHistory(processInstanceId, (String) scope.get("process_key"), (String) scope.get("business_key"),
             workspace, (String) scope.get("owner"), instant(process.getStartTime()), instant(process.getEndTime()),
@@ -186,6 +196,16 @@ public final class FlowableWorkflowService implements WorkflowService {
             throw CoreException.conflict("Unsupported process definition version; explicit migration required");
         return task;
     }
+
+    /** Comment của bước: comment Flowable; instance cũ lưu trong biến task-local "comment". */
+    private String comment(String taskId, Map<String, Object> locals) {
+        var comments = engine.getTaskService().getTaskComments(taskId);
+        if (!comments.isEmpty()) return comments.get(0).getFullMessage();
+        return (String) locals.get("comment");
+    }
+
+    /** Bước giao thẳng cho người khởi tạo: không có candidate group (ProcessRegistry chỉ cho phép dạng này). */
+    private boolean initiatorStep(Task task) { return view(task).candidateGroups().isEmpty(); }
 
     private Map<String, Object> readable(CurrentUser user, String workspace, String id) {
         var scope = scope(workspace, id);
