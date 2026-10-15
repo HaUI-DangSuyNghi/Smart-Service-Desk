@@ -7,4 +7,7 @@ public interface FileAccessPolicy {
     /** Loại đối tượng, ví dụ {@code servicedesk.ticket}. */
     String resourceType();
     boolean canRead(CurrentUser user, String workspace, String resourceId);
+
+    /** Verify target existence, workspace and permission to attach; missing adapters deny by default. */
+    default boolean canLink(CurrentUser user, String workspace, String resourceId) { return false; }
 }

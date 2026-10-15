@@ -57,8 +57,8 @@ Core completion is not completion of the final H-P-D-I/app submission or a relea
 
 | Module | Current branch | Current state | Missing | Dependency | Target branch / owner |
 | --- | --- | --- | --- | --- | --- |
-| Workflow | `feat/workflow-approval` | Isolated adapter, registry, BPMNs and PostgreSQL tests verified at `9b74b8e`; PR #8 open | Human review/merge; HTTP wiring remains separate | Existing identity/audit contracts on `develop` | Reuse `feat/workflow-approval`; BE, FE reviews |
-| File | Not created | Schema and Java contracts only | Secure storage, links/ACL, compensation and tests | Workflow PR verified MERGED on `origin/develop` | `feat/core-file-storage`; AI, BE reviews |
+| Workflow | `feat/workflow-approval` | PR #8 verified MERGED at `ca2dc2a`; isolated adapter/tests accepted into develop | HTTP wiring remains separate | Existing identity/audit contracts on `develop` | Completed capability branch; BE, FE reviews |
+| File | `feat/core-file-storage` | Local service, scoped resource ACL, rollback compensation and V3 migration verified at `74c1e4e`; PR #9 open | Human review/merge; HTTP wiring remains separate | Workflow PR verified MERGED on `origin/develop` | `feat/core-file-storage`; AI, BE reviews |
 | Metadata | Not created | Create/read HTTP controller uses JDBC; service contract only | Reusable service, safe search/pagination, controller delegation and tests | File PR verified MERGED | `feat/core-metadata-service`; AI, BE reviews |
 | Integration | Not created | Existing runtime still uses workflow probes | Wire validated services/controllers, OpenAPI, identity/audit, BPMN version policy and gateway verification | Workflow + File + Metadata PRs verified MERGED | `feat/core-integration`; BE, FE + AI review |
 | Acceptance | Not created | Historical smoke and isolated tests, not full completion proof | JWT negatives, real E2E/restart, fresh deploy, backup/restore and scans | Integration PR verified MERGED | `test/core-acceptance`; FE, BE + AI review |
@@ -76,18 +76,25 @@ updated by a normal fast-forward push after rechecking remote refs.
 
 | Feature | Branch | Commit | PR | Merge status | Tests | Gate |
 | --- | --- | --- | --- | --- | --- | --- |
-| Workflow | `feat/workflow-approval` | `9b74b8e` (implementation), `8428dc4` (scope/evidence docs) | [PR #8](https://github.com/HaUI-DangSuyNghi/Smart-Service-Desk/pull/8) | PR OPEN; not merged | Clean verify: 23 passed, 0 skipped; 12 real-engine tests | Wait for human review/merge; HTTP integration deferred |
-| File | `feat/core-file-storage` (not created) | None | None | NOT STARTED | None | Wait for Workflow MERGED |
+| Workflow | `feat/workflow-approval` | `9b74b8e` (implementation), merge `ca2dc2a` | [PR #8](https://github.com/HaUI-DangSuyNghi/Smart-Service-Desk/pull/8) | MERGED; verified on origin/develop | Clean verify: 23 passed, 0 skipped; 12 real-engine tests | Capability merged; HTTP integration deferred |
+| File | `feat/core-file-storage` | `74c1e4e` (implementation), `053b8e9` (scope/evidence docs) | [PR #9](https://github.com/HaUI-DangSuyNghi/Smart-Service-Desk/pull/9) | PR OPEN; not merged | Clean verify: 44 passed, 0 skipped; 21 File + 23 regressions | Wait for human review/merge; HTTP integration deferred |
 | Metadata | `feat/core-metadata-service` (not created) | None | None | NOT STARTED | None | Wait for File MERGED |
 | Integration | `feat/core-integration` (not created) | None | None | NOT STARTED | None | Wait for all capability PRs MERGED |
 | Acceptance | `test/core-acceptance` (not created) | None | None | NOT STARTED | None | Wait for Integration MERGED |
 
-Handoff on 2026-10-15: normal push succeeded; GitHub returned PR #8 `open`,
-`merged_at: null`, base `develop`. Human review/merge is the current blocker.
-No auto-merge, dependent branch, direct shared-branch push or release was attempted.
-After the maintainer merges, fetch and verify the PR's merge commit is reachable
-from `origin/develop`, then safely fast-forward local `develop` before creating
-`feat/core-file-storage`. Creating a PR alone does not satisfy that dependency.
+File phase entry on 2026-10-15: GitHub confirmed PR #8 MERGED with merge commit
+`ca2dc2ac8ae87adcc04cac87099d0bc3bb86395e`, reachable from `origin/develop`.
+With a clean working tree, local `develop` was fast-forwarded from `d9a58cf`
+to that merge commit; no local/remote File branch existed. Only then was
+`feat/core-file-storage` created from updated `develop`. No automatic merge,
+direct shared-branch push or history rewrite was performed. Metadata still waits
+for File's reviewed merge. File implementation/limits are in `core-file-storage.md`.
+
+File handoff on 2026-10-15: normal push succeeded and GitHub confirmed PR #9 OPEN,
+base `develop`, `merged_at: null`. Human review/merge is the current dependency
+gate. No Metadata branch has been created. After merge, verify the actual merge
+commit is reachable from fetched `origin/develop`, fast-forward local `develop`
+with a clean working tree, and only then create `feat/core-metadata-service`.
 
 Workflow review on 2026-10-15: see `workflow-approval-review.md`. First prove the
 adapter and two approval BPMNs on an isolated engine/database without app, IdP or
