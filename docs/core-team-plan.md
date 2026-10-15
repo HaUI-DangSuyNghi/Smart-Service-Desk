@@ -57,7 +57,7 @@ Core completion is not completion of the final H-P-D-I/app submission or a relea
 
 | Module | Current branch | Current state | Missing | Dependency | Target branch / owner |
 | --- | --- | --- | --- | --- | --- |
-| Workflow | `feat/workflow-approval` | Isolated adapter, registry, BPMNs and PostgreSQL tests verified at `9b74b8e` | Push, PR and human review/merge; HTTP wiring remains separate | Existing identity/audit contracts on `develop` | Reuse `feat/workflow-approval`; BE, FE reviews |
+| Workflow | `feat/workflow-approval` | Isolated adapter, registry, BPMNs and PostgreSQL tests verified at `9b74b8e`; PR #8 open | Human review/merge; HTTP wiring remains separate | Existing identity/audit contracts on `develop` | Reuse `feat/workflow-approval`; BE, FE reviews |
 | File | Not created | Schema and Java contracts only | Secure storage, links/ACL, compensation and tests | Workflow PR verified MERGED on `origin/develop` | `feat/core-file-storage`; AI, BE reviews |
 | Metadata | Not created | Create/read HTTP controller uses JDBC; service contract only | Reusable service, safe search/pagination, controller delegation and tests | File PR verified MERGED | `feat/core-metadata-service`; AI, BE reviews |
 | Integration | Not created | Existing runtime still uses workflow probes | Wire validated services/controllers, OpenAPI, identity/audit, BPMN version policy and gateway verification | Workflow + File + Metadata PRs verified MERGED | `feat/core-integration`; BE, FE + AI review |
@@ -76,11 +76,18 @@ updated by a normal fast-forward push after rechecking remote refs.
 
 | Feature | Branch | Commit | PR | Merge status | Tests | Gate |
 | --- | --- | --- | --- | --- | --- | --- |
-| Workflow | `feat/workflow-approval` | `9b74b8e` (implementation) | Not created | READY FOR REVIEW | Clean verify: 23 passed, 0 skipped; 12 real-engine tests | Workflow only; HTTP integration deferred |
+| Workflow | `feat/workflow-approval` | `9b74b8e` (implementation), `8428dc4` (scope/evidence docs) | [PR #8](https://github.com/HaUI-DangSuyNghi/Smart-Service-Desk/pull/8) | PR OPEN; not merged | Clean verify: 23 passed, 0 skipped; 12 real-engine tests | Wait for human review/merge; HTTP integration deferred |
 | File | `feat/core-file-storage` (not created) | None | None | NOT STARTED | None | Wait for Workflow MERGED |
 | Metadata | `feat/core-metadata-service` (not created) | None | None | NOT STARTED | None | Wait for File MERGED |
 | Integration | `feat/core-integration` (not created) | None | None | NOT STARTED | None | Wait for all capability PRs MERGED |
 | Acceptance | `test/core-acceptance` (not created) | None | None | NOT STARTED | None | Wait for Integration MERGED |
+
+Handoff on 2026-10-15: normal push succeeded; GitHub returned PR #8 `open`,
+`merged_at: null`, base `develop`. Human review/merge is the current blocker.
+No auto-merge, dependent branch, direct shared-branch push or release was attempted.
+After the maintainer merges, fetch and verify the PR's merge commit is reachable
+from `origin/develop`, then safely fast-forward local `develop` before creating
+`feat/core-file-storage`. Creating a PR alone does not satisfy that dependency.
 
 Workflow review on 2026-10-15: see `workflow-approval-review.md`. First prove the
 adapter and two approval BPMNs on an isolated engine/database without app, IdP or

@@ -121,6 +121,13 @@ No dependency, Flyway migration, production controller or gateway change is part
 of this feature. The staged token/private-key heuristic found no matches; it is
 not a substitute for the planned full repository/dependency/image scans.
 
+Git handoff: implementation `9b74b8e` and scope/evidence docs `8428dc4` were
+normally pushed to the existing `feat/workflow-approval` branch. GitHub
+[PR #8](https://github.com/HaUI-DangSuyNghi/Smart-Service-Desk/pull/8) targets
+`develop` and is OPEN, not merged. Human review is required before starting File;
+the remaining branches have not been created. No force-push, history rewrite,
+automatic merge or direct update of `develop`/`main` was performed.
+
 Official scope was checked directly against all seven pages of
 `references/De_thi_PMNM_HaUI_2026_BAN_CHINH_THUC.pdf`: pp1-3 mandate Core-first,
 headless reuse and a workflow engine; pp3-4 distinguish Core from H-P-D-I/apps;
