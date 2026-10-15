@@ -65,7 +65,7 @@ class WorkflowApprovalTest {
         engine = config.buildProcessEngine();
         var deployment = engine.getRepositoryService().createDeployment();
         for (var policy : registration.policies())
-            deployment.addClasspathResource("workflow-approval/" + policy.processKey() + ".bpmn20.xml");
+            deployment.addClasspathResource("processes/" + policy.processKey() + ".bpmn20.xml");
         deployment.deploy();
         registry = new ProcessRegistry(List.of(registration), engine.getRepositoryService());
     }
@@ -248,7 +248,7 @@ class WorkflowApprovalTest {
     @Test void registryPinsStartsAndRejectsTaskMutationAcrossVersions() {
         var repository = engine.getRepositoryService();
         String pinned = registry.definitionId("document-review");
-        var deployment = repository.createDeployment().addClasspathResource("workflow-approval/document-review.bpmn20.xml").deploy();
+        var deployment = repository.createDeployment().addClasspathResource("processes/document-review.bpmn20.xml").deploy();
         String newProcessId = null;
         try {
             var refreshed = new ProcessRegistry(List.of(registration), repository);
@@ -278,7 +278,15 @@ class WorkflowApprovalTest {
 
     @Test void legacyProbeCannotBeRegisteredOrMutatedButHistoryRemainsReadable() {
         var repository = engine.getRepositoryService();
-        var deployment = repository.createDeployment().addClasspathResource("processes/document-review.bpmn20.xml").deploy();
+        var deployment = repository.createDeployment().addString("legacy-document-review.bpmn20.xml", """
+            <definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:flowable="http://flowable.org/bpmn" targetNamespace="https://haui.vn/dx/core">
+              <process id="document-review" name="Legacy probe" isExecutable="true">
+                <startEvent id="start"/><sequenceFlow id="s1" sourceRef="start" targetRef="review"/>
+                <userTask id="review" name="Review document" flowable:assignee="${initiator}"/>
+                <sequenceFlow id="s2" sourceRef="review" targetRef="end"/><endEvent id="end"/>
+              </process>
+            </definitions>
+            """).deploy();
         String legacyId = null;
         try {
             assertThrows(IllegalArgumentException.class, () -> new ProcessRegistry(List.of(registration), repository));

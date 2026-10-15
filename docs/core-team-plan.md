@@ -1,5 +1,10 @@
 # Tier 1 team execution plan
 
+Current execution (2026-10-15): Workflow #8, File #9 and Metadata #10 are merged.
+`feat/core-integration` starts at verified `origin/develop` commit `73d5b64`.
+See [integration handoff](core-integration.md) for runtime/test evidence and remaining
+acceptance gates. Older delivery notes below describe their original checkpoints.
+
 ## Baseline and capacity
 
 Relative days N1-N4 are the initial Core target inside the existing 14-day schedule, NOT four days added from today. Actual contest start/deadline must be confirmed by the team. Budget: 6 hours/person/day = 4 task hours + 1 shared review/integration hour + 1 contingency hour. N1-N4 totals 72 person-hours: 48 implementation, 12 review/integration, 12 contingency. No business UI or Intelligence work during this gate.

@@ -1,5 +1,9 @@
 # Core review and isolated workflow approval
 
+Integration update (2026-10-15): canonical independent BPMNs now live in `processes/`,
+with HTTP/Spring wiring and shared-transaction checks on `feat/core-integration`.
+See [current evidence](core-integration.md); the isolated-review findings below are historical.
+
 Review date: 2026-10-15. Branch: `feat/workflow-approval`.
 
 ## Findings before this change

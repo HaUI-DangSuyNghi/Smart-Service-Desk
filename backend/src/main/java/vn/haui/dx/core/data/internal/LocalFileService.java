@@ -22,10 +22,13 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
@@ -39,6 +42,7 @@ import vn.haui.dx.core.data.api.StoredFile;
 import vn.haui.dx.core.identity.api.CurrentUser;
 import vn.haui.dx.core.identity.api.WorkspaceAccess;
 
+@Service
 public final class LocalFileService implements FileService {
     private static final Logger LOG = LoggerFactory.getLogger(LocalFileService.class);
     private final Path root;
@@ -47,6 +51,14 @@ public final class LocalFileService implements FileService {
     private final AuditService audit;
     private final Map<String, FileAccessPolicy> policies;
     private final TransactionTemplate transaction;
+
+    @Autowired
+    public LocalFileService(
+            @Value("${dx.storage.root:./.local/files}") String rootPath,
+            JdbcTemplate jdbc, WorkspaceAccess access, AuditService audit,
+            Collection<FileAccessPolicy> policies, PlatformTransactionManager manager) {
+        this(Path.of(rootPath), jdbc, access, audit, policies, manager);
+    }
 
     public LocalFileService(Path root, JdbcTemplate jdbc, WorkspaceAccess access, AuditService audit,
             Collection<FileAccessPolicy> policies, PlatformTransactionManager manager) {

@@ -1,5 +1,9 @@
 # Core baseline status
 
+Current handoff (2026-10-15): PRs #8/#9/#10 are merged. Core HTTP runtime integration
+is on `feat/core-integration`; see [integration evidence and remaining gates](core-integration.md).
+The dated baseline below is historical, not a statement that File remains unimplemented.
+
 Verification date: 2026-10-07 (Asia/Saigon). Local Windows / Docker Desktop Linux engine 29.5.2. This is a tested local foundation, NOT completed tier 1 or a completed competition submission.
 
 ## Implemented and exercised

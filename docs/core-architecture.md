@@ -1,5 +1,8 @@
 # Core architecture / ADR-001
 
+Integration update (2026-10-15): [current runtime and authorization](core-integration.md)
+supersede the probe-only implementation descriptions below. Core Acceptance remains pending.
+
 Status: local baseline, not the full competition product. Date: 2026-10-06.
 
 ```mermaid

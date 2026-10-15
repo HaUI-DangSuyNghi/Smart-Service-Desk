@@ -5,13 +5,16 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.springframework.stereotype.Component;
 import org.flowable.bpmn.model.UserTask;
 import org.flowable.engine.RepositoryService;
 import vn.haui.dx.core.common.CoreException;
 import vn.haui.dx.core.workflow.api.ProcessPolicy;
 import vn.haui.dx.core.workflow.api.ProcessRegistration;
 
-public final class ProcessRegistry {
+@Component
+@org.springframework.context.annotation.Lazy
+public class ProcessRegistry {
     private final Map<String, ProcessPolicy> policies;
     private final Map<String, String> definitionIds;
 
@@ -62,4 +65,6 @@ public final class ProcessRegistry {
     }
 
     public boolean supportsDefinition(String id) { return definitionIds.containsValue(id); }
+
+    public Collection<ProcessPolicy> policies() { return policies.values(); }
 }

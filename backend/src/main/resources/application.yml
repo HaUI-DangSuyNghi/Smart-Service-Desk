@@ -1,4 +1,8 @@
 spring:
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 10MB
   datasource:
     url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/core}
     username: core
@@ -17,6 +21,10 @@ flowable:
   database-schema-update: true
   async-executor-activate: false
   history-level: full
+dx:
+  storage:
+    root: ${DX_STORAGE_ROOT:./.local/files}
+    allow-unscanned-upload: ${DX_ALLOW_UNSCANNED_UPLOAD:false}
 management:
   endpoints:
     web:

@@ -11,7 +11,16 @@ public record ProcessHistory(String id, String processKey, String businessKey, S
         steps = List.copyOf(steps);
     }
 
+    @com.fasterxml.jackson.annotation.JsonProperty("ended")
+    public boolean ended() { return endedAt != null; }
+
+    @com.fasterxml.jackson.annotation.JsonProperty("tasks")
+    public List<Step> tasks() { return steps; }
+
     /** Một bước; {@code outcome}, {@code comment}, {@code endedAt} là null khi chưa hoàn thành. */
-    public record Step(String key, String name, String assignee, String outcome, String comment,
-                       Instant startedAt, Instant claimedAt, Instant endedAt) {}
+    public record Step(String id, String key, String name, String assignee, String outcome, String comment,
+                       Instant startedAt, Instant claimedAt, Instant endedAt) {
+        @com.fasterxml.jackson.annotation.JsonProperty("actor")
+        public String actor() { return assignee; }
+    }
 }

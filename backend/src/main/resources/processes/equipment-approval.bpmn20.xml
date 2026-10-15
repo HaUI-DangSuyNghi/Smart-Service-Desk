@@ -1,10 +1,20 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:flowable="http://flowable.org/bpmn" targetNamespace="https://haui.vn/dx/core">
-  <process id="equipment-approval" name="Equipment approval probe" isExecutable="true">
-    <startEvent id="start"/><sequenceFlow id="s1" sourceRef="start" targetRef="approve"/>
-    <userTask id="approve" name="Approve request" flowable:assignee="${initiator}"/>
-    <sequenceFlow id="s2" sourceRef="approve" targetRef="handover"/>
-    <userTask id="handover" name="Confirm handover" flowable:assignee="${initiator}"/>
-    <sequenceFlow id="s3" sourceRef="handover" targetRef="end"/><endEvent id="end"/>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:flowable="http://flowable.org/bpmn" targetNamespace="https://haui.vn/dx/core">
+  <process id="equipment-approval" name="Independent equipment approval" isExecutable="true">
+    <startEvent id="start"/>
+    <sequenceFlow id="toApprove" sourceRef="start" targetRef="approve"/>
+    <userTask id="approve" name="Approve request" flowable:candidateGroups="${workspace}:coordinator"/>
+    <sequenceFlow id="toDecision" sourceRef="approve" targetRef="decision"/>
+    <exclusiveGateway id="decision"/>
+    <sequenceFlow id="accept" sourceRef="decision" targetRef="handover">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${outcome_approve == 'approved'}]]></conditionExpression>
+    </sequenceFlow>
+    <sequenceFlow id="reject" sourceRef="decision" targetRef="rejected">
+      <conditionExpression xsi:type="tFormalExpression"><![CDATA[${outcome_approve == 'rejected'}]]></conditionExpression>
+    </sequenceFlow>
+    <userTask id="handover" name="Confirm handover" flowable:candidateGroups="${workspace}:agent"/>
+    <sequenceFlow id="delivered" sourceRef="handover" targetRef="end"/>
+    <endEvent id="end"/>
+    <endEvent id="rejected"/>
   </process>
 </definitions>

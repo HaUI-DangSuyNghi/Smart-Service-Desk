@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: DX-Lab Headless Core
   version: 0.1.0
-  description: Local baseline. File upload/download is not implemented. Every response carries X-Request-ID (client/gateway UUID kept, otherwise generated).
+  description: Integrated headless Core runtime. Unscanned upload is opt-in for local synthetic data only. Every response carries X-Request-ID (client/gateway UUID kept, otherwise generated).
 servers:
   - url: http://localhost:9080/api/core/v1
 security:
@@ -89,10 +89,10 @@ paths:
       - name: processKey
         in: path
         required: true
-        schema: {type: string, enum: [document-review, equipment-approval]}
+        schema: {type: string}
     post:
       operationId: startProcess
-      description: Thành viên của workspace (tạm thời, chờ starterRoles). Biến initiator/workspace do server đặt.
+      description: Khởi tạo quy trình; quyền theo starterRoles. initiator/workspace do server đặt. (P0)
       requestBody:
         required: true
         content:
@@ -100,63 +100,53 @@ paths:
             schema:
               type: object
               additionalProperties: false
-              required: [businessKey, title]
+              required: [businessKey]
               properties:
                 businessKey: {type: string, minLength: 1, maxLength: 200}
-                title: {type: string, minLength: 1, maxLength: 200}
+                title: {type: string, maxLength: 200, description: Legacy shorthand for variables.title; supply only once}
+                # Chỉ các tên trong allowedStartVariables của quy trình
+                variables:
+                  type: object
+                  additionalProperties: {type: string, maxLength: 200}
       responses:
         '201':
-          description: Engine instance with committed scope and audit
+          description: Đã khởi tạo
           content:
             application/json:
-              schema:
-                type: object
-                required: [id, processKey, businessKey, workspace]
-                properties:
-                  id: {type: string}
-                  processKey: {type: string}
-                  businessKey: {type: string}
-                  workspace: {type: string}
+              schema: {$ref: '#/components/schemas/ProcessRef'}
         '400': {$ref: '#/components/responses/BadRequest'}
         '401': {$ref: '#/components/responses/Unauthorized'}
         '403': {$ref: '#/components/responses/Forbidden'}
         '404': {$ref: '#/components/responses/NotFound'}
         '409': {$ref: '#/components/responses/Conflict'}
+
   /workspaces/{workspace}/instances/{id}/tasks:
     parameters:
       - {$ref: '#/components/parameters/Workspace'}
       - {$ref: '#/components/parameters/Instance'}
     get:
       operationId: listTasks
-      description: Thành viên của workspace và là người khởi tạo quy trình.
+      description: Task đang mở của một quy trình; ai xem được lịch sử thì xem được. (P0)
       responses:
         '200':
-          description: Active engine tasks
+          description: Task đang mở
           content:
             application/json:
               schema:
                 type: array
-                items:
-                  type: object
-                  required: [id, key, name]
-                  properties:
-                    id: {type: string}
-                    key: {type: string}
-                    name: {type: string}
+                items: {$ref: '#/components/schemas/Task'}
         '401': {$ref: '#/components/responses/Unauthorized'}
         '403': {$ref: '#/components/responses/Forbidden'}
         '404': {$ref: '#/components/responses/NotFound'}
+
   /workspaces/{workspace}/instances/{id}/tasks/{taskId}/complete:
     parameters:
       - {$ref: '#/components/parameters/Workspace'}
       - {$ref: '#/components/parameters/Instance'}
-      - name: taskId
-        in: path
-        required: true
-        schema: {type: string}
+      - {$ref: '#/components/parameters/TaskId'}
     post:
       operationId: completeTask
-      description: Thành viên, người khởi tạo và người đang giữ task. Tuần tự theo từng quy trình.
+      description: Hoàn thành task; chỉ người đang giữ. Sai bước hoặc gửi lặp → 409. (P0)
       requestBody:
         required: true
         content:
@@ -164,48 +154,37 @@ paths:
             schema:
               type: object
               additionalProperties: false
-              required: [expectedTaskKey]
+              required: [expectedTaskKey, outcome]
               properties:
                 expectedTaskKey: {type: string, minLength: 1, maxLength: 100}
+                # Phải thuộc outcomesByTask của bước này
+                outcome: {type: string, minLength: 1, maxLength: 100}
+                comment: {type: string, maxLength: 1000}
       responses:
-        '204': {description: Task completed and audit committed}
+        '204': {description: Đã hoàn thành}
         '400': {$ref: '#/components/responses/BadRequest'}
         '401': {$ref: '#/components/responses/Unauthorized'}
         '403': {$ref: '#/components/responses/Forbidden'}
         '404': {$ref: '#/components/responses/NotFound'}
         '409': {$ref: '#/components/responses/Conflict'}
+
   /workspaces/{workspace}/instances/{id}/history:
     parameters:
       - {$ref: '#/components/parameters/Workspace'}
       - {$ref: '#/components/parameters/Instance'}
     get:
       operationId: history
-      description: Thành viên và người khởi tạo. Lịch sử lấy từ Flowable.
+      description: Lịch sử quy trình; người khởi tạo, người đã tham gia, coordinator. (P0)
       responses:
         '200':
-          description: Engine process and task history
+          description: Lịch sử từ Flowable
           content:
             application/json:
-              schema:
-                type: object
-                required: [id, ended, tasks]
-                properties:
-                  id: {type: string}
-                  ended: {type: boolean}
-                  tasks:
-                    type: array
-                    items:
-                      type: object
-                      required: [id, key, actor, startedAt, endedAt]
-                      properties:
-                        id: {type: string}
-                        key: {type: string}
-                        actor: {type: string}
-                        startedAt: {type: string, format: date-time}
-                        endedAt: {type: string, format: date-time, nullable: true}
+              schema: {$ref: '#/components/schemas/ProcessHistory'}
         '401': {$ref: '#/components/responses/Unauthorized'}
         '403': {$ref: '#/components/responses/Forbidden'}
         '404': {$ref: '#/components/responses/NotFound'}
+
   /workspaces/{workspace}/audit:
     parameters:
       - {$ref: '#/components/parameters/Workspace'}
@@ -234,6 +213,132 @@ paths:
         '400': {$ref: '#/components/responses/BadRequest'}
         '401': {$ref: '#/components/responses/Unauthorized'}
         '403': {$ref: '#/components/responses/Forbidden'}
+  /process-definitions:
+    get:
+      operationId: listProcessDefinitions
+      description: Quy trình đã đăng ký và vai trò được khởi tạo. (P1)
+      responses:
+        '200':
+          description: Danh sách quy trình
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/ProcessDefinition'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+
+  /workspaces/{workspace}/tasks:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+    get:
+      operationId: inbox
+      description: Inbox. assigned = task mình đang giữ; candidate = task chưa ai nhận của nhóm mình. (P0)
+      parameters:
+        - name: scope
+          in: query
+          required: false
+          schema: {type: string, enum: [assigned, candidate], default: assigned}
+        - {$ref: '#/components/parameters/Page'}
+        - {$ref: '#/components/parameters/Size'}
+      responses:
+        '200':
+          description: Một trang task
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - {$ref: '#/components/schemas/PageMeta'}
+                  - type: object
+                    required: [items]
+                    properties:
+                      items: {type: array, items: {$ref: '#/components/schemas/Task'}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+
+  /workspaces/{workspace}/instances/{id}/tasks/{taskId}/claim:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+      - {$ref: '#/components/parameters/Instance'}
+      - {$ref: '#/components/parameters/TaskId'}
+    post:
+      operationId: claimTask
+      description: Nhận task; phải thuộc candidate group. Hai người claim cùng lúc → một người 409. (P0)
+      responses:
+        '200':
+          description: Task đã nhận
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Task'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+
+  /workspaces/{workspace}/files:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+    post:
+      operationId: uploadFile
+      description: Upload file <= 5 MiB; workspace member. Disabled by default pending scanning approval; local synthetic-data Compose explicitly opts in.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: {type: string, format: binary}
+      responses:
+        '201':
+          description: Đã lưu
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/StoredFile'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '413': {$ref: '#/components/responses/PayloadTooLarge'}
+        '415': {$ref: '#/components/responses/UnsupportedMediaType'}
+
+  /workspaces/{workspace}/files/{fileId}:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+      - {$ref: '#/components/parameters/FileId'}
+    get:
+      operationId: describeFile
+      description: Thông tin file; quyền đọc theo mục 7.3 (không được đọc → 404). (P0)
+      responses:
+        '200':
+          description: Thông tin file
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/StoredFile'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+
+  /workspaces/{workspace}/files/{fileId}/content:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+      - {$ref: '#/components/parameters/FileId'}
+    get:
+      operationId: downloadFile
+      description: Tải nội dung; luôn Content-Disposition attachment và nosniff. (P0)
+      responses:
+        '200':
+          description: Nội dung file
+          headers:
+            Content-Disposition: {schema: {type: string}}
+            X-Content-Type-Options: {schema: {type: string, enum: [nosniff]}}
+          content:
+            application/octet-stream:
+              schema: {type: string, format: binary}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+
 components:
   securitySchemes:
     bearer: {type: http, scheme: bearer, bearerFormat: JWT}
@@ -257,6 +362,16 @@ components:
       name: size
       in: query
       schema: {type: integer, minimum: 1, maximum: 100, default: 20}
+    TaskId:
+      name: taskId
+      in: path
+      required: true
+      schema: {type: string}
+    FileId:
+      name: fileId
+      in: path
+      required: true
+      schema: {type: string, format: uuid}
   responses:
     Unauthorized:
       description: UNAUTHENTICATED – thiếu/sai/hết hạn token
@@ -264,9 +379,21 @@ components:
     Forbidden:
       description: FORBIDDEN – không thuộc workspace hoặc thiếu vai trò
       content: {application/problem+json: {schema: {$ref: '#/components/schemas/Problem'}}}
-    NotFound: {description: Resource not found in caller scope}
-    Conflict: {description: Duplicate business key or task transition is no longer valid}
-    BadRequest: {description: Invalid input or unknown JSON property}
+    NotFound:
+      description: Resource not found in caller scope
+      content: {application/problem+json: {schema: {$ref: '#/components/schemas/Problem'}}}
+    Conflict:
+      description: Duplicate business key or task transition is no longer valid
+      content: {application/problem+json: {schema: {$ref: '#/components/schemas/Problem'}}}
+    BadRequest:
+      description: Invalid input or unknown JSON property
+      content: {application/problem+json: {schema: {$ref: '#/components/schemas/Problem'}}}
+    PayloadTooLarge:
+      description: PAYLOAD_TOO_LARGE – file vượt 5 MiB
+      content: {application/problem+json: {schema: {$ref: '#/components/schemas/Problem'}}}
+    UnsupportedMediaType:
+      description: UNSUPPORTED_MEDIA_TYPE – loại file không cho phép
+      content: {application/problem+json: {schema: {$ref: '#/components/schemas/Problem'}}}
   schemas:
     NewMetadata:
       type: object
@@ -316,10 +443,10 @@ components:
       type: string
       pattern: '^[a-z0-9-]{1,30}$'
       example: coordinator
-    # Body lỗi chuẩn RFC 9457. 401/403 đã dùng; 400/404/409 của endpoint baseline chưa dùng.
+    # Shared RFC 9457 error body for the integrated runtime.
     Problem:
       type: object
-      required: [title, status, code]
+      required: [title, status, code, requestId]
       properties:
         type: {type: string, example: about:blank}
         title: {type: string, example: Forbidden}
@@ -351,3 +478,75 @@ components:
         workspace: {type: string}
         requestId: {type: string}
         details: {type: object, additionalProperties: true}
+    ProcessDefinition:
+      type: object
+      required: [processKey, starterRoles, allowedStartVariables, outcomesByTask]
+      properties:
+        processKey: {type: string}
+        starterRoles: {type: array, items: {$ref: '#/components/schemas/WorkspaceRole'}}
+        allowedStartVariables: {type: array, items: {type: string}}
+        # taskKey → các outcome hợp lệ
+        outcomesByTask:
+          type: object
+          additionalProperties: {type: array, items: {type: string}}
+    ProcessRef:
+      type: object
+      required: [processInstanceId, processKey, businessKey, workspace]
+      properties:
+        id: {type: string, description: Legacy alias of processInstanceId}
+        processInstanceId: {type: string}
+        processKey: {type: string}
+        businessKey: {type: string}
+        workspace: {type: string}
+    Task:
+      type: object
+      required: [id, processInstanceId, key, name, candidateGroups, createdAt]
+      properties:
+        id: {type: string}
+        processInstanceId: {type: string}
+        key: {type: string, description: id của userTask trong BPMN}
+        name: {type: string}
+        candidateGroups: {type: array, items: {type: string, example: 'lab-a:coordinator'}}
+        assignee: {type: string, nullable: true, description: null nếu chưa ai nhận}
+        createdAt: {type: string, format: date-time}
+    ProcessHistory:
+      type: object
+      required: [id, processKey, businessKey, workspace, initiator, startedAt, currentTasks, steps]
+      properties:
+        ended: {type: boolean, description: Legacy completion flag}
+        tasks: {type: array, description: Legacy alias of steps, items: {$ref: '#/components/schemas/HistoryStep'}}
+        id: {type: string}
+        processKey: {type: string}
+        businessKey: {type: string}
+        workspace: {type: string}
+        initiator: {type: string}
+        startedAt: {type: string, format: date-time}
+        endedAt: {type: string, format: date-time, nullable: true}
+        currentTasks: {type: array, items: {$ref: '#/components/schemas/Task'}}
+        steps: {type: array, items: {$ref: '#/components/schemas/HistoryStep'}}
+    HistoryStep:
+      type: object
+      required: [key, name, startedAt]
+      properties:
+        id: {type: string}
+        actor: {type: string, nullable: true, description: Legacy alias of assignee}
+        key: {type: string}
+        name: {type: string}
+        assignee: {type: string, nullable: true}
+        outcome: {type: string, nullable: true}
+        comment: {type: string, nullable: true}
+        startedAt: {type: string, format: date-time}
+        claimedAt: {type: string, format: date-time, nullable: true}
+        endedAt: {type: string, format: date-time, nullable: true}
+    StoredFile:
+      type: object
+      required: [id, workspace, originalName, mediaType, size, checksum, owner, createdAt]
+      properties:
+        id: {type: string, format: uuid}
+        workspace: {type: string}
+        originalName: {type: string}
+        mediaType: {type: string, enum: [application/pdf, text/plain, text/markdown, image/png, image/jpeg]}
+        size: {type: integer, format: int64, maximum: 5242880}
+        checksum: {type: string}
+        owner: {type: string}
+        createdAt: {type: string, format: date-time}
