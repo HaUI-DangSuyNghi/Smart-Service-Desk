@@ -100,6 +100,13 @@ both fresh migration and V2-to-V3 upgrade preserving seeded legacy metadata.
 workflow code and the existing metadata controller were checked unchanged.
 These are isolated module/regression results, not HTTP/JWT/gateway/E2E evidence.
 
+Git handoff on 2026-10-15: implementation `74c1e4e` and docs `053b8e9` were
+normally pushed to `feat/core-file-storage` and
+[PR #9](https://github.com/HaUI-DangSuyNghi/Smart-Service-Desk/pull/9) was opened
+against `develop`. It is OPEN, not merged. Human review/merge is required before
+the Metadata branch can start from updated `develop`. No auto-merge, force push,
+direct shared-branch commit/push or release was performed.
+
 ## Deferred integration
 
 No Spring File bean, upload/download/link controller, HTTP multipart configuration,
