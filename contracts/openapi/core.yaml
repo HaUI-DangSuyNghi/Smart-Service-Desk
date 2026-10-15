@@ -29,13 +29,37 @@ paths:
         required: true
         content:
           application/json:
-            schema: {$ref: '#/components/schemas/MetadataInput'}
+            schema: {$ref: '#/components/schemas/NewMetadata'}
       responses:
         '201':
           description: Persisted metadata
           content:
             application/json:
               schema: {$ref: '#/components/schemas/Metadata'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+    get:
+      operationId: searchMetadata
+      description: Tìm metadata theo tiêu đề (không phân biệt hoa thường); thành viên. (P1)
+      parameters:
+        - {name: q, in: query, schema: {type: string, maxLength: 200}}
+        - {name: source, in: query, schema: {type: string, maxLength: 1000}}
+        - {name: sort, in: query, schema: {type: string, enum: ['createdAt,desc', 'createdAt,asc', 'title,asc', 'title,desc'], default: 'createdAt,desc'}}
+        - {$ref: '#/components/parameters/Page'}
+        - {$ref: '#/components/parameters/Size'}
+      responses:
+        '200':
+          description: Một trang metadata
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - {$ref: '#/components/schemas/PageMeta'}
+                  - type: object
+                    required: [items]
+                    properties:
+                      items: {type: array, items: {$ref: '#/components/schemas/Metadata'}}
         '400': {$ref: '#/components/responses/BadRequest'}
         '401': {$ref: '#/components/responses/Unauthorized'}
         '403': {$ref: '#/components/responses/Forbidden'}
@@ -244,19 +268,24 @@ components:
     Conflict: {description: Duplicate business key or task transition is no longer valid}
     BadRequest: {description: Invalid input or unknown JSON property}
   schemas:
-    MetadataInput:
+    NewMetadata:
       type: object
       additionalProperties: false
-      required: [title, source, version, usageRights, checksum]
+      required: [title, source, version, usageRights]
+      description: "Bắt buộc đúng một trong hai: checksum hoặc fileId. Cung cấp cả hai hoặc thiếu cả hai -> 400 VALIDATION_FAILED."
+      oneOf:
+        - required: [checksum]
+        - required: [fileId]
       properties:
         title: {type: string, minLength: 1, maxLength: 200}
         source: {type: string, minLength: 1, maxLength: 1000}
         version: {type: string, minLength: 1, maxLength: 100}
         usageRights: {type: string, minLength: 1, maxLength: 200}
         checksum: {type: string, pattern: '^[a-f0-9]{64}$'}
+        fileId: {type: string, format: uuid}
     Metadata:
       type: object
-      required: [id, workspace, title, source, version, usage_rights, checksum, owner, created_at]
+      required: [id, workspace, title, source, version, usage_rights, checksum, file_id, owner, created_at]
       properties:
         id: {type: string, format: uuid}
         workspace: {type: string}
@@ -265,6 +294,7 @@ components:
         version: {type: string}
         usage_rights: {type: string}
         checksum: {type: string}
+        file_id: {type: string, format: uuid, nullable: true}
         owner: {type: string}
         created_at: {type: string, format: date-time}
     Me:
