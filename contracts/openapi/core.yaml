@@ -41,7 +41,7 @@ paths:
         '403': {$ref: '#/components/responses/Forbidden'}
     get:
       operationId: searchMetadata
-      description: T?m metadata theo ti?u ?? (kh?ng ph?n bi?t hoa th??ng); th?nh vi?n. (P1)
+      description: Tìm metadata theo tiêu đề (không phân biệt hoa thường); thành viên. (P1)
       parameters:
         - {name: q, in: query, schema: {type: string, maxLength: 200}}
         - {name: source, in: query, schema: {type: string, maxLength: 1000}}
@@ -50,7 +50,7 @@ paths:
         - {$ref: '#/components/parameters/Size'}
       responses:
         '200':
-          description: M?t trang metadata
+          description: Một trang metadata
           content:
             application/json:
               schema:
@@ -272,6 +272,10 @@ components:
       type: object
       additionalProperties: false
       required: [title, source, version, usageRights]
+      description: "Bắt buộc đúng một trong hai: checksum hoặc fileId. Cung cấp cả hai hoặc thiếu cả hai -> 400 VALIDATION_FAILED."
+      oneOf:
+        - required: [checksum]
+        - required: [fileId]
       properties:
         title: {type: string, minLength: 1, maxLength: 200}
         source: {type: string, minLength: 1, maxLength: 1000}

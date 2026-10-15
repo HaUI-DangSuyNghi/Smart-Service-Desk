@@ -77,10 +77,18 @@ updated by a normal fast-forward push after rechecking remote refs.
 | Feature | Branch | Commit | PR | Merge status | Tests | Gate |
 | --- | --- | --- | --- | --- | --- | --- |
 | Workflow | `feat/workflow-approval` | `9b74b8e` (implementation), merge `ca2dc2a` | [PR #8](https://github.com/HaUI-DangSuyNghi/Smart-Service-Desk/pull/8) | MERGED; verified on origin/develop | Clean verify: 23 passed, 0 skipped; 12 real-engine tests | Capability merged; HTTP integration deferred |
-| File | `feat/core-file-storage` | `74c1e4e` (implementation), `053b8e9` (scope/evidence docs) | [PR #9](https://github.com/HaUI-DangSuyNghi/Smart-Service-Desk/pull/9) | PR OPEN; not merged | Clean verify: 44 passed, 0 skipped; 21 File + 23 regressions | Wait for human review/merge; HTTP integration deferred |
-| Metadata | `feat/core-metadata-service` | In progress | Pending PR | Capability implemented; 57 tests passed | 57 passed, 0 skipped | Wait for human review/merge |
+| File | `feat/core-file-storage` | `d9a1355`, merge `347d2e5` | [PR #9](https://github.com/HaUI-DangSuyNghi/Smart-Service-Desk/pull/9) | MERGED; verified on origin/develop | Clean verify: 46 passed, 0 skipped; 23 File + 23 regressions | Capability merged; HTTP integration deferred |
+| Metadata | `feat/core-metadata-service` | In review | [PR #10](https://github.com/HaUI-DangSuyNghi/Smart-Service-Desk/pull/10) | PR OPEN; not merged | Clean verify: 61 passed, 0 skipped; 15 Metadata + 46 regressions | Wait for human review/merge |
 | Integration | `feat/core-integration` (not created) | None | None | NOT STARTED | None | Wait for all capability PRs MERGED |
 | Acceptance | `test/core-acceptance` (not created) | None | None | NOT STARTED | None | Wait for Integration MERGED |
+
+Metadata phase entry on 2026-10-15: GitHub confirmed PR #9 MERGED with merge commit
+`347d2e5b68320bfb7daf2df0a0a06c0292e7f903`, reachable from `origin/develop`.
+Local `develop` was fast-forwarded cleanly from `ca2dc2a` to `347d2e5`. Only then was
+`feat/core-metadata-service` created. Implementation completed, PR #10 opened, and
+findings from review (P1 JSON contract, P2 Spring transaction proxy verification,
+OpenAPI/doc synchronizations) addressed with 61 tests passing. PR #10 remains OPEN
+awaiting human review/merge before Core Integration.
 
 File phase entry on 2026-10-15: GitHub confirmed PR #8 MERGED with merge commit
 `ca2dc2ac8ae87adcc04cac87099d0bc3bb86395e`, reachable from `origin/develop`.

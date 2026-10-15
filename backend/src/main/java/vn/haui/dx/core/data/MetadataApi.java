@@ -2,6 +2,8 @@ package vn.haui.dx.core.data;
 
 import java.time.Instant;
 import java.util.UUID;
+import com.fasterxml.jackson.annotation.JsonAlias;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.converter.HttpMessageNotReadableException;
@@ -23,10 +25,19 @@ public class MetadataApi {
 
     public MetadataApi(MetadataService metadata) { this.metadata = metadata; }
 
-    public record View(UUID id, String workspace, String title, String source, String version,
-            @JsonProperty("usage_rights") String usageRights, String checksum, UUID fileId, String owner,
-            @JsonProperty("created_at") Instant createdAt) {
-        static View of(MetadataRecord record) {
+    public record View(
+        UUID id,
+        String workspace,
+        String title,
+        String source,
+        String version,
+        @JsonProperty("usage_rights") @JsonAlias("usageRights") String usageRights,
+        String checksum,
+        @JsonProperty("file_id") @JsonAlias("fileId") UUID fileId,
+        String owner,
+        @JsonProperty("created_at") @JsonAlias("createdAt") @JsonFormat(shape = JsonFormat.Shape.STRING) Instant createdAt
+    ) {
+        public static View of(MetadataRecord record) {
             return new View(record.id(), record.workspace(), record.title(), record.source(), record.version(),
                 record.usageRights(), record.checksum(), record.fileId(), record.owner(), record.createdAt());
         }

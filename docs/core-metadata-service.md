@@ -30,6 +30,34 @@ section 4.1 (p3) and section 4.2 D - Data (p4).
     preventing cross-workspace file associations at the database layer.
   - Adds compound index on `metadata(workspace, created_at DESC, id DESC)` for fast paging.
 
+## Review Findings Addressed
+
+- **P1 JSON contract mismatch:**
+  - `MetadataApi.View` previously serialized `fileId` without `@JsonProperty("file_id")`,
+    causing a mismatch against OpenAPI `core.yaml` schema `Metadata`.
+  - `View` now annotates `@JsonProperty("file_id") @JsonAlias("fileId")` and
+    `@JsonFormat(shape = JsonFormat.Shape.STRING)` on `createdAt`.
+  - Deserialization in `NewMetadata` supports both `fileId`/`file_id` and
+    `usageRights`/`usage_rights` for backward compatibility.
+  - `MetadataSpringIntegrationTest.mockMvcHttpResponseMatchesOpenApiMetadataSchemaExactly`
+    verifies using `MockMvc` that the actual HTTP response JSON has exact fields
+    (`id`, `workspace`, `title`, `source`, `version`, `usage_rights`, `checksum`,
+    `file_id`, `owner`, `created_at`) matching OpenAPI `Metadata` schema.
+- **P2 Spring transaction verification:**
+  - Added `MetadataSpringIntegrationTest` creating an `AnnotationConfigApplicationContext`
+    with `@EnableTransactionManagement`.
+  - Confirmed `AopUtils.isAopProxy(metadataService)` is true.
+  - Verified on real PostgreSQL 16.6 that an exception during `metadataService.create`
+    (simulated audit failure) triggers automatic rollback via Spring's transactional proxy,
+    leaving 0 metadata rows and 0 file_link rows.
+  - Verified atomic commit when all operations succeed.
+  - Verified DataSource and DataSourceTransactionManager consistency.
+- **P2 Contract and Documentation:**
+  - Corrected Vietnamese UTF-8 encoding in `contracts/openapi/core.yaml`.
+  - Expressed the `exactly-one-of` requirement for `checksum` vs `fileId` via
+    `oneOf: [ {required: [checksum]}, {required: [fileId]} ]` and schema description.
+  - Synchronized PR #9 and PR #10 status tables and test counts.
+
 ## Reproducible verification
 
 ```powershell
@@ -37,8 +65,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test-file.ps1
 ```
 
 Verification uses PostgreSQL 16.6 and offline Maven test verify against clean databases.
-**57 tests run, 0 failures, 0 errors, 0 skipped**:
+**61 tests run, 0 failures, 0 errors, 0 skipped**:
 - 10 Metadata service/controller tests (search, filter, paging, validation, cross-workspace denial, file-linking, audit rollback, concurrency).
+- 4 Metadata Spring integration & HTTP contract tests (Spring AOP proxy rollback, commit, tx manager consistency, MockMvc schema verification).
 - 1 V3->V4 upgrade and foreign key constraint regression test.
 - 23 File storage regression tests.
 - 12 Flowable workflow approval regression tests.
