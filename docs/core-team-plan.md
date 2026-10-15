@@ -78,7 +78,7 @@ updated by a normal fast-forward push after rechecking remote refs.
 | --- | --- | --- | --- | --- | --- | --- |
 | Workflow | `feat/workflow-approval` | `9b74b8e` (implementation), merge `ca2dc2a` | [PR #8](https://github.com/HaUI-DangSuyNghi/Smart-Service-Desk/pull/8) | MERGED; verified on origin/develop | Clean verify: 23 passed, 0 skipped; 12 real-engine tests | Capability merged; HTTP integration deferred |
 | File | `feat/core-file-storage` | `74c1e4e` (implementation), `053b8e9` (scope/evidence docs) | [PR #9](https://github.com/HaUI-DangSuyNghi/Smart-Service-Desk/pull/9) | PR OPEN; not merged | Clean verify: 44 passed, 0 skipped; 21 File + 23 regressions | Wait for human review/merge; HTTP integration deferred |
-| Metadata | `feat/core-metadata-service` (not created) | None | None | NOT STARTED | None | Wait for File MERGED |
+| Metadata | `feat/core-metadata-service` | In progress | Pending PR | Capability implemented; 57 tests passed | 57 passed, 0 skipped | Wait for human review/merge |
 | Integration | `feat/core-integration` (not created) | None | None | NOT STARTED | None | Wait for all capability PRs MERGED |
 | Acceptance | `test/core-acceptance` (not created) | None | None | NOT STARTED | None | Wait for Integration MERGED |
 

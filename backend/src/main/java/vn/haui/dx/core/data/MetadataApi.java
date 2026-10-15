@@ -1,50 +1,56 @@
 package vn.haui.dx.core.data;
 
-import java.util.Map;
+import java.time.Instant;
 import java.util.UUID;
-import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.oauth2.jwt.Jwt;
-import org.springframework.transaction.annotation.Transactional;
+import com.fasterxml.jackson.annotation.JsonProperty;
+import org.springframework.http.ProblemDetail;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.server.ResponseStatusException;
-import vn.haui.dx.core.audit.api.AuditService;
-import vn.haui.dx.core.identity.api.WorkspaceAccess;
-import static vn.haui.dx.core.identity.api.WorkspaceRole.AGENT;
-import static vn.haui.dx.core.identity.api.WorkspaceRole.COORDINATOR;
-import static org.springframework.http.HttpStatus.NOT_FOUND;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
+import vn.haui.dx.core.common.ErrorCode;
+import vn.haui.dx.core.common.Page;
+import vn.haui.dx.core.common.PageRequest;
+import vn.haui.dx.core.common.Problems;
+import vn.haui.dx.core.data.api.MetadataQuery;
+import vn.haui.dx.core.data.api.MetadataRecord;
+import vn.haui.dx.core.data.api.MetadataService;
+import vn.haui.dx.core.data.api.NewMetadata;
 
 @RestController
 @RequestMapping("/api/core/v1/workspaces/{workspace}/metadata")
 public class MetadataApi {
-    private final JdbcTemplate jdbc;
-    private final AuditService audit;
-    private final WorkspaceAccess access;
-    public MetadataApi(JdbcTemplate jdbc, AuditService audit, WorkspaceAccess access) { this.jdbc = jdbc; this.audit = audit; this.access = access; }
-    public record Input(@NotBlank @Size(max=200) String title, @NotBlank @Size(max=1000) String source,
-                        @NotBlank @Size(max=100) String version, @NotBlank @Size(max=200) String usageRights,
-                        @NotBlank @Pattern(regexp="[a-f0-9]{64}") String checksum) {}
+    private final MetadataService metadata;
+
+    public MetadataApi(MetadataService metadata) { this.metadata = metadata; }
+
+    public record View(UUID id, String workspace, String title, String source, String version,
+            @JsonProperty("usage_rights") String usageRights, String checksum, UUID fileId, String owner,
+            @JsonProperty("created_at") Instant createdAt) {
+        static View of(MetadataRecord record) {
+            return new View(record.id(), record.workspace(), record.title(), record.source(), record.version(),
+                record.usageRights(), record.checksum(), record.fileId(), record.owner(), record.createdAt());
+        }
+    }
+
     @PostMapping
     @ResponseStatus(org.springframework.http.HttpStatus.CREATED)
-    @Transactional
-    public Map<String, Object> create(@PathVariable String workspace, @Valid @RequestBody Input input,
-        @AuthenticationPrincipal Jwt jwt) {
-        access.requireRole(workspace, AGENT, COORDINATOR);
-        UUID id = UUID.randomUUID();
-        jdbc.update("insert into metadata(id,workspace,title,source,version,usage_rights,checksum,owner) values (?,?,?,?,?,?,?,?)",
-            id, workspace, input.title(), input.source(), input.version(), input.usageRights(), input.checksum(), jwt.getSubject());
-        audit.record("metadata.create", "metadata", id.toString(), workspace, Map.of());
-        return get(workspace, id, jwt);
+    public View create(@PathVariable String workspace, @RequestBody NewMetadata input) {
+        return View.of(metadata.create(workspace, input));
     }
+
     @GetMapping("/{id}")
-    public Map<String, Object> get(@PathVariable String workspace, @PathVariable UUID id, @AuthenticationPrincipal Jwt jwt) {
-        access.requireMember(workspace);
-        var rows = jdbc.queryForList("select * from metadata where id=? and workspace=?", id, workspace);
-        if (rows.isEmpty()) throw new ResponseStatusException(NOT_FOUND);
-        return rows.get(0);
+    public View get(@PathVariable String workspace, @PathVariable UUID id) {
+        return View.of(metadata.get(workspace, id));
     }
+
+    @GetMapping
+    public Page<View> search(@PathVariable String workspace, @RequestParam(required = false) String q,
+            @RequestParam(required = false) String source, @RequestParam(defaultValue = "createdAt,desc") String sort,
+            @RequestParam(required = false) Integer page, @RequestParam(required = false) Integer size) {
+        var result = metadata.search(workspace, new MetadataQuery(q, source, sort), PageRequest.of(page, size));
+        return new Page<>(result.items().stream().map(View::of).toList(), result.page(), result.size(), result.total());
+    }
+
+    @ExceptionHandler({HttpMessageNotReadableException.class, MethodArgumentTypeMismatchException.class})
+    public ProblemDetail invalidRequest() { return Problems.of(ErrorCode.VALIDATION_FAILED, "Invalid metadata request"); }
 }
