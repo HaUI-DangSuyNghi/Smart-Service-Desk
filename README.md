@@ -4,6 +4,8 @@ Tier 1 foundation for DX-OS Open-Core. No frontend, ticket application, chatbot 
 
 Current integration scope, verification and remaining acceptance/security gates: [Core integration handoff](docs/core-integration.md).
 
+Executable acceptance checks, backup/restore procedure and mandatory-versus-production gates: [Core acceptance](docs/core-acceptance.md). A passing functional run is not full Core or production approval.
+
 Development baseline: `develop`. Start task branches from `develop`, then open reviewed pull requests back into it. `main` is reserved for approved releases. Read `CONTRIBUTING.md` for the team's Git Flow, branch names and merge rules.
 
 ## Run locally (Windows PowerShell)
@@ -30,7 +32,7 @@ Gateway: `http://localhost:9080`; health: `http://localhost:9080/health`; Keyclo
 | `user6` | `/workspaces/lab-b/coordinator` |
 | `user7` | realm role `platform-admin`, no workspace |
 
-Keycloak imports the realm only when it does not exist. After `realm-template.json` changes, run `docker compose down -v` then `scripts/start.ps1` (this deletes local data), or apply the change in the admin console. To add a workspace or role, create groups `/workspaces/<workspace>/<role>` in Keycloak; no Core code change is needed.
+Keycloak imports the realm only when it does not exist. Apply changes to existing realms through the Admin API/console, or use a separately named acceptance project with new volumes. Never delete shared volumes to refresh a realm import. To add a workspace or role, create groups `/workspaces/<workspace>/<role>` in Keycloak; no Core code change is needed.
 
 The probe client uses password grant strictly for local automated checks. It is not the future UI login design. Browser integration must use Authorization Code + PKCE. Keycloak `start-dev`, HTTP, shared DB role and older pinned compatibility versions are not production-ready. See the security/release gates in the architecture and inventory.
 

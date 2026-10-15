@@ -1,5 +1,9 @@
 # Core baseline status
 
+Acceptance follow-up (2026-10-15): PR #11 is merged. Current gate classifications,
+reproduction commands and remaining limits are in [Core acceptance](core-acceptance.md).
+Do not read the historical baseline as a complete Core/production approval.
+
 Current handoff (2026-10-15): PRs #8/#9/#10 are merged. Core HTTP runtime integration
 is on `feat/core-integration`; see [integration evidence and remaining gates](core-integration.md).
 The dated baseline below is historical, not a statement that File remains unimplemented.

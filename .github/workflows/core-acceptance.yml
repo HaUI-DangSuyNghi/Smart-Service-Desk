@@ -1,0 +1,39 @@
+name: Core acceptance
+on:
+  pull_request:
+    branches: [develop]
+    paths: ['backend/**', 'infra/**', 'compose.yaml', 'contracts/openapi/**', 'scripts/**', '.github/workflows/core-acceptance.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  functional:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Prepare contract validators
+        run: |
+          python3 -m venv .local/acceptance-venv
+          .local/acceptance-venv/bin/pip install -r scripts/acceptance/requirements.txt
+      - name: PostgreSQL, clean E2E, security, restart and restore
+        shell: pwsh
+        run: ./scripts/test-core-acceptance.ps1 -Python .local/acceptance-venv/bin/python
+      - name: Scan runtime and build images (manual full security gate)
+        if: github.event_name == 'workflow_dispatch'
+        shell: pwsh
+        run: ./scripts/scan-core.ps1
+      - name: Upload non-secret summaries only
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: core-acceptance-summaries
+          include-hidden-files: true
+          retention-days: 7
+          path: |
+            backend/target/surefire-reports/TEST-*.xml
+            .local/acceptance-*/summary.json
+            .local/scan-*/summary.json
+            .local/scan-*/scanner-version.txt

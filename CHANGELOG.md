@@ -1,5 +1,12 @@
 # Changelog
 
+## Core acceptance (unreleased)
+
+- Add isolated PostgreSQL/E2E/security, restart, logical backup/restore and read-only blob inventory checks, plus a second application's headless reuse probe.
+- Add PR functional CI and digest-pinned image/dependency scanning; functional success is not full Core or production approval. See `docs/core-acceptance.md` for evidence and unresolved gates.
+- Document metadata creation's file-link error responses and make the PostgreSQL test mount portable to Linux CI.
+- Supersede historical realm-reset advice: migrate through the Admin API/console or use new isolated test volumes; never reset shared volumes to refresh imports.
+
 ## Intelligence documentation location (unreleased)
 
 - Keep Intelligence architecture, decisions, governance and N1 reports under `intelligence/docs/`, with N1 evidence in `task/N1/`; update repository links and LF attributes.
