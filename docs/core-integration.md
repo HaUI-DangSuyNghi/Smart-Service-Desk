@@ -1,5 +1,8 @@
 # Core integration handoff
 
+Historical handoff: PR #11 merged on 2026-10-15. Current post-merge verification and
+remaining gates are tracked in [Core acceptance](core-acceptance.md), not implied by this handoff.
+
 Date: 2026-10-15 (Asia/Saigon). Branch: `feat/core-integration`.
 Scope: integration of existing Core capabilities, not Core Acceptance or production approval.
 

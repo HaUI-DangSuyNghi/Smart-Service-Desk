@@ -1,5 +1,10 @@
 # Dependency, provenance and license inventory
 
+Acceptance scan update (2026-10-15): actual HIGH/CRITICAL package findings make the
+production security gate FAIL, not merely unverified. Counts, tool/database identity
+and remediation ownership are in [Core acceptance](core-acceptance.md). The historical
+inventory below is not a security waiver or a complete transitive license audit.
+
 Reviewed 2026-10-07. Versions are compatibility pins, not claims of latest releases or absence of CVEs. Do not publish this development stack as a production service. Project source license is pending team approval: no blanket license is applied to supplied PDFs/XLSX or other third-party material.
 
 | Component | Pinned version / origin | Upstream license | Role |

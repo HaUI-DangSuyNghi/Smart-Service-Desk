@@ -1,5 +1,10 @@
 # Tier 1 team execution plan
 
+Acceptance execution (2026-10-15): PR #11 is merged into `develop` at `78e64de`.
+`test/core-acceptance` starts from that verified merge with a clean working tree.
+See [acceptance gates, operating procedure and evidence](core-acceptance.md).
+Functional verification does not replace the three-member sign-off or release/security gates.
+
 Current execution (2026-10-15): Workflow #8, File #9 and Metadata #10 are merged.
 `feat/core-integration` starts at verified `origin/develop` commit `73d5b64`.
 See [integration handoff](core-integration.md) for runtime/test evidence and remaining
