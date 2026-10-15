@@ -58,31 +58,31 @@
   "users": [
     {
       "username": "user1", "enabled": true, "email": "user1@example.com", "emailVerified": true,
-      "firstName": "User 1", "lastName": "(lab-a requester)", "groups": ["/workspaces/lab-a/requester"]
+      "firstName": "Demo", "lastName": "Requester", "groups": ["/workspaces/lab-a/requester"]
     },
     {
       "username": "user2", "enabled": true, "email": "user2@example.com", "emailVerified": true,
-      "firstName": "User 2", "lastName": "(lab-a agent)", "groups": ["/workspaces/lab-a/agent"]
+      "firstName": "Demo", "lastName": "Agent", "groups": ["/workspaces/lab-a/agent"]
     },
     {
       "username": "user3", "enabled": true, "email": "user3@example.com", "emailVerified": true,
-      "firstName": "User 3", "lastName": "(lab-a coordinator)", "groups": ["/workspaces/lab-a/coordinator"]
+      "firstName": "Demo", "lastName": "Coordinator", "groups": ["/workspaces/lab-a/coordinator"]
     },
     {
       "username": "user4", "enabled": true, "email": "user4@example.com", "emailVerified": true,
-      "firstName": "User 4", "lastName": "(lab-b requester)", "groups": ["/workspaces/lab-b/requester"]
+      "firstName": "Demo", "lastName": "Requester", "groups": ["/workspaces/lab-b/requester"]
     },
     {
       "username": "user5", "enabled": true, "email": "user5@example.com", "emailVerified": true,
-      "firstName": "User 5", "lastName": "(lab-b agent)", "groups": ["/workspaces/lab-b/agent"]
+      "firstName": "Demo", "lastName": "Agent", "groups": ["/workspaces/lab-b/agent"]
     },
     {
       "username": "user6", "enabled": true, "email": "user6@example.com", "emailVerified": true,
-      "firstName": "User 6", "lastName": "(lab-b coordinator)", "groups": ["/workspaces/lab-b/coordinator"]
+      "firstName": "Demo", "lastName": "Coordinator", "groups": ["/workspaces/lab-b/coordinator"]
     },
     {
       "username": "user7", "enabled": true, "email": "user7@example.com", "emailVerified": true,
-      "firstName": "User 7", "lastName": "(platform-admin)", "groups": [], "realmRoles": ["platform-admin"]
+      "firstName": "Demo", "lastName": "Administrator", "groups": [], "realmRoles": ["platform-admin"]
     }
   ]
 }

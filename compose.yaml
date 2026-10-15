@@ -40,6 +40,8 @@ services:
     environment:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Run scripts/setup.ps1}
       DATABASE_URL: jdbc:postgresql://postgres:5432/core
+      DX_STORAGE_ROOT: /var/lib/dx/files
+      DX_ALLOW_UNSCANNED_UPLOAD: 'true'
       JWT_JWKS: http://keycloak:8080/realms/dx-lab/protocol/openid-connect/certs
     volumes: ["files:/var/lib/dx/files"]
     depends_on:

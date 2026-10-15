@@ -11,6 +11,8 @@ import vn.haui.dx.core.common.PageRequest;
  * CONFLICT trùng business key, claim thua, sai bước, gửi lặp; VALIDATION_FAILED biến/outcome không hợp lệ.
  */
 public interface WorkflowService {
+    void requireTaskInstance(String workspace, String processInstanceId, String taskId);
+
     /** Khởi tạo; {@code variables} chỉ gồm biến có trong allowedStartVariables. */
     ProcessRef start(String workspace, String processKey, String businessKey, Map<String, Object> variables);
 

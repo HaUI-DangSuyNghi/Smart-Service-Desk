@@ -5,10 +5,13 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Supplier;
 import org.flowable.engine.ProcessEngine;
 import org.flowable.task.api.Task;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.stereotype.Service;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 import vn.haui.dx.core.audit.api.AuditService;
@@ -16,30 +19,53 @@ import vn.haui.dx.core.common.CoreException;
 import vn.haui.dx.core.common.Page;
 import vn.haui.dx.core.common.PageRequest;
 import vn.haui.dx.core.identity.api.CurrentUser;
+import vn.haui.dx.core.identity.api.WorkspaceAccess;
 import vn.haui.dx.core.identity.api.WorkspaceRole;
 import vn.haui.dx.core.workflow.api.*;
 
+@Service
 public final class FlowableWorkflowService implements WorkflowService {
     private final ProcessEngine engine;
     private final JdbcTemplate jdbc;
-    private final CurrentUser user;
+    private final Supplier<CurrentUser> current;
     private final AuditService audit;
     private final ProcessRegistry registry;
     private final TransactionTemplate transaction;
 
     public FlowableWorkflowService(ProcessEngine engine, JdbcTemplate jdbc, CurrentUser user,
             AuditService audit, ProcessRegistry registry, PlatformTransactionManager manager) {
+        this(engine, jdbc, (Supplier<CurrentUser>) () -> user, audit, registry, manager);
+    }
+
+    @Autowired
+    public FlowableWorkflowService(ProcessEngine engine, JdbcTemplate jdbc, WorkspaceAccess access,
+            AuditService audit, @org.springframework.context.annotation.Lazy ProcessRegistry registry, PlatformTransactionManager manager) {
+        this(engine, jdbc, access::current, audit, registry, manager);
+    }
+
+    private FlowableWorkflowService(ProcessEngine engine, JdbcTemplate jdbc, Supplier<CurrentUser> current,
+            AuditService audit, ProcessRegistry registry, PlatformTransactionManager manager) {
         this.engine = engine;
         this.jdbc = jdbc;
-        this.user = user;
+        this.current = current;
         this.audit = audit;
         this.registry = registry;
         this.transaction = new TransactionTemplate(manager);
     }
 
     @Override
-    public ProcessRef start(String workspace, String processKey, String businessKey, Map<String, Object> variables) {
+    public void requireTaskInstance(String workspace, String processInstanceId, String taskId) {
         member(workspace);
+        scope(workspace, processInstanceId);
+        text(taskId, 100, "taskId");
+        var task = engine.getHistoryService().createHistoricTaskInstanceQuery().taskId(taskId)
+            .processInstanceId(processInstanceId).singleResult();
+        if (task == null) throw CoreException.notFound("Task not found in this instance");
+    }
+
+    @Override
+    public ProcessRef start(String workspace, String processKey, String businessKey, Map<String, Object> variables) {
+        var user = member(workspace);
         var policy = registry.require(processKey);
         if (!user.hasRole(workspace, policy.starterRoles().toArray(WorkspaceRole[]::new)))
             throw CoreException.forbidden("Starter role required");
@@ -69,13 +95,13 @@ public final class FlowableWorkflowService implements WorkflowService {
 
     @Override
     public Page<TaskView> inbox(String workspace, InboxFilter filter, PageRequest page) {
-        member(workspace);
+        var user = member(workspace);
         if (filter == null || page == null || page.offset() > Integer.MAX_VALUE)
             throw CoreException.validation("Invalid inbox page");
         var query = engine.getTaskService().createTaskQuery().processVariableValueEquals("workspace", workspace);
         if (filter.scope() == InboxFilter.Scope.ASSIGNED) query.taskAssignee(user.sub());
         else {
-            var groups = groups(workspace);
+            var groups = groups(user, workspace);
             if (groups.isEmpty()) return new Page<>(List.of(), page.page(), page.size(), 0);
             query.taskCandidateGroupIn(groups).taskUnassigned().processVariableValueNotEquals("initiator", user.sub());
         }
@@ -87,28 +113,30 @@ public final class FlowableWorkflowService implements WorkflowService {
 
     @Override
     public List<TaskView> tasksOf(String workspace, String processInstanceId) {
-        readable(workspace, processInstanceId);
+        var user = member(workspace);
+        readable(user, workspace, processInstanceId);
         return currentTasks(processInstanceId);
     }
 
     @Override
     public TaskView claim(String workspace, String taskId) {
-        member(workspace);
+        var user = member(workspace);
         return transaction.execute(status -> {
             var task = lockedTask(workspace, taskId);
             var scope = scope(workspace, task.getProcessInstanceId());
             if (user.sub().equals(scope.get("owner"))) throw CoreException.forbidden("Independent approver required");
             if (task.getAssignee() != null) throw CoreException.conflict("Task already claimed");
-            candidate(workspace, task);
+            candidate(user, workspace, task);
             engine.getTaskService().claim(taskId, user.sub());
-            audit.record("task.claim", "task", taskId, workspace, Map.of("processInstanceId", task.getProcessInstanceId()));
+            audit.record("task.claim", "task", taskId, workspace,
+                Map.of("processInstanceId", task.getProcessInstanceId()));
             return view(engine.getTaskService().createTaskQuery().taskId(taskId).singleResult());
         });
     }
 
     @Override
     public void complete(String workspace, String taskId, String expectedTaskKey, String outcome, String comment) {
-        member(workspace);
+        var user = member(workspace);
         text(expectedTaskKey, 100, "expectedTaskKey");
         text(outcome, 100, "outcome");
         if (comment != null && comment.length() > 2000) throw CoreException.validation("Comment too long");
@@ -118,7 +146,7 @@ public final class FlowableWorkflowService implements WorkflowService {
             var scope = scope(workspace, task.getProcessInstanceId());
             if (!user.sub().equals(task.getAssignee()) || user.sub().equals(scope.get("owner")))
                 throw CoreException.forbidden("Independent assignee required");
-            candidate(workspace, task);
+            candidate(user, workspace, task);
             var allowed = registry.require((String) scope.get("process_key")).outcomesByTask().get(expectedTaskKey);
             if (allowed == null || !allowed.contains(outcome)) throw CoreException.validation("Invalid outcome");
             Map<String, Object> local = new HashMap<>();
@@ -133,11 +161,12 @@ public final class FlowableWorkflowService implements WorkflowService {
 
     @Override
     public ProcessHistory history(String workspace, String processInstanceId) {
-        var scope = readable(workspace, processInstanceId);
+        var user = member(workspace);
+        var scope = readable(user, workspace, processInstanceId);
         var process = engine.getHistoryService().createHistoricProcessInstanceQuery().processInstanceId(processInstanceId).singleResult();
         var steps = engine.getHistoryService().createHistoricTaskInstanceQuery().processInstanceId(processInstanceId)
             .includeTaskLocalVariables().orderByHistoricTaskInstanceStartTime().asc().list().stream()
-            .map(task -> new ProcessHistory.Step(task.getTaskDefinitionKey(), task.getName(), task.getAssignee(),
+            .map(task -> new ProcessHistory.Step(task.getId(), task.getTaskDefinitionKey(), task.getName(), task.getAssignee(),
                 (String) task.getTaskLocalVariables().get("outcome"), (String) task.getTaskLocalVariables().get("comment"),
                 instant(task.getStartTime()), instant(task.getClaimTime()), instant(task.getEndTime()))).toList();
         return new ProcessHistory(processInstanceId, (String) scope.get("process_key"), (String) scope.get("business_key"),
@@ -158,8 +187,7 @@ public final class FlowableWorkflowService implements WorkflowService {
         return task;
     }
 
-    private Map<String, Object> readable(String workspace, String id) {
-        member(workspace);
+    private Map<String, Object> readable(CurrentUser user, String workspace, String id) {
         var scope = scope(workspace, id);
         if (!user.sub().equals(scope.get("owner")) && !user.hasRole(workspace, WorkspaceRole.COORDINATOR)
                 && engine.getHistoryService().createHistoricTaskInstanceQuery().processInstanceId(id).taskAssignee(user.sub()).count() == 0)
@@ -187,18 +215,20 @@ public final class FlowableWorkflowService implements WorkflowService {
             candidates, task.getAssignee(), instant(task.getCreateTime()));
     }
 
-    private List<String> groups(String workspace) {
+    private List<String> groups(CurrentUser user, String workspace) {
         return user.memberships().stream().filter(membership -> membership.workspace().equals(workspace))
             .map(membership -> membership.candidateGroup()).toList();
     }
 
-    private void candidate(String workspace, Task task) {
-        if (view(task).candidateGroups().stream().noneMatch(groups(workspace)::contains))
+    private void candidate(CurrentUser user, String workspace, Task task) {
+        if (view(task).candidateGroups().stream().noneMatch(groups(user, workspace)::contains))
             throw CoreException.forbidden("Candidate role required");
     }
 
-    private void member(String workspace) {
+    private CurrentUser member(String workspace) {
+        var user = current.get();
         if (workspace == null || !user.isMember(workspace)) throw CoreException.forbidden("Workspace membership required");
+        return user;
     }
 
     private static void text(String value, int max, String field) {

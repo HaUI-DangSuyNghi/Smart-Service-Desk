@@ -25,6 +25,15 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'Cannot create isolated workflow regression database' }
     docker run --rm --network $network --mount "type=bind,source=$root\backend,target=/work" -w /work -e FILE_TEST_JDBC_URL=jdbc:postgresql://database:5432/file_storage -e "FILE_TEST_DB_PASSWORD=$password" -e WORKFLOW_TEST_JDBC_URL=jdbc:postgresql://database:5432/workflow_approval -e "WORKFLOW_TEST_DB_PASSWORD=$password" $BuildImage mvn -B -o clean verify
     if ($LASTEXITCODE -ne 0) { throw 'File/regression tests failed' }
+    $reports = @(Get-ChildItem -LiteralPath (Join-Path $root 'backend/target/surefire-reports') -Filter 'TEST-*.xml')
+    if ($reports.Count -eq 0) { throw 'No test reports produced' }
+    $total = 0
+    foreach ($report in $reports) {
+        $suite = ([xml](Get-Content -LiteralPath $report.FullName -Raw)).testsuite
+        if ([int]$suite.skipped -ne 0 -or [int]$suite.failures -ne 0 -or [int]$suite.errors -ne 0) { throw "Non-passing tests in $($report.Name)" }
+        $total += [int]$suite.tests
+    }
+    Write-Host "PASS $total tests; failures=0 errors=0 skipped=0 (PostgreSQL 16.6)"
 } finally {
     if ($databaseCreated) { docker rm -f -v $database | Out-Null }
     if ($networkCreated) { docker network rm $network | Out-Null }

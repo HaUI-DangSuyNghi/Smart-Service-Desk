@@ -1,6 +1,8 @@
-# DX-Lab HaUI: Headless Core Baseline
+# DX-Lab HaUI: Headless Core
 
 Tier 1 foundation for DX-OS Open-Core. No frontend, ticket application, chatbot or model training is included. This is not the complete competition submission.
+
+Current integration scope, verification and remaining acceptance/security gates: [Core integration handoff](docs/core-integration.md).
 
 Development baseline: `develop`. Start task branches from `develop`, then open reviewed pull requests back into it. `main` is reserved for approved releases. Read `CONTRIBUTING.md` for the team's Git Flow, branch names and merge rules.
 
@@ -36,10 +38,11 @@ The probe client uses password grant strictly for local automated checks. It is 
 
 - Keycloak identity with per-workspace roles from groups `/workspaces/{workspace}/{role}`, `/api/core/v1/me` with memberships, backend JWT issuer/audience validation; 401/403 return Problem Details with `code` and `requestId`.
 - APISIX standalone routing and rate limits, no public Admin API.
-- PostgreSQL metadata create/read: source, usage rights, version, checksum, workspace, owner and timestamp.
-- Real embedded Flowable start/tasks/complete/history; two distinct process keys: `document-review` and `equipment-approval`.
+- PostgreSQL metadata create/read/search with pagination, file linking, source, usage rights, version, checksum, workspace, owner and timestamp.
+- Real embedded Flowable start, candidate/assigned inbox, independent claim/complete and history; two process keys: `document-review` and `equipment-approval`.
 - Transactional audit for writes/transitions (`AuditService`, with `resourceType` and JSON `details`); audit read `GET /workspaces/{workspace}/audit` for coordinators and `platform-admin`; `X-Request-ID` kept from client/gateway when it is a UUID, otherwise generated, and logged; unique scoped business keys; replay protection.
-- File schema/link contract and volume only. Upload/download, audit export and richer task assignment remain backlog.
+- Private File upload/describe/download with size/type checks, safe attachment headers, resource policies and transactional audit. Unlinked files are workspace-shared, not owner-private.
+- Unscanned uploads are disabled by default; local Compose explicitly opts in for synthetic data only. Malware scanning, automated orphan reconciliation, audit export and task delegation remain release/acceptance backlog.
 
 ## API and structure
 
