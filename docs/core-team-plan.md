@@ -35,7 +35,7 @@ Every row is four focused hours. Daily review and contingency are separately bud
 | BE-02 N2: engine and transaction verification | BE / AI | BE-01, FE-01 | workflow, BPMN, workflow tests | Two keys, unique business key, atomic audit | Start/complete/history; duplicate start leaves one scope and one engine instance; rollback test |
 | FE-02 N2: identity and gateway negative cases | FE / BE | FE-01, BE-01 | identity, realm setup, smoke | Issuer/audience/expiry, deny by default | Missing/wrong/expired JWT 401; direct backend request still checked; reader write 403 |
 | AI-02 N2: audit and File contract | AI / FE | AI-01, BE-02 | audit, File contract, new migration if needed | Audit query design + resource authorization contract | Compare committed audit against actions; specify cross-workspace link denial and failed-write cleanup |
-| BE-03 N3: task actor/claim policy | BE / FE | BE-02, FE-02 | workflow + tests + OpenAPI | Independent reviewer policy; atomic claim API if required by agreed scope | Concurrent claim/complete has one winner; non-assignee denied; preserve baseline probes |
+| BE-03 N3: task actor/claim policy | BE / FE | BE-02, FE-02 | workflow + tests + OpenAPI | Independent reviewer policy; candidate/assigned inbox; atomic claim; validated outcome/history | Concurrent start/claim/complete has one winner; creator self-approval and non-assignee denied; rejection skips handover; preserve baseline probes |
 | FE-03 N3: reproducibility/security upgrade spike | FE / BE | FE-02 | inventory, Compose/Dockerfile proposal, smoke | CVE report, fixed image digests, tested supported version proposal | Timebox to 4h; validate upgraded combination in isolated branch; no untested mass upgrade |
 | AI-03 N3: minimal private File implementation | AI / BE | AI-02 authorization contract | future file package, tests | <=5 MiB upload/download, generated storage key, metadata | Traversal/type/size/foreign resource tests; DB/filesystem failure cleanup; do not enable if incomplete |
 | BE-04 N4: contract and Core acceptance | BE / AI | BE-03, AI-03 | OpenAPI, workflow tests, baseline status | Headless + reuse evidence, backlog classification | Run both probes without apps; no double transition; mark actual findings, not mock success |
@@ -43,6 +43,58 @@ Every row is four focused hours. Daily review and contingency are separately bud
 | AI-04 N4: data/file/audit acceptance | AI / BE | AI-03, BE-04 | fixtures, data/file/audit tests, status | Two-workspace security report and data provenance | No leaked metadata/content; DB audit actor/time/request IDs correct; declare residual backlog |
 
 ## Daily integration and critical path
+
+### Core completion ownership and branch gates (2026-10-15)
+
+The official seven-page `references/De_thi_PMNM_HaUI_2026_BAN_CHINH_THUC.pdf`
+was read for this completion pass. Sections 3/4.1 (p3) require reusable headless
+Identity, Gateway, Data and Workflow; section 4.2 (pp3-4) places end-user H-P-D-I
+above Core. Sections 5/7/10 (pp4-5) require source reproducibility, RBAC, secret
+hygiene, license/provenance and real tests. Stack names and two BPMNs are team
+choices, not prescribed products/counts. File storage is our agreed scope; p3
+allows structured and/or unstructured data, not a mandatory separate object store.
+Core completion is not completion of the final H-P-D-I/app submission or a release.
+
+| Module | Current branch | Current state | Missing | Dependency | Target branch / owner |
+| --- | --- | --- | --- | --- | --- |
+| Workflow | `feat/workflow-approval` | Isolated adapter, registry, BPMNs and PostgreSQL tests verified at `9b74b8e`; PR #8 open | Human review/merge; HTTP wiring remains separate | Existing identity/audit contracts on `develop` | Reuse `feat/workflow-approval`; BE, FE reviews |
+| File | Not created | Schema and Java contracts only | Secure storage, links/ACL, compensation and tests | Workflow PR verified MERGED on `origin/develop` | `feat/core-file-storage`; AI, BE reviews |
+| Metadata | Not created | Create/read HTTP controller uses JDBC; service contract only | Reusable service, safe search/pagination, controller delegation and tests | File PR verified MERGED | `feat/core-metadata-service`; AI, BE reviews |
+| Integration | Not created | Existing runtime still uses workflow probes | Wire validated services/controllers, OpenAPI, identity/audit, BPMN version policy and gateway verification | Workflow + File + Metadata PRs verified MERGED | `feat/core-integration`; BE, FE + AI review |
+| Acceptance | Not created | Historical smoke and isolated tests, not full completion proof | JWT negatives, real E2E/restart, fresh deploy, backup/restore and scans | Integration PR verified MERGED | `test/core-acceptance`; FE, BE + AI review |
+
+Feature order is sequential by the owner's explicit instruction. Never auto-merge,
+push directly to `develop`/`main`, or begin a dependent feature from an unmerged base.
+BE/FE/AI here are ownership/reviewer roles for the team, not delegated agents.
+
+Inspection: HEAD/local `develop`/`origin/develop` were `d9a58cf` after fetch;
+`origin/feat/workflow-approval` was ancestor `2b3bd31` (25 ahead, 0 behind).
+No remote-only workflow commits existed, and no workflow PR existed on GitHub.
+All seven untracked workflow paths and both modified docs were preserved; no
+stash/reset/rebase or branch replacement was used. The existing branch can be
+updated by a normal fast-forward push after rechecking remote refs.
+
+| Feature | Branch | Commit | PR | Merge status | Tests | Gate |
+| --- | --- | --- | --- | --- | --- | --- |
+| Workflow | `feat/workflow-approval` | `9b74b8e` (implementation), `8428dc4` (scope/evidence docs) | [PR #8](https://github.com/HaUI-DangSuyNghi/Smart-Service-Desk/pull/8) | PR OPEN; not merged | Clean verify: 23 passed, 0 skipped; 12 real-engine tests | Wait for human review/merge; HTTP integration deferred |
+| File | `feat/core-file-storage` (not created) | None | None | NOT STARTED | None | Wait for Workflow MERGED |
+| Metadata | `feat/core-metadata-service` (not created) | None | None | NOT STARTED | None | Wait for File MERGED |
+| Integration | `feat/core-integration` (not created) | None | None | NOT STARTED | None | Wait for all capability PRs MERGED |
+| Acceptance | `test/core-acceptance` (not created) | None | None | NOT STARTED | None | Wait for Integration MERGED |
+
+Handoff on 2026-10-15: normal push succeeded; GitHub returned PR #8 `open`,
+`merged_at: null`, base `develop`. Human review/merge is the current blocker.
+No auto-merge, dependent branch, direct shared-branch push or release was attempted.
+After the maintainer merges, fetch and verify the PR's merge commit is reachable
+from `origin/develop`, then safely fast-forward local `develop` before creating
+`feat/core-file-storage`. Creating a PR alone does not satisfy that dependency.
+
+Workflow review on 2026-10-15: see `workflow-approval-review.md`. First prove the
+adapter and two approval BPMNs on an isolated engine/database without app, IdP or
+gateway connections. Then separately budget HTTP contract/controller wiring,
+production identity/audit transaction checks and BPMN version migration before
+gateway acceptance. The isolated branch is not completion of BE-04 or the Core gate;
+re-estimate remaining work rather than silently extending N1-N4 capacity.
 
 - N1: 10-minute blocker check + 50-minute contract/demo. Gate: exact API, ownership and all services start. FE owns environment, BE owns assembly, AI owns schemas.
 - N2: run `/me`, metadata create/read and first engine history through gateway. Gate: 401/403/404 work and no orphan process on failure.

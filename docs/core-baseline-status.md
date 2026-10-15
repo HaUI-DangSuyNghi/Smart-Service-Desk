@@ -51,7 +51,23 @@ Smoke assertions: no token 401; malformed token 401; valid token 200; reader wri
 
 Initial failures and corrections: Windows native argument quoting damaged the initial POM namespace, corrected before successful compile; gateway healthcheck assumed curl (not in APISIX image), replaced with Bash TCP HTTP status check; interrupted Docker daemon recovered. One prior Compose wait observed a replaced container while the corrected stack was recreated. A PowerShell-redirection run reported nonzero despite healthy logs; the final unredirected start was rerun and returned 0. An unquoted Maven `-DoutputFile` was split by PowerShell; rerun quoted successfully. These are not reported as initial passes.
 
-## Not implemented
+## Status correction on 2026-10-15
+
+The command evidence above is historical. Audit read now exists in
+`AuditController`/`JdbcAuditService.search`; the earlier backlog statement below
+must not be read as the current audit implementation inventory.
+The `feat/workflow-approval` branch adds an isolated workflow adapter and independent
+approval definitions, not production HTTP wiring. See `workflow-approval-review.md`
+for scope, reproducible verification and the remaining integration gate.
+Workflow implementation commit `9b74b8e` was subsequently verified using
+`powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test-workflow.ps1`:
+offline `mvn -B -o clean verify`, 23 tests, zero failures/errors/skips, including
+12 tests against an actual isolated PostgreSQL/Flowable engine; executable JAR
+packaged successfully. The original 19 tests were rerun before hardening.
+This is not production HTTP/JWT/gateway acceptance. Only test-owned Docker
+resources were created and removed; no live Core data or services were changed.
+
+## Not implemented at original baseline
 
 Private File upload/download/link authorization and failure compensation; audit read/export/retention; independent approver/claim/delegate/cancel; workflow deployment API; granular app-specific ACL; metadata search/version update; UI, business ticket/equipment apps, Intelligence, notification and production observability.
 
