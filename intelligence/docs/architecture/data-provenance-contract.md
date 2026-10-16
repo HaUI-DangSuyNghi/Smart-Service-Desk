@@ -1,5 +1,31 @@
 # AI-01 N1: Data / Provenance contract
 
+## Đối chiếu hiện tại — 16/10/2026
+
+Đã đối chiếu implementation Core tại `0238c590b905e6a47913fe844406894ef81e0cfd`:
+
+- Metadata API có create, get và search theo workspace. Read/search cần membership;
+  create cần `agent` hoặc `coordinator`. Các role mặc định gồm cả `requester`.
+- Create nhận `title`, `source`, `version`, `usageRights` và **đúng một** trong
+  `checksum`/`fileId`. Checksum tự khai vẫn chỉ là khai báo; với `fileId`, Core
+  kiểm tra file cùng workspace, quyền sở hữu và dùng checksum của File.
+- Response camelCase gồm `id`, `workspace`, `title`, `source`, `version`,
+  `usageRights`, `checksum`, `fileId`, `owner`, `createdAt`.
+- File HTTP hỗ trợ upload, describe, download; SHA-256 được tính từ bytes nhận
+  bởi server, download kiểm tra size/checksum. Quyền File phải được Core xác minh.
+- Metadata insert, file link và audit nằm trong transaction. Đây là đối chiếu
+  code; không phải lần chạy lại Core acceptance trong AI-01.5.
+- Intelligence sử dụng API đã authorize, không đọc DB trực tiếp. Citation dùng
+  workspace + metadata UUID thật + version/checksum. Kiểm tra checksum bytes tải
+  về trước indexing; không sửa source Core khi phát hiện sai khác.
+
+Nguồn đối chiếu: `MetadataApi`, `JdbcMetadataService`, `LocalFileService`,
+`MetadataFileAccessPolicy` và [Core acceptance](../../../docs/core-acceptance.md).
+Phê duyệt BE và nghiệp vụ còn chờ. Quy tắc runtime hiện tại là mục này;
+phần dưới giữ nguyên proposal và bằng chứng cũ để truy vết.
+
+## Hồ sơ lịch sử N1 — không dùng làm hướng dẫn runtime hiện tại
+
 Status: **proposed for BE / repository owner review**, not ratified. Baseline:
 `c92b38733d00c77bd90b96318f8c70d7b19be5c0`, branch `feature/ai01-data-provenance`.
 The owner requested no direct DX core edits before review. This document lives in

@@ -1,5 +1,15 @@
 # Requirements and source review
 
+## Đối chiếu hiện tại — 16/10/2026
+
+Các bảng baseline ban đầu bên dưới là lịch sử. Tại Core `0238c59`, Metadata
+search, File HTTP, checksum server, DTO camelCase, transaction/audit và Service
+Desk ticket foundation đã được tích hợp; xem [Core acceptance](core-acceptance.md).
+Intelligence AI-01.5 đối chiếu lại ranh giới với Core; AI-02 chuẩn bị library
+triage deterministic theo profile riêng v0.2, chưa phải HTTP service hay kết
+quả triển khai production. BE/Process Owner review và merge gate còn chờ.
+Giữ contract wire 0.1.0, profile/fixture v0.1 và bằng chứng N1 nguyên trạng.
+
 ## Documents examined
 
 1. `docs/references/De_thi_PMNM_HaUI_2026_BAN_CHINH_THUC.pdf`: 7 pages, official HaUI brief. Text extracted; architecture diagram on p2 and mandatory-component table on p3 visually inspected.

@@ -1,7 +1,21 @@
 # Intelligence foundation
 
 Owner: AI member. Status: **READY FOR BE REVIEW — PROPOSED**.
-N1 completion still requires BE ratification, Core alignment and Core regression evidence.
+N1 human review remains pending. Current implementation alignment is recorded below.
+
+## Trạng thái đối chiếu Core ngày 16/10/2026
+
+Baseline: `0238c590b905e6a47913fe844406894ef81e0cfd`. Bằng chứng N1 ngày
+07–08/10 được giữ nguyên theo baseline lịch sử, không coi là lần chạy mới.
+Core hiện có Metadata search, File HTTP, `fileId`, checksum do Core tính cho
+file upload, DTO camelCase và audit trong transaction. Metadata read/search yêu
+cầu thành viên workspace; create yêu cầu `agent` hoặc `coordinator`.
+Các vai trò mặc định là `requester`, `agent`, `coordinator`.
+
+AI-01.5 bổ sung profile thực thi riêng `service-desk@0.2.0`; bản v0.1 tiếp tục
+là đầu vào lịch sử, không đổi nội dung hoặc nhãn version. AI-02 triển khai local
+library để review; merge gate AI-01.5 và phê duyệt nghiệp vụ vẫn chờ BE/Process
+Owner. Không suy diễn quyền truy cập từ `context.workspaceId` trong payload.
 
 Intelligence currently owns the versioned Service Desk domain profile: taxonomy,
 matching rules, priority configuration and normalization proposal. Core owns
@@ -51,8 +65,9 @@ are not runtime citations. Root `.gitattributes` preserves LF for moved assets;
 semantic source edits require version/checksum/size updates. Local plans and probe
 evidence belong under ignored `.local/ai-n1/`.
 
-No Intelligence runtime, FastAPI service, rules executor, TF-IDF index, embedding,
-vector database or model exists yet. Approved integration seeds must be ingested
+At the historical N1 baseline no Intelligence runtime existed. AI-02 runtime
+progress is recorded separately; retrieval, HTTP and model adoption remain later work.
+Approved integration seeds must be ingested
 through Core APIs; future indexes consume authorized Core interfaces. Additional
 domains add profiles and fixtures without adding Service Desk semantics to Core.
 

@@ -1,5 +1,16 @@
 # AI dependency / data / model inventory — N1 draft
 
+## Trạng thái hiện tại — 16/10/2026
+
+Danh mục N1 bên dưới là lịch sử trước runtime. AI-02 chỉ chọn Python, YAML parser,
+JSON Schema validator và công cụ test/build; version, nguồn release/license và
+dependency closure phải được ghi trước khi thêm dependency vào project.
+FastAPI/Pydantic/Uvicorn, LLM, vector DB và retrieval chưa được chọn cho AI-02.
+Phê duyệt source license, quyền dữ liệu và nghiệp vụ vẫn thuộc chủ sở hữu.
+Core đã có File HTTP và checksum server; mô tả N3 bên dưới thuộc kế hoạch N1 cũ.
+
+## Danh mục lịch sử N1
+
 Status: PROPOSED. No Intelligence dependency or model has been adopted/pinned.
 Repository/source license and knowledge usage rights still need owner decisions.
 This inventory does not declare a license verified or grant redistribution rights.
