@@ -2,6 +2,7 @@ import copy
 import json
 from pathlib import Path
 import shutil
+import runpy
 import tempfile
 import unittest
 
@@ -62,6 +63,14 @@ class ExecutableProfileTests(unittest.TestCase):
             (root / 'immutable-artifacts.json').write_text(json.dumps({'../outside.yaml': 'a' * 64}))
             with self.assertRaises(ProfileInvalid):
                 verify_lock(root)
+
+    def test_repinning_existing_version_is_rejected_against_git_history(self):
+        script = ROOT.parents[1] / 'scripts/intelligence/validate-executable-profiles.py'
+        history = runpy.run_path(str(script))['check_history']
+        lock = verify_lock(ROOT)
+        lock['service-desk/versions/0.2.0/rules.yaml'] = 'a' * 64
+        with self.assertRaises(ProfileInvalid):
+            history(ROOT, lock, 'HEAD')
 
 
 if __name__ == '__main__':
