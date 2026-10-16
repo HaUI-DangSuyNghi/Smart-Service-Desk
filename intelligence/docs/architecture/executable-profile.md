@@ -9,6 +9,9 @@ thực thi. Không tự chuyển version không tồn tại sang bản mới nh�
 khóa bằng SHA-256 trong `profiles/immutable-artifacts.json`; thay đổi nội dung
 phải có version mới. Lock chỉ là bằng chứng toàn vẹn trong repo, không là chữ ký
 hay approval. Reviewer cần kiểm tra mọi thay đổi lock của version đã tồn tại.
+Foundation validator đối chiếu thêm Git baseline: sửa cả file và digest vẫn bị
+chặn khi nhãn version đã tồn tại. Local mặc định so với HEAD; CI so với base SHA
+của pull request qua `INTELLIGENCE_PROFILE_BASE_REF`.
 
 Luật chỉ nhận literal và count template có đúng một `{count}` với khoảng số
 nguyên hữu hạn 2–9999. Không hỗ trợ regex do người cấu hình cung cấp; trường
