@@ -1,0 +1,179 @@
+status: PROPOSED
+rulesVersion: 0.2.0
+categoryRules:
+  CAT-NET-001:
+    category: NETWORK
+    positiveSignals:
+    - wifi
+    - wi-fi
+    - mạng
+    - internet
+    - không vào mạng
+    - mất mạng
+    - chập chờn
+    - dns
+    - ip
+    - access point
+    - lan
+    - không truy cập
+  CAT-ACC-001:
+    category: ACCOUNT
+    positiveSignals:
+    - đăng nhập
+    - mật khẩu
+    - password
+    - tài khoản
+    - account
+    - bị khóa
+    - không có quyền
+    - permission
+    - authentication
+  CAT-SW-001:
+    category: SOFTWARE
+    positiveSignals:
+    - ứng dụng
+    - phần mềm
+    - software
+    - windows
+    - linux
+    - crash
+    - không mở được
+    - cài đặt
+    - update
+    - version
+    - cập nhật
+    - hệ thống quản lý báo lỗi
+  CAT-HW-001:
+    category: HARDWARE
+    positiveSignals:
+    - không lên nguồn
+    - không bật
+    - màn hình
+    - bàn phím
+    - chuột
+    - ổ cứng
+    - ram
+    - nguồn
+    - hỏng
+    - cháy
+    - vỡ
+  CAT-OTHER-001:
+    category: OTHER
+    positiveSignals:
+    - điều hòa
+    - chiếu sáng
+    - bàn ghế
+    - cơ sở vật chất
+conflictRules:
+  CONFLICT-ROOT-001:
+    overrides:
+    - winnerRule: CAT-ACC-001
+      overruledRules:
+      - CAT-NET-001
+      allOf:
+      - - bị khóa
+        - lỗi xác thực
+        - authentication error
+      - - wifi vẫn hoạt động với người khác
+        - người khác vẫn dùng được wifi
+    - winnerRule: CAT-SW-001
+      overruledRules:
+      - CAT-NET-001
+      allOf:
+      - - website khác
+        - internet vẫn hoạt động
+      - - báo lỗi sau khi cập nhật
+        - lỗi sau bản cập nhật
+        - lỗi sau cập nhật
+reviewRules:
+  REVIEW-INSUFFICIENT-001:
+    policyRef: ../../priority-policy.yaml#/reviewFallback
+impactRules:
+  I1:
+    ruleId: IMPACT-USER-001
+    positiveSignals:
+    - một máy
+    - máy cá nhân
+    - chỉ tôi
+    - chỉ tài khoản của tôi
+    - một người
+    - một thiết bị
+    countSignals: []
+    overrides: []
+  I2:
+    ruleId: IMPACT-GROUP-001
+    positiveSignals:
+    - một nhóm
+    - nhóm bị ảnh hưởng
+    - nhóm bị lỗi
+    countSignals:
+    - template: '{count} máy'
+      min: 2
+      max: 9999
+    - template: '{count} sinh viên'
+      min: 2
+      max: 9999
+    overrides: []
+  I3:
+    ruleId: IMPACT-ROOM-001
+    positiveSignals:
+    - cả phòng
+    - toàn bộ phòng
+    - cả lớp
+    - toàn bộ lớp
+    countSignals:
+    - template: toàn bộ {count} máy
+      min: 2
+      max: 9999
+    overrides:
+    - I2
+  I4:
+    ruleId: IMPACT-WIDE-001
+    positiveSignals:
+    - nhiều phòng
+    - toàn trường
+    - toàn bộ trường
+    - dịch vụ dùng chung
+    countSignals: []
+    overrides:
+    - I2
+    - I3
+urgencyRules:
+  U1:
+    ruleId: URGENCY-WORKAROUND-001
+    positiveSignals:
+    - dùng hotspot
+    - có giải pháp thay thế
+    - không ảnh hưởng đáng kể
+    - có cách khắc phục tạm
+    countSignals: []
+    overrides: []
+  U2:
+    ruleId: URGENCY-DEFERRED-001
+    positiveSignals:
+    - có thể chờ
+    - chưa cần xử lý ngay
+    countSignals: []
+    overrides: []
+  U3:
+    ruleId: URGENCY-BLOCKING-001
+    positiveSignals:
+    - không thể tiếp tục
+    - đang bị chặn
+    - công việc hiện tại bị gián đoạn
+    countSignals: []
+    overrides: []
+  U4:
+    ruleId: URGENCY-CRITICAL-001
+    positiveSignals:
+    - buổi thi bắt đầu sau
+    - kỳ thi đang bị chặn
+    - hoạt động khẩn cấp bị chặn
+    countSignals: []
+    overrides:
+    - U3
+priorityRuleIds:
+  LOW: PRI-001
+  MEDIUM: PRI-002
+  HIGH: PRI-003
+  CRITICAL: PRI-004
