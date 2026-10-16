@@ -9,6 +9,29 @@ FastAPI/Pydantic/Uvicorn, LLM, vector DB và retrieval chưa được chọn cho
 Phê duyệt source license, quyền dữ liệu và nghiệp vụ vẫn thuộc chủ sở hữu.
 Core đã có File HTTP và checksum server; mô tả N3 bên dưới thuộc kế hoạch N1 cũ.
 
+## Lựa chọn kỹ thuật AI-02
+
+Đã kiểm tra nguồn release và license ngày 16/10/2026 trước khi thêm dependency.
+Đây là lựa chọn kỹ thuật cho library local theo yêu cầu triển khai; không thay
+thế quyết định source license của repository, approval nghiệp vụ hoặc release.
+Các version là baseline tương thích để tái lập, không tuyên bố mới nhất/an toàn.
+
+| Thành phần | Pin | Vai trò | Nguồn license đã đối chiếu |
+| --- | --- | --- | --- |
+| CPython | 3.12.7, Unicode 15.0.0 | Runtime; chỉ hỗ trợ 3.12 trong AI-02 | [PSF và notices, tag v3.12.7](https://github.com/python/cpython/blob/v3.12.7/LICENSE) |
+| PyYAML | 6.0.2 | Runtime parser với SafeLoader, từ chối duplicate key | [MIT, tag 6.0.2](https://github.com/yaml/pyyaml/blob/6.0.2/LICENSE) |
+| jsonschema | 4.23.0 | Runtime Draft 2020-12 validator | [MIT, tag v4.23.0](https://github.com/python-jsonschema/jsonschema/blob/v4.23.0/COPYING) |
+| pytest | 8.3.5 | Dev/test | [MIT, tag 8.3.5](https://github.com/pytest-dev/pytest/blob/8.3.5/LICENSE) |
+| setuptools | 75.1.0 | Build backend | [MIT, tag v75.1.0](https://github.com/pypa/setuptools/blob/v75.1.0/LICENSE) |
+| wheel | 0.44.0 | Build wheel | [MIT, tag 0.44.0](https://github.com/pypa/wheel/blob/0.44.0/LICENSE.txt) |
+| build | 1.2.2.post1 | Dev/build frontend | [MIT, tag 1.2.2.post1](https://github.com/pypa/build/blob/1.2.2.post1/LICENSE) |
+
+`requirements.lock` khóa cả runtime, build, test và dependency bắc cầu; marker
+Windows chỉ bật colorama. Bằng chứng resolution/license metadata được ghi riêng
+trong báo cáo AI-02 sau khi cài môi trường sạch. Kiểm tra top-level license không
+phải audit đầy đủ transitive hoặc xác nhận đủ điều kiện phân phối. Không thêm
+network inference, framework HTTP, model, DB client hoặc bộ số học cho AI-02.
+
 ## Danh mục lịch sử N1
 
 Status: PROPOSED. No Intelligence dependency or model has been adopted/pinned.

@@ -5,3 +5,9 @@
 **/target/
 *.log
 .idea/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/
+intelligence/build/
+intelligence/dist/
