@@ -12,7 +12,20 @@ from ..domain.errors import (AuthorizationRejected, CitationVerificationError,
                              CorpusUnavailable, EngineConfigurationError)
 from ..domain.models import TrustedContext
 from ..retrieval.models import (AuthorizedDocument, MAX_CORPUS_BYTES, MAX_DOCUMENTS,
-                                MAX_SOURCE_BYTES, PartitionKey, digest)
+                                MAX_SOURCE_BYTES, PartitionKey, digest, scope_hash)
+
+
+def _unique_json(pairs):
+    result = {}
+    for key, value in pairs:
+        if key in result:
+            raise ValueError('Duplicate Core JSON key')
+        result[key] = value
+    return result
+
+
+def _invalid_constant(value):
+    raise ValueError('Non-finite Core JSON constant')
 
 
 class _NoRedirect(HTTPRedirectHandler):
@@ -38,7 +51,7 @@ class CoreHttpClient:
 
     def get(self, path, *, limit=128*1024, missing=False):
         token = self._token_provider()
-        if not isinstance(token, str) or not token.strip() or any(c.isspace() for c in token):
+        if not isinstance(token, str) or not token.strip() or not token.isascii() or any(c.isspace() for c in token):
             raise AuthorizationRejected('Authenticated Core access token required')
         request = Request(self.base_url + '/api/core/v1' + path,
                           headers={'Authorization': 'Bearer ' + token, 'Accept': 'application/json'})
@@ -66,7 +79,7 @@ class CoreHttpClient:
         if raw is None:
             return None
         try:
-            data = json.loads(raw)
+            data = json.loads(raw, object_pairs_hook=_unique_json, parse_constant=_invalid_constant)
             if not isinstance(data, dict):
                 raise ValueError()
             return data
@@ -96,6 +109,12 @@ class CoreCorpusCatalog:
 class CoreAuthorizedCorpusAdapter:
     def __init__(self, client: CoreHttpClient, catalog: CoreCorpusCatalog):
         self.client, self.catalog = client, catalog
+
+    def _require_context(self, context):
+        scope_hash(context)
+        if (context.workspace_id != self.catalog.workspace_id or not isinstance(context.subject, str)
+                or not context.subject.strip()):
+            raise AuthorizationRejected('Explicit authenticated Core context required')
 
     def _identity(self, context=None):
         if context is not None and (not isinstance(context, TrustedContext)
@@ -164,16 +183,19 @@ class CoreAuthorizedCorpusAdapter:
                               auth_scope_fingerprint=fingerprint)
 
     def resolve_partition(self, context, profile):
+        self._require_context(context)
         _, fingerprint, _ = self._selection(context)
         return PartitionKey(workspace_id=self.catalog.workspace_id, profile_id=profile.profile_id,
             profile_version=profile.identity.split('@')[-1], access_scope_hash=sha256(fingerprint.encode()).hexdigest(),
             corpus_version='core-http-corpus@0.1.0:' + digest(['corpus', fingerprint]))
 
     def load_documents(self, context, profile):
+        self._require_context(context)
         _, _, documents = self._selection(context)
         return documents
 
     def resolve(self, context, metadata_id):
+        self._require_context(context)
         self._identity(context)
         if metadata_id not in self.catalog.metadata_ids:
             raise AuthorizationRejected('Citation is outside the trusted corpus catalog')

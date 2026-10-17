@@ -124,7 +124,8 @@ def test_http_status_taxonomy_and_no_redirect(core_http, status, error):
     assert '/must-not-follow' not in state['calls']
 
 
-@pytest.mark.parametrize('change', ['checksum', 'file-checksum', 'foreign-workspace', 'oversized', 'bad-json', 'no-file'])
+@pytest.mark.parametrize('change', ['checksum', 'file-checksum', 'foreign-workspace', 'oversized', 'bad-json',
+                                   'duplicate-json', 'nonfinite-json', 'no-file'])
 def test_invalid_provenance_fails_closed(core_http, change):
     state, _, adapter = core_http
     metadata = state['routes'][BASE+'/metadata/'+MID]
@@ -139,6 +140,10 @@ def test_invalid_provenance_fails_closed(core_http, change):
         file['size'] = 3*1024*1024
     elif change == 'bad-json':
         state['routes'][BASE+'/metadata/'+MID] = b'{'
+    elif change == 'duplicate-json':
+        state['routes'][BASE+'/metadata/'+MID] = b'{"id":"first","id":"second"}'
+    elif change == 'nonfinite-json':
+        state['routes'][BASE+'/metadata/'+MID] = b'{"value":NaN}'
     else:
         metadata['fileId'] = None
     with pytest.raises(CitationVerificationError):
@@ -156,6 +161,19 @@ def test_context_workspace_and_catalog_boundary(core_http):
         adapter.resolve(context, FID)
     state['routes'][BASE+'/metadata/'+MID] = 404
     assert adapter.resolve(context, MID) is None
+
+
+@pytest.mark.parametrize('method', ['resolve_partition', 'load_documents', 'resolve'])
+@pytest.mark.parametrize('kind', ['none', 'no-scope'])
+def test_public_adapter_methods_require_context_before_any_http(core_http, method, kind):
+    state, _, adapter = core_http
+    context = adapter.trusted_context()
+    context = None if kind == 'none' else replace(context, auth_scope_fingerprint=None)
+    state['calls'].clear()
+    argument = MID if method == 'resolve' else ProfileRegistry().get('service-desk', '0.2.0')
+    with pytest.raises(AuthorizationRejected):
+        getattr(adapter, method)(context, argument)
+    assert state['calls'] == []
 
 
 @pytest.mark.parametrize('url', ['http://example.com', 'https://user:password@example.com',
