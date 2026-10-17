@@ -1,4 +1,11 @@
-# Intelligence architecture overview
+# Tổng quan kiến trúc Intelligence
+
+Cập nhật AI-03 ngày 17/10/2026, baseline `f348beb`: library TF-IDF, chia chunk,
+partition theo workspace/scope và kiểm chứng citation đã được triển khai.
+Xem [runtime truy xuất](retrieval-runtime.md), [vòng đời index](corpus-index-lifecycle.md)
+và [ADR-004](../decisions/ADR-004-tfidf-retrieval-baseline.md). Phần dưới giữ bối
+cảnh thiết kế N1; các mô tả “future” không phải trạng thái triển khai AI-03.
+Adapter production, BE access-scope review và quyền dữ liệu vẫn còn chờ.
 
 Status: **PROPOSED — READY FOR BE REVIEW**. N1 evidence is historical. Current
 Core alignment (16/10/2026) targets `0238c59`; AI-01.5/AI-02 work is prepared

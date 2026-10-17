@@ -1,5 +1,10 @@
 # Dependency, provenance and license inventory
 
+Cập nhật Intelligence AI-03 (17/10/2026): dependency TF-IDF và closure được pin,
+kèm nguồn license và notices trong [danh mục AI-03](../intelligence/docs/governance/ai03-dependencies.md)
+và [resolution thực tế](../intelligence/docs/governance/ai03-dependency-resolution.json).
+Không thay đổi quyết định source license hoặc quyền dữ liệu của repository.
+
 Acceptance scan update (2026-10-15): actual HIGH/CRITICAL package findings make the
 production security gate FAIL, not merely unverified. Counts, tool/database identity
 and remediation ownership are in [Core acceptance](core-acceptance.md). The historical

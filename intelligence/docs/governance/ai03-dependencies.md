@@ -18,9 +18,12 @@ thêm framework orchestration. [API TF-IDF chính thức](https://scikit-learn.o
 
 Wheel số học có thể kèm OpenBLAS, LAPACK và runtime compiler với notices riêng.
 Nguồn license cấp project không thay thế notices của binary. Báo cáo resolution
-ghi URL/hash wheel và metadata; phải giữ các LICENSE/NOTICE đi kèm khi phân phối.
+ghi URL/hash wheel, metadata và hash các file LICENSE/COPYING/NOTICE có trong
+distribution đã cài; phải giữ các notices đi kèm khi phân phối. Việc ghi hash
+không thay thế đánh giá pháp lý đầy đủ các binary thành phần.
 Không dùng `joblib.load`/pickle để đọc index, dù joblib là dependency bắc cầu.
 
 Lựa chọn dependency không thay đổi license repository, không cấp quyền cho
-fixture và không đóng gate phát hành. Windows được kiểm tra local; Linux do
-matrix CI kiểm tra, không ghi PASS khi chưa có lần chạy thực tế.
+fixture và không đóng gate phát hành. Đã cài sạch và kiểm tra trên Windows local
+và Linux container CPython 3.12.7; [resolution Linux](ai03-linux-dependency-resolution.json)
+ghi riêng wheel manylinux. Matrix GitHub Actions chưa chạy trên nhánh này.
