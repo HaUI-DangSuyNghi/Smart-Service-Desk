@@ -50,4 +50,55 @@ No new dependencies or license grant. Production/security/release gates remain.
 
 ## Verification
 
-Implementation/execution evidence will be recorded before human review.
+From repository root on Windows, with Docker's Linux engine running:
+
+```powershell
+py -3.11 -m venv .local/acceptance-venv
+& .local/acceptance-venv/Scripts/python.exe -m pip install -r scripts/acceptance/requirements.txt
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test-core-acceptance.ps1 -Project acceptance-ticket-review-01 -Python .local/acceptance-venv/Scripts/python.exe
+```
+
+Choose a new project name for each full run. The runner refuses existing projects,
+volumes or evidence directories. It retains confidential DB/file backups and stops
+only its named projects. Do not delete shared volumes to make verification pass.
+The existing Core acceptance CI also invokes ticket HTTP and restore checks.
+
+The HTTP probe can run independently against the local synthetic deployment:
+
+```powershell
+& .local/acceptance-venv/Scripts/python.exe scripts/acceptance/servicedesk.py .local/servicedesk-http.json
+& .local/acceptance-venv/Scripts/python.exe scripts/check-core-contract.py .local/servicedesk-http.json contracts/openapi/servicedesk.yaml
+```
+
+Only use synthetic demo data with these probes. Treat ticket text as untrusted
+plain text in the frontend; do not render it as HTML. OpenAPI, API and process
+policies are reviewable application decisions, not changes to Core authority.
+
+### Recorded execution: 2026-10-17 (Asia/Saigon)
+
+Final local run: `.local/acceptance-ticket-20261017-c/summary.json` and
+`.local/ticket-acceptance-c.log`. Exit 0; all nine functional gates PASS.
+Tested code commit: `0483c7e`; workingTreeDirty=true records documentation-only
+README/CHANGELOG/handoff edits. The final documentation commit changes no runtime,
+contract, infrastructure or test code. Raw evidence/backups remain ignored/private.
+
+| Check | Actual result |
+| --- | --- |
+| PostgreSQL 16.6 clean Maven verify | 77 passed, 0 failures/errors/skipped; includes 10 ticket integration tests |
+| OpenAPI | Core, Core target and Service Desk specifications PASS |
+| Real Keycloak -> APISIX -> application | Create/detail/list, scope/role negatives, duplicate race, rework and confirmation PASS |
+| Contract-validated JSON | 164 existing Core responses + 26 application responses + 6 restored application responses |
+| Failure injection | Workflow failure before/after real start and audit failure roll back ticket/engine/scope/audit |
+| Restart / storage inventory / logical restore | PASS; three restored tickets preserve content, owner, process reference and readable progress |
+| Intelligence regression, unchanged sources | Foundation/history checks and 90 tests PASS on Linux Python 3.12.14, Unicode 15.0.0; not an exact Python 3.12.7 CI-pin reproduction |
+| Contract negative check | Removing creator from a captured successful response is rejected |
+
+The first attempt was interrupted by Docker disappearance; the second exposed a
+cross-document validator scope error. Neither is counted as a successful full run.
+The validator now uses the installed referencing registry, and the final full run
+passes Core and application schemas, including restored records.
+
+Human sign-off, actual PR-head CI, production security, browser E2E and AI bridge
+remain NOT VERIFIED/not delivered by this local result. No public release or
+license grant is made. Before merge reviewers must approve the documented
+visibility, submission-conflict, coordinator/agent and confirmation/rework policies.

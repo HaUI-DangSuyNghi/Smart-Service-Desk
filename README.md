@@ -1,7 +1,7 @@
 # DX-Lab HaUI: Headless Core
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Java-21-blue.svg" alt="Java 21" />
+  <img src="https://img.shields.io/badge/Java-17-blue.svg" alt="Java 17" />
   <img src="https://img.shields.io/badge/Spring%20Boot-3.3-green.svg" alt="Spring Boot" />
   <img src="https://img.shields.io/badge/Keycloak-26.0.7-red.svg" alt="Keycloak" />
   <img src="https://img.shields.io/badge/APISIX-3.11-orange.svg" alt="APISIX" />
@@ -13,7 +13,7 @@
 Nền tảng headless Tier-1 dành cho DX-OS Open-Core (Smart Service Desk). Hệ thống cung cấp dịch vụ định danh tập trung, kiểm soát truy cập đa không gian làm việc (multi-workspace RBAC), động cơ quy trình nghiệp vụ BPMN (Flowable), quản lý siêu dữ liệu/tệp tin bảo mật và ghi vết kiểm toán giao dịch (transactional audit).
 
 > [!NOTE]
-> Đây là tầng Headless Core độc lập. Dự án hiện tại không bao gồm giao diện người dùng (UI), ứng dụng gửi ticket, chatbot hay mô hình huấn luyện AI.
+> Core remains headless. Service Desk now has backend ticket APIs and a real Flowable process; frontend and the AI bridge are not implemented. See [Ticket Foundation](docs/servicedesk-ticket-foundation.md) and [application OpenAPI](contracts/openapi/servicedesk.yaml). The Python Intelligence library remains independent.
 
 ---
 
