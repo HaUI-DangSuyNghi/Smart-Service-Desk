@@ -1,9 +1,40 @@
 # AI-03 — Báo cáo nền tảng truy xuất tri thức
 
 Ngày thực thi: 17/10/2026. Nhánh: `feature/ai03-knowledge-retrieval`.
-Base: `develop@f348beb200b84bb31f2550879d38e744fa695230`, đã fetch và đối chiếu
-`origin/develop` trước khi tạo nhánh. Trạng thái: **ĐÃ TRIỂN KHAI LIBRARY VÀ
-KIỂM CHỨNG LOCAL; CHỜ REVIEW/TÍCH HỢP, CHƯA ĐẠT MỤC TIÊU RETRIEVAL GỢI Ý**.
+Base hardening: `develop@e39356cc44ef50421a9b81199756ec9784fe161a`.
+Base triển khai ban đầu: `f348beb200b84bb31f2550879d38e744fa695230`.
+Trạng thái hiện tại: **INTEGRATION VERIFIED — REVIEW PENDING**. Package 0.3.0;
+chưa đạt mục tiêu retrieval gợi ý, chưa có approval production.
+
+## Hardening và provenance hiện tại
+
+Nhánh khi tiếp nhận hardening đã chứa `origin/develop@e39356c`; behind = 0.
+Các thay đổi upstream là thống kê Service Desk, không sửa Intelligence contract
+hay Core Metadata/File. Lịch sử local đã rebase trước phiên hardening, còn remote
+giữ SHA cũ; đã merge remote bằng `eea45299dac4cc9eec35f11d634cbab384dab42e`, giải
+quyết duy nhất xung đột package version bằng cách giữ 0.3.0. Không force-push.
+
+Runtime/package được kiểm chứng tại `eea45299dac4cc9eec35f11d634cbab384dab42e`;
+các commit docs/CI đóng evidence nằm sau mốc này. SHA HEAD hiện hành xem lịch sử
+[PR #19](https://github.com/HaUI-DangSuyNghi/Smart-Service-Desk/pull/19).
+Chủ nhánh tự mời reviewer; agent không gửi yêu cầu review hoặc tự merge.
+
+- Package 0.3.0, profile service-desk@0.2.0, contract 0.1.0 tách biệt.
+- Wheel discovery đòi đúng một artifact, kiểm distribution/version và cài lại;
+  không còn hardcode tên wheel 0.2.0 trong CI.
+- PR-range check dùng base SHA thực của PR; workflow_dispatch dùng merge-base.
+- Adapter Core HTTP có timeout/giới hạn bytes, HTTPS mặc định, local HTTP opt-in,
+  không redirect token, không cache quyền, không đọc DB.
+- Scope suy ra từ tập source Core đã cho đọc, có version và rotation; chờ BE duyệt.
+- [Core integration report](CORE_INTEGRATION_REPORT.md): 8/8 scenario PASS với
+  giới hạn JWT mới, metadata bất biến, 404 và failure injection được ghi riêng.
+
+CI đầu tiên của hardening được kích hoạt bằng PR tại runtime commit nói trên:
+[Intelligence runtime #2](https://github.com/HaUI-DangSuyNghi/Smart-Service-Desk/actions/runs/39047786245).
+Kết quả đã quan sát: **PASS cả ubuntu-24.04 và windows-2022**, bao gồm source suite,
+installed-wheel suite, evaluation và PR-range check. Workflow sau đó bổ sung job
+Core HTTP acceptance thật trên Ubuntu tại `4c56ca964e1f0839073978b54643e73b0500ac1e`,
+dùng wheel cài riêng và stack disposable; kết quả job mới được ghi sau lần chạy thực tế.
 
 ## Phạm vi hoàn thành
 
@@ -18,12 +49,12 @@ KIỂM CHỨNG LOCAL; CHỜ REVIEW/TÍCH HỢP, CHƯA ĐẠT MỤC TIÊU RETRIEV
 | AI-03.6 | CoreCitationVerifier qua resolver có phân quyền; loại stale, từ chối nguồn khác workspace, không bịa citation |
 | AI-03.7 | Hit@1, Hit@3, MRR cấp artifact; CLI/evaluation tách khỏi runtime; ghi kết quả thực |
 | AI-03.8 | Build sdist/wheel; cài wheel và kiểm tra bằng isolated Python |
-| AI-03.9 | Mở rộng CI Windows/Linux với installed-wheel suite và authored evaluation; chưa chạy GitHub Actions |
+| AI-03.9 | CI Windows/Linux có installed-wheel suite/evaluation; hardening thêm PR-range và Core HTTP acceptance |
 
 Không thay schema search v0.1, profile bất biến AI-02, luật triage, fixture gốc
 hoặc Core bindings. Không thêm HTTP production, LLM, embedding, DB/vector store,
 framework orchestration, truy cập DB Core hoặc hành động sửa workflow.
-Giữ package version 0.2.0 của baseline; đây là nhánh phát triển, chưa gắn tag release.
+Hardening nâng package từ 0.2.0 lên 0.3.0; chưa gắn tag release.
 
 ## Quyết định triển khai và ranh giới an toàn
 
@@ -72,11 +103,11 @@ chạy lại với quyền phù hợp đạt 90 test. Bộ pin sạch không d�
 | `pip install -r intelligence/requirements.lock` vào venv mới | PASS; URL/hash/closure trong resolution AI-03 |
 | `pip check` | PASS, không có dependency lỗi |
 | Foundation validator | PASS, 145 negative case, 5 source digest, profile bất biến |
-| `python -m pytest intelligence/tests -q` | 155 test PASS, gồm 65 test AI-03 mới |
+| `python -m pytest intelligence/tests -q` | 181 test PASS, gồm 26 test hardening mới |
 | `python -m build --no-isolation intelligence` | PASS, sdist và wheel; wheel được build từ sdist |
 | Cài wheel `--no-deps --force-reinstall` | PASS |
 | `python -I scripts/intelligence/verify-installed-package.py` | PASS cả triage, resource, TF-IDF, snapshot và citation qua FakeCore |
-| `python -I -m pytest -c scripts/intelligence/installed-pytest.ini intelligence/tests -q` | 155 test PASS từ package cài trong site-packages |
+| `python -I -m pytest -c scripts/intelligence/installed-pytest.ini intelligence/tests -q` | 181 test PASS từ package 0.3.0 trong site-packages |
 | Evaluation bằng package đã cài | PASS tính toán; kết quả bằng lần chạy từ source |
 | Authoring CLI query tài khoản | Trả `kb-account-001` đầu tiên; nhãn AUTHORING_ONLY_NOT_RUNTIME |
 | `git diff --check` | PASS |
@@ -86,7 +117,8 @@ và dùng importlib. Script xác nhận package nằm trong site-packages và sc
 profile được đóng trong `_resources`. Test double được ghi rõ FakeCore; đây
 không phải bằng chứng tích hợp API Core thật.
 
-Linux container cũng đã kiểm chứng thực tế, dùng CPython 3.12.7 trong image
+Ở vòng triển khai ban đầu (package 0.2.0), Linux container đã kiểm chứng thực tế,
+dùng CPython 3.12.7 trong image
 `python:3.12.7-slim@sha256:60d9996b6a8a3689d36db740b49f4327be3be09a21122bd02fb8895abb38b50d`.
 Repository được mount chỉ đọc, dependency cài trong container mới, wheel dựng
 từ sdist vào thư mục tạm. Resolution Linux có 19 package (Windows có thêm colorama),
@@ -101,8 +133,9 @@ ghi tại [resolution Linux](../../governance/ai03-linux-dependency-resolution.j
 | Full suite từ installed wheel | 155 test PASS, 23,11 giây |
 | Authored evaluation | Giống Windows: Hit@1 7/12, Hit@3 11/12, MRR 0,7388888889 |
 
-Bằng chứng container Linux local không thay thế GitHub Actions trên
-`ubuntu-24.04`/`windows-2022`; workflow chưa được kích hoạt vì nhánh chưa push.
+Bằng chứng container Linux local phía trên là lịch sử của baseline 155 test,
+không thay kết quả CI hardening 181 test. GitHub Actions đã được kích hoạt bởi
+PR #19; trạng thái hiện tại được ghi ở phần hardening đầu báo cáo.
 
 Đo local trên 5 tài liệu/12 chunk, sau import: build 112,209 ms; đỉnh bộ nhớ
 Python do tracemalloc theo dõi 767.235 byte; median search 0,914 ms, max 2,531 ms
@@ -150,14 +183,15 @@ nguồn giữ `MANUAL_EXPECTED`, `NOT BENCHMARK`, `NOT ENGINE OUTPUT`; báo cáo
 | Gate | Trạng thái và việc cần làm |
 | --- | --- |
 | AI review | Chờ người review xác nhận thiết kế, config và đánh giá; local test không thay approval |
-| BE-03-A | Chờ xác nhận tập quyền file/metadata, scope identity/rotation và triển khai adapter Core API có phân quyền |
+| BE-03-A | Adapter đã có real API acceptance; chờ duyệt scope/rotation, giới hạn JWT và semantics 404 |
 | Chính sách lỗi vận hành | Chờ BE/Application quyết định khi nào bật DEGRADED |
 | OWNER-03-A | Fixture vẫn PENDING_OWNER_APPROVAL, usageRights=null, NOT_INGESTED; chưa được cấp quyền public/production |
 | Process Owner | Không sửa nghiệp vụ; quyền sử dụng knowledge chứa policy cần xác nhận khi tích hợp |
-| QA | Windows và Linux container local unit/security/package PASS; review độc lập và acceptance Core thật còn chờ |
-| CI | Matrix đã cập nhật; chưa có bằng chứng GitHub Actions trên nhánh này |
+| QA | Windows hardening 181 test PASS, Core thật 8/8 PASS có giới hạn; chờ review độc lập |
+| CI | PR #19 đã kích hoạt matrix; trạng thái cụ thể ghi ở phần hardening |
 | Retrieval target | Hai mục tiêu gợi ý chưa đạt; đã ghi miss analysis để review và chuyển AI-04 |
 
-Chưa push, mở PR, merge hoặc phát hành. Các commit được chia theo kiến trúc,
-dependency, domain, chunker, index, service, citation, evaluation/security, CI và
-tài liệu. Commit message dùng tiếng Anh; tài liệu tổng hợp dùng tiếng Việt.
+Đã push và mở PR #19 vào develop; chưa merge/phát hành. Commit message tiếng Anh;
+tài liệu tổng hợp tiếng Việt. Fixture vẫn PENDING_OWNER_APPROVAL, usageRights=null,
+NOT_INGESTED. Không thêm model/vector DB/RAG. Các thử nghiệm lexical, dataset v0.2,
+coverage/SBOM/pip-audit là hạng mục tùy chọn chưa thực hiện, không tuyên bố đã đạt.

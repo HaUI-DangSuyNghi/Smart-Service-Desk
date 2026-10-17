@@ -7,6 +7,12 @@ hạn. [Kiến trúc](docs/architecture/retrieval-runtime.md), [vòng đời ind
 [ADR-004](docs/decisions/ADR-004-tfidf-retrieval-baseline.md) và
 [dependency/license](docs/governance/ai03-dependencies.md) phục vụ review.
 
+Hardening: package **0.3.0**, giữ profile `service-desk@0.2.0` và wire contract
+`0.1.0`. Đã bổ sung adapter Core HTTP và acceptance thật, xem
+[hợp đồng scope](docs/architecture/access-scope-contract.md) và
+[bằng chứng tích hợp](docs/task/AI03/CORE_INTEGRATION_REPORT.md). Review BE và
+quyền dữ liệu vẫn còn chờ; chưa coi là phê duyệt production.
+
 Sau khi cài wheel bằng bộ pin `requirements.lock`, chạy từ repository root:
 
 ```powershell
@@ -36,8 +42,11 @@ run = service.search(payload, trusted_context=context, profile_version='0.2.0')
 ```
 
 Các symbol lần lượt nằm trong `retrieval.index`, `retrieval.registry`,
-`services.search` và `citations.verifier` của package. Không có adapter Core
-production đi kèm; BE cần duyệt cơ chế scope trước tích hợp. Snapshot phải lưu
+`services.search` và `citations.verifier` của package. Adapter HTTP nằm trong
+`integrations.core`, có `CoreHttpClient`, `CoreCorpusCatalog`,
+`CoreAuthorizedCorpusAdapter`. Cấp token provider từ middleware đã xác thực,
+catalog từ cấu hình Application tin cậy, rồi gọi `adapter.trusted_context()`;
+không lấy subject/scope từ request. BE cần duyệt cơ chế scope trước production. Snapshot phải lưu
 ngoài Git, có ACL thích hợp, nạp bằng `load_index(path, expected_partition)`.
 Truy vấn không có kết quả phù hợp trả SUCCESS và yêu cầu review; nguồn stale bị bỏ; lỗi quyền
 luôn được truyền ra ngoài. Mặc định lỗi vận hành cũng được truyền ra ngoài;
@@ -47,7 +56,7 @@ Phụ trách: AI. Trạng thái: **ĐÃ TRIỂN KHAI LOCAL, CHỜ REVIEW**.
 AI-01.5 có profile thực thi; AI-02 có triage deterministic; AI-03 bổ sung library
 TF-IDF, partition theo workspace/scope và kiểm chứng citation. Bằng chứng hiện tại
 và các gate còn chờ được ghi trong [báo cáo AI-03](docs/task/AI03/RUNTIME_REPORT.md).
-Không có adapter Core production hoặc endpoint HTTP trong giai đoạn này.
+Có adapter Core HTTP đã kiểm chứng local; chưa có endpoint Intelligence public.
 Xem [báo cáo AI-01.5](docs/task/AI015/CLOSEOUT_REPORT.md) và
 [báo cáo AI-02](docs/task/AI02/RUNTIME_REPORT.md). Phê duyệt BE/Process Owner
 và merge gate AI-01.5 vẫn chờ; chưa coi là release hoặc hoàn tất approval.
@@ -104,11 +113,27 @@ python -m venv .local/ai02-venv
 .local/ai02-venv/Scripts/python -m pip install -r intelligence/requirements.lock
 .local/ai02-venv/Scripts/python scripts/intelligence/validate-foundation.py
 .local/ai02-venv/Scripts/python -m pytest intelligence/tests -q
-.local/ai02-venv/Scripts/python -m build --no-isolation intelligence
-.local/ai02-venv/Scripts/python -m pip install --no-deps intelligence/dist/smart_service_intelligence-0.2.0-py3-none-any.whl
+.local/ai02-venv/Scripts/python -m build --no-isolation --outdir .local/ai03-dist intelligence
+.local/ai02-venv/Scripts/python scripts/intelligence/install-built-wheel.py --dist .local/ai03-dist
 .local/ai02-venv/Scripts/python -I scripts/intelligence/verify-installed-package.py
 git diff --check
 ```
+
+Thư mục dist phải có đúng một wheel. Discovery từ chối không có artifact, nhiều
+wheel hoặc metadata version khác `pyproject.toml`; tránh trộn wheel 0.2/0.3 cũ.
+Để chạy acceptance Core thật với project/port riêng:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup.ps1
+docker compose -p dx-ai03-hardening -f compose.yaml -f scripts/acceptance/intelligence-compose.yaml up -d --build --wait --wait-timeout 300
+python -I scripts/acceptance/intelligence-retrieval.py --output .local/ai03-core-acceptance.json
+docker compose -p dx-ai03-hardening -f compose.yaml -f scripts/acceptance/intelligence-compose.yaml stop
+```
+
+Cần Compose >=2.24.4; cổng 18081/19080. Runner đọc `.env` riêng tư, chỉ seed
+source tổng hợp độc lập và principal test riêng, rồi xóa principal đó. Metadata
+test còn trong volume acceptance vì Core không có API delete. Không dùng fixture
+`PENDING_OWNER_APPROVAL`. Không chạy script này trên hệ thống production.
 
 Linux dùng `.local/ai02-venv/bin/python` thay cho đường dẫn `Scripts/python`.
 Developer CLI chạy sau khi cài wheel, chỉ dành cho engineering local:
@@ -118,7 +143,7 @@ Developer CLI chạy sau khi cài wheel, chỉ dành cho engineering local:
 .local/ai02-venv/Scripts/python -m smart_service_intelligence.evaluation.conformance --fixtures fixtures/intelligence/service-desk/tickets/tickets-v0.1.jsonl --output .local/ai02-conformance.json
 ```
 
-CLI không xác thực hay cấp quyền. Adapter sau này phải authorize và truyền
+CLI không xác thực hay cấp quyền. Adapter Core HTTP phải authorize và truyền
 `TrustedContext` riêng; payload workspace chỉ dùng correlation. Service chỉ map
 `EngineUnavailable` sang DEGRADED, còn authorization/configuration/contract error
 được raise. Trace không chứa nội dung ticket/credential; normalization version
@@ -128,8 +153,8 @@ Validation covers the shared schemas, profile composition, 12 manual expected
 ticket annotations, literal INPUT evidence, priority/routing/rule versions,
 exact-byte manifests, retrieval gold and invalid data. It reads local artifacts
 without calling Core or executing an engine. Runtime tests execute triage
-separately. Public adapter authorization and Core citation issuance require
-later integration tests.
+separately. Hardening adds the real Core HTTP acceptance runner described above;
+this does not replace BE approval or a production public endpoint review.
 
 Fixtures are synthetic authoring/evaluation seeds, not production data or engine
 predictions. The five knowledge sources have exact-byte SHA-256, pending rights,

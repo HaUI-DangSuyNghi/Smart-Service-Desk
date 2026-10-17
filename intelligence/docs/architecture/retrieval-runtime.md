@@ -8,7 +8,10 @@ Partition bao gồm workspace, profile/version, hash scope, corpus version,
 chunk/normalization version và engine/version/config. Không chọn `latest`.
 `AuthorizedCorpusSource` là giao diện adapter, không phải một bộ cấp quyền.
 Adapter production phải dùng API Core được hỗ trợ, kiểm tra cả metadata và file.
-AI-03 chỉ cung cấp protocol và test double; chưa có credentials/adapter production.
+AI-03 hardening có `integrations.core.CoreAuthorizedCorpusAdapter` dùng API HTTP
+Core thật. Token provider thuộc middleware đã xác thực; library không tạo hoặc
+lưu credentials. [Hợp đồng scope](access-scope-contract.md) mô tả snapshot digest,
+rotation và giới hạn thu hồi JWT; BE chưa phê duyệt production.
 
 Các mối đe dọa và biện pháp:
 
