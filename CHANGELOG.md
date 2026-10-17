@@ -1,5 +1,12 @@
 # Changelog
 
+## Service Desk ticket foundation (unreleased)
+
+- Add workspace-scoped ticket create/detail/search APIs and live Flowable progress.
+- Add V5 ticket persistence, database-controlled duplicate submissions, atomic workflow/audit and application-owned handle/confirm/rework BPMN.
+- Publish application OpenAPI, gateway route and FE/AI handoff. No frontend, AI bridge, private attachments or license grant.
+- Add PostgreSQL/Spring authorization, rollback and concurrency tests plus real Keycloak/gateway acceptance tooling.
+
 ## Core fixes before H-P-D-I (unreleased)
 
 - Fix startup on a fresh database: Flowable created its tables before Flyway, so Flyway refused the non-empty schema and Core exited. The engine now depends on Flyway (`EngineAfterMigrations`).

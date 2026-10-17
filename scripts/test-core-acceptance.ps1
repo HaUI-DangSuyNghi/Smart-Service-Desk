@@ -6,7 +6,7 @@ $ErrorActionPreference = 'Stop'
 Set-Location (Split-Path $PSScriptRoot -Parent)
 $restore = "$Project-restore"
 $evidence = Join-Path $PWD ".local/$Project"
-$results = [ordered]@{postgresql='NOT VERIFIED'; contracts='NOT VERIFIED'; cleanE2E='NOT VERIFIED'; independentSecurityAndReuse='NOT VERIFIED'; uploadDisabled='NOT VERIFIED'; restart='NOT VERIFIED'; storageInventory='NOT VERIFIED'; backupRestore='NOT VERIFIED'}
+$results = [ordered]@{postgresql='NOT VERIFIED'; contracts='NOT VERIFIED'; cleanE2E='NOT VERIFIED'; ticketFoundation='NOT VERIFIED'; independentSecurityAndReuse='NOT VERIFIED'; uploadDisabled='NOT VERIFIED'; restart='NOT VERIFIED'; storageInventory='NOT VERIFIED'; backupRestore='NOT VERIFIED'}
 function Run-Docker {
     & docker @args
     if ($LASTEXITCODE -ne 0) { throw "Docker command failed: $($args[0]) $($args[1])" }
@@ -38,6 +38,7 @@ try {
     $stage = 'contracts'
     Run-Python -m openapi_spec_validator contracts/openapi/core.yaml
     Run-Python -m openapi_spec_validator contracts/openapi/core-target.yaml
+    Run-Python -m openapi_spec_validator contracts/openapi/servicedesk.yaml
     $results.contracts = 'PASS'
     $stage = 'cleanE2E'
     Run-Docker compose -p $Project up -d --build --wait --wait-timeout 300
@@ -45,6 +46,10 @@ try {
     Copy-Item -LiteralPath .local/core-integration-http.json -Destination (Join-Path $evidence 'smoke-http.json')
     Run-Python scripts/check-core-contract.py (Join-Path $evidence 'smoke-http.json')
     $results.cleanE2E = 'PASS'
+    $stage = 'ticketFoundation'
+    Run-Python scripts/acceptance/servicedesk.py (Join-Path $evidence 'servicedesk-http.json')
+    Run-Python scripts/check-core-contract.py (Join-Path $evidence 'servicedesk-http.json') contracts/openapi/servicedesk.yaml
+    $results.ticketFoundation = 'PASS'
     $stage = 'independentSecurityAndReuse'
     Run-Python scripts/acceptance/core/verify-runtime.py seed $state
     Run-Python scripts/check-core-contract.py (Join-Path $evidence 'seed-http.json')
@@ -100,6 +105,8 @@ try {
     Copy-Item -LiteralPath (Join-Path $evidence 'verify-http.json') -Destination (Join-Path $evidence 'restore-http.json')
     Run-Python scripts/acceptance/core/verify-runtime.py resume $state
     foreach ($name in @('restart', 'restore', 'resume')) { Run-Python scripts/check-core-contract.py (Join-Path $evidence "$name-http.json") }
+    Run-Python scripts/acceptance/servicedesk.py (Join-Path $evidence 'restored-servicedesk-http.json') (Join-Path $evidence 'servicedesk-http.json')
+    Run-Python scripts/check-core-contract.py (Join-Path $evidence 'restored-servicedesk-http.json') contracts/openapi/servicedesk.yaml
     Get-Content scripts/check-db.sql -Raw | & docker compose -p $restore exec -T postgres psql -U core -d core -v ON_ERROR_STOP=1
     if ($LASTEXITCODE -ne 0) { throw 'Restored DB consistency failed' }
     $results.backupRestore = 'PASS'

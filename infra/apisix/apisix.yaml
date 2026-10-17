@@ -15,6 +15,21 @@ routes:
       type: roundrobin
       nodes:
         'core:8080': 1
+  - id: servicedesk
+    uri: /api/apps/servicedesk/v1/*
+    plugins:
+      limit-count:
+        count: 300
+        time_window: 60
+        rejected_code: 429
+        key: remote_addr
+        policy: local
+      client-control:
+        max_body_size: 6291456
+    upstream:
+      type: roundrobin
+      nodes:
+        'core:8080': 1
   - id: health
     uri: /health
     plugins:
