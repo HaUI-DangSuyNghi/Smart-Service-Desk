@@ -37,7 +37,9 @@ paths:
       operationId: searchTickets
       description: Requester sees own tickets; agent/coordinator sees workspace tickets. Stable newest-first ordering by createdAt and id.
       parameters:
-        - {name: q, in: query, schema: {type: string, maxLength: 200}, description: Case-insensitive literal substring in title or description; no wildcard syntax.}
+        - {$ref: '#/components/parameters/Query'}
+        - {$ref: '#/components/parameters/From'}
+        - {$ref: '#/components/parameters/To'}
         - {$ref: 'core.yaml#/components/parameters/Page'}
         - {$ref: 'core.yaml#/components/parameters/Size'}
       responses:
@@ -46,6 +48,25 @@ paths:
           content:
             application/json:
               schema: {$ref: '#/components/schemas/TicketPage'}
+        '400': {$ref: 'core.yaml#/components/responses/BadRequest'}
+        '401': {$ref: 'core.yaml#/components/responses/Unauthorized'}
+        '403': {$ref: 'core.yaml#/components/responses/Forbidden'}
+  /workspaces/{workspace}/tickets/statistics:
+    parameters:
+      - {$ref: 'core.yaml#/components/parameters/Workspace'}
+    get:
+      operationId: getTicketStatistics
+      description: One workspace only. Requester counts own tickets; agent/coordinator counts workspace tickets, including tasks not yet claimed. Filters match Ticket List. Current workflow states of tickets created in the selected interval, not historical completion counts. No caching or separate status storage.
+      parameters:
+        - {$ref: '#/components/parameters/Query'}
+        - {$ref: '#/components/parameters/From'}
+        - {$ref: '#/components/parameters/To'}
+      responses:
+        '200':
+          description: Single database snapshot; total equals the sum of the four mutually exclusive state counts. Empty results have all counts zero.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/TicketStatistics'}
         '400': {$ref: 'core.yaml#/components/responses/BadRequest'}
         '401': {$ref: 'core.yaml#/components/responses/Unauthorized'}
         '403': {$ref: 'core.yaml#/components/responses/Forbidden'}
@@ -87,12 +108,39 @@ components:
   securitySchemes:
     bearer: {type: http, scheme: bearer, bearerFormat: JWT}
   parameters:
+    Query:
+      name: q
+      in: query
+      description: Case-insensitive literal substring in title or description; no wildcard syntax or control characters. Empty or omitted matches all visible tickets.
+      schema: {type: string, maxLength: 200}
+    From:
+      name: from
+      in: query
+      description: Inclusive ticket createdAt lower bound, RFC3339 with timezone. Years 0001-9999, at most microsecond precision. Must precede to when both are supplied.
+      schema: {type: string, format: date-time}
+    To:
+      name: to
+      in: query
+      description: Exclusive ticket createdAt upper bound, RFC3339 with timezone. Years 0001-9999, at most microsecond precision. Omitted bounds are unbounded.
+      schema: {type: string, format: date-time}
     TicketId:
       name: id
       in: path
       required: true
       schema: {type: string, format: uuid}
   schemas:
+    TicketStatistics:
+      type: object
+      additionalProperties: false
+      required: [workspace, visibility, total, awaitingHandling, awaitingConfirmation, completed, unclassified]
+      properties:
+        workspace: {type: string}
+        visibility: {type: string, enum: [own, workspace]}
+        total: {type: integer, format: int64, minimum: 0}
+        awaitingHandling: {type: integer, format: int64, minimum: 0, description: Exactly one active handle task; includes claimed tasks.}
+        awaitingConfirmation: {type: integer, format: int64, minimum: 0, description: Exactly one active confirm task.}
+        completed: {type: integer, format: int64, minimum: 0, description: Normal service-desk end event in Flowable history and no runtime tasks; excludes deleted processes.}
+        unclassified: {type: integer, format: int64, minimum: 0, description: 'Missing or mismatched scope/history, suspended, deleted or unexpected task configuration; never assumed completed.'}
     NewTicket:
       type: object
       additionalProperties: false

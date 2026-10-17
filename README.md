@@ -14,6 +14,7 @@ Nền tảng headless Tier-1 dành cho DX-OS Open-Core (Smart Service Desk). H�
 
 > [!NOTE]
 > Core remains headless. Service Desk now has backend ticket APIs and a real Flowable process; frontend and the AI bridge are not implemented. See [Ticket Foundation](docs/servicedesk-ticket-foundation.md) and [application OpenAPI](contracts/openapi/servicedesk.yaml). The Python Intelligence library remains independent.
+> Dashboard counts and shared time filters are documented in [Service Desk statistics](docs/servicedesk-statistics.md); dashboard UI remains a frontend task.
 
 ---
 

@@ -1,6 +1,7 @@
 package vn.haui.dx.apps.servicedesk;
 
 import java.util.UUID;
+import java.time.Instant;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 import vn.haui.dx.core.common.Page;
@@ -28,8 +29,16 @@ public class TicketController {
 
     @GetMapping
     public Page<Ticket> search(@PathVariable String workspace, @RequestParam(required = false) String q,
+                              @RequestParam(required = false) Instant from, @RequestParam(required = false) Instant to,
                               @RequestParam(required = false) Integer page, @RequestParam(required = false) Integer size) {
-        return tickets.search(workspace, q, PageRequest.of(page, size));
+        return tickets.search(workspace, q, from, to, PageRequest.of(page, size));
+    }
+
+    @GetMapping("/statistics")
+    public TicketStatistics statistics(@PathVariable String workspace, @RequestParam(required = false) String q,
+                                       @RequestParam(required = false) Instant from,
+                                       @RequestParam(required = false) Instant to) {
+        return tickets.statistics(workspace, q, from, to);
     }
 
     @GetMapping("/{id}/progress")

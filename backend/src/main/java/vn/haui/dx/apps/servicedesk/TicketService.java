@@ -2,6 +2,7 @@ package vn.haui.dx.apps.servicedesk;
 
 import java.util.Map;
 import java.util.UUID;
+import java.time.Instant;
 import jakarta.validation.Validator;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
@@ -56,12 +57,31 @@ public class TicketService {
     }
 
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
-    public Page<Ticket> search(String workspace, String query, PageRequest page) {
+    public Page<Ticket> search(String workspace, String query, Instant from, Instant to, PageRequest page) {
         var user = member(workspace);
         if (page == null) throw CoreException.validation("Page is required");
+        filters(query, from, to);
+        return repository.search(workspace, reader(user, workspace), query, from, to, page);
+    }
+
+    @Transactional(readOnly = true)
+    public TicketStatistics statistics(String workspace, String query, Instant from, Instant to) {
+        var user = member(workspace);
+        filters(query, from, to);
+        return repository.statistics(workspace, reader(user, workspace), query, from, to);
+    }
+
+    private static void filters(String query, Instant from, Instant to) {
         if (query != null && (query.length() > 200 || query.codePoints().anyMatch(Character::isISOControl)))
             throw CoreException.validation("Invalid ticket query");
-        return repository.search(workspace, reader(user, workspace), query, page);
+        for (Instant bound : new Instant[] {from, to}) {
+            if (bound != null && (bound.getNano() % 1000 != 0
+                || bound.isBefore(Instant.parse("0001-01-01T00:00:00Z"))
+                || !bound.isBefore(Instant.parse("+10000-01-01T00:00:00Z"))))
+                throw CoreException.validation("Time filter requires years 0001-9999 and microsecond precision");
+        }
+        if (from != null && to != null && !from.isBefore(to))
+            throw CoreException.validation("from must precede to");
     }
 
     @Transactional(readOnly = true)

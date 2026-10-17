@@ -51,6 +51,7 @@ class TicketIntegrationTest {
     @Autowired ObjectMapper json;
     @Autowired JdbcTemplate jdbc;
     @SpyBean WorkflowService workflow;
+    @Autowired org.flowable.engine.ProcessEngine engine;
 
     private RequestPostProcessor as(String subject, String workspace, String... roles) {
         return jwt().jwt(token -> token.subject(subject).claim("groups", Arrays.stream(roles)
@@ -78,6 +79,122 @@ class TicketIntegrationTest {
     private long[] counts() {
         return List.of("servicedesk_ticket", "process_scope", "act_hi_procinst", "act_ru_task", "audit_event")
             .stream().mapToLong(table -> jdbc.queryForObject("select count(*) from " + table, Long.class)).toArray();
+    }
+
+    private JsonNode statistics(String workspace, String subject, String query, String... roles) throws Exception {
+        return body(mvc.perform(get(BASE.replace("lab-a", workspace) + "/statistics").param("q", query)
+            .with(as(subject, workspace, roles))).andExpect(status().isOk()));
+    }
+
+    private void metrics(JsonNode result, long handling, long confirming, long completed, long unclassified) {
+        assertEquals(handling + confirming + completed + unclassified, result.path("total").asLong());
+        assertEquals(handling, result.path("awaitingHandling").asLong());
+        assertEquals(confirming, result.path("awaitingConfirmation").asLong());
+        assertEquals(completed, result.path("completed").asLong());
+        assertEquals(unclassified, result.path("unclassified").asLong());
+    }
+
+    @Test void statisticsAreEmptyAndRequireAnExplicitWorkspaceRole() throws Exception {
+        String path = BASE + "/statistics";
+        mvc.perform(get(path)).andExpect(status().isUnauthorized());
+        mvc.perform(get(path).with(as("foreign", "lab-b", "coordinator"))).andExpect(status().isForbidden());
+        mvc.perform(get(path).with(as("observer", "lab-a", "observer"))).andExpect(status().isForbidden());
+        mvc.perform(get(path).with(jwt().jwt(token -> token.subject("admin")
+            .claim("realm_access", Map.of("roles", List.of("platform-admin")))))).andExpect(status().isForbidden());
+        var result = statistics("lab-a", "empty", UUID.randomUUID().toString(), "requester");
+        metrics(result, 0, 0, 0, 0);
+        assertEquals("lab-a", result.path("workspace").asText());
+        assertEquals("own", result.path("visibility").asText());
+    }
+
+    @Test void statisticsReuseListVisibilityAndLiteralSearchWithoutCrossWorkspaceCounts() throws Exception {
+        String marker = "stats-" + UUID.randomUUID();
+        create("stats-owner", marker + " %_ Alpha", "requester");
+        create("stats-owner", marker + " %_ Beta", "requester");
+        create("stats-other", marker + " Other", "requester");
+        mvc.perform(post(BASE.replace("lab-a", "lab-b")).with(as("stats-owner", "lab-b", "requester"))
+            .contentType("application/json").content(payload(UUID.randomUUID(), marker)))
+            .andExpect(status().isCreated());
+        for (String role : List.of("requester", "agent", "coordinator")) {
+            var stats = statistics("lab-a", "stats-owner", marker.toUpperCase(), role);
+            metrics(stats, role.equals("requester") ? 2 : 3, 0, 0, 0);
+            assertEquals(role.equals("requester") ? "own" : "workspace", stats.path("visibility").asText());
+            var list = body(mvc.perform(get(BASE).param("q", marker).param("size", "1")
+                .with(as("stats-owner", "lab-a", role))).andExpect(status().isOk()));
+            assertEquals(list.get("total"), stats.get("total"));
+        }
+        metrics(statistics("lab-a", "stats-agent", marker + " %_", "agent"), 2, 0, 0, 0);
+        metrics(statistics("lab-b", "stats-owner", marker, "coordinator"), 1, 0, 0, 0);
+        metrics(statistics("lab-a", "stats-hidden", marker, "requester"), 0, 0, 0, 0);
+        metrics(statistics("lab-a", "stats-agent", "' OR 1=1 --", "agent"), 0, 0, 0, 0);
+    }
+
+    @Test void statisticsAndListShareHalfOpenCreationTimeBoundsAndOffsets() throws Exception {
+        String marker = "time-" + UUID.randomUUID();
+        String[] dates = {"2026-01-01T00:00:00Z", "2026-01-01T00:00:00.000001Z", "2026-01-02T00:00:00Z"};
+        for (String date : dates) {
+            var ticket = create("time-owner", marker, "requester");
+            jdbc.update("update servicedesk_ticket set created_at=cast(? as timestamptz) where id=?",
+                date, UUID.fromString(ticket.get("id").asText()));
+        }
+        for (String route : List.of(BASE, BASE + "/statistics")) {
+            mvc.perform(get(route).with(as("time-owner", "lab-a", "requester")).param("q", marker)
+                .param("from", "2026-01-01T07:00:00+07:00").param("to", dates[2]))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.total").value(2));
+            mvc.perform(get(route).with(as("time-owner", "lab-a", "requester")).param("q", marker)
+                .param("from", dates[1]).param("to", dates[2]))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.total").value(1));
+            mvc.perform(get(route).with(as("time-owner", "lab-a", "requester")).param("q", marker).param("to", dates[0]))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.total").value(0));
+            mvc.perform(get(route).with(as("time-owner", "lab-a", "requester")).param("q", marker).param("from", dates[2]))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.total").value(1));
+        }
+    }
+
+    @Test void statisticsAndListRejectInvalidFilters() throws Exception {
+        for (String route : List.of(BASE, BASE + "/statistics")) {
+            for (String invalid : List.of("not-a-date", "2026-01-01", "2026-01-01T00:00:00.000000001Z", "0000-01-01T00:00:00Z")) {
+                mvc.perform(get(route).with(as("invalid-stats", "lab-a", "requester")).param("from", invalid))
+                    .andExpect(status().isBadRequest());
+                mvc.perform(get(route).with(as("invalid-stats", "lab-a", "requester")).param("to", invalid))
+                    .andExpect(status().isBadRequest());
+            }
+            for (String from : List.of("2026-01-02T00:00:00Z", "2026-01-03T00:00:00Z"))
+                mvc.perform(get(route).with(as("invalid-stats", "lab-a", "requester"))
+                    .param("from", from).param("to", "2026-01-02T00:00:00Z")).andExpect(status().isBadRequest());
+            for (String query : List.of("x".repeat(201), "bad\nquery"))
+                mvc.perform(get(route).with(as("invalid-stats", "lab-a", "requester")).param("q", query))
+                    .andExpect(status().isBadRequest());
+        }
+    }
+
+    @Test void statisticsDoNotMislabelSuspendedDeletedOrMissingHistoryAsCompleted() throws Exception {
+        String marker = "unknown-" + UUID.randomUUID();
+        var ticket = create("unknown-owner", marker, "requester");
+        String process = ticket.path("process").path("processInstanceId").asText();
+        engine.getRuntimeService().suspendProcessInstanceById(process);
+        metrics(statistics("lab-a", "unknown-owner", marker, "requester"), 0, 0, 0, 1);
+        engine.getRuntimeService().activateProcessInstanceById(process);
+        metrics(statistics("lab-a", "unknown-owner", marker, "requester"), 1, 0, 0, 0);
+        engine.getRuntimeService().deleteProcessInstance(process, "synthetic test cancellation");
+        metrics(statistics("lab-a", "unknown-owner", marker, "requester"), 0, 0, 0, 1);
+        engine.getHistoryService().deleteHistoricProcessInstance(process);
+        metrics(statistics("lab-a", "unknown-owner", marker, "requester"), 0, 0, 0, 1);
+    }
+
+    @Test void statisticsIgnoreStandaloneCoreProcessesAndDetectScopeMismatch() throws Exception {
+        String marker = "scope-" + UUID.randomUUID();
+        mvc.perform(post("/api/core/v1/workspaces/lab-a/processes/service-desk/instances")
+            .with(as("standalone-stats", "lab-a", "requester")).contentType("application/json")
+            .content(json.writeValueAsString(Map.of("businessKey", marker)))).andExpect(status().isCreated());
+        metrics(statistics("lab-a", "standalone-stats", null, "requester"), 0, 0, 0, 0);
+        var ticket = create("scope-stats", marker, "requester");
+        String process = ticket.path("process").path("processInstanceId").asText();
+        jdbc.update("update process_scope set workspace='lab-b' where id=?", process);
+        try {
+            metrics(statistics("lab-a", "scope-stats", marker, "requester"), 0, 0, 0, 1);
+            metrics(statistics("lab-b", "scope-stats", marker, "agent"), 0, 0, 0, 0);
+        } finally { jdbc.update("update process_scope set workspace='lab-a' where id=?", process); }
     }
 
     @Test void createPersistsCanonicalProcessAndRealAuditWithoutContent() throws Exception {
@@ -253,6 +370,7 @@ class TicketIntegrationTest {
         mvc.perform(get(ticketPath + "/progress").with(as("handler", "lab-a", "agent"))).andExpect(status().isNotFound());
         mvc.perform(get(ticketPath + "/progress").with(as("coordinator", "lab-a", "coordinator"))).andExpect(status().isOk());
         for (String confirmation : List.of("rework", "accepted")) {
+            metrics(statistics("lab-a", "workflow-owner", "Workflow", "requester"), 1, 0, 0, 0);
             var progress = body(mvc.perform(get(ticketPath + "/progress").with(as("workflow-owner", "lab-a", "requester")))
                 .andExpect(status().isOk()));
             String task = progress.path("currentTasks").get(0).get("id").asText();
@@ -263,9 +381,11 @@ class TicketIntegrationTest {
                 .andExpect(status().isForbidden());
             mvc.perform(post(core + "/tasks/" + task + "/claim").with(as("handler", "lab-a", "agent")))
                 .andExpect(status().isOk());
+            metrics(statistics("lab-a", "workflow-owner", "Workflow", "requester"), 1, 0, 0, 0);
             mvc.perform(post(core + "/tasks/" + task + "/complete").with(as("handler", "lab-a", "agent"))
                 .contentType("application/json").content("{\"expectedTaskKey\":\"handle\",\"outcome\":\"resolved\"}"))
                 .andExpect(status().isNoContent());
+            metrics(statistics("lab-a", "workflow-owner", "Workflow", "requester"), 0, 1, 0, 0);
             progress = body(mvc.perform(get(ticketPath + "/progress").with(as("workflow-owner", "lab-a", "requester")))
                 .andExpect(status().isOk()));
             String confirm = progress.path("currentTasks").get(0).get("id").asText();
@@ -280,6 +400,7 @@ class TicketIntegrationTest {
         mvc.perform(get(ticketPath + "/progress").with(as("workflow-owner", "lab-a", "requester")))
             .andExpect(status().isOk()).andExpect(jsonPath("$.ended").value(true))
             .andExpect(jsonPath("$.steps.length()").value(4)).andExpect(jsonPath("$.currentTasks").isEmpty());
+        metrics(statistics("lab-a", "workflow-owner", "Workflow", "requester"), 0, 0, 1, 0);
         assertEquals(1L, jdbc.queryForObject("select count(*) from audit_event where action='servicedesk.ticket.create' "
             + "and resource=?", Long.class, ticket.get("id").asText()));
     }

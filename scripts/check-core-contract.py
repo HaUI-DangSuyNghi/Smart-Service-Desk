@@ -22,6 +22,9 @@ assert responses, "No HTTP responses captured"
 for response in responses:
     path = response["path"].split("?", 1)[0]
     routes = [route for route in spec["paths"] if re.fullmatch(re.sub(r"\{[^}]+\}", "[^/]+", route), path)]
+    if routes:
+        specificity = min(route.count("{") for route in routes)
+        routes = [route for route in routes if route.count("{") == specificity]
     assert len(routes) == 1, f"Unknown or ambiguous route: {path}"
     operation = spec["paths"][routes[0]][response["method"].lower()]
     contract = operation["responses"][str(response["status"])]
