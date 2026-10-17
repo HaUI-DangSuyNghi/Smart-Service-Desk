@@ -1,0 +1,12 @@
+# Local AI-03 acceptance only. Use with compose.yaml and project dx-ai03-hardening.
+# Compose >=2.24.4 supports !override. Existing project volumes stay untouched.
+services:
+  keycloak:
+    ports: !override ["127.0.0.1:18081:8080"]
+    environment:
+      KC_HOSTNAME: http://localhost:18081
+  core:
+    environment:
+      JWT_ISSUER: http://localhost:18081/realms/dx-lab
+  gateway:
+    ports: !override ["127.0.0.1:19080:9080"]
