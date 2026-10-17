@@ -1,5 +1,11 @@
 # Changelog
 
+## Service Desk statistics (unreleased)
+
+- Add permission-aware per-workspace dashboard counts from live Flowable state, including an explicit unclassified bucket.
+- Share literal search and half-open creation-time filters with Ticket List; publish OpenAPI and frontend handoff.
+- Reuse PostgreSQL and existing migrations; no dashboard UI or Intelligence adapter.
+
 ## Service Desk ticket foundation (unreleased)
 
 - Add workspace-scoped ticket create/detail/search APIs and live Flowable progress.
