@@ -1,5 +1,20 @@
 # AI-01 / N1 — BE Review Brief
 
+## Cập nhật cho reviewer — 16/10/2026
+
+Đối chiếu implementation Core `0238c59`: D1/D2 không còn là gap implementation
+như proposal cũ. Metadata create hiện yêu cầu member + `agent`/`coordinator`,
+read/search yêu cầu member; DTO camelCase có thêm `fileId`. File HTTP, checksum
+server và transaction/audit đã tồn tại. Đây không phải bằng chứng reviewer
+đã ratify D1–D5, cũng không phải lần chạy lại acceptance N1.
+
+BE cần review ranh giới trusted context, error mapping và contract của library
+AI-02; Process Owner cần review luật impact/urgency/conflict v0.2 và fallback.
+Gate AI-01.5 review/merge còn chờ. Tài liệu dưới đây là brief lịch sử; role cũ
+chỉ được giữ để giải thích quyết định tại thời điểm đó.
+
+## Brief lịch sử ngày 08/10/2026
+
 Cập nhật: **08/10/2026, Asia/Saigon**. Branch: `feature/ai01-data-provenance`.
 Trạng thái: **READY FOR BE REVIEW — design freeze candidate, PROPOSED**.
 N1 chưa DONE; cần BE ratification, Core alignment và Core regression evidence.

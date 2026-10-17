@@ -1,5 +1,17 @@
 # AI-01 / N1 — Intelligence Foundation Report
 
+## Cập nhật đối chiếu ngày 16/10/2026
+
+Core hiện tại `0238c59` đã có Metadata search, File HTTP, `fileId`, checksum
+server, response camelCase và transaction/audit. Role mặc định đã chuyển sang
+`requester`, `agent`, `coordinator`; xem [đối chiếu provenance](../../architecture/data-provenance-contract.md).
+Các mốc/commit/kết quả dưới đây được giữ nguyên như bằng chứng lịch sử.
+Không có lần chạy lại Core acceptance trong đợt đối chiếu này. Phê duyệt BE và
+Process Owner vẫn còn chờ; AI-02 được chuẩn bị local để review, chưa xác nhận
+gate merge AI-01.5 đã đạt.
+
+## Báo cáo lịch sử ngày 08/10/2026
+
 Cập nhật: **08/10/2026, Asia/Saigon**. Branch: `feature/ai01-data-provenance`.
 Trạng thái: **READY FOR BE REVIEW — design freeze candidate, PROPOSED**.
 Pre-BE hardening đã hoàn tất; N1 chưa DONE vì BE ratification, Core alignment và

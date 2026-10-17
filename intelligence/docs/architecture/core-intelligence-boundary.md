@@ -7,13 +7,20 @@ Status: **PROPOSED**. This records the existing
 | Concern | Authority |
 | --- | --- |
 | Identity, workspace and access decisions | Core / authorized Application adapter |
-| Canonical metadata, provenance and files | Core; File I/O and server checksum verification remain backlog |
+| Canonical metadata, provenance and files | Core; File HTTP and server-computed upload checksums exist at `0238c59` |
 | Workflow state and audit | Core / Application through supported APIs |
 | Final classification, priority and override | Human / Application / Process Owner |
 | Taxonomy, signals and derived normalization | Intelligence domain profile |
 | Chunks, index/cache, ranking and evaluation | Future Intelligence derived state |
 | Capability schemas | Shared repository contracts |
 | Synthetic tickets, local knowledge and manual expected retrieval | Repository fixtures; no production truth or Core bindings |
+
+Đối chiếu ngày 16/10/2026 với Core `0238c59`: Metadata read/search yêu cầu
+membership; create yêu cầu `agent`/`coordinator`. Vai trò mặc định gồm `requester`,
+`agent`, `coordinator`. File có access policy riêng; adapter phải sử dụng API với
+quyền thật của subject. Metadata đọc được không bảo đảm mọi file đều đọc được.
+Metadata create nhận đúng một trong `checksum` hoặc `fileId`; với `fileId`, Core
+kiểm tra chủ sở hữu và lấy checksum từ File. Dữ liệu trả về dùng camelCase.
 
 No request field grants access. The Application adapter derives trusted workspace
 and profile context after Core authorization. Unauthorized requests stop before

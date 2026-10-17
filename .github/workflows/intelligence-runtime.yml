@@ -1,0 +1,47 @@
+name: Intelligence runtime
+on:
+  pull_request:
+    branches: [develop]
+    paths:
+      - 'intelligence/**'
+      - 'contracts/intelligence/**'
+      - 'fixtures/intelligence/**'
+      - 'scripts/intelligence/**'
+      - '.gitattributes'
+      - '.github/workflows/intelligence-runtime.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    strategy:
+      matrix:
+        os: [ubuntu-24.04, windows-2022]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version-file: intelligence/.python-version
+      - name: Install pinned runtime and build tools
+        run: python -m pip install -r intelligence/requirements.lock
+      - name: Check dependency consistency
+        run: python -m pip check
+      - name: Foundation and immutable executable profiles
+        env:
+          INTELLIGENCE_PROFILE_BASE_REF: ${{ github.event.pull_request.base.sha || github.sha }}
+        run: python scripts/intelligence/validate-foundation.py
+      - name: Unit, contract, conformance and regression tests
+        run: python -m pytest intelligence/tests -q
+      - name: Build source distribution and wheel without new resolution
+        run: python -m build --no-isolation intelligence
+      - name: Install built wheel
+        run: python -m pip install --no-deps intelligence/dist/smart_service_intelligence-0.2.0-py3-none-any.whl
+      - name: Verify installed package without source imports
+        run: python -I scripts/intelligence/verify-installed-package.py
+      - name: Verify diff whitespace
+        run: git diff --check

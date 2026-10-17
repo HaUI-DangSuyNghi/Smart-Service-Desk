@@ -1,7 +1,8 @@
 # Intelligence architecture overview
 
-Status: **PROPOSED — READY FOR BE REVIEW**. N1 contains design artifacts and local
-fixtures; no Intelligence runtime has been implemented or adopted.
+Status: **PROPOSED — READY FOR BE REVIEW**. N1 evidence is historical. Current
+Core alignment (16/10/2026) targets `0238c59`; AI-01.5/AI-02 work is prepared
+locally for review, without claiming BE or business-policy approval.
 
 Core remains authoritative for identity, authorization, workspace, metadata,
 canonical source files, workflow and audit. Intelligence owns domain profiles and,
@@ -22,8 +23,8 @@ The Process Owner retains priority authority. See the [policy rationale](priorit
 Repository [fixtures](../../../fixtures/intelligence/service-desk/knowledge/manifest.json)
 are synthetic/test seeds with pending rights and no Core bindings. In development
 they feed the local [validator](../../../scripts/intelligence/validate-foundation.py).
-Approved integration/demo sources enter through Core File/Metadata APIs when those
-capabilities exist; an authorized Core interface then feeds derived Intelligence
+Approved integration/demo sources enter through the existing Core File/Metadata APIs;
+an authorized Core interface then feeds derived Intelligence
 state. Reading a fixture directory as a production corpus is outside this design.
 The knowledge fixture's policy table preserves historical source bytes; it is not
 another policy authority.
@@ -36,7 +37,8 @@ partition enforcement remain future work.
 
 Additional domains such as Room Request add their own profile and fixtures.
 Generic contracts and Core remain reusable. Rules and TF-IDF are proposed MVP
-candidates, replaceable behind capability interfaces; no engine is adopted here.
+candidates, replaceable behind capability interfaces. AI-02 implements only the
+deterministic triage library; retrieval and application adapters remain future work.
 See [Core boundary](core-intelligence-boundary.md), [data/provenance](data-provenance-contract.md),
 [decisions](../decisions/ADR-001-profile-driven-intelligence.md) and
 [N1 review brief](../task/N1/BE_REVIEW_BRIEF.md).

@@ -282,6 +282,10 @@ def reject_mutation(label, value, validator):
 
 
 def main():
+    # The historical v0.1 validator remains intact; new versions are checked too.
+    import runpy
+    executable = runpy.run_path(str(REPO_ROOT / 'scripts/intelligence/validate-executable-profiles.py'))
+    executable['main']()
     print("Validation time (UTC):", datetime.now(timezone.utc).isoformat(timespec="seconds"))
     profile, taxonomy, rules, policy = [read_yaml(PROFILE_DIR / filename) for filename in
         ("profile.yaml", "taxonomy.yaml", "rules.yaml", "priority-policy.yaml")]
