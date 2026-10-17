@@ -40,6 +40,10 @@ class TfidfSearchEngine:
     def search(self, query: str, index, top_k: int) -> tuple[RankedHit, ...]:
         if type(top_k) is not int or not 1 <= top_k <= 10:
             raise EngineConfigurationError('top_k outside supported bounds')
+        return self.rank(query, index)[:top_k]
+
+    def rank(self, query: str, index) -> tuple[RankedHit, ...]:
+        """Internal complete ranking for document-level evaluation, no wire output."""
         if len(query) > MAX_QUERY_CHARS:
             raise EngineConfigurationError('Query exceeds internal resource limit')
         lexical = getattr(index, 'lexical', index)
@@ -51,4 +55,4 @@ class TfidfSearchEngine:
             raise EngineConfigurationError('Non-finite ranking score')
         hits = [RankedHit(chunk, float(score)) for chunk, score in zip(lexical.chunks, scores) if score > 0]
         hits.sort(key=lambda h: (-h.score, h.chunk.source_id, h.chunk.ordinal, h.chunk.chunk_id))
-        return tuple(hits[:top_k])
+        return tuple(hits)

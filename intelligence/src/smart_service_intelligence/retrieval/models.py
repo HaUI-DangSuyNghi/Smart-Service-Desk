@@ -113,7 +113,8 @@ class PartitionKey:
             raise EngineConfigurationError('Unsupported retrieval version/configuration')
 
     def authorize(self, context: TrustedContext):
-        if context.workspace_id != self.workspace_id or scope_hash(context) != self.access_scope_hash:
+        current_scope = scope_hash(context)
+        if context.workspace_id != self.workspace_id or current_scope != self.access_scope_hash:
             raise AuthorizationRejected('Foreign workspace or access scope partition')
 
 
