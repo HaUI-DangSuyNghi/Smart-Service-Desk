@@ -179,7 +179,9 @@ class CoreRuntimeIntegrationTest {
 
     @Test void independentWorkflowAndParentBinding() throws Exception {
         mvc.perform(get("/api/core/v1/process-definitions").with(requester()))
-            .andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(2));
+            .andExpect(status().isOk())
+            .andExpect(jsonPath("$[?(@.processKey == 'document-review')]").isNotEmpty())
+            .andExpect(jsonPath("$[?(@.processKey == 'equipment-approval')]").isNotEmpty());
         for (String key : List.of("document-review", "equipment-approval")) {
             var process = start(key);
             String id = process.get("processInstanceId").asText();
