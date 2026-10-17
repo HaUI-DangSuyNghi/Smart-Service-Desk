@@ -3,7 +3,7 @@ from dataclasses import asdict, dataclass
 from ..domain.errors import AuthorizationRejected, EngineConfigurationError
 from .chunking import chunk_document
 from .models import (AuthorizedDocument, IndexManifest, MAX_CORPUS_BYTES, MAX_DOCUMENTS,
-                     NUMERICAL_RUNTIME, PartitionKey, digest)
+                     NUMERICAL_RUNTIME, PartitionKey, digest, scope_hash)
 from .tfidf.engine import LexicalIndex, fit_chunks
 
 
@@ -40,3 +40,14 @@ def build_index(documents, partition: PartitionKey) -> TfidfIndex:
                             [asdict(c) for c in chunks], 'ai03@0.1.0'])
     manifest = IndexManifest(partition, index_version, source_digest, len(documents), len(chunks))
     return TfidfIndex(manifest, documents, lexical)
+
+
+def build_authorized_index(*, source, context, profile):
+    """Adapter integration helper; authorize and choose scope before loading bytes."""
+    scope_hash(context)
+    key = source.resolve_partition(context, profile)
+    key.authorize(context)
+    if (key.profile_id, key.profile_version, key.normalization) != (
+            profile.profile_id, profile.identity.split('@')[-1], profile.normalization_version):
+        raise EngineConfigurationError('Authorized corpus does not match exact profile')
+    return build_index(source.load_documents(context, profile), key)
