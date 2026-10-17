@@ -2,7 +2,7 @@
 
 Ngày: 17/10/2026. Trạng thái: **INTEGRATION VERIFIED — REVIEW PENDING**.
 Core baseline: `e39356cc44ef50421a9b81199756ec9784fe161a`.
-AI runtime đã kiểm chứng: `eea45299dac4cc9eec35f11d634cbab384dab42e`.
+AI runtime cuối đã kiểm chứng: `34d91019900499a701b0100e184e6a8ec9c8a3cd`.
 Package cài riêng: `smart-service-intelligence==0.3.0`, Python 3.12.7.
 PR: [#19](https://github.com/HaUI-DangSuyNghi/Smart-Service-Desk/pull/19), base `develop`.
 Các commit tài liệu/CI tiếp theo không được coi là đã chạy lại Core acceptance
@@ -19,7 +19,7 @@ APISIX 3.11.0. Volume acceptance tách khỏi project `dx-core`. Keycloak bind
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup.ps1
 docker compose -p dx-ai03-hardening -f compose.yaml -f scripts/acceptance/intelligence-compose.yaml up -d --build --wait --wait-timeout 300
-.local/ai03-venv/Scripts/python -I scripts/acceptance/intelligence-retrieval.py --output .local/ai03-hardening-core-acceptance.json
+.local/ai03-venv/Scripts/python -I scripts/acceptance/intelligence-retrieval.py --output .local/ai03-hardening-core-final.json
 ```
 
 Runner đọc credentials local từ `.env`, không in token/mật khẩu và không commit
@@ -32,11 +32,13 @@ Không dùng 5 knowledge fixture còn chờ quyền. Nội dung acceptance là h
 synthetic độc lập, ghi rõ `INTERNAL_SYNTHETIC_ACCEPTANCE_ONLY`, không phải corpus
 release hoặc quyết định license. Principal tạm đã xóa; metadata/file test còn
 trong volume riêng vì Core không cung cấp API xóa. Không xóa volume hiện có.
+Sau kiểm chứng đã dừng cả project acceptance và stack local được bật trong phiên;
+không để container tiếp tục chạy và không xóa volume.
 
 ## Kết quả thực tế
 
 Tổng: **8/8 PASS với giới hạn Core được ghi rõ**. Report JSON private tại
-`.local/ai03-hardening-core-acceptance.json`, trạng thái
+`.local/ai03-hardening-core-final.json`, trạng thái
 `PASS_WITH_DOCUMENTED_CORE_LIMITS`, `temporaryIdentityRemoved=true`.
 
 | ID | Kết quả đã thực thi | Giới hạn phép kiểm |
@@ -50,13 +52,14 @@ Tổng: **8/8 PASS với giới hạn Core được ghi rõ**. Report JSON priva
 | CORE-AI03-07 | PASS: authority loopback không lắng nghe gây CorpusUnavailable, DEGRADED mặc định tắt | Không dừng dịch vụ Core đang chạy; đây là lỗi transport thực |
 | CORE-AI03-08 | PASS: AI-02 triage vẫn SUCCESS sau khi retrieval authority không truy cập được | Triage độc lập, không cấp quyền truy xuất cho principal đã bị revoke |
 
-Correlation an toàn: `ai03-4b2be1231c8e4655b3f7a37403e25e35`.
-Core cấp metadata v1 `07f96613-3607-4483-b1c4-de267c10cd21`, v2
-`1b84c9bd-4042-424c-b12b-996e5012254a`. Source checksum v1:
+Correlation an toàn: `ai03-e910159f9c874f1aa8e3afa8553ec557`.
+Core cấp metadata v1 `b3fa755b-c2ca-47f9-b28d-f39d480bdb15`, v2
+`24c827d3-a13b-4373-9ae9-8bdb674c68b3`. Source checksum v1:
 `9d7930280228d79e50d0d98206c77835f8196d25d73517e811e0f51b6898c244`.
 Không ghi UUID này vào fixture manifest; chỉ là record test trong môi trường riêng.
 
-Một lần search có xác minh Core đo được **212,645 ms**. Con số gồm các HTTP read
+Một lần search có xác minh Core ở lần cuối đo được **175,985 ms** (lần trước
+212,645 ms). Con số gồm các HTTP read
 scope/citation và lexical search, chỉ trên một tài liệu rất nhỏ ở máy local;
 không phải SLA, percentile production hoặc phép đo tải đồng thời.
 
@@ -71,6 +74,12 @@ runner dùng IPv4 loopback và refresh admin token trước revoke/cleanup. Prin
 tạm từ lần thất bại đã được dọn riêng, không đụng user demo.
 
 ## Gate còn chờ
+
+Job `core-integration` đã PASS trên GitHub ở runtime cuối
+`34d91019900499a701b0100e184e6a8ec9c8a3cd`,
+[Intelligence runtime #5](https://github.com/HaUI-DangSuyNghi/Smart-Service-Desk/actions/runs/39048305509).
+Đây là lần chạy stack Core/Keycloak thật trên runner Ubuntu, không phải unit HTTP
+simulation. Các lần chạy trên HEAD mới hơn được ghi trong runtime report/PR.
 
 BE phải duyệt [scope contract](../../architecture/access-scope-contract.md),
 thời gian thu hồi JWT và semantics 404 che quyền. Core kiểm membership từ JWT

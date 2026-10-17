@@ -3,7 +3,7 @@
 Ngày thực thi: 17/10/2026. Nhánh: `feature/ai03-knowledge-retrieval`.
 Base hardening: `develop@e39356cc44ef50421a9b81199756ec9784fe161a`.
 Base triển khai ban đầu: `f348beb200b84bb31f2550879d38e744fa695230`.
-Trạng thái hiện tại: **INTEGRATION VERIFIED — REVIEW PENDING**. Package 0.3.0;
+Trạng thái hiện tại: **CI VERIFIED; INTEGRATION VERIFIED — REVIEW PENDING**. Package 0.3.0;
 chưa đạt mục tiêu retrieval gợi ý, chưa có approval production.
 
 ## Hardening và provenance hiện tại
@@ -14,7 +14,7 @@ hay Core Metadata/File. Lịch sử local đã rebase trước phiên hardening,
 giữ SHA cũ; đã merge remote bằng `eea45299dac4cc9eec35f11d634cbab384dab42e`, giải
 quyết duy nhất xung đột package version bằng cách giữ 0.3.0. Không force-push.
 
-Runtime/package được kiểm chứng tại `eea45299dac4cc9eec35f11d634cbab384dab42e`;
+Runtime/package cuối được kiểm chứng tại `34d91019900499a701b0100e184e6a8ec9c8a3cd`;
 các commit docs/CI đóng evidence nằm sau mốc này. SHA HEAD hiện hành xem lịch sử
 [PR #19](https://github.com/HaUI-DangSuyNghi/Smart-Service-Desk/pull/19).
 Chủ nhánh tự mời reviewer; agent không gửi yêu cầu review hoặc tự merge.
@@ -25,6 +25,8 @@ Chủ nhánh tự mời reviewer; agent không gửi yêu cầu review hoặc t�
 - PR-range check dùng base SHA thực của PR; workflow_dispatch dùng merge-base.
 - Adapter Core HTTP có timeout/giới hạn bytes, HTTPS mặc định, local HTTP opt-in,
   không redirect token, không cache quyền, không đọc DB.
+- Các phương thức public của adapter từ chối context null/thiếu scope trước mọi
+  HTTP read; parser từ chối duplicate JSON key và NaN/Infinity từ Core.
 - Scope suy ra từ tập source Core đã cho đọc, có version và rotation; chờ BE duyệt.
 - [Core integration report](CORE_INTEGRATION_REPORT.md): 8/8 scenario PASS với
   giới hạn JWT mới, metadata bất biến, 404 và failure injection được ghi riêng.
@@ -34,7 +36,14 @@ CI đầu tiên của hardening được kích hoạt bằng PR tại runtime co
 Kết quả đã quan sát: **PASS cả ubuntu-24.04 và windows-2022**, bao gồm source suite,
 installed-wheel suite, evaluation và PR-range check. Workflow sau đó bổ sung job
 Core HTTP acceptance thật trên Ubuntu tại `4c56ca964e1f0839073978b54643e73b0500ac1e`,
-dùng wheel cài riêng và stack disposable; kết quả job mới được ghi sau lần chạy thực tế.
+dùng wheel cài riêng và stack disposable. Job này đã **PASS** ở
+[Intelligence runtime #3](https://github.com/HaUI-DangSuyNghi/Smart-Service-Desk/actions/runs/39048029234),
+cùng matrix Ubuntu/Windows. Lần chạy kiểm tra context nghiêm ngặt cuối ở commit
+`34d9101`: [Intelligence runtime #5](https://github.com/HaUI-DangSuyNghi/Smart-Service-Desk/actions/runs/39048305509)
+đã **PASS cả ba job**: Ubuntu, Windows và Core integration. Log Ubuntu ghi rõ
+189 test PASS từ source, 189 test PASS từ installed wheel, package 0.3.0 và
+PR-range base `e39356c`. Trạng thái HEAD chứa commit tài liệu cuối xem trực tiếp
+trong PR; không coi việc cập nhật tài liệu là thay đổi runtime đã kiểm chứng.
 
 ## Phạm vi hoàn thành
 
@@ -103,11 +112,11 @@ chạy lại với quyền phù hợp đạt 90 test. Bộ pin sạch không d�
 | `pip install -r intelligence/requirements.lock` vào venv mới | PASS; URL/hash/closure trong resolution AI-03 |
 | `pip check` | PASS, không có dependency lỗi |
 | Foundation validator | PASS, 145 negative case, 5 source digest, profile bất biến |
-| `python -m pytest intelligence/tests -q` | 181 test PASS, gồm 26 test hardening mới |
-| `python -m build --no-isolation intelligence` | PASS, sdist và wheel; wheel được build từ sdist |
+| `python -m pytest intelligence/tests -q` | 189 test PASS, gồm 34 test hardening mới |
+| `python -m build --no-isolation --outdir .local/ai03-hardening-dist intelligence` | PASS, sdist và wheel 0.3.0; wheel được build từ sdist |
 | Cài wheel `--no-deps --force-reinstall` | PASS |
 | `python -I scripts/intelligence/verify-installed-package.py` | PASS cả triage, resource, TF-IDF, snapshot và citation qua FakeCore |
-| `python -I -m pytest -c scripts/intelligence/installed-pytest.ini intelligence/tests -q` | 181 test PASS từ package 0.3.0 trong site-packages |
+| `python -I -m pytest -c scripts/intelligence/installed-pytest.ini intelligence/tests -q` | 189 test PASS từ package 0.3.0 trong site-packages |
 | Evaluation bằng package đã cài | PASS tính toán; kết quả bằng lần chạy từ source |
 | Authoring CLI query tài khoản | Trả `kb-account-001` đầu tiên; nhãn AUTHORING_ONLY_NOT_RUNTIME |
 | `git diff --check` | PASS |
@@ -134,7 +143,7 @@ ghi tại [resolution Linux](../../governance/ai03-linux-dependency-resolution.j
 | Authored evaluation | Giống Windows: Hit@1 7/12, Hit@3 11/12, MRR 0,7388888889 |
 
 Bằng chứng container Linux local phía trên là lịch sử của baseline 155 test,
-không thay kết quả CI hardening 181 test. GitHub Actions đã được kích hoạt bởi
+không thay kết quả CI hardening mới. GitHub Actions đã được kích hoạt bởi
 PR #19; trạng thái hiện tại được ghi ở phần hardening đầu báo cáo.
 
 Đo local trên 5 tài liệu/12 chunk, sau import: build 112,209 ms; đỉnh bộ nhớ
@@ -187,7 +196,7 @@ nguồn giữ `MANUAL_EXPECTED`, `NOT BENCHMARK`, `NOT ENGINE OUTPUT`; báo cáo
 | Chính sách lỗi vận hành | Chờ BE/Application quyết định khi nào bật DEGRADED |
 | OWNER-03-A | Fixture vẫn PENDING_OWNER_APPROVAL, usageRights=null, NOT_INGESTED; chưa được cấp quyền public/production |
 | Process Owner | Không sửa nghiệp vụ; quyền sử dụng knowledge chứa policy cần xác nhận khi tích hợp |
-| QA | Windows hardening 181 test PASS, Core thật 8/8 PASS có giới hạn; chờ review độc lập |
+| QA | Windows hardening 189 test PASS, Core thật 8/8 PASS có giới hạn; chờ review độc lập |
 | CI | PR #19 đã kích hoạt matrix; trạng thái cụ thể ghi ở phần hardening |
 | Retrieval target | Hai mục tiêu gợi ý chưa đạt; đã ghi miss analysis để review và chuyển AI-04 |
 
@@ -195,3 +204,19 @@ nguồn giữ `MANUAL_EXPECTED`, `NOT BENCHMARK`, `NOT ENGINE OUTPUT`; báo cáo
 tài liệu tổng hợp tiếng Việt. Fixture vẫn PENDING_OWNER_APPROVAL, usageRights=null,
 NOT_INGESTED. Không thêm model/vector DB/RAG. Các thử nghiệm lexical, dataset v0.2,
 coverage/SBOM/pip-audit là hạng mục tùy chọn chưa thực hiện, không tuyên bố đã đạt.
+
+## Đối chiếu acceptance hardening
+
+| Hạng mục trong plan | Kết quả |
+| --- | --- |
+| F-01–04: sync, package, contract, profile | PASS: behind develop = 0, package 0.3.0, contract 0.1.0, profile 0.2.0 |
+| F-05: scope documented/reviewed | Tài liệu và code có; BE approval còn chờ |
+| F-06–10: chặn quyền, Core source/citation, cross-workspace, revoke/stale | PASS theo scope/JWT mới và immutable catalog; giới hạn nêu ở Core integration report |
+| F-11: outage policy reviewed | CorpusUnavailable đã test, DEGRADED tắt; BE policy approval còn chờ |
+| F-12: AI-02 độc lập | PASS 12/12 conformance và kiểm tra khi retrieval lỗi |
+| F-13–14: GitHub Linux/Windows | PASS ở run #5 cùng Core integration; HEAD mới nhất xem CI trong PR |
+| F-15: installed wheel | PASS 189 test local; CI dùng cùng discovery/verification |
+| F-16: report đúng thực tế | Ghi SHA runtime đã test, SHA base, CI link, PR và giới hạn riêng |
+| F-17–20: rights, scope, metric, review gate | Đã ghi đúng trạng thái, không tự đóng approval |
+
+Không dùng nhãn APPROVED/DONE cho toàn bộ AI-03 khi BE/owner/QA chưa sign-off.
