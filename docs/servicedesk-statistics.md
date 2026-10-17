@@ -17,6 +17,8 @@ knowledge search. No new database, search engine, migration or dependency.
 
 `GET /api/apps/servicedesk/v1/workspaces/{workspace}/tickets/statistics`
 
+No request body; filters are query parameters.
+
 Authorization: bearer JWT via the existing Gateway. Requester sees own tickets;
 agent/coordinator sees workspace tickets. A requester with either elevated role
 gets workspace visibility, matching Ticket List. No platform-admin bypass.
@@ -88,3 +90,28 @@ Run `scripts/test-core-acceptance.ps1 -Project acceptance-statistics-review-01
 OpenAPI, restart and backup/restore. Use an unused project name and synthetic data.
 Evidence directories/backups are ignored/private. Human approval and PR CI are
 separate gates. No production readiness, full H-P-D-I or AI integration claim.
+
+### Recorded execution: 2026-10-17
+
+Final run: `.local/acceptance-statistics-20261017-d/summary.json`, full log
+`.local/statistics-acceptance-d.log`. Exit 0; all nine functional gates PASS.
+Tested source: `5b11106`, workingTreeDirty=false. The subsequent evidence-only
+documentation commit changes no backend, contract, infrastructure or test code.
+
+- PostgreSQL 16.6: 83 Java tests, zero failures/errors/skips, including 16 ticket
+  integration tests and real handle/claim/confirm/rework statistics assertions.
+- Three OpenAPI specs and `python scripts/test-core-contract.py` PASS; the latter
+  checks concrete-route precedence, UUID detail and missing-field rejection.
+- 249 actual JSON responses validated: 164 Core, 73 application (25 statistics),
+  12 restored application (3 statistics). Excludes the duplicate verify capture.
+- Restart, storage inventory and logical backup/restore PASS. Three tickets and
+  their current-state counts survive restore. Exact repository SQL was also
+  EXPLAIN ANALYZE checked on three synthetic tickets; not a load benchmark.
+
+This Docker Desktop/Compose 5 host used `DOCKER_CONTEXT=desktop-linux` explicitly.
+Earlier attempts are retained, not counted as full passes: initial redirected
+PowerShell test interrupted, then rerun passed; acceptance a hit Docker Hub TLS
+timeout, b hit builder/context selection, c passed HTTP but exposed validator
+route ambiguity. The corrected validator passes c's captured responses and the
+entire final d run. Raw evidence/backups remain ignored/private.
+PR-head CI, human sign-off and production security remain NOT VERIFIED.
