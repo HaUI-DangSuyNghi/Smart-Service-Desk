@@ -1,5 +1,11 @@
 # AI dependency / data / model inventory — N1 draft
 
+Cập nhật AI-03 (17/10/2026): đã chọn scikit-learn và closure NumPy/SciPy/joblib/
+threadpoolctl cho retrieval library. Pin và license tại [danh mục AI-03](ai03-dependencies.md),
+URL/hash wheel và dependency closure tại [resolution AI-03](ai03-dependency-resolution.json).
+Các bảng N1 phía dưới là lịch sử, không mô tả runtime hiện tại. Không có model,
+embedding hoặc vector DB; quyền dữ liệu vẫn chờ chủ sở hữu quyết định.
+
 ## Trạng thái hiện tại — 16/10/2026
 
 Danh mục N1 bên dưới là lịch sử trước runtime. AI-02 chỉ chọn Python, YAML parser,

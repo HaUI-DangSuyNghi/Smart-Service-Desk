@@ -1,9 +1,53 @@
-# Intelligence — foundation và runtime triage
+# Intelligence — foundation, triage và truy xuất tri thức
+
+## Truy xuất AI-03
+
+[Báo cáo thực thi](docs/task/AI03/RUNTIME_REPORT.md) ghi kết quả kiểm thử và giới
+hạn. [Kiến trúc](docs/architecture/retrieval-runtime.md), [vòng đời index](docs/architecture/corpus-index-lifecycle.md),
+[ADR-004](docs/decisions/ADR-004-tfidf-retrieval-baseline.md) và
+[dependency/license](docs/governance/ai03-dependencies.md) phục vụ review.
+
+Sau khi cài wheel bằng bộ pin `requirements.lock`, chạy từ repository root:
+
+```powershell
+python -I -m smart_service_intelligence.search --profile service-desk@0.2.0 --fixture-repo-root . --query "không đăng nhập được tài khoản" --top-k 3
+python -I -m smart_service_intelligence.evaluation.retrieval --repo-root . --output .local/ai03-evaluation.json
+python -I scripts/intelligence/verify-installed-package.py
+python -I -m pytest -c scripts/intelligence/installed-pytest.ini intelligence/tests -q
+```
+
+CLI bắt buộc chỉ rõ fixture repo và gắn nhãn `AUTHORING_ONLY_NOT_RUNTIME`;
+`kb-*` chỉ là ID biên soạn. Điểm TF-IDF không phải confidence. Kết quả evaluation
+được khử trùng lặp ở cấp artifact theo điểm chunk cao nhất; runtime trả chunk.
+Không so hai phép đo này như cùng một benchmark production.
+
+Runtime dùng `SearchService`, adapter triển khai `AuthorizedCorpusSource` và
+`CoreSourceResolver`. Adapter phải xác thực, kiểm tra membership/quyền file, tạo
+`TrustedContext` với scope opaque hiện tại trước khi gọi library. Luồng tích hợp:
+
+```python
+# context và profile do adapter tin cậy cung cấp, không deserialize từ request.
+index = build_authorized_index(source=adapter, context=context, profile=profile)
+indexes = IndexRegistry()
+indexes.register(index)
+service = SearchService(corpus_source=adapter, indexes=indexes,
+                        citation_verifier=CoreCitationVerifier(adapter))
+run = service.search(payload, trusted_context=context, profile_version='0.2.0')
+```
+
+Các symbol lần lượt nằm trong `retrieval.index`, `retrieval.registry`,
+`services.search` và `citations.verifier` của package. Không có adapter Core
+production đi kèm; BE cần duyệt cơ chế scope trước tích hợp. Snapshot phải lưu
+ngoài Git, có ACL thích hợp, nạp bằng `load_index(path, expected_partition)`.
+Truy vấn không có kết quả phù hợp trả SUCCESS và yêu cầu review; nguồn stale bị bỏ; lỗi quyền
+luôn được truyền ra ngoài. Mặc định lỗi vận hành cũng được truyền ra ngoài;
+chỉ bật `allow_operational_degraded=True` sau khi thống nhất chính sách adapter.
 
 Phụ trách: AI. Trạng thái: **ĐÃ TRIỂN KHAI LOCAL, CHỜ REVIEW**.
-AI-01.5 đã có tài liệu/profile thực thi; AI-02 có Python library deterministic.
-Kết quả mới nhất: **90 test PASS**, gồm **12/12 kịch bản conformance** tự biên soạn;
-sdist/wheel build thành công và wheel cài độc lập đã được kiểm tra.
+AI-01.5 có profile thực thi; AI-02 có triage deterministic; AI-03 bổ sung library
+TF-IDF, partition theo workspace/scope và kiểm chứng citation. Bằng chứng hiện tại
+và các gate còn chờ được ghi trong [báo cáo AI-03](docs/task/AI03/RUNTIME_REPORT.md).
+Không có adapter Core production hoặc endpoint HTTP trong giai đoạn này.
 Xem [báo cáo AI-01.5](docs/task/AI015/CLOSEOUT_REPORT.md) và
 [báo cáo AI-02](docs/task/AI02/RUNTIME_REPORT.md). Phê duyệt BE/Process Owner
 và merge gate AI-01.5 vẫn chờ; chưa coi là release hoặc hoàn tất approval.
@@ -94,8 +138,8 @@ are not runtime citations. Root `.gitattributes` preserves LF for moved assets;
 semantic source edits require version/checksum/size updates. Local plans and probe
 evidence belong under ignored `.local/ai-n1/`.
 
-At the historical N1 baseline no Intelligence runtime existed. AI-02 runtime
-progress is recorded separately; retrieval, HTTP and model adoption remain later work.
+Ở baseline N1 chưa có runtime. AI-02 triển khai triage; AI-03 triển khai truy xuất
+lexical dạng library. HTTP, tích hợp Core production và mô hình vẫn thuộc giai đoạn sau.
 Approved integration seeds must be ingested
 through Core APIs; future indexes consume authorized Core interfaces. Additional
 domains add profiles and fixtures without adding Service Desk semantics to Core.
