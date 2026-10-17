@@ -1,0 +1,502 @@
+{
+  "status": "RESOLVED_LOCAL_NOT_RELEASE_APPROVAL",
+  "python": "3.12.7",
+  "platform": "win32",
+  "packages": [
+    {
+      "name": "scikit-learn",
+      "version": "1.6.1",
+      "source": "https://files.pythonhosted.org/packages/62/27/585859e72e117fe861c2079bcba35591a84f801e21bc1ab85bce6ce60305/scikit_learn-1.6.1-cp312-cp312-win_amd64.whl",
+      "sha256": "70b1d7e85b1c96383f872a519b3375f92f14731e279a7b4c6cfd650cf5dffc52",
+      "requiresDist": [
+        "numpy>=1.19.5",
+        "scipy>=1.6.0",
+        "joblib>=1.2.0",
+        "threadpoolctl>=3.1.0",
+        "numpy>=1.19.5; extra == \"build\"",
+        "scipy>=1.6.0; extra == \"build\"",
+        "cython>=3.0.10; extra == \"build\"",
+        "meson-python>=0.16.0; extra == \"build\"",
+        "numpy>=1.19.5; extra == \"install\"",
+        "scipy>=1.6.0; extra == \"install\"",
+        "joblib>=1.2.0; extra == \"install\"",
+        "threadpoolctl>=3.1.0; extra == \"install\"",
+        "matplotlib>=3.3.4; extra == \"benchmark\"",
+        "pandas>=1.1.5; extra == \"benchmark\"",
+        "memory_profiler>=0.57.0; extra == \"benchmark\"",
+        "matplotlib>=3.3.4; extra == \"docs\"",
+        "scikit-image>=0.17.2; extra == \"docs\"",
+        "pandas>=1.1.5; extra == \"docs\"",
+        "seaborn>=0.9.0; extra == \"docs\"",
+        "memory_profiler>=0.57.0; extra == \"docs\"",
+        "sphinx>=7.3.7; extra == \"docs\"",
+        "sphinx-copybutton>=0.5.2; extra == \"docs\"",
+        "sphinx-gallery>=0.17.1; extra == \"docs\"",
+        "numpydoc>=1.2.0; extra == \"docs\"",
+        "Pillow>=7.1.2; extra == \"docs\"",
+        "pooch>=1.6.0; extra == \"docs\"",
+        "sphinx-prompt>=1.4.0; extra == \"docs\"",
+        "sphinxext-opengraph>=0.9.1; extra == \"docs\"",
+        "plotly>=5.14.0; extra == \"docs\"",
+        "polars>=0.20.30; extra == \"docs\"",
+        "sphinx-design>=0.5.0; extra == \"docs\"",
+        "sphinx-design>=0.6.0; extra == \"docs\"",
+        "sphinxcontrib-sass>=0.3.4; extra == \"docs\"",
+        "pydata-sphinx-theme>=0.15.3; extra == \"docs\"",
+        "sphinx-remove-toctrees>=1.0.0.post1; extra == \"docs\"",
+        "towncrier>=24.8.0; extra == \"docs\"",
+        "matplotlib>=3.3.4; extra == \"examples\"",
+        "scikit-image>=0.17.2; extra == \"examples\"",
+        "pandas>=1.1.5; extra == \"examples\"",
+        "seaborn>=0.9.0; extra == \"examples\"",
+        "pooch>=1.6.0; extra == \"examples\"",
+        "plotly>=5.14.0; extra == \"examples\"",
+        "matplotlib>=3.3.4; extra == \"tests\"",
+        "scikit-image>=0.17.2; extra == \"tests\"",
+        "pandas>=1.1.5; extra == \"tests\"",
+        "pytest>=7.1.2; extra == \"tests\"",
+        "pytest-cov>=2.9.0; extra == \"tests\"",
+        "ruff>=0.5.1; extra == \"tests\"",
+        "black>=24.3.0; extra == \"tests\"",
+        "mypy>=1.9; extra == \"tests\"",
+        "pyamg>=4.0.0; extra == \"tests\"",
+        "polars>=0.20.30; extra == \"tests\"",
+        "pyarrow>=12.0.0; extra == \"tests\"",
+        "numpydoc>=1.2.0; extra == \"tests\"",
+        "pooch>=1.6.0; extra == \"tests\"",
+        "conda-lock==2.5.6; extra == \"maintenance\""
+      ],
+      "licenseExpression": null,
+      "licenseClassifiers": [
+        "License :: OSI Approved :: BSD License"
+      ]
+    },
+    {
+      "name": "numpy",
+      "version": "2.2.6",
+      "source": "https://files.pythonhosted.org/packages/36/fa/8c9210162ca1b88529ab76b41ba02d433fd54fecaf6feb70ef9f124683f1/numpy-2.2.6-cp312-cp312-win_amd64.whl",
+      "sha256": "c1f9540be57940698ed329904db803cf7a402f3fc200bfe599334c9bd84a40b2",
+      "requiresDist": [],
+      "licenseExpression": null,
+      "licenseClassifiers": [
+        "License :: OSI Approved :: BSD License"
+      ]
+    },
+    {
+      "name": "scipy",
+      "version": "1.15.3",
+      "source": "https://files.pythonhosted.org/packages/e6/eb/3bf6ea8ab7f1503dca3a10df2e4b9c3f6b3316df07f6c0ded94b281c7101/scipy-1.15.3-cp312-cp312-win_amd64.whl",
+      "sha256": "52092bc0472cfd17df49ff17e70624345efece4e1a12b23783a1ac59a1b728ed",
+      "requiresDist": [
+        "numpy<2.5,>=1.23.5",
+        "pytest; extra == \"test\"",
+        "pytest-cov; extra == \"test\"",
+        "pytest-timeout; extra == \"test\"",
+        "pytest-xdist; extra == \"test\"",
+        "asv; extra == \"test\"",
+        "mpmath; extra == \"test\"",
+        "gmpy2; extra == \"test\"",
+        "threadpoolctl; extra == \"test\"",
+        "scikit-umfpack; extra == \"test\"",
+        "pooch; extra == \"test\"",
+        "hypothesis>=6.30; extra == \"test\"",
+        "array-api-strict<2.1.1,>=2.0; extra == \"test\"",
+        "Cython; extra == \"test\"",
+        "meson; extra == \"test\"",
+        "ninja; sys_platform != \"emscripten\" and extra == \"test\"",
+        "sphinx<8.0.0,>=5.0.0; extra == \"doc\"",
+        "intersphinx_registry; extra == \"doc\"",
+        "pydata-sphinx-theme>=0.15.2; extra == \"doc\"",
+        "sphinx-copybutton; extra == \"doc\"",
+        "sphinx-design>=0.4.0; extra == \"doc\"",
+        "matplotlib>=3.5; extra == \"doc\"",
+        "numpydoc; extra == \"doc\"",
+        "jupytext; extra == \"doc\"",
+        "myst-nb; extra == \"doc\"",
+        "pooch; extra == \"doc\"",
+        "jupyterlite-sphinx>=0.19.1; extra == \"doc\"",
+        "jupyterlite-pyodide-kernel; extra == \"doc\"",
+        "mypy==1.10.0; extra == \"dev\"",
+        "typing_extensions; extra == \"dev\"",
+        "types-psutil; extra == \"dev\"",
+        "pycodestyle; extra == \"dev\"",
+        "ruff>=0.0.292; extra == \"dev\"",
+        "cython-lint>=0.12.2; extra == \"dev\"",
+        "rich-click; extra == \"dev\"",
+        "doit>=0.36.0; extra == \"dev\"",
+        "pydevtool; extra == \"dev\""
+      ],
+      "licenseExpression": null,
+      "licenseClassifiers": [
+        "License :: OSI Approved :: BSD License"
+      ]
+    },
+    {
+      "name": "joblib",
+      "version": "1.4.2",
+      "source": "https://files.pythonhosted.org/packages/91/29/df4b9b42f2be0b623cbd5e2140cafcaa2bef0759a00b7b70104dcfe2fb51/joblib-1.4.2-py3-none-any.whl",
+      "sha256": "06d478d5674cbc267e7496a410ee875abd68e4340feff4490bcb7afb88060ae6",
+      "requiresDist": [],
+      "licenseExpression": null,
+      "licenseClassifiers": [
+        "License :: OSI Approved :: BSD License"
+      ]
+    },
+    {
+      "name": "threadpoolctl",
+      "version": "3.6.0",
+      "source": "https://files.pythonhosted.org/packages/32/d5/f9a850d79b0851d1d4ef6456097579a9005b31fea68726a4ae5f2d82ddd9/threadpoolctl-3.6.0-py3-none-any.whl",
+      "sha256": "43a0b8fd5a2928500110039e43a5eed8480b918967083ea48dc3ab9f13c4a7fb",
+      "requiresDist": [],
+      "licenseExpression": null,
+      "licenseClassifiers": [
+        "License :: OSI Approved :: BSD License"
+      ]
+    },
+    {
+      "name": "PyYAML",
+      "version": "6.0.2",
+      "source": "https://files.pythonhosted.org/packages/0c/e8/4f648c598b17c3d06e8753d7d13d57542b30d56e6c2dedf9c331ae56312e/PyYAML-6.0.2-cp312-cp312-win_amd64.whl",
+      "sha256": "7e7401d0de89a9a855c839bc697c079a4af81cf878373abd7dc625847d25cbd8",
+      "requiresDist": [],
+      "licenseExpression": null,
+      "licenseClassifiers": [
+        "License :: OSI Approved :: MIT License"
+      ]
+    },
+    {
+      "name": "jsonschema",
+      "version": "4.23.0",
+      "source": "https://files.pythonhosted.org/packages/69/4a/4f9dbeb84e8850557c02365a0eee0649abe5eb1d84af92a25731c6c0f922/jsonschema-4.23.0-py3-none-any.whl",
+      "sha256": "fbadb6f8b144a8f8cf9f0b89ba94501d143e50411a1278633f56a7acf7fd5566",
+      "requiresDist": [
+        "attrs>=22.2.0",
+        "importlib-resources>=1.4.0; python_version < '3.9'",
+        "jsonschema-specifications>=2023.03.6",
+        "pkgutil-resolve-name>=1.3.10; python_version < '3.9'",
+        "referencing>=0.28.4",
+        "rpds-py>=0.7.1",
+        "fqdn; extra == 'format'",
+        "idna; extra == 'format'",
+        "isoduration; extra == 'format'",
+        "jsonpointer>1.13; extra == 'format'",
+        "rfc3339-validator; extra == 'format'",
+        "rfc3987; extra == 'format'",
+        "uri-template; extra == 'format'",
+        "webcolors>=1.11; extra == 'format'",
+        "fqdn; extra == 'format-nongpl'",
+        "idna; extra == 'format-nongpl'",
+        "isoduration; extra == 'format-nongpl'",
+        "jsonpointer>1.13; extra == 'format-nongpl'",
+        "rfc3339-validator; extra == 'format-nongpl'",
+        "rfc3986-validator>0.1.0; extra == 'format-nongpl'",
+        "uri-template; extra == 'format-nongpl'",
+        "webcolors>=24.6.0; extra == 'format-nongpl'"
+      ],
+      "licenseExpression": null,
+      "licenseClassifiers": [
+        "License :: OSI Approved :: MIT License"
+      ]
+    },
+    {
+      "name": "attrs",
+      "version": "24.2.0",
+      "source": "https://files.pythonhosted.org/packages/6a/21/5b6702a7f963e95456c0de2d495f67bf5fd62840ac655dc451586d23d39a/attrs-24.2.0-py3-none-any.whl",
+      "sha256": "81921eb96de3191c8258c199618104dd27ac608d9366f5e35d011eae1867ede2",
+      "requiresDist": [
+        "importlib-metadata; python_version < '3.8'",
+        "cloudpickle; (platform_python_implementation == 'CPython') and extra == 'benchmark'",
+        "hypothesis; extra == 'benchmark'",
+        "mypy>=1.11.1; (platform_python_implementation == 'CPython' and python_version >= '3.9') and extra == 'benchmark'",
+        "pympler; extra == 'benchmark'",
+        "pytest-codspeed; extra == 'benchmark'",
+        "pytest-mypy-plugins; (platform_python_implementation == 'CPython' and python_version >= '3.9' and python_version < '3.13') and extra == 'benchmark'",
+        "pytest-xdist[psutil]; extra == 'benchmark'",
+        "pytest>=4.3.0; extra == 'benchmark'",
+        "cloudpickle; (platform_python_implementation == 'CPython') and extra == 'cov'",
+        "coverage[toml]>=5.3; extra == 'cov'",
+        "hypothesis; extra == 'cov'",
+        "mypy>=1.11.1; (platform_python_implementation == 'CPython' and python_version >= '3.9') and extra == 'cov'",
+        "pympler; extra == 'cov'",
+        "pytest-mypy-plugins; (platform_python_implementation == 'CPython' and python_version >= '3.9' and python_version < '3.13') and extra == 'cov'",
+        "pytest-xdist[psutil]; extra == 'cov'",
+        "pytest>=4.3.0; extra == 'cov'",
+        "cloudpickle; (platform_python_implementation == 'CPython') and extra == 'dev'",
+        "hypothesis; extra == 'dev'",
+        "mypy>=1.11.1; (platform_python_implementation == 'CPython' and python_version >= '3.9') and extra == 'dev'",
+        "pre-commit; extra == 'dev'",
+        "pympler; extra == 'dev'",
+        "pytest-mypy-plugins; (platform_python_implementation == 'CPython' and python_version >= '3.9' and python_version < '3.13') and extra == 'dev'",
+        "pytest-xdist[psutil]; extra == 'dev'",
+        "pytest>=4.3.0; extra == 'dev'",
+        "cogapp; extra == 'docs'",
+        "furo; extra == 'docs'",
+        "myst-parser; extra == 'docs'",
+        "sphinx; extra == 'docs'",
+        "sphinx-notfound-page; extra == 'docs'",
+        "sphinxcontrib-towncrier; extra == 'docs'",
+        "towncrier<24.7; extra == 'docs'",
+        "cloudpickle; (platform_python_implementation == 'CPython') and extra == 'tests'",
+        "hypothesis; extra == 'tests'",
+        "mypy>=1.11.1; (platform_python_implementation == 'CPython' and python_version >= '3.9') and extra == 'tests'",
+        "pympler; extra == 'tests'",
+        "pytest-mypy-plugins; (platform_python_implementation == 'CPython' and python_version >= '3.9' and python_version < '3.13') and extra == 'tests'",
+        "pytest-xdist[psutil]; extra == 'tests'",
+        "pytest>=4.3.0; extra == 'tests'",
+        "mypy>=1.11.1; (platform_python_implementation == 'CPython' and python_version >= '3.9') and extra == 'tests-mypy'",
+        "pytest-mypy-plugins; (platform_python_implementation == 'CPython' and python_version >= '3.9' and python_version < '3.13') and extra == 'tests-mypy'"
+      ],
+      "licenseExpression": null,
+      "licenseClassifiers": [
+        "License :: OSI Approved :: MIT License"
+      ]
+    },
+    {
+      "name": "jsonschema-specifications",
+      "version": "2023.12.1",
+      "source": "https://files.pythonhosted.org/packages/ee/07/44bd408781594c4d0a027666ef27fab1e441b109dc3b76b4f836f8fd04fe/jsonschema_specifications-2023.12.1-py3-none-any.whl",
+      "sha256": "87e4fdf3a94858b8a2ba2778d9ba57d8a9cafca7c7489c46ba0d30a8bc6a9c3c",
+      "requiresDist": [
+        "importlib-resources>=1.4.0; python_version < '3.9'",
+        "referencing>=0.31.0"
+      ],
+      "licenseExpression": null,
+      "licenseClassifiers": [
+        "License :: OSI Approved :: MIT License"
+      ]
+    },
+    {
+      "name": "referencing",
+      "version": "0.35.1",
+      "source": "https://files.pythonhosted.org/packages/b7/59/2056f61236782a2c86b33906c025d4f4a0b17be0161b63b70fd9e8775d36/referencing-0.35.1-py3-none-any.whl",
+      "sha256": "eda6d3234d62814d1c64e305c1331c9a3a6132da475ab6382eaa997b21ee75de",
+      "requiresDist": [
+        "attrs>=22.2.0",
+        "rpds-py>=0.7.0"
+      ],
+      "licenseExpression": null,
+      "licenseClassifiers": [
+        "License :: OSI Approved :: MIT License"
+      ]
+    },
+    {
+      "name": "rpds-py",
+      "version": "0.20.0",
+      "source": "https://files.pythonhosted.org/packages/ec/2f/b938864d66b86a6e4acadefdc56de75ef56f7cafdfd568a6464605457bd5/rpds_py-0.20.0-cp312-none-win_amd64.whl",
+      "sha256": "0e13e6952ef264c40587d510ad676a988df19adea20444c2b295e536457bc585",
+      "requiresDist": [],
+      "licenseExpression": null,
+      "licenseClassifiers": [
+        "License :: OSI Approved :: MIT License"
+      ]
+    },
+    {
+      "name": "pytest",
+      "version": "8.3.5",
+      "source": "https://files.pythonhosted.org/packages/30/3d/64ad57c803f1fa1e963a7946b6e0fea4a70df53c1a7fed304586539c2bac/pytest-8.3.5-py3-none-any.whl",
+      "sha256": "c69214aa47deac29fad6c2a4f590b9c4a9fdb16a403176fe154b79c0b4d4d820",
+      "requiresDist": [
+        "colorama; sys_platform == \"win32\"",
+        "exceptiongroup>=1.0.0rc8; python_version < \"3.11\"",
+        "iniconfig",
+        "packaging",
+        "pluggy<2,>=1.5",
+        "tomli>=1; python_version < \"3.11\"",
+        "argcomplete; extra == \"dev\"",
+        "attrs>=19.2; extra == \"dev\"",
+        "hypothesis>=3.56; extra == \"dev\"",
+        "mock; extra == \"dev\"",
+        "pygments>=2.7.2; extra == \"dev\"",
+        "requests; extra == \"dev\"",
+        "setuptools; extra == \"dev\"",
+        "xmlschema; extra == \"dev\""
+      ],
+      "licenseExpression": null,
+      "licenseClassifiers": [
+        "License :: OSI Approved :: MIT License"
+      ]
+    },
+    {
+      "name": "iniconfig",
+      "version": "2.0.0",
+      "source": "https://files.pythonhosted.org/packages/ef/a6/62565a6e1cf69e10f5727360368e451d4b7f58beeac6173dc9db836a5b46/iniconfig-2.0.0-py3-none-any.whl",
+      "sha256": "b6a85871a79d2e3b22d2d1b94ac2824226a63c6b741c88f7ae975f18b6778374",
+      "requiresDist": [],
+      "licenseExpression": null,
+      "licenseClassifiers": [
+        "License :: OSI Approved :: MIT License"
+      ]
+    },
+    {
+      "name": "packaging",
+      "version": "24.1",
+      "source": "https://files.pythonhosted.org/packages/08/aa/cc0199a5f0ad350994d660967a8efb233fe0416e4639146c089643407ce6/packaging-24.1-py3-none-any.whl",
+      "sha256": "5b8f2217dbdbd2f7f384c41c628544e6d52f2d0f53c6d0c3ea61aa5d1d7ff124",
+      "requiresDist": [],
+      "licenseExpression": null,
+      "licenseClassifiers": [
+        "License :: OSI Approved :: Apache Software License",
+        "License :: OSI Approved :: BSD License"
+      ]
+    },
+    {
+      "name": "pluggy",
+      "version": "1.5.0",
+      "source": "https://files.pythonhosted.org/packages/88/5f/e351af9a41f866ac3f1fac4ca0613908d9a41741cfcf2228f4ad853b697d/pluggy-1.5.0-py3-none-any.whl",
+      "sha256": "44e1ad92c8ca002de6377e165f3e0f1be63266ab4d554740532335b9d75ea669",
+      "requiresDist": [
+        "pre-commit ; extra == 'dev'",
+        "tox ; extra == 'dev'",
+        "pytest ; extra == 'testing'",
+        "pytest-benchmark ; extra == 'testing'"
+      ],
+      "licenseExpression": null,
+      "licenseClassifiers": [
+        "License :: OSI Approved :: MIT License"
+      ]
+    },
+    {
+      "name": "colorama",
+      "version": "0.4.6",
+      "source": "https://files.pythonhosted.org/packages/d1/d6/3965ed04c63042e047cb6a3e6ed1a63a35087b6a609aa3a15ed8ac56c221/colorama-0.4.6-py2.py3-none-any.whl",
+      "sha256": "4f1d9991f5acc0ca119f9d443620b77f9d6b33703e51011c16baf57afb285fc6",
+      "requiresDist": [],
+      "licenseExpression": null,
+      "licenseClassifiers": [
+        "License :: OSI Approved :: BSD License"
+      ]
+    },
+    {
+      "name": "build",
+      "version": "1.2.2.post1",
+      "source": "https://files.pythonhosted.org/packages/84/c2/80633736cd183ee4a62107413def345f7e6e3c01563dbca1417363cf957e/build-1.2.2.post1-py3-none-any.whl",
+      "sha256": "1d61c0887fa860c01971625baae8bdd338e517b836a2f70dd1f7aa3a6b2fc5b5",
+      "requiresDist": [
+        "packaging >= 19.1",
+        "pyproject_hooks",
+        "colorama; os_name == \"nt\"",
+        "importlib-metadata >= 4.6; python_full_version < \"3.10.2\"",
+        "tomli >= 1.1.0; python_version < \"3.11\"",
+        "furo >= 2023.08.17 ; extra == \"docs\"",
+        "sphinx ~= 7.0 ; extra == \"docs\"",
+        "sphinx-argparse-cli >= 1.5 ; extra == \"docs\"",
+        "sphinx-autodoc-typehints >= 1.10 ; extra == \"docs\"",
+        "sphinx-issues >= 3.0.0 ; extra == \"docs\"",
+        "build[uv, virtualenv] ; extra == \"test\"",
+        "filelock >= 3 ; extra == \"test\"",
+        "pytest >= 6.2.4 ; extra == \"test\"",
+        "pytest-cov >= 2.12 ; extra == \"test\"",
+        "pytest-mock >= 2 ; extra == \"test\"",
+        "pytest-rerunfailures >= 9.1 ; extra == \"test\"",
+        "pytest-xdist >= 1.34 ; extra == \"test\"",
+        "wheel >= 0.36.0 ; extra == \"test\"",
+        "setuptools >= 42.0.0 ; extra == \"test\" and ( python_version < \"3.10\")",
+        "setuptools >= 56.0.0 ; extra == \"test\" and ( python_version == \"3.10\")",
+        "setuptools >= 56.0.0 ; extra == \"test\" and ( python_version == \"3.11\")",
+        "setuptools >= 67.8.0 ; extra == \"test\" and ( python_version >= \"3.12\")",
+        "build[uv] ; extra == \"typing\"",
+        "importlib-metadata >= 5.1 ; extra == \"typing\"",
+        "mypy ~= 1.9.0 ; extra == \"typing\"",
+        "tomli ; extra == \"typing\"",
+        "typing-extensions >= 3.7.4.3 ; extra == \"typing\"",
+        "uv >= 0.1.18 ; extra == \"uv\"",
+        "virtualenv >= 20.0.35 ; extra == \"virtualenv\""
+      ],
+      "licenseExpression": null,
+      "licenseClassifiers": [
+        "License :: OSI Approved :: MIT License"
+      ]
+    },
+    {
+      "name": "pyproject_hooks",
+      "version": "1.2.0",
+      "source": "https://files.pythonhosted.org/packages/bd/24/12818598c362d7f300f18e74db45963dbcb85150324092410c8b49405e42/pyproject_hooks-1.2.0-py3-none-any.whl",
+      "sha256": "9e5c6bfa8dcc30091c74b0cf803c81fdd29d94f01992a7707bc97babb1141913",
+      "requiresDist": [],
+      "licenseExpression": null,
+      "licenseClassifiers": [
+        "License :: OSI Approved :: MIT License"
+      ]
+    },
+    {
+      "name": "setuptools",
+      "version": "75.1.0",
+      "source": "https://files.pythonhosted.org/packages/ff/ae/f19306b5a221f6a436d8f2238d5b80925004093fa3edea59835b514d9057/setuptools-75.1.0-py3-none-any.whl",
+      "sha256": "35ab7fd3bcd95e6b7fd704e4a1539513edad446c097797f2985e0e4b960772f2",
+      "requiresDist": [
+        "pytest-checkdocs >=2.4 ; extra == 'check'",
+        "pytest-ruff >=0.2.1 ; (sys_platform != \"cygwin\") and extra == 'check'",
+        "ruff >=0.5.2 ; (sys_platform != \"cygwin\") and extra == 'check'",
+        "packaging >=24 ; extra == 'core'",
+        "more-itertools >=8.8 ; extra == 'core'",
+        "jaraco.text >=3.7 ; extra == 'core'",
+        "wheel >=0.43.0 ; extra == 'core'",
+        "platformdirs >=2.6.2 ; extra == 'core'",
+        "jaraco.collections ; extra == 'core'",
+        "jaraco.functools ; extra == 'core'",
+        "packaging ; extra == 'core'",
+        "more-itertools ; extra == 'core'",
+        "importlib-metadata >=6 ; (python_version < \"3.10\") and extra == 'core'",
+        "tomli >=2.0.1 ; (python_version < \"3.11\") and extra == 'core'",
+        "importlib-resources >=5.10.2 ; (python_version < \"3.9\") and extra == 'core'",
+        "pytest-cov ; extra == 'cover'",
+        "sphinx >=3.5 ; extra == 'doc'",
+        "jaraco.packaging >=9.3 ; extra == 'doc'",
+        "rst.linker >=1.9 ; extra == 'doc'",
+        "furo ; extra == 'doc'",
+        "sphinx-lint ; extra == 'doc'",
+        "jaraco.tidelift >=1.4 ; extra == 'doc'",
+        "pygments-github-lexers ==0.0.5 ; extra == 'doc'",
+        "sphinx-favicon ; extra == 'doc'",
+        "sphinx-inline-tabs ; extra == 'doc'",
+        "sphinx-reredirects ; extra == 'doc'",
+        "sphinxcontrib-towncrier ; extra == 'doc'",
+        "sphinx-notfound-page <2,>=1 ; extra == 'doc'",
+        "pyproject-hooks !=1.1 ; extra == 'doc'",
+        "towncrier <24.7 ; extra == 'doc'",
+        "pytest-enabler >=2.2 ; extra == 'enabler'",
+        "pytest !=8.1.*,>=6 ; extra == 'test'",
+        "virtualenv >=13.0.0 ; extra == 'test'",
+        "wheel >=0.44.0 ; extra == 'test'",
+        "pip >=19.1 ; extra == 'test'",
+        "packaging >=23.2 ; extra == 'test'",
+        "jaraco.envs >=2.2 ; extra == 'test'",
+        "pytest-xdist >=3 ; extra == 'test'",
+        "jaraco.path >=3.2.0 ; extra == 'test'",
+        "build[virtualenv] >=1.0.3 ; extra == 'test'",
+        "filelock >=3.4.0 ; extra == 'test'",
+        "ini2toml[lite] >=0.14 ; extra == 'test'",
+        "tomli-w >=1.0.0 ; extra == 'test'",
+        "pytest-timeout ; extra == 'test'",
+        "pytest-home >=0.5 ; extra == 'test'",
+        "pytest-subprocess ; extra == 'test'",
+        "pyproject-hooks !=1.1 ; extra == 'test'",
+        "jaraco.test ; extra == 'test'",
+        "jaraco.develop >=7.21 ; (python_version >= \"3.9\" and sys_platform != \"cygwin\") and extra == 'test'",
+        "pytest-perf ; (sys_platform != \"cygwin\") and extra == 'test'",
+        "pytest-mypy ; extra == 'type'",
+        "mypy ==1.11.* ; extra == 'type'",
+        "importlib-metadata >=7.0.2 ; (python_version < \"3.10\") and extra == 'type'",
+        "jaraco.develop >=7.21 ; (sys_platform != \"cygwin\") and extra == 'type'"
+      ],
+      "licenseExpression": null,
+      "licenseClassifiers": [
+        "License :: OSI Approved :: MIT License"
+      ]
+    },
+    {
+      "name": "wheel",
+      "version": "0.44.0",
+      "source": "https://files.pythonhosted.org/packages/1b/d1/9babe2ccaecff775992753d8686970b1e2755d21c8a63be73aba7a4e7d77/wheel-0.44.0-py3-none-any.whl",
+      "sha256": "2376a90c98cc337d18623527a97c31797bd02bad0033d41547043a1cbfbe448f",
+      "requiresDist": [
+        "pytest >= 6.0.0 ; extra == \"test\"",
+        "setuptools >= 65 ; extra == \"test\""
+      ],
+      "licenseExpression": null,
+      "licenseClassifiers": [
+        "License :: OSI Approved :: MIT License"
+      ]
+    }
+  ]
+}
