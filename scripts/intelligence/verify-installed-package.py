@@ -1,6 +1,8 @@
 """Run with python -I after installing the wheel; never import from source."""
 
 from pathlib import Path
+from importlib.metadata import version
+import platform
 
 import smart_service_intelligence
 from smart_service_intelligence.domain.models import TrustedContext
@@ -59,6 +61,10 @@ def verify_retrieval():
 
 
 def main():
+    expected_version = '0.3.0'
+    if version('smart-service-intelligence') != expected_version:
+        raise RuntimeError('Installed package version must be ' + expected_version)
+    print(f'Python {platform.python_version()}; smart-service-intelligence {expected_version}')
     location = Path(smart_service_intelligence.__file__).resolve()
     if 'site-packages' not in location.parts:
         raise RuntimeError('Verification must load the installed wheel')

@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "smart-service-intelligence"
-version = "0.2.0"
+version = "0.3.0"
 description = "Deterministic triage and authorized lexical retrieval for Smart Service Desk"
 requires-python = ">=3.12,<3.13"
 dependencies = ["PyYAML==6.0.2", "jsonschema==4.23.0", "scikit-learn==1.6.1",

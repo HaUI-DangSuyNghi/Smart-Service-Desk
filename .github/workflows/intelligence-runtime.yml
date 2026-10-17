@@ -38,9 +38,9 @@ jobs:
       - name: Unit, contract, conformance and regression tests
         run: python -m pytest intelligence/tests -q
       - name: Build source distribution and wheel without new resolution
-        run: python -m build --no-isolation intelligence
+        run: python -m build --no-isolation --outdir .local/ai03-dist intelligence
       - name: Install built wheel
-        run: python -m pip install --no-deps intelligence/dist/smart_service_intelligence-0.2.0-py3-none-any.whl
+        run: python scripts/intelligence/install-built-wheel.py --dist .local/ai03-dist
       - name: Verify installed package without source imports
         run: python -I scripts/intelligence/verify-installed-package.py
       - name: Run regression and security suite against installed wheel
@@ -48,4 +48,6 @@ jobs:
       - name: Record authored retrieval evaluation (not a production benchmark)
         run: python -I -m smart_service_intelligence.evaluation.retrieval --repo-root . --output .local/ai03-evaluation.json
       - name: Verify diff whitespace
-        run: git diff --check
+        env:
+          INTELLIGENCE_PR_BASE_SHA: ${{ github.event.pull_request.base.sha || '' }}
+        run: python scripts/intelligence/verify-pr-range.py
