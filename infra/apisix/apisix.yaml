@@ -1,4 +1,19 @@
 routes:
+  - id: hpdi
+    uri: /api/hpdi/v1/*
+    plugins:
+      limit-count:
+        count: 300
+        time_window: 60
+        rejected_code: 429
+        key: remote_addr
+        policy: local
+      client-control:
+        max_body_size: 6291456
+    upstream:
+      type: roundrobin
+      nodes:
+        'core:8080': 1
   - id: core
     uri: /api/core/v1/*
     plugins:

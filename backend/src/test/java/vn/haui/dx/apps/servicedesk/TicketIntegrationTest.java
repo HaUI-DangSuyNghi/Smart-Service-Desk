@@ -35,6 +35,22 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @EnabledIfEnvironmentVariable(named = "FILE_TEST_JDBC_URL", matches = ".+/file_storage")
 class TicketIntegrationTest {
+    @Test void hpdiInboxAndTimelineExposeAppIndependentCorrelation() throws Exception {
+        var ticket = create("hpdi-owner", "HPDI correlation", "requester");
+        String process = ticket.path("process").path("processInstanceId").asText();
+        String task = body(mvc.perform(get(BASE + "/" + ticket.get("id").asText() + "/progress")
+            .with(as("hpdi-owner", "lab-a", "requester"))).andExpect(status().isOk()))
+            .path("currentTasks").get(0).path("id").asText();
+        String hpdi = "/api/hpdi/v1/workspaces/lab-a";
+        mvc.perform(get(hpdi + "/inbox").with(as("hpdi-handler", "lab-a", "agent")))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.items[?(@.id == '" + task + "')].processKey").value("service-desk"));
+        mvc.perform(post(hpdi + "/tasks/" + task + "/claim").with(as("hpdi-handler", "lab-a", "agent")))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.businessKey").value(ticket.get("id").asText()));
+        mvc.perform(get(hpdi + "/instances/" + process + "/timeline").with(as("hpdi-handler", "lab-a", "agent")))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.processKey").value("service-desk"));
+        mvc.perform(get(hpdi + "/instances/" + process + "/timeline").with(as("foreign", "lab-b", "agent")))
+            .andExpect(status().isForbidden());
+    }
     private static final String BASE = "/api/apps/servicedesk/v1/workspaces/lab-a/tickets";
     private static final Path STORAGE = Path.of(System.getProperty("java.io.tmpdir"), "ticket-test-" + UUID.randomUUID());
 

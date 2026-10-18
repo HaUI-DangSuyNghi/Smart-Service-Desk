@@ -228,11 +228,13 @@ public final class FlowableWorkflowService implements WorkflowService {
     }
 
     private TaskView view(Task task) {
+        var reference = jdbc.queryForMap("select process_key,business_key from process_scope where id=?", task.getProcessInstanceId());
         var candidates = engine.getTaskService().getIdentityLinksForTask(task.getId()).stream()
             .filter(link -> "candidate".equals(link.getType()) && link.getGroupId() != null)
             .map(link -> link.getGroupId()).sorted().toList();
         return new TaskView(task.getId(), task.getProcessInstanceId(), task.getTaskDefinitionKey(), task.getName(),
-            candidates, task.getAssignee(), instant(task.getCreateTime()));
+            candidates, task.getAssignee(), instant(task.getCreateTime()),
+            (String) reference.get("process_key"), (String) reference.get("business_key"));
     }
 
     private List<String> groups(CurrentUser user, String workspace) {

@@ -1,24 +1,4 @@
 {
-  "backend/src/main/java/vn/haui/dx/apps/servicedesk/ServiceDeskProcess.java:core-import:vn.haui.dx.core.workflow.api.ProcessPolicy": {
-    "debt": "BD-01",
-    "owner": "Backend",
-    "removal": "ARC-06"
-  },
-  "backend/src/main/java/vn/haui/dx/apps/servicedesk/ServiceDeskProcess.java:core-import:vn.haui.dx.core.workflow.api.ProcessRegistration": {
-    "debt": "BD-01",
-    "owner": "Backend",
-    "removal": "ARC-06"
-  },
-  "backend/src/main/java/vn/haui/dx/apps/servicedesk/ServiceDeskProcess.java:core-import:vn.haui.dx.core.identity.api.WorkspaceRole.*": {
-    "debt": "BD-01",
-    "owner": "Backend",
-    "removal": "ARC-06"
-  },
-  "backend/src/main/java/vn/haui/dx/apps/servicedesk/Ticket.java:core-import:vn.haui.dx.core.workflow.api.ProcessRef": {
-    "debt": "BD-01",
-    "owner": "Backend",
-    "removal": "ARC-06"
-  },
   "backend/src/main/java/vn/haui/dx/apps/servicedesk/TicketController.java:core-import:vn.haui.dx.core.common.Page": {
     "debt": "BD-01",
     "owner": "Backend",
@@ -29,22 +9,12 @@
     "owner": "Backend",
     "removal": "ARC-06"
   },
-  "backend/src/main/java/vn/haui/dx/apps/servicedesk/TicketController.java:core-import:vn.haui.dx.core.workflow.api.ProcessHistory": {
-    "debt": "BD-01",
-    "owner": "Backend",
-    "removal": "ARC-06"
-  },
   "backend/src/main/java/vn/haui/dx/apps/servicedesk/TicketRepository.java:core-import:vn.haui.dx.core.common.Page": {
     "debt": "BD-01",
     "owner": "Backend",
     "removal": "ARC-06"
   },
   "backend/src/main/java/vn/haui/dx/apps/servicedesk/TicketRepository.java:core-import:vn.haui.dx.core.common.PageRequest": {
-    "debt": "BD-01",
-    "owner": "Backend",
-    "removal": "ARC-06"
-  },
-  "backend/src/main/java/vn/haui/dx/apps/servicedesk/TicketRepository.java:core-import:vn.haui.dx.core.workflow.api.ProcessRef": {
     "debt": "BD-01",
     "owner": "Backend",
     "removal": "ARC-06"
@@ -90,16 +60,6 @@
     "removal": "ARC-06"
   },
   "backend/src/main/java/vn/haui/dx/apps/servicedesk/TicketService.java:core-import:vn.haui.dx.core.identity.api.WorkspaceAccess": {
-    "debt": "BD-01",
-    "owner": "Backend",
-    "removal": "ARC-06"
-  },
-  "backend/src/main/java/vn/haui/dx/apps/servicedesk/TicketService.java:core-import:vn.haui.dx.core.workflow.api.ProcessHistory": {
-    "debt": "BD-01",
-    "owner": "Backend",
-    "removal": "ARC-06"
-  },
-  "backend/src/main/java/vn/haui/dx/apps/servicedesk/TicketService.java:core-import:vn.haui.dx.core.workflow.api.WorkflowService": {
     "debt": "BD-01",
     "owner": "Backend",
     "removal": "ARC-06"

@@ -6,7 +6,7 @@ import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
 import vn.haui.dx.core.common.Page;
 import vn.haui.dx.core.common.PageRequest;
-import vn.haui.dx.core.workflow.api.ProcessHistory;
+import vn.haui.dx.hpdi.process.api.ProcessTimeline;
 import static org.springframework.http.HttpStatus.CREATED;
 
 @RestController
@@ -42,7 +42,7 @@ public class TicketController {
     }
 
     @GetMapping("/{id}/progress")
-    public ProcessHistory progress(@PathVariable String workspace, @PathVariable UUID id) {
+    public ProcessTimeline progress(@PathVariable String workspace, @PathVariable UUID id) {
         return tickets.progress(workspace, id);
     }
 }

@@ -65,7 +65,7 @@ class WorkflowApprovalTest {
         engine = config.buildProcessEngine();
         var deployment = engine.getRepositoryService().createDeployment();
         for (var policy : registration.policies())
-            deployment.addClasspathResource("processes/" + policy.processKey() + ".bpmn20.xml");
+            deployment.addClasspathResource("apps/samples/process/" + policy.processKey() + ".bpmn20.xml");
         deployment.deploy();
         registry = new ProcessRegistry(List.of(registration), engine.getRepositoryService());
     }
@@ -245,10 +245,46 @@ class WorkflowApprovalTest {
         assertEquals(before, engine.getRuntimeService().createProcessInstanceQuery().count());
     }
 
+    @Test void movingResourcesPreservesDeploymentIdentityAndRunningInstanceAcrossRegistryRestart() throws Exception {
+        var repository = engine.getRepositoryService();
+        var strategy = new org.flowable.spring.configurator.DefaultAutoDeploymentStrategy();
+        var moved = registration.policies().stream().map(p -> new org.springframework.core.io.ClassPathResource(
+            "apps/samples/process/" + p.processKey() + ".bpmn20.xml")).toArray(org.springframework.core.io.Resource[]::new);
+        var legacy = new org.springframework.core.io.Resource[moved.length];
+        for (int i = 0; i < moved.length; i++) {
+            var resource = moved[i];
+            legacy[i] = new org.springframework.core.io.ByteArrayResource(resource.getContentAsByteArray()) {
+                @Override public String getFilename() { return resource.getFilename(); }
+                @Override public String getDescription() { return "legacy/processes/" + resource.getFilename(); }
+            };
+        }
+        strategy.deployResources("ownership-migration-probe", legacy, engine);
+        var deployment = repository.createDeploymentQuery().deploymentName("ownership-migration-probe").singleResult();
+        String processId = null;
+        try {
+            var before = new ProcessRegistry(List.of(registration), repository);
+            var oldService = new FlowableWorkflowService(engine, jdbc, requester, audit(requester), before, manager);
+            var process = oldService.start("lab-a", "document-review", UUID.randomUUID().toString(), Map.of());
+            processId = process.processInstanceId();
+            new ContentAwareDeploymentStrategy().deployResources("ownership-migration-probe", moved, engine);
+            var restarted = new ProcessRegistry(List.of(registration), repository);
+            assertEquals(before.definitionId("document-review"), restarted.definitionId("document-review"));
+            assertEquals(1, repository.createDeploymentQuery().deploymentName("ownership-migration-probe").count());
+            var newService = new FlowableWorkflowService(engine, jdbc, reviewer, audit(reviewer), restarted, manager);
+            var task = oldService.tasksOf("lab-a", processId).get(0);
+            newService.claim("lab-a", task.id());
+            newService.complete("lab-a", task.id(), "review", "approved", null);
+            assertNotNull(oldService.history("lab-a", processId).endedAt());
+        } finally {
+            repository.deleteDeployment(deployment.getId(), true);
+            if (processId != null) jdbc.update("delete from process_scope where id=?", processId);
+        }
+    }
+
     @Test void registryPinsStartsAndRejectsTaskMutationAcrossVersions() {
         var repository = engine.getRepositoryService();
         String pinned = registry.definitionId("document-review");
-        var deployment = repository.createDeployment().addClasspathResource("processes/document-review.bpmn20.xml").deploy();
+        var deployment = repository.createDeployment().addClasspathResource("apps/samples/process/document-review.bpmn20.xml").deploy();
         String newProcessId = null;
         try {
             var refreshed = new ProcessRegistry(List.of(registration), repository);
@@ -372,3 +408,4 @@ class WorkflowApprovalTest {
         assertThrows(IllegalArgumentException.class, () -> new ProcessRegistry(List.of(missingTask), engine.getRepositoryService()));
     }
 }
+

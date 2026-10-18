@@ -12,7 +12,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
 import vn.haui.dx.core.common.Page;
 import vn.haui.dx.core.common.PageRequest;
-import vn.haui.dx.core.workflow.api.ProcessRef;
+import vn.haui.dx.hpdi.process.api.ProcessHandle;
 
 @Repository
 class TicketRepository {
@@ -105,6 +105,6 @@ class TicketRepository {
         String workspace = row.getString("workspace");
         return new Ticket(id, workspace, row.getString("creator"), row.getObject("client_request_id", UUID.class),
             row.getString("title"), row.getString("description"), row.getTimestamp("created_at").toInstant(),
-            new ProcessRef(row.getString("process_instance_id"), ServiceDeskProcess.KEY, id.toString(), workspace));
+            new ProcessHandle(row.getString("process_instance_id"), ServiceDeskProcess.KEY, id.toString(), workspace));
     }
 }

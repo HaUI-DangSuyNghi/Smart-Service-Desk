@@ -7,9 +7,9 @@ claims of team approval. No unregistered exceptions may enter production code.
 | --- | --- | --- | --- | --- | --- | --- |
 | BD-01 | TicketService -> workflow/identity/audit | baseline integration | ProcessCapability/HumanContext/ActivityJournal | Backend | ARC-06 | OPEN |
 | BD-02 | TicketRepository -> engine/Core SQL | baseline statistics | ProcessSnapshot | Backend | ARC-04 | OPEN |
-| BD-03 | Ticket -> Core ProcessRef | baseline DTO | ProcessHandle | Process | ARC-02 | OPEN |
-| BD-04 | Core -> approval business policies | baseline probes | sample app contributions | Process | ARC-02 | OPEN |
-| BD-05 | shared BPMN -> app processes | default deployment path | explicit resource ownership | Process | ARC-02 | OPEN |
+| BD-03 | Ticket -> Core ProcessRef | baseline DTO | ProcessHandle | Process | ARC-02 | CLOSED |
+| BD-04 | Core -> approval business policies | baseline probes | sample app contributions | Process | ARC-02 | CLOSED |
+| BD-05 | shared BPMN -> app processes | default deployment path | explicit resource ownership | Process | ARC-02 | CLOSED |
 | BD-06 | V5 -> global migration stream | applied history immutable | documented ownership; future scoped paths | Backend | ARC-09 | OPEN |
 | BD-07 | T3 -> missing T2 | capabilities not extracted | hpdi public APIs | Backend | ARC-06 | OPEN |
 | BD-08 | frontend -> absent boundaries | framework not initialized | platform/apps + import guard | Frontend | ARC-07 | OPEN |

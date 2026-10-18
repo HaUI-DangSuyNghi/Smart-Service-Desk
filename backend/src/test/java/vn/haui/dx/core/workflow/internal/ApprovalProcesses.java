@@ -8,7 +8,6 @@ import vn.haui.dx.core.workflow.api.ProcessPolicy;
 import vn.haui.dx.core.workflow.api.ProcessRegistration;
 import static vn.haui.dx.core.identity.api.WorkspaceRole.*;
 
-@Component
 public final class ApprovalProcesses implements ProcessRegistration {
     @Override
     public List<ProcessPolicy> policies() {

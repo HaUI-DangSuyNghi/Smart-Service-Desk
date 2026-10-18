@@ -13,19 +13,19 @@ import vn.haui.dx.core.common.Page;
 import vn.haui.dx.core.common.PageRequest;
 import vn.haui.dx.core.identity.api.CurrentUser;
 import vn.haui.dx.core.identity.api.WorkspaceAccess;
-import vn.haui.dx.core.workflow.api.ProcessHistory;
-import vn.haui.dx.core.workflow.api.WorkflowService;
+import vn.haui.dx.hpdi.process.api.ProcessTimeline;
+import vn.haui.dx.hpdi.process.api.ProcessCapability;
 import static vn.haui.dx.core.identity.api.WorkspaceRole.*;
 
 @Service
 public class TicketService {
     private final TicketRepository repository;
     private final WorkspaceAccess access;
-    private final WorkflowService workflow;
+    private final ProcessCapability workflow;
     private final AuditService audit;
     private final Validator validator;
 
-    public TicketService(TicketRepository repository, WorkspaceAccess access, WorkflowService workflow,
+    public TicketService(TicketRepository repository, WorkspaceAccess access, ProcessCapability workflow,
                          AuditService audit, Validator validator) {
         this.repository = repository;
         this.access = access;
@@ -85,8 +85,8 @@ public class TicketService {
     }
 
     @Transactional(readOnly = true)
-    public ProcessHistory progress(String workspace, UUID id) {
-        return workflow.history(workspace, get(workspace, id).process().processInstanceId());
+    public ProcessTimeline progress(String workspace, UUID id) {
+        return workflow.timeline(workspace, get(workspace, id).process().processInstanceId());
     }
 
     private CurrentUser member(String workspace) {

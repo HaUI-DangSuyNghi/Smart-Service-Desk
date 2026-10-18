@@ -18,6 +18,8 @@ spring:
           jwk-set-uri: ${JWT_JWKS:http://localhost:8081/realms/dx-lab/protocol/openid-connect/certs}
           audiences: dx-core
 flowable:
+  process-definition-location-prefix: classpath*:/apps/
+  process-definition-location-suffixes: "**/process/*.bpmn20.xml"
   database-schema-update: true
   async-executor-activate: false
   history-level: full
