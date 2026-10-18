@@ -18,8 +18,10 @@ Production security G9 remains FAIL; release remains BLOCKED.
 Nền tảng headless Tier-1 dành cho DX-OS Open-Core (Smart Service Desk). Hệ thống cung cấp dịch vụ định danh tập trung, kiểm soát truy cập đa không gian làm việc (multi-workspace RBAC), động cơ quy trình nghiệp vụ BPMN (Flowable), quản lý siêu dữ liệu/tệp tin bảo mật và ghi vết kiểm toán giao dịch (transactional audit).
 
 > [!NOTE]
-> Core remains headless. Service Desk now has backend ticket APIs and a real Flowable process; frontend and the AI bridge are not implemented. See [Ticket Foundation](docs/servicedesk-ticket-foundation.md) and [application OpenAPI](contracts/openapi/servicedesk.yaml). The Python Intelligence library remains independent.
+> Headless Core and Service Desk Backend are implemented, including ticket APIs and a real Flowable process. Java-Python AI Triage is integrated and tested through Keycloak/APISIX. See [Ticket Foundation](docs/servicedesk-ticket-foundation.md), [application OpenAPI](contracts/openapi/servicedesk.yaml) and [integration evidence](docs/BE_POSTMERGE01.md#validation).
+> Frontend is being developed by a teammate; browser application E2E has not been verified on develop. AI-03 Retrieval has no public Knowledge Search endpoint.
 > Dashboard counts and shared time filters are documented in [Service Desk statistics](docs/servicedesk-statistics.md); dashboard UI remains a frontend task.
+> Production Security G9 is FAIL; release is BLOCKED. Functional acceptance does not imply release readiness.
 
 ---
 

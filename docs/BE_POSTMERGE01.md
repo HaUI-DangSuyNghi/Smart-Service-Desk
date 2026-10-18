@@ -48,6 +48,7 @@ stack to free them. The following uses new project-scoped volumes, not `dx-core`
 Flowable is embedded in Core, not a missing standalone service.
 
 ```powershell
+if (Test-Path .env) { throw 'First-run instructions require a fresh checkout; reuse existing credentials for subsequent starts' }
 ./scripts/setup.ps1
 # Fresh .env only: provision the Java/Python shared service credential once.
 $rng = [Security.Cryptography.RandomNumberGenerator]::Create()
@@ -90,8 +91,16 @@ python scripts/acceptance/triage-gateway.py --project $env:INT01_PROJECT --core-
 ```
 
 Triage acceptance deliberately stops/restarts ONLY this project's Python container.
-Stop after the demo with the SAME Compose options and `stop`; never `down -v` or
-volume prune. See local `.local/postmerge01/` for private run evidence, not committed
+Stop after the demo in the SAME shell, preserving the project/port variables:
+
+```powershell
+if (!$env:INT01_PROJECT) { throw 'Set the existing demo project name; do not create a new project' }
+docker compose -p $env:INT01_PROJECT -f compose.yaml -f compose.triage.yaml -f scripts/acceptance/integration-compose.yaml --profile intelligence stop
+if ($LASTEXITCODE -ne 0) { throw 'Demo stop failed' }
+```
+
+This retains the disposable volumes. Never use `down -v` or volume prune.
+See local `.local/postmerge01/` for private run evidence, not committed
 HTTP bodies/tokens. Browser application E2E remains NOT RUN.
 
 ## E. Proof of FOSS
