@@ -1,5 +1,12 @@
 # Changelog
 
+## Backend post-merge stabilization (unreleased)
+
+- Verify develop after PR #22/#24 and document safe PR #23 retarget prerequisites.
+- Document isolated integrated demo startup, PKCE/proxy acceptance and FOSS gates.
+- Run Core acceptance and Intelligence runtime CI on pushes to develop, not only PRs/manual runs.
+- No runtime, API/AI contract, dependency, license grant or release changes.
+
 ## Service Desk statistics (unreleased)
 
 - Add permission-aware per-workspace dashboard counts from live Flowable state, including an explicit unclassified bucket.

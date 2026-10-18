@@ -1,5 +1,10 @@
 # DX-Lab HaUI: Headless Core
 
+Post-merge integration: see [BE-POSTMERGE-01](docs/BE_POSTMERGE01.md) for the
+isolated Java/Python demo, FE proxy, acceptance evidence and release blockers.
+The default startup is Core-only; enable Intelligence with the documented overlays.
+Production security G9 remains FAIL; release remains BLOCKED.
+
 <p align="center">
   <img src="https://img.shields.io/badge/Java-17-blue.svg" alt="Java 17" />
   <img src="https://img.shields.io/badge/Spring%20Boot-3.3-green.svg" alt="Spring Boot" />
@@ -7,7 +12,7 @@
   <img src="https://img.shields.io/badge/APISIX-3.11-orange.svg" alt="APISIX" />
   <img src="https://img.shields.io/badge/PostgreSQL-16.6-blue.svg" alt="PostgreSQL" />
   <img src="https://img.shields.io/badge/Docker-Compose%20v2-blue.svg" alt="Docker" />
-  <img src="https://img.shields.io/badge/License-Proprietary%20%2F%20Internal-lightgrey.svg" alt="License" />
+  <img src="https://img.shields.io/badge/License-Pending%20Approval-lightgrey.svg" alt="License approval pending" />
 </p>
 
 Nền tảng headless Tier-1 dành cho DX-OS Open-Core (Smart Service Desk). Hệ thống cung cấp dịch vụ định danh tập trung, kiểm soát truy cập đa không gian làm việc (multi-workspace RBAC), động cơ quy trình nghiệp vụ BPMN (Flowable), quản lý siêu dữ liệu/tệp tin bảo mật và ghi vết kiểm toán giao dịch (transactional audit).
