@@ -9,7 +9,7 @@ import unittest
 from hdpi.domain.errors import ProfileInvalid
 from hdpi.profiles.validation import load_documents, read_yaml, validate_documents, verify_lock
 
-ROOT = Path(__file__).resolve().parents[3] / 'apps/servicedesk/intelligence/profiles'
+ROOT = Path(__file__).resolve().parents[3] / 'intelligence/src/apps/servicedesk/intelligence/profiles'
 MANIFEST = 'service-desk/versions/0.2.0/profile.yaml'
 
 

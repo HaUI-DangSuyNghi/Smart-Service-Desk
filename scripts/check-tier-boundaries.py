@@ -35,7 +35,7 @@ def violations(root=ROOT):
         observed[(path.relative_to(root).as_posix(), rule, value)] += 1
 
     profiles = {'service-desk'}
-    for registry in list((root / 'apps').rglob('registry.yaml')) + list((root / 'intelligence/profiles').glob('registry.yaml')):
+    for registry in list((root / 'intelligence/src/apps').rglob('registry.yaml')) + list((root / 'intelligence/profiles').glob('registry.yaml')):
         profiles.update(re.findall(r'''^\s+["']?([a-z][a-z0-9-]+)@[^:]+:''', registry.read_text('utf-8'), re.M))
     process_keys = set()
     for path in (root / RESOURCES).rglob('*.bpmn20.xml'):
@@ -46,7 +46,7 @@ def violations(root=ROOT):
 
     identifier = r'(?:"[a-z_][\w$]*"|[a-z_][\w$]*)'
     app_names = set()
-    for directory in (root / JAVA / 'apps', root / 'apps', root / RESOURCES / 'apps', root / RESOURCES / 'db/migration/apps'):
+    for directory in (root / JAVA / 'apps', root / 'intelligence/src/apps', root / RESOURCES / 'apps', root / RESOURCES / 'db/migration/apps'):
         if directory.is_dir():
             app_names.update(path.name.lower() for path in directory.iterdir() if path.is_dir())
     core_tables = {'process_scope', 'metadata', 'metadata_record', 'file_object', 'file_link', 'audit_event', 'workspace_membership'}
@@ -140,6 +140,8 @@ def violations(root=ROOT):
         report(path, 'cross-owner-fk', value)
 
     for path in (root / 'intelligence/src').rglob('*.py'):
+        if path.is_relative_to(root / 'intelligence/src/apps'):
+            continue  # Tier-3 policy lives beside, never inside, the generic runtime.
         for node in ast.walk(ast.parse(path.read_text('utf-8'), filename=str(path))):
             if isinstance(node, ast.Constant) and isinstance(node.value, str):
                 if any(profile in node.value.lower().replace('_', '-') for profile in profiles):
@@ -152,6 +154,9 @@ def violations(root=ROOT):
     for path in (root / 'intelligence/profiles').rglob('*'):
         if path.is_file() and path.suffix in ('.yaml', '.json', '.md'):
             report(path, 'bundled-app-profile', path.relative_to(root / 'intelligence/profiles').as_posix())
+    for path in (root / 'intelligence/src/hdpi/_resources/profiles').rglob('*'):
+        if path.is_file():
+            report(path, 'bundled-app-profile', path.relative_to(root / 'intelligence/src/hdpi').as_posix())
     for path in (root / 'frontend/src/platform').rglob('*'):
         if path.suffix in ('.js', '.jsx', '.ts', '.tsx', '.mjs'):
             for specifier in re.findall(r'''(?:\bfrom\s*|\bimport\s*\(?\s*|\brequire\s*\(\s*)['"]([^'"]+)['"]''', path.read_text('utf-8')):

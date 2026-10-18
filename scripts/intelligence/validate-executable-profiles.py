@@ -22,9 +22,12 @@ def check_history(root, lock, baseline):
     # Reject bad refs rather than silently skipping the history gate.
     result = subprocess.run(['git', 'rev-parse', '--verify', baseline + '^{commit}'], cwd=ROOT, capture_output=True)
     require(result.returncode == 0, 'Immutable history baseline does not exist')
-    prefix = 'apps/servicedesk/intelligence/profiles/'
-    if read_git(prefix + 'immutable-artifacts.json') is None:
-        prefix = 'intelligence/profiles/'  # Pre-recovery immutable history, not a runtime fallback.
+    # Follow both ownership moves without weakening the immutable-history gate.
+    # These are historical locations, never implicit runtime profile fallbacks.
+    prefixes = ('intelligence/src/apps/servicedesk/intelligence/profiles/',
+                'apps/servicedesk/intelligence/profiles/', 'intelligence/profiles/')
+    prefix = next((candidate for candidate in prefixes
+                   if read_git(candidate + 'immutable-artifacts.json') is not None), prefixes[-1])
     previous = read_git(prefix + 'immutable-artifacts.json')
     if previous is not None:
         old_lock = json.loads(previous)
@@ -38,7 +41,7 @@ def check_history(root, lock, baseline):
 
 
 def main():
-    root = ROOT / 'apps/servicedesk/intelligence/profiles'
+    root = ROOT / 'intelligence/src/apps/servicedesk/intelligence/profiles'
     registry = read_yaml(root / 'registry.yaml')
     require(registry['registryVersion'] == '1', 'Unsupported registry version')
     lock = verify_lock(root)

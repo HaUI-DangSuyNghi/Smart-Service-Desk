@@ -1,4 +1,4 @@
-"""Bundle authoritative profile/schema files without a second committed copy."""
+"""Bundle shared contracts while keeping application profiles external."""
 
 from pathlib import Path
 import shutil

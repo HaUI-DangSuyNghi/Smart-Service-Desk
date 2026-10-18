@@ -9,7 +9,7 @@ services:
       HDPI_PROFILE_ROOT: /profiles
       HDPI_REQUIRED_PROFILES: ${INTELLIGENCE_REQUIRED_PROFILES:-service-desk@0.2.0}
     volumes:
-      - ${INTELLIGENCE_PROFILE_ROOT:-./apps/servicedesk/intelligence/profiles}:/profiles:ro
+      - ${INTELLIGENCE_PROFILE_ROOT:-./intelligence/src/apps/servicedesk/intelligence/profiles}:/profiles:ro
     read_only: true
     cap_drop: [ALL]
     security_opt: [no-new-privileges:true]

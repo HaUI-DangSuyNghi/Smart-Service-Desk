@@ -19,6 +19,26 @@ jobs:
         run: python3 scripts/check-tier-boundaries.py
       - name: Prove guards reject boundary mutations
         run: python3 scripts/test-tier-boundaries.py
+  architecture-frontend:
+    runs-on: ubuntu-24.04
+    container: node:24.12.0-bookworm
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Install locked frontend tooling
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Verify strict types, import direction and application clients
+        run: |
+          npm run typecheck
+          npm run lint
+          npm test
+          npm run build
+          npm run build:platform
   architecture-java:
     runs-on: ubuntu-24.04
     timeout-minutes: 15
@@ -96,7 +116,7 @@ jobs:
     env:
       FILE_TEST_JDBC_URL: jdbc:postgresql://localhost:5432/file_storage
       FILE_TEST_DB_PASSWORD: isolated-boundary-ci
-      HDPI_PROFILE_ROOT: ${{ github.workspace }}/apps/roomrequest/intelligence/profiles
+      HDPI_PROFILE_ROOT: ${{ github.workspace }}/intelligence/src/apps/roomrequest/intelligence/profiles
       HDPI_REQUIRED_PROFILES: room-request@0.2.0
       INTELLIGENCE_TRIAGE_BASE_URL: http://127.0.0.1:19091
     steps:
@@ -142,3 +162,28 @@ jobs:
       - name: Stop test runtime
         if: always()
         run: if test -f .local/reuse-python.pid; then kill "$(cat .local/reuse-python.pid)"; fi
+  real-three-tier-integration:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version-file: intelligence/.python-version
+      - name: Install contract validators separately from the generic runtime
+        run: |
+          python -m venv .local/tier-contracts
+          .local/tier-contracts/bin/python -m pip install -r scripts/acceptance/requirements.txt
+      - name: Exercise real H-P-D-I and the private Python runtime
+        shell: pwsh
+        run: ./scripts/test-tier-reuse.ps1 -Python .local/tier-contracts/bin/python -Project dx-tier-reuse-ci-${{ github.run_id }}
+      - name: Retain synthetic reuse summary
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: three-tier-reuse-summary
+          path: .local/dx-tier-reuse-ci-${{ github.run_id }}.json
+          include-hidden-files: true
+          retention-days: 7

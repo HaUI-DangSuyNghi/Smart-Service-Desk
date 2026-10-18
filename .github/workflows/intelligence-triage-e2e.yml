@@ -2,7 +2,7 @@ name: Integrated current HEAD acceptance
 on:
   pull_request:
     branches: [develop]
-    paths: ['backend/**', 'intelligence/**', 'apps/**', 'contracts/**', 'fixtures/intelligence/**', 'scripts/**', 'infra/**', 'compose*.yaml', '.dockerignore', '.env.example', 'docs/INT01*', '.github/workflows/**']
+    paths: ['backend/**', 'intelligence/**', 'contracts/**', 'fixtures/intelligence/**', 'scripts/**', 'infra/**', 'compose*.yaml', '.dockerignore', '.env.example', 'docs/INT01*', '.github/workflows/**']
   workflow_dispatch:
 permissions:
   contents: read
@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     env:
-      HDPI_PROFILE_ROOT: ${{ github.workspace }}/apps/servicedesk/intelligence/profiles
+      HDPI_PROFILE_ROOT: ${{ github.workspace }}/intelligence/src/apps/servicedesk/intelligence/profiles
       FILE_TEST_JDBC_URL: jdbc:postgresql://localhost:15432/file_storage
       WORKFLOW_TEST_JDBC_URL: jdbc:postgresql://localhost:15432/workflow_approval
       INTELLIGENCE_TRIAGE_BASE_URL: http://127.0.0.1:18000

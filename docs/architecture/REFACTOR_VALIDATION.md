@@ -6,6 +6,8 @@ Functional base: `develop@728cdc3`; BND-00 base: `ebf7037`.
 Runtime code tested: `ce7d422fc4ba62f85626489ccd830bab40242738`.
 The closure commit adds generic ownership guard coverage and this evidence;
 production Core, HPDI and hdpi runtime code remains identical to the tested code.
+The reference-structure follow-up also leaves those production sources unchanged;
+its additional checks for the new asset roots and frontend are recorded below.
 
 ## Result
 
@@ -18,7 +20,7 @@ Service Desk profile artifact are byte-identical to develop.
 | Verification | Result |
 | --- | --- |
 | Source boundaries and strict metadata | PASS, zero exceptions |
-| Mutation/ratchet checks | PASS, 31 tests |
+| Mutation/ratchet checks | PASS, 33 tests |
 | Assembled Java regression, Linux/JDK 17/PostgreSQL 16.6 | PASS, 151 tests, no failures/errors/skips |
 | Core-only classpath/resources/database proof | PASS, 69 tests, no failures/errors/skips |
 | Second domain with Service Desk excluded | PASS, 11 tests, no failures/errors/skips |
@@ -75,8 +77,42 @@ The Tier boundaries workflow now runs source/bytecode checks, isolated module
 proofs and real second-domain Python integration. Local results do not assert
 remote GitHub CI, branch protection or integration approval. Existing G9 security
 scan failure remains a release blocker; this refactor preserves that release status.
-No frontend restructuring or frontend artifacts are committed. No remote branch,
-tag or PR was published by this task.
+The structure follow-up restores the strict TypeScript frontend scaffold,
+platform-only build and CI from the legacy reference. Application profiles now
+live under `intelligence/src/apps`; generic `hdpi` packaging remains isolated.
+No build output or installed dependencies are committed. No remote branch, tag
+or PR was published by this task.
 
 See [RECOVERY_PROGRESS.md](RECOVERY_PROGRESS.md) for phase ownership and
 [STRICT_BOUNDARY_OPERATIONS.md](STRICT_BOUNDARY_OPERATIONS.md) for configuration.
+
+## Reference-structure follow-up
+
+The final layout restores frontend platform/apps and keeps Python application
+assets at `intelligence/src/apps`. The generic import package remains `hdpi`.
+
+| Additional verification | Result |
+| --- | --- |
+| Frontend locked install, strict typecheck and ESLint | PASS, Node 24.12.0 |
+| Frontend extension, import guard and Service Desk client regression | PASS, 6 tests |
+| Full and independent platform TypeScript builds | PASS, platform artifact has no app code |
+| Python source and rebuilt installed-wheel regression after asset move | PASS, 272 tests each |
+| Boundary mutation suite after separating src/hdpi from src/apps | PASS, 33 tests |
+| Foundation, immutable version history against HEAD and legacy branch | PASS |
+| Moved application assets versus previous committed bytes | PASS, 16 identical files |
+| Built wheel/sdist and installed generic image | PASS, application profile assets excluded |
+| Restored disposable Room Request gateway runner | PASS, 5 scenarios; 6 app and 4 HPDI contract responses |
+| Default Service Desk profile root through gateway and real Python | PASS, create/triage/progress/statistics; 4 contract responses |
+| Service Desk, Room Request and HPDI OpenAPI syntax | PASS |
+
+Safe local evidence includes `structure-python-source.log`,
+`structure-wheel-build.log`, `structure-wheel-tests.log`, `structure-room-e2e.log`,
+`dx-tier-reuse-4f5a09f6a416.json`, `structure-servicedesk-summary.json` and the
+captured HTTP responses. Service Desk captures use paths relative to the OpenAPI
+server prefix; validation was rerun successfully after normalizing the capture
+format. No product contract or implementation changed for that normalization.
+
+Superseded reference files are intentionally not restored: production
+`CoreApplication` is replaced by assembly bootstrap, `IntelligenceUnavailable`
+by classified capability failures, Room Request V6 by V7 after the required
+forward migration, and the old private HTTP test by the hardened transport suite.

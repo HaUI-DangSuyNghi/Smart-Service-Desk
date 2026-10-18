@@ -18,6 +18,11 @@ The original baseline inventoried 51 source violations and 35 compiled edges;
   removed by V6; historical V1-V5 remain unchanged. Room Request V7 has no cross-owner FK.
 - Generic wheels carry runtime/contracts, with explicit external profile roots.
   Public app OpenAPI schemas do not reference Core DTOs.
+- `intelligence/src/hdpi` is generic runtime; `intelligence/src/apps` owns app
+  profiles outside that package and is excluded from the wheel/image context.
+- Frontend platform imports no app code and builds independently. Applications
+  register extensions through the frontend composition root; TypeScript, ESLint
+  and runtime tests enforce the restored scaffold.
 
 The source SQL scanner checks literal SQL, CTEs, qualified tables and effective
 forward FK changes; it is not a general dynamic-SQL evaluator. App table prefixes

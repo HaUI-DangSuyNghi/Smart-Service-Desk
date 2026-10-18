@@ -64,3 +64,17 @@ Create a hotfix from the affected `main` release, verify it, merge with `--no-ff
 Protect `main` and `develop`: require pull requests and at least one approval, block force pushes/deletion and require CI checks once an actual CI workflow is configured. Enable merge commits. Choose `develop` as the default branch if the team wants the active baseline visible by default; otherwise explicitly select `develop` when browsing/cloning for development.
 
 These are required team settings, not a claim that protection or CI has already been configured. The initial CLI bootstrap does not change GitHub repository settings or visibility. Source-license approval and security release gates remain in `docs/dependency-licenses.md`.
+
+## Three-tier ownership
+
+Core contains technical mechanisms. HPDI public APIs expose reusable capabilities;
+applications depend only on those public APIs. `assembly` composes the backend.
+Python runtime is `intelligence/src/hdpi`; app profiles belong to
+`intelligence/src/apps/<app>/intelligence` and are excluded from generic artifacts.
+Frontend platform must build without applications; applications register routes
+and capabilities through extensions at `frontend/src/main.ts`.
+
+Run `python scripts/check-tier-boundaries.py`, `python scripts/test-tier-boundaries.py`
+and the frontend lint/typecheck/test/build commands before integration. See
+[ownership map](docs/architecture/tier-boundary-map.md) and
+[validation](docs/architecture/REFACTOR_VALIDATION.md).

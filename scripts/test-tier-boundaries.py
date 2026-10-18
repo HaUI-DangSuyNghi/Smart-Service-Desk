@@ -116,11 +116,19 @@ class BoundaryGuardTest(unittest.TestCase):
         self.mutation('intelligence/src/hdpi/bad.py', 'from apps.example import policy', 'python-app-import')
 
     def test_external_profile_identity_is_discovered(self):
-        self.write('apps/example/intelligence/registry.yaml', 'profiles:\n  fake-domain@1.0:\n    file: fake.yaml\n')
+        self.write('intelligence/src/apps/example/intelligence/registry.yaml', 'profiles:\n  fake-domain@1.0:\n    file: fake.yaml\n')
         self.mutation('intelligence/src/hdpi/bad.py', 'PROFILE = "fake-domain"', 'python-app-literal')
 
     def test_runtime_cannot_bundle_new_app_profile(self):
         self.mutation('intelligence/profiles/fake/profile.yaml', 'profile: fake', 'bundled-app-profile')
+
+    def test_runtime_cannot_embed_profiles_as_package_resources(self):
+        self.mutation('intelligence/src/hdpi/_resources/profiles/fake/profile.yaml', 'profile: fake', 'bundled-app-profile')
+
+    def test_app_policy_under_src_apps_is_not_generic_runtime(self):
+        self.write('intelligence/src/apps/example/intelligence/registry.yaml', 'profiles:\n  fake-domain@1.0:\n    file: fake.yaml\n')
+        self.write('intelligence/src/apps/example/policy.py', 'PROFILE = "fake-domain"')
+        self.assertFalse(guard.violations(self.root))
 
     def test_platform_cannot_statically_or_dynamically_import_apps(self):
         for statement in ('import { Ticket } from "../../apps/servicedesk/ticket";',

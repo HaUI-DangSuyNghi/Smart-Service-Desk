@@ -10,12 +10,15 @@ their validation time. The former Python import path is no longer provided.
 Application profiles are external configuration. From the repository root in PowerShell:
 
 ```powershell
-$env:HDPI_PROFILE_ROOT = (Resolve-Path apps/servicedesk/intelligence/profiles).Path
+$env:HDPI_PROFILE_ROOT = (Resolve-Path intelligence/src/apps/servicedesk/intelligence/profiles).Path
 $env:HDPI_REQUIRED_PROFILES = 'service-desk@0.2.0'
 ```
 
 The generic wheel contains contracts and runtime code. `ProfileRegistry(root=...)`
 or `HDPI_PROFILE_ROOT` is required; there is no bundled application fallback.
+`src/hdpi` owns reusable runtime code; `src/apps/<app>/intelligence` owns external
+application policy. Setuptools discovers only `hdpi*`, and the generic Docker
+build context excludes `src/apps`, so adjacent directories do not share packaging.
 The private HTTP endpoint accepts an HPDI envelope with `request`, `profileVersion`
 and independently verified `trustedContext` (`workspaceId`, `subject`). The Java
 capability constructs this envelope after authorization; the public ticket endpoint

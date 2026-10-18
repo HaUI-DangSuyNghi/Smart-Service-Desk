@@ -22,7 +22,7 @@ Nền tảng headless Tier-1 dành cho DX-OS Open-Core (Smart Service Desk). H�
 
 > [!NOTE]
 > Headless Core and Service Desk Backend are implemented, including ticket APIs and a real Flowable process. Java-Python AI Triage is integrated and tested through Keycloak/APISIX. See [Ticket Foundation](docs/servicedesk-ticket-foundation.md), [application OpenAPI](contracts/openapi/servicedesk.yaml) and [integration evidence](docs/BE_POSTMERGE01.md#validation).
-> Frontend is being developed by a teammate; browser application E2E has not been verified on develop. AI-03 Retrieval has no public Knowledge Search endpoint.
+> Frontend has a strict TypeScript platform/app scaffold with independent builds and import guards; rendered browser UI remains a frontend task. AI-03 Retrieval has no public Knowledge Search endpoint.
 > Dashboard counts and shared time filters are documented in [Service Desk statistics](docs/servicedesk-statistics.md); dashboard UI remains a frontend task.
 > Production Security G9 is FAIL; release is BLOCKED. Functional acceptance does not imply release readiness.
 
@@ -46,7 +46,7 @@ Nền tảng headless Tier-1 dành cho DX-OS Open-Core (Smart Service Desk). H�
 
 - **Xác thực & Phân quyền IAM:** Tích hợp Keycloak quản lý vai trò theo từng workspace (`/workspaces/{workspace}/{role}`). Xác thực JWT chặt chẽ (Issuer/Audience) và chuẩn hóa thông báo lỗi theo chuẩn RFC 7807 (Problem Details kèm `code` và `requestId`).
 - **Cổng kết nối API (API Gateway):** Apache APISIX chạy chế độ standalone, đảm nhiệm định tuyến và giới hạn tần suất truy cập (rate limit), bảo vệ API nội bộ và không mở công khai Admin API.
-- **Động cơ quy trình BPMN tích hợp:** Nhúng trực tiếp Flowable Engine quản lý vòng đời quy trình (`document-review`, `equipment-approval`), hỗ trợ danh sách nhiệm vụ (inbox), tiếp nhận/xử lý độc lập (claim/complete) và tra cứu lịch sử luồng.
+- **Động cơ quy trình BPMN tích hợp:** Flowable Engine thực thi BPMN do ứng dụng đóng góp qua HPDI Process, hỗ trợ danh sách nhiệm vụ (inbox), tiếp nhận/xử lý độc lập (claim/complete) và tra cứu lịch sử luồng.
 - **Quản lý dữ liệu & Lưu trữ tệp an toàn:** Lưu trữ siêu dữ liệu trên PostgreSQL kèm phân trang, checksum, quyền sử dụng; hỗ trợ upload/download tệp tin private kèm kiểm tra dung lượng, loại tệp, bảo mật header tải về và liên kết kiểm toán.
 - **Kiểm toán giao dịch (Transactional Audit):** Ghi vết tự động mọi biến động dữ liệu/trạng thái qua `AuditService`, hỗ trợ chống tấn công phát lại (replay protection) và theo dõi luồng thông suốt với `X-Request-ID`.
 
@@ -55,27 +55,21 @@ Nền tảng headless Tier-1 dành cho DX-OS Open-Core (Smart Service Desk). H�
 ## 🏗️ Kiến trúc hệ thống
 
 ```text
-[ Trình duyệt / Client ]
-           │ (Authorization Code + PKCE)
-           ▼
-┌─────────────────────────────────────────────────────────────┐
-│ Apache APISIX Gateway (Port 9080)                           │
-│  - /health (Kiểm tra Gateway)                               │
-│  - /api/core/v1/* (Reverse Proxy + Rate Limiting)           │
-└──────────────┬──────────────────────────────────────────────┘
-               ▼
-┌─────────────────────────────────────────────────────────────┐
-│ DX-Core Backend (Spring Boot 3.3, Port 8080 nội bộ)         │
-│  ├── Identity: Xác thực JWT qua Keycloak JWKS               │
-│  ├── Workflow: Flowable BPMN Engine nhúng                   │
-│  ├── Data & Storage: Quản lý Metadata & Tệp tin private     │
-│  └── Audit: Transactional Audit Service                     │
-└──────────────┬───────────────────────────────┬──────────────┘
-               ▼                               ▼
-┌───────────────────────────────┐ ┌───────────────────────────┐
-│ PostgreSQL 16 (Port 5432)     │ │ Keycloak 26 (Port 8081)   │
-│  - DB core & DB keycloak      │ │  - Realm: dx-lab          │
-└───────────────────────────────┘ └───────────────────────────┘
+Tier 3: Service Desk / Room Request
+        Business APIs, persistence, BPMN, application AI profiles
+                         |
+                         v
+Tier 2: Human / Process / Data / Intelligence public capabilities
+        Generic Python hdpi runtime + TypeScript frontend platform
+                         |
+                         v
+Tier 1: Identity / Workflow engine / Metadata / Files / Audit
+                         |
+                PostgreSQL / Keycloak / Storage
+
+assembly/DxOsApplication composes backend tiers.
+frontend/src/main.ts registers application extensions.
+APISIX routes /api/apps/*, /api/hpdi/v1/* and /api/core/v1/*.
 ```
 
 ---
@@ -139,7 +133,7 @@ Mật khẩu của tất cả tài khoản mẫu được sinh ngẫu nhiên t�
 ## 🔌 API & Hợp đồng giao tiếp
 
 - **Tài liệu OpenAPI Spec:** Tra cứu chi tiết tại [`contracts/openapi/core.yaml`](contracts/openapi/core.yaml).
-- **Đường dẫn gốc:** `/api/core/v1`
+- **Đường dẫn gốc:** `/api/core/v1` (Core), `/api/hpdi/v1` (capabilities), `/api/apps/<app>/v1` (applications)
 - **Các nhóm endpoint tiêu biểu:**
   - `GET /api/core/v1/me`: Trả về danh tính người dùng và danh sách nhóm/workspace trực thuộc.
   - `POST /api/core/v1/workspaces/{workspace}/processes`: Khởi tạo quy trình xử lý công việc.
@@ -166,14 +160,14 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/smoke.ps1
 # Kiểm tra tính hợp lệ của file cấu hình Compose
 docker compose config --quiet
 
-# Build lại container backend core
-docker compose build core
+# Build lại container backend platform
+docker compose build platform
 
 # Kiểm tra cơ sở dữ liệu PostgreSQL trực tiếp
 Get-Content scripts/check-db.sql -Raw | docker compose exec -T postgres psql -U core -d core -v ON_ERROR_STOP=1
 
 # Theo dõi nhật ký hệ thống (logs)
-docker compose logs --tail 100 -f core keycloak gateway
+docker compose logs --tail 100 -f platform keycloak gateway
 
 # Dừng cụm dịch vụ (giữ nguyên dữ liệu volumes)
 docker compose stop
@@ -193,20 +187,30 @@ docker compose up -d --wait --wait-timeout 300
 ## 📂 Cấu trúc thư mục
 
 ```text
-.
-├── backend/                  # Mã nguồn Spring Boot, Dockerfile và Maven build
-│   └── src/main/java/vn/haui/dx/
-│       ├── CoreApplication.java  # Lớp khởi chạy ứng dụng
-│       └── core/                 # Identity, Workflow, Data, Audit
-├── contracts/                # Định nghĩa hợp đồng giao tiếp
-│   ├── openapi/core.yaml     # Hợp đồng API chuẩn OpenAPI 3.0
-│   └── intelligence/         # Hợp đồng đề xuất cho các tính năng AI
-├── fixtures/                 # Dữ liệu mẫu (synthetic fixtures) phục vụ kiểm thử
-├── infra/                    # Template cấu hình Keycloak, APISIX và PostgreSQL
-├── scripts/                  # Kịch bản kiểm thử và vận hành tự động (PowerShell)
-├── docs/                     # Tài liệu kiến trúc, bàn giao kỹ thuật và kiểm thử
-├── compose.yaml              # Orchestration file Docker Compose
-└── CHANGELOG.md              # Lịch sử phiên bản
+backend/src/main/java/vn/haui/dx/
+├── core/                       # Tier 1: technical mechanisms and public APIs
+├── hpdi/                       # Tier 2: Human, Process, Data, Intelligence
+├── apps/                       # Tier 3: Service Desk, Room Request, samples
+└── assembly/DxOsApplication    # Platform bootstrap
+backend/src/main/resources/
+├── apps/<app>/process/         # App-owned BPMN
+└── db/migration/               # Immutable history and forward app migrations
+intelligence/src/
+├── hdpi/                       # Generic Tier-2 Python runtime
+└── apps/<app>/intelligence/    # External Tier-3 profiles; excluded from wheel/image
+frontend/src/
+├── platform/                   # Shared TypeScript clients and extension registry
+├── apps/servicedesk/            # Application routes, clients and projections
+└── main.ts                     # Frontend composition root
+contracts/
+├── openapi/                    # Stable Core and Service Desk wire contracts
+├── hpdi/                       # Tier-2 capability contracts
+├── apps/                       # Tier-3 ownership and Room Request API
+└── intelligence/v1/            # Shared Intelligence schemas
+scripts/                        # Boundary, regression and acceptance checks
+infra/                          # Keycloak, APISIX and PostgreSQL configuration
+docs/architecture/              # ADR, ownership map and validation evidence
+compose.yaml + compose.triage.yaml
 ```
 
 ---

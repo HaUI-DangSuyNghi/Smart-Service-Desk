@@ -27,4 +27,4 @@ def trusted():
 
 @pytest.fixture(autouse=True)
 def configured_app_profiles(monkeypatch):
-    monkeypatch.setenv('HDPI_PROFILE_ROOT', str(ROOT / 'apps/servicedesk/intelligence/profiles'))
+    monkeypatch.setenv('HDPI_PROFILE_ROOT', str(ROOT / 'intelligence/src/apps/servicedesk/intelligence/profiles'))

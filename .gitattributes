@@ -8,6 +8,5 @@ fixtures/intelligence/**/*.json text eol=lf
 fixtures/intelligence/**/*.jsonl text eol=lf
 scripts/intelligence/*.py text eol=lf
 intelligence/** text eol=lf
-apps/**/intelligence/** text eol=lf
 scripts/acceptance/core/*.ps1 text eol=lf
 scripts/acceptance/core/*.sql text eol=lf

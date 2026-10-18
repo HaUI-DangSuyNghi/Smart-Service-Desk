@@ -57,7 +57,10 @@ BND-07 now implement workflow data isolation, public HPDI contracts, external pr
 Human/Data alignment, assembly separation and second-domain reuse.
 The explicitly requested `hdpi` rename is a separate change on the same recovery
 branch, including import sites, packaging resources, Docker entrypoint and CI.
-Frontend restructuring remains outside this recovery. Room Request is a minimal
+The completed structure also restores the legacy strict TypeScript platform/app
+scaffold, independent platform build and frontend boundary CI. App-owned Python
+profiles live under `intelligence/src/apps`, outside the generic `hdpi` package
+and excluded from the generic wheel and image build context. Room Request is a minimal
 reuse proof; its profiles/resources and semantics belong to that application. Functional CI stays enabled alongside architecture CI.
 Local evidence is recorded in REFACTOR_VALIDATION.md; remote integration approval
 and branch-protection configuration remain external.

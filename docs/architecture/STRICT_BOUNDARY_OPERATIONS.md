@@ -16,11 +16,18 @@ docker compose -f compose.yaml -f compose.triage.yaml --profile intelligence up 
 ```
 
 `compose.triage.yaml` mounts the application profile root read-only at `/profiles`.
-The default is `apps/servicedesk/intelligence/profiles`. To run the second-domain
+The default is `intelligence/src/apps/servicedesk/intelligence/profiles`. To run the second-domain
 architecture proof, configure `INTELLIGENCE_PROFILE_ROOT` to
-`./apps/roomrequest/intelligence/profiles` and `INTELLIGENCE_REQUIRED_PROFILES` to
+`./intelligence/src/apps/roomrequest/intelligence/profiles` and `INTELLIGENCE_REQUIRED_PROFILES` to
 `room-request@0.2.0`. The isolated `second-domain` Maven profile excludes Service
 Desk source/resources/migrations; its runtime uses only the Room Request profile.
+
+`intelligence/src/apps` contains application-owned assets alongside the generic
+`intelligence/src/hdpi` package. These assets are excluded from wheel/sdist and
+the generic image build context; deployments must supply their selected root.
+Run `scripts/test-tier-reuse.ps1 -Python <contract-validation-python>` for a fresh
+Room Request gateway proof. The script uses a dedicated project, transient
+credential and project-specific images, and stops its stack after verification.
 
 For an installed Python wheel, set `HDPI_PROFILE_ROOT` explicitly or construct
 `ProfileRegistry(root=...)`. There is no built-in app profile. Optional

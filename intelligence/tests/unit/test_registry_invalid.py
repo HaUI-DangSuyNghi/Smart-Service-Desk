@@ -9,7 +9,7 @@ import yaml
 from hdpi.domain.errors import ProfileInvalid
 from hdpi.profiles.registry import ProfileRegistry
 
-ROOT = Path(__file__).resolve().parents[3] / 'apps/servicedesk/intelligence/profiles'
+ROOT = Path(__file__).resolve().parents[3] / 'intelligence/src/apps/servicedesk/intelligence/profiles'
 
 
 @pytest.mark.parametrize('mutation', [

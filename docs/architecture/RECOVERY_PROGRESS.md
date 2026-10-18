@@ -50,7 +50,7 @@ integration; develop and the legacy reference branch are not merged or rewritten
 ## BND-04: external application profiles and generic Python runtime
 
 - Service Desk owns its registry, immutable profiles, taxonomy and policies under
-  `apps/servicedesk/intelligence`. Profile bytes and historical checks are retained.
+  `intelligence/src/apps/servicedesk/intelligence`. Profile bytes and historical checks are retained.
 - The `hdpi` wheel contains generic runtime/contracts only. Explicit profile root
   configuration is required. Build logic rejects stale bundled profile content.
 - Java and Python use the same private envelope: request, immutable profile
@@ -119,3 +119,28 @@ HPDI responses matched their contracts. Service Desk acceptance passed with 73
 real HTTP responses matching its application-owned contract. The final guard
 suite has 31 passing tests, including new-domain FK discovery and reserved engine
 prefix protection. Detailed execution scope is in REFACTOR_VALIDATION.md.
+
+## Reference structure alignment
+
+The completed layout preserves the reference branch's frontend platform/apps,
+strict TypeScript tooling, extension registration and independent platform build.
+Service Desk clients retain current progress, shared search/statistics filters
+and bodyless triage; application REST types stay app-owned. Frontend source CI
+and real gateway reuse CI run alongside the existing isolation/transport gates.
+
+All 16 application profile files moved byte-for-byte to
+`intelligence/src/apps/<app>/intelligence/profiles`. Runtime remains `src/hdpi`;
+wheel/sdist discovery and the generic image exclude application assets. Compose,
+CI, tests, authoring validators and documentation use the new roots. Immutable
+history validation follows both earlier profile locations and the current one.
+The reference ownership docs and isolated gateway proof runner are restored
+against current develop behavior. Existing build/dependency directories are
+preserved and ignored by Git.
+
+Validation: frontend lint/typecheck, six tests and both builds passed; all 272
+Python tests passed from source and installed wheel. All 33 boundary mutations,
+immutable history against HEAD/reference, foundation checks and generic artifact
+isolation passed. The restored proof runner passed five real Room Request gateway
+scenarios and ten contract responses. The default Service Desk root also passed
+real create/triage/progress/statistics and all four captured response contracts.
+Backend Java and generic hdpi runtime source are unchanged by this layout change.
