@@ -1,4 +1,4 @@
-FROM maven:3.9.9-eclipse-temurin-17@sha256:82e47241881f23ad774f5db8829efca15758e8fdb5b1d64ea9f8d6420a85068e AS build
+FROM maven:3.9.9-eclipse-temurin-17@sha256:f58d59b6273e785ac0a4477f6e9b5ba1d7731c75b906c0f7b34076f1851318cc AS build
 WORKDIR /build
 COPY backend/pom.xml .
 RUN mvn -B dependency:go-offline
