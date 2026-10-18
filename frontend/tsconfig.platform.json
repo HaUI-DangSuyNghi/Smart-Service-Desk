@@ -1,0 +1,10 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "src/platform",
+    "outDir": "dist-platform"
+  },
+  "include": [
+    "src/platform/**/*.ts"
+  ]
+}

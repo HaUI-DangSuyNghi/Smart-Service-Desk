@@ -1,5 +1,6 @@
-import {routes} from './routes/index.js';
-export function registerServiceDesk(registry) {
+import type {ExtensionRegistry} from '../../platform/extensions/registry.ts';
+import {routes} from './routes/index.ts';
+export function registerServiceDesk(registry: ExtensionRegistry) {
   return registry.register({
     id: 'servicedesk', routes,
     menuItems: [{label: 'Service Desk', path: '/servicedesk/tickets'}],
