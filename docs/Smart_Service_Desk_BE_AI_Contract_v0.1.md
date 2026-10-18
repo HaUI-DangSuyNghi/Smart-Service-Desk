@@ -1,10 +1,10 @@
 # SMART SERVICE DESK — BE ↔ INTELLIGENCE TECHNICAL DESIGN
 
-**Design revision:** `BE-AI-TECH-0.1`  
-**Status:** **G0-A TECHNICAL APPROVAL RECORDED; G0-B BUSINESS APPROVAL PENDING**  
-**Scope:** Triage-first integration; authorized retrieval is phase 2.  
-**Reference baseline (verified during review):** `develop` after PR #18 (`e39356cc`); AI-03 PR #19 under review.  
-**Authoritative existing schemas:** `contracts/intelligence/v1/{triage-request,triage-result,search-request,search-result}.schema.json` — logical contract `0.1.0`.  
+**Design revision:** `BE-AI-TECH-0.1`
+**Status:** **G0-A TECHNICAL APPROVAL RECORDED; G0-B BUSINESS APPROVAL PENDING**
+**Scope:** Triage-first integration; authorized retrieval is phase 2.
+**Reference baseline (verified during review):** `develop` after PR #18 (`e39356cc`); AI-03 PR #19 under review.
+**Authoritative existing schemas:** `contracts/intelligence/v1/{triage-request,triage-result,search-request,search-result}.schema.json` — logical contract `0.1.0`.
 **AI profile:** ID `service-desk`, resolved/pinned to `service-desk@0.2.0` on the server. The existing profile YAML was marked PROPOSED at review time; the service-desk/process owner must approve business policy.
 
 > G0-A decisions 1-5 are approved according to the user's explicit confirmation of Backend + AI team agreement in the IMPLEMENT BE-01 instruction. This records that attestation, not independently collected signatures; no individual names or approval dates are inferred. G0-B business priority profile approval remains PENDING: no Process Owner approval evidence was supplied. Technical implementation may proceed; business/release approval is not implied. Retrieval remains a separately gated proposal.
