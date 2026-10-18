@@ -1,0 +1,34 @@
+name: Tier boundaries
+on:
+  pull_request:
+    branches: [develop]
+  push:
+    branches: [develop]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-boundaries:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Enforce exact debt and expiry
+        run: python3 scripts/check-tier-boundaries.py
+      - name: Prove guards reject boundary mutations
+        run: python3 scripts/test-tier-boundaries.py
+  architecture-java:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Enforce compiled Java dependency edges
+        run: mvn -B -f backend/pom.xml -Dtest=TierBoundaryTest test

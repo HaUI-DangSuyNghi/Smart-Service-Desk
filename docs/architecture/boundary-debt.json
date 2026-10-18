@@ -1,0 +1,868 @@
+{
+  "schemaVersion": 1,
+  "baselineCommit": "728cdc3",
+  "source": [
+    {
+      "id": "BND-DEBT-S001",
+      "path": "backend/src/main/java/vn/haui/dx/apps/servicedesk/ServiceDeskProcess.java",
+      "rule": "app-core-import",
+      "value": "vn.haui.dx.core.identity.api.WorkspaceRole",
+      "occurrences": 1,
+      "owner": "Backend Lead",
+      "targetPhase": "BND-05",
+      "expires": "2026-12-18"
+    },
+    {
+      "id": "BND-DEBT-S002",
+      "path": "backend/src/main/java/vn/haui/dx/apps/servicedesk/ServiceDeskProcess.java",
+      "rule": "app-core-import",
+      "value": "vn.haui.dx.core.workflow.api.ProcessPolicy",
+      "occurrences": 1,
+      "owner": "Backend Lead",
+      "targetPhase": "BND-02",
+      "expires": "2026-12-18"
+    },
+    {
+      "id": "BND-DEBT-S003",
+      "path": "backend/src/main/java/vn/haui/dx/apps/servicedesk/ServiceDeskProcess.java",
+      "rule": "app-core-import",
+      "value": "vn.haui.dx.core.workflow.api.ProcessRegistration",
+      "occurrences": 1,
+      "owner": "Backend Lead",
+      "targetPhase": "BND-02",
+      "expires": "2026-12-18"
+    },
+    {
+      "id": "BND-DEBT-S004",
+      "path": "backend/src/main/java/vn/haui/dx/apps/servicedesk/Ticket.java",
+      "rule": "app-core-import",
+      "value": "vn.haui.dx.core.workflow.api.ProcessRef",
+      "occurrences": 1,
+      "owner": "Backend Lead",
+      "targetPhase": "BND-02",
+      "expires": "2026-12-18"
+    },
+    {
+      "id": "BND-DEBT-S005",
+      "path": "backend/src/main/java/vn/haui/dx/apps/servicedesk/TicketController.java",
+      "rule": "app-core-import",
+      "value": "vn.haui.dx.core.common.Page",
+      "occurrences": 1,
+      "owner": "Backend Lead",
+      "targetPhase": "BND-05",
+      "expires": "2026-12-18"
+    },
+    {
+      "id": "BND-DEBT-S006",
+      "path": "backend/src/main/java/vn/haui/dx/apps/servicedesk/TicketController.java",
+      "rule": "app-core-import",
+      "value": "vn.haui.dx.core.common.PageRequest",
+      "occurrences": 1,
+      "owner": "Backend Lead",
+      "targetPhase": "BND-05",
+      "expires": "2026-12-18"
+    },
+    {
+      "id": "BND-DEBT-S007",
+      "path": "backend/src/main/java/vn/haui/dx/apps/servicedesk/TicketController.java",
+      "rule": "app-core-import",
+      "value": "vn.haui.dx.core.workflow.api.ProcessHistory",
+      "occurrences": 1,
+      "owner": "Backend Lead",
+      "targetPhase": "BND-02",
+      "expires": "2026-12-18"
+    },
+    {
+      "id": "BND-DEBT-S008",
+      "path": "backend/src/main/java/vn/haui/dx/apps/servicedesk/TicketRepository.java",
+      "rule": "app-core-import",
+      "value": "vn.haui.dx.core.common.Page",
+      "occurrences": 1,
+      "owner": "Backend Lead",
+      "targetPhase": "BND-05",
+      "expires": "2026-12-18"
+    },
+    {
+      "id": "BND-DEBT-S009",
+      "path": "backend/src/main/java/vn/haui/dx/apps/servicedesk/TicketRepository.java",
+      "rule": "app-core-import",
+      "value": "vn.haui.dx.core.common.PageRequest",
+      "occurrences": 1,
+      "owner": "Backend Lead",
+      "targetPhase": "BND-05",
+      "expires": "2026-12-18"
+    },
+    {
+      "id": "BND-DEBT-S010",
+      "path": "backend/src/main/java/vn/haui/dx/apps/servicedesk/TicketRepository.java",
+      "rule": "app-core-import",
+      "value": "vn.haui.dx.core.workflow.api.ProcessRef",
+      "occurrences": 1,
+      "owner": "Backend Lead",
+      "targetPhase": "BND-02",
+      "expires": "2026-12-18"
+    },
+    {
+      "id": "BND-DEBT-S011",
+      "path": "backend/src/main/java/vn/haui/dx/apps/servicedesk/TicketRepository.java",
+      "rule": "app-private-sql",
+      "value": "act_hi_procinst",
+      "occurrences": 1,
+      "owner": "Backend Lead",
+      "targetPhase": "BND-01",
+      "expires": "2026-12-18"
+    },
+    {
+      "id": "BND-DEBT-S012",
+      "path": "backend/src/main/java/vn/haui/dx/apps/servicedesk/TicketRepository.java",
+      "rule": "app-private-sql",
+      "value": "act_ru_task",
+      "occurrences": 1,
+      "owner": "Backend Lead",
+      "targetPhase": "BND-01",
+      "expires": "2026-12-18"
+    },
+    {
+      "id": "BND-DEBT-S013",
+      "path": "backend/src/main/java/vn/haui/dx/apps/servicedesk/TicketRepository.java",
+      "rule": "app-private-sql",
+      "value": "process_scope",
+      "occurrences": 1,
+      "owner": "Backend Lead",
+      "targetPhase": "BND-01",
+      "expires": "2026-12-18"
+    },
+    {
+      "id": "BND-DEBT-S014",
+      "path": "backend/src/main/java/vn/haui/dx/apps/servicedesk/TicketService.java",
+      "rule": "app-core-import",
+      "value": "vn.haui.dx.core.audit.api.AuditService",
+      "occurrences": 1,
+      "owner": "Backend Lead",
+      "targetPhase": "BND-05",
+      "expires": "2026-12-18"
+    },
+    {
+      "id": "BND-DEBT-S015",
+      "path": "backend/src/main/java/vn/haui/dx/apps/servicedesk/TicketService.java",
+      "rule": "app-core-import",
+      "value": "vn.haui.dx.core.common.CoreException",
+      "occurrences": 1,
+      "owner": "Backend Lead",
+      "targetPhase": "BND-05",
+      "expires": "2026-12-18"
+    },
+    {
+      "id": "BND-DEBT-S016",
+      "path": "backend/src/main/java/vn/haui/dx/apps/servicedesk/TicketService.java",
+      "rule": "app-core-import",
+      "value": "vn.haui.dx.core.common.Page",
+      "occurrences": 1,
+      "owner": "Backend Lead",
+      "targetPhase": "BND-05",
+      "expires": "2026-12-18"
+    },
+    {
+      "id": "BND-DEBT-S017",
+      "path": "backend/src/main/java/vn/haui/dx/apps/servicedesk/TicketService.java",
+      "rule": "app-core-import",
+      "value": "vn.haui.dx.core.common.PageRequest",
+      "occurrences": 1,
+      "owner": "Backend Lead",
+      "targetPhase": "BND-05",
+      "expires": "2026-12-18"
+    },
+    {
+      "id": "BND-DEBT-S018",
+      "path": "backend/src/main/java/vn/haui/dx/apps/servicedesk/TicketService.java",
+      "rule": "app-core-import",
+      "value": "vn.haui.dx.core.identity.api.CurrentUser",
+      "occurrences": 1,
+      "owner": "Backend Lead",
+      "targetPhase": "BND-05",
+      "expires": "2026-12-18"
+    },
+    {
+      "id": "BND-DEBT-S019",
+      "path": "backend/src/main/java/vn/haui/dx/apps/servicedesk/TicketService.java",
+      "rule": "app-core-import",
+      "value": "vn.haui.dx.core.identity.api.WorkspaceAccess",
+      "occurrences": 1,
+      "owner": "Backend Lead",
+      "targetPhase": "BND-05",
+      "expires": "2026-12-18"
+    },
+    {
+      "id": "BND-DEBT-S020",
+      "path": "backend/src/main/java/vn/haui/dx/apps/servicedesk/TicketService.java",
+      "rule": "app-core-import",
+      "value": "vn.haui.dx.core.identity.api.WorkspaceRole",
+      "occurrences": 1,
+      "owner": "Backend Lead",
+      "targetPhase": "BND-05",
+      "expires": "2026-12-18"
+    },
+    {
+      "id": "BND-DEBT-S021",
+      "path": "backend/src/main/java/vn/haui/dx/apps/servicedesk/TicketService.java",
+      "rule": "app-core-import",
+      "value": "vn.haui.dx.core.workflow.api.ProcessHistory",
+      "occurrences": 1,
+      "owner": "Backend Lead",
+      "targetPhase": "BND-02",
+      "expires": "2026-12-18"
+    },
+    {
+      "id": "BND-DEBT-S022",
+      "path": "backend/src/main/java/vn/haui/dx/apps/servicedesk/TicketService.java",
+      "rule": "app-core-import",
+      "value": "vn.haui.dx.core.workflow.api.WorkflowService",
+      "occurrences": 1,
+      "owner": "Backend Lead",
+      "targetPhase": "BND-02",
+      "expires": "2026-12-18"
+    },
+    {
+      "id": "BND-DEBT-S023",
+      "path": "backend/src/main/java/vn/haui/dx/apps/servicedesk/triage/HttpIntelligenceTriageClient.java",
+      "rule": "app-transport-import",
+      "value": "java.net.http.HttpClient",
+      "occurrences": 1,
+      "owner": "Backend Lead",
+      "targetPhase": "BND-03",
+      "expires": "2026-12-18"
+    },
+    {
+      "id": "BND-DEBT-S024",
+      "path": "backend/src/main/java/vn/haui/dx/apps/servicedesk/triage/HttpIntelligenceTriageClient.java",
+      "rule": "app-transport-import",
+      "value": "java.net.http.HttpRequest",
+      "occurrences": 1,
+      "owner": "Backend Lead",
+      "targetPhase": "BND-03",
+      "expires": "2026-12-18"
+    },
+    {
+      "id": "BND-DEBT-S025",
+      "path": "backend/src/main/java/vn/haui/dx/apps/servicedesk/triage/HttpIntelligenceTriageClient.java",
+      "rule": "app-transport-import",
+      "value": "java.net.http.HttpResponse",
+      "occurrences": 1,
+      "owner": "Backend Lead",
+      "targetPhase": "BND-03",
+      "expires": "2026-12-18"
+    },
+    {
+      "id": "BND-DEBT-S026",
+      "path": "backend/src/main/java/vn/haui/dx/apps/servicedesk/triage/HttpIntelligenceTriageClient.java",
+      "rule": "app-transport-import",
+      "value": "java.net.http.HttpTimeoutException",
+      "occurrences": 1,
+      "owner": "Backend Lead",
+      "targetPhase": "BND-03",
+      "expires": "2026-12-18"
+    },
+    {
+      "id": "BND-DEBT-S027",
+      "path": "backend/src/main/java/vn/haui/dx/apps/servicedesk/triage/TicketTriageController.java",
+      "rule": "app-core-import",
+      "value": "vn.haui.dx.core.common.CoreException",
+      "occurrences": 1,
+      "owner": "Backend Lead",
+      "targetPhase": "BND-05",
+      "expires": "2026-12-18"
+    },
+    {
+      "id": "BND-DEBT-S028",
+      "path": "backend/src/main/java/vn/haui/dx/apps/servicedesk/triage/TriageErrors.java",
+      "rule": "app-core-import",
+      "value": "vn.haui.dx.core.common.RequestContext",
+      "occurrences": 1,
+      "owner": "Backend Lead",
+      "targetPhase": "BND-05",
+      "expires": "2026-12-18"
+    },
+    {
+      "id": "BND-DEBT-S029",
+      "path": "backend/src/main/java/vn/haui/dx/apps/servicedesk/triage/TriageValidator.java",
+      "rule": "app-transport-import",
+      "value": "com.networknt.schema.JsonSchema",
+      "occurrences": 1,
+      "owner": "Backend Lead",
+      "targetPhase": "BND-03",
+      "expires": "2026-12-18"
+    },
+    {
+      "id": "BND-DEBT-S030",
+      "path": "backend/src/main/java/vn/haui/dx/apps/servicedesk/triage/TriageValidator.java",
+      "rule": "app-transport-import",
+      "value": "com.networknt.schema.JsonSchemaFactory",
+      "occurrences": 1,
+      "owner": "Backend Lead",
+      "targetPhase": "BND-03",
+      "expires": "2026-12-18"
+    },
+    {
+      "id": "BND-DEBT-S031",
+      "path": "backend/src/main/java/vn/haui/dx/apps/servicedesk/triage/TriageValidator.java",
+      "rule": "app-transport-import",
+      "value": "com.networknt.schema.SpecVersion",
+      "occurrences": 1,
+      "owner": "Backend Lead",
+      "targetPhase": "BND-03",
+      "expires": "2026-12-18"
+    },
+    {
+      "id": "BND-DEBT-S032",
+      "path": "backend/src/main/java/vn/haui/dx/core/workflow/internal/ApprovalProcesses.java",
+      "rule": "core-domain-process-key",
+      "value": "document-review",
+      "occurrences": 1,
+      "owner": "Backend Lead",
+      "targetPhase": "BND-02",
+      "expires": "2026-12-18"
+    },
+    {
+      "id": "BND-DEBT-S033",
+      "path": "backend/src/main/java/vn/haui/dx/core/workflow/internal/ApprovalProcesses.java",
+      "rule": "core-domain-process-key",
+      "value": "equipment-approval",
+      "occurrences": 1,
+      "owner": "Backend Lead",
+      "targetPhase": "BND-02",
+      "expires": "2026-12-18"
+    },
+    {
+      "id": "BND-DEBT-S034",
+      "path": "backend/src/main/resources/db/migration/V5__servicedesk_ticket.sql",
+      "rule": "cross-owner-fk",
+      "value": "servicedesk_ticket -> process_scope",
+      "occurrences": 1,
+      "owner": "Backend Lead",
+      "targetPhase": "BND-01",
+      "expires": "2026-12-18"
+    },
+    {
+      "id": "BND-DEBT-S035",
+      "path": "backend/src/main/resources/processes/document-review.bpmn20.xml",
+      "rule": "app-process-resource",
+      "value": "document-review.bpmn20.xml",
+      "occurrences": 1,
+      "owner": "Backend Lead",
+      "targetPhase": "BND-02",
+      "expires": "2026-12-18"
+    },
+    {
+      "id": "BND-DEBT-S036",
+      "path": "backend/src/main/resources/processes/equipment-approval.bpmn20.xml",
+      "rule": "app-process-resource",
+      "value": "equipment-approval.bpmn20.xml",
+      "occurrences": 1,
+      "owner": "Backend Lead",
+      "targetPhase": "BND-02",
+      "expires": "2026-12-18"
+    },
+    {
+      "id": "BND-DEBT-S037",
+      "path": "backend/src/main/resources/processes/service-desk.bpmn20.xml",
+      "rule": "app-process-resource",
+      "value": "service-desk.bpmn20.xml",
+      "occurrences": 1,
+      "owner": "Backend Lead",
+      "targetPhase": "BND-02",
+      "expires": "2026-12-18"
+    },
+    {
+      "id": "BND-DEBT-S038",
+      "path": "intelligence/profiles/immutable-artifacts.json",
+      "rule": "bundled-app-profile",
+      "value": "immutable-artifacts.json",
+      "occurrences": 1,
+      "owner": "AI Engineer",
+      "targetPhase": "BND-04",
+      "expires": "2026-12-18"
+    },
+    {
+      "id": "BND-DEBT-S039",
+      "path": "intelligence/profiles/registry.yaml",
+      "rule": "bundled-app-profile",
+      "value": "registry.yaml",
+      "occurrences": 1,
+      "owner": "AI Engineer",
+      "targetPhase": "BND-04",
+      "expires": "2026-12-18"
+    },
+    {
+      "id": "BND-DEBT-S040",
+      "path": "intelligence/profiles/service-desk/normalization.md",
+      "rule": "bundled-app-profile",
+      "value": "service-desk/normalization.md",
+      "occurrences": 1,
+      "owner": "AI Engineer",
+      "targetPhase": "BND-04",
+      "expires": "2026-12-18"
+    },
+    {
+      "id": "BND-DEBT-S041",
+      "path": "intelligence/profiles/service-desk/priority-policy.yaml",
+      "rule": "bundled-app-profile",
+      "value": "service-desk/priority-policy.yaml",
+      "occurrences": 1,
+      "owner": "AI Engineer",
+      "targetPhase": "BND-04",
+      "expires": "2026-12-18"
+    },
+    {
+      "id": "BND-DEBT-S042",
+      "path": "intelligence/profiles/service-desk/profile.yaml",
+      "rule": "bundled-app-profile",
+      "value": "service-desk/profile.yaml",
+      "occurrences": 1,
+      "owner": "AI Engineer",
+      "targetPhase": "BND-04",
+      "expires": "2026-12-18"
+    },
+    {
+      "id": "BND-DEBT-S043",
+      "path": "intelligence/profiles/service-desk/rules.yaml",
+      "rule": "bundled-app-profile",
+      "value": "service-desk/rules.yaml",
+      "occurrences": 1,
+      "owner": "AI Engineer",
+      "targetPhase": "BND-04",
+      "expires": "2026-12-18"
+    },
+    {
+      "id": "BND-DEBT-S044",
+      "path": "intelligence/profiles/service-desk/taxonomy.yaml",
+      "rule": "bundled-app-profile",
+      "value": "service-desk/taxonomy.yaml",
+      "occurrences": 1,
+      "owner": "AI Engineer",
+      "targetPhase": "BND-04",
+      "expires": "2026-12-18"
+    },
+    {
+      "id": "BND-DEBT-S045",
+      "path": "intelligence/profiles/service-desk/versions/0.2.0/profile.yaml",
+      "rule": "bundled-app-profile",
+      "value": "service-desk/versions/0.2.0/profile.yaml",
+      "occurrences": 1,
+      "owner": "AI Engineer",
+      "targetPhase": "BND-04",
+      "expires": "2026-12-18"
+    },
+    {
+      "id": "BND-DEBT-S046",
+      "path": "intelligence/profiles/service-desk/versions/0.2.0/rules.yaml",
+      "rule": "bundled-app-profile",
+      "value": "service-desk/versions/0.2.0/rules.yaml",
+      "occurrences": 1,
+      "owner": "AI Engineer",
+      "targetPhase": "BND-04",
+      "expires": "2026-12-18"
+    },
+    {
+      "id": "BND-DEBT-S047",
+      "path": "intelligence/src/hdpi/evaluation/conformance.py",
+      "rule": "python-app-literal",
+      "value": "service-desk@0.2.0",
+      "occurrences": 1,
+      "owner": "AI Engineer",
+      "targetPhase": "BND-04",
+      "expires": "2026-12-18"
+    },
+    {
+      "id": "BND-DEBT-S048",
+      "path": "intelligence/src/hdpi/evaluation/retrieval.py",
+      "rule": "python-app-literal",
+      "value": "fixtures/intelligence/service-desk",
+      "occurrences": 1,
+      "owner": "AI Engineer",
+      "targetPhase": "BND-04",
+      "expires": "2026-12-18"
+    },
+    {
+      "id": "BND-DEBT-S049",
+      "path": "intelligence/src/hdpi/evaluation/retrieval.py",
+      "rule": "python-app-literal",
+      "value": "fixtures/intelligence/service-desk/knowledge",
+      "occurrences": 1,
+      "owner": "AI Engineer",
+      "targetPhase": "BND-04",
+      "expires": "2026-12-18"
+    },
+    {
+      "id": "BND-DEBT-S050",
+      "path": "intelligence/src/hdpi/http_service.py",
+      "rule": "python-app-literal",
+      "value": "service-desk",
+      "occurrences": 1,
+      "owner": "AI Engineer",
+      "targetPhase": "BND-04",
+      "expires": "2026-12-18"
+    },
+    {
+      "id": "BND-DEBT-S051",
+      "path": "intelligence/src/hdpi/triage.py",
+      "rule": "python-app-literal",
+      "value": "Exact immutable identity, e.g. service-desk@0.2.0",
+      "occurrences": 1,
+      "owner": "AI Engineer",
+      "targetPhase": "BND-04",
+      "expires": "2026-12-18"
+    }
+  ],
+  "java": [
+    {
+      "occurrences": 1,
+      "value": "vn.haui.dx.apps.servicedesk.ServiceDeskProcess -> vn.haui.dx.core.identity.api.WorkspaceRole",
+      "path": "backend/src/main/java/vn/haui/dx/apps/servicedesk/ServiceDeskProcess.java",
+      "rule": "app-core-dependency",
+      "id": "BND-DEBT-J001",
+      "owner": "Backend Lead",
+      "targetPhase": "BND-05",
+      "expires": "2026-12-18"
+    },
+    {
+      "occurrences": 1,
+      "value": "vn.haui.dx.apps.servicedesk.ServiceDeskProcess -> vn.haui.dx.core.workflow.api.ProcessPolicy",
+      "path": "backend/src/main/java/vn/haui/dx/apps/servicedesk/ServiceDeskProcess.java",
+      "rule": "app-core-dependency",
+      "id": "BND-DEBT-J002",
+      "owner": "Backend Lead",
+      "targetPhase": "BND-02",
+      "expires": "2026-12-18"
+    },
+    {
+      "occurrences": 1,
+      "value": "vn.haui.dx.apps.servicedesk.ServiceDeskProcess -> vn.haui.dx.core.workflow.api.ProcessRegistration",
+      "path": "backend/src/main/java/vn/haui/dx/apps/servicedesk/ServiceDeskProcess.java",
+      "rule": "app-core-dependency",
+      "id": "BND-DEBT-J003",
+      "owner": "Backend Lead",
+      "targetPhase": "BND-02",
+      "expires": "2026-12-18"
+    },
+    {
+      "occurrences": 1,
+      "value": "vn.haui.dx.apps.servicedesk.Ticket -> vn.haui.dx.core.workflow.api.ProcessRef",
+      "path": "backend/src/main/java/vn/haui/dx/apps/servicedesk/Ticket.java",
+      "rule": "app-core-dependency",
+      "id": "BND-DEBT-J004",
+      "owner": "Backend Lead",
+      "targetPhase": "BND-02",
+      "expires": "2026-12-18"
+    },
+    {
+      "occurrences": 1,
+      "value": "vn.haui.dx.apps.servicedesk.TicketController -> vn.haui.dx.core.common.Page",
+      "path": "backend/src/main/java/vn/haui/dx/apps/servicedesk/TicketController.java",
+      "rule": "app-core-dependency",
+      "id": "BND-DEBT-J005",
+      "owner": "Backend Lead",
+      "targetPhase": "BND-05",
+      "expires": "2026-12-18"
+    },
+    {
+      "occurrences": 1,
+      "value": "vn.haui.dx.apps.servicedesk.TicketController -> vn.haui.dx.core.common.PageRequest",
+      "path": "backend/src/main/java/vn/haui/dx/apps/servicedesk/TicketController.java",
+      "rule": "app-core-dependency",
+      "id": "BND-DEBT-J006",
+      "owner": "Backend Lead",
+      "targetPhase": "BND-05",
+      "expires": "2026-12-18"
+    },
+    {
+      "occurrences": 1,
+      "value": "vn.haui.dx.apps.servicedesk.TicketController -> vn.haui.dx.core.workflow.api.ProcessHistory",
+      "path": "backend/src/main/java/vn/haui/dx/apps/servicedesk/TicketController.java",
+      "rule": "app-core-dependency",
+      "id": "BND-DEBT-J007",
+      "owner": "Backend Lead",
+      "targetPhase": "BND-02",
+      "expires": "2026-12-18"
+    },
+    {
+      "occurrences": 1,
+      "value": "vn.haui.dx.apps.servicedesk.TicketRepository -> vn.haui.dx.core.common.Page",
+      "path": "backend/src/main/java/vn/haui/dx/apps/servicedesk/TicketRepository.java",
+      "rule": "app-core-dependency",
+      "id": "BND-DEBT-J008",
+      "owner": "Backend Lead",
+      "targetPhase": "BND-05",
+      "expires": "2026-12-18"
+    },
+    {
+      "occurrences": 1,
+      "value": "vn.haui.dx.apps.servicedesk.TicketRepository -> vn.haui.dx.core.common.PageRequest",
+      "path": "backend/src/main/java/vn/haui/dx/apps/servicedesk/TicketRepository.java",
+      "rule": "app-core-dependency",
+      "id": "BND-DEBT-J009",
+      "owner": "Backend Lead",
+      "targetPhase": "BND-05",
+      "expires": "2026-12-18"
+    },
+    {
+      "occurrences": 1,
+      "value": "vn.haui.dx.apps.servicedesk.TicketRepository -> vn.haui.dx.core.workflow.api.ProcessRef",
+      "path": "backend/src/main/java/vn/haui/dx/apps/servicedesk/TicketRepository.java",
+      "rule": "app-core-dependency",
+      "id": "BND-DEBT-J010",
+      "owner": "Backend Lead",
+      "targetPhase": "BND-02",
+      "expires": "2026-12-18"
+    },
+    {
+      "occurrences": 1,
+      "value": "vn.haui.dx.apps.servicedesk.TicketService -> vn.haui.dx.core.audit.api.AuditService",
+      "path": "backend/src/main/java/vn/haui/dx/apps/servicedesk/TicketService.java",
+      "rule": "app-core-dependency",
+      "id": "BND-DEBT-J011",
+      "owner": "Backend Lead",
+      "targetPhase": "BND-05",
+      "expires": "2026-12-18"
+    },
+    {
+      "occurrences": 1,
+      "value": "vn.haui.dx.apps.servicedesk.TicketService -> vn.haui.dx.core.common.CoreException",
+      "path": "backend/src/main/java/vn/haui/dx/apps/servicedesk/TicketService.java",
+      "rule": "app-core-dependency",
+      "id": "BND-DEBT-J012",
+      "owner": "Backend Lead",
+      "targetPhase": "BND-05",
+      "expires": "2026-12-18"
+    },
+    {
+      "occurrences": 1,
+      "value": "vn.haui.dx.apps.servicedesk.TicketService -> vn.haui.dx.core.common.Page",
+      "path": "backend/src/main/java/vn/haui/dx/apps/servicedesk/TicketService.java",
+      "rule": "app-core-dependency",
+      "id": "BND-DEBT-J013",
+      "owner": "Backend Lead",
+      "targetPhase": "BND-05",
+      "expires": "2026-12-18"
+    },
+    {
+      "occurrences": 1,
+      "value": "vn.haui.dx.apps.servicedesk.TicketService -> vn.haui.dx.core.common.PageRequest",
+      "path": "backend/src/main/java/vn/haui/dx/apps/servicedesk/TicketService.java",
+      "rule": "app-core-dependency",
+      "id": "BND-DEBT-J014",
+      "owner": "Backend Lead",
+      "targetPhase": "BND-05",
+      "expires": "2026-12-18"
+    },
+    {
+      "occurrences": 1,
+      "value": "vn.haui.dx.apps.servicedesk.TicketService -> vn.haui.dx.core.identity.api.CurrentUser",
+      "path": "backend/src/main/java/vn/haui/dx/apps/servicedesk/TicketService.java",
+      "rule": "app-core-dependency",
+      "id": "BND-DEBT-J015",
+      "owner": "Backend Lead",
+      "targetPhase": "BND-05",
+      "expires": "2026-12-18"
+    },
+    {
+      "occurrences": 1,
+      "value": "vn.haui.dx.apps.servicedesk.TicketService -> vn.haui.dx.core.identity.api.WorkspaceAccess",
+      "path": "backend/src/main/java/vn/haui/dx/apps/servicedesk/TicketService.java",
+      "rule": "app-core-dependency",
+      "id": "BND-DEBT-J016",
+      "owner": "Backend Lead",
+      "targetPhase": "BND-05",
+      "expires": "2026-12-18"
+    },
+    {
+      "occurrences": 1,
+      "value": "vn.haui.dx.apps.servicedesk.TicketService -> vn.haui.dx.core.identity.api.WorkspaceRole",
+      "path": "backend/src/main/java/vn/haui/dx/apps/servicedesk/TicketService.java",
+      "rule": "app-core-dependency",
+      "id": "BND-DEBT-J017",
+      "owner": "Backend Lead",
+      "targetPhase": "BND-05",
+      "expires": "2026-12-18"
+    },
+    {
+      "occurrences": 1,
+      "value": "vn.haui.dx.apps.servicedesk.TicketService -> vn.haui.dx.core.workflow.api.ProcessHistory",
+      "path": "backend/src/main/java/vn/haui/dx/apps/servicedesk/TicketService.java",
+      "rule": "app-core-dependency",
+      "id": "BND-DEBT-J018",
+      "owner": "Backend Lead",
+      "targetPhase": "BND-02",
+      "expires": "2026-12-18"
+    },
+    {
+      "occurrences": 1,
+      "value": "vn.haui.dx.apps.servicedesk.TicketService -> vn.haui.dx.core.workflow.api.ProcessRef",
+      "path": "backend/src/main/java/vn/haui/dx/apps/servicedesk/TicketService.java",
+      "rule": "app-core-dependency",
+      "id": "BND-DEBT-J019",
+      "owner": "Backend Lead",
+      "targetPhase": "BND-02",
+      "expires": "2026-12-18"
+    },
+    {
+      "occurrences": 1,
+      "value": "vn.haui.dx.apps.servicedesk.TicketService -> vn.haui.dx.core.workflow.api.WorkflowService",
+      "path": "backend/src/main/java/vn/haui/dx/apps/servicedesk/TicketService.java",
+      "rule": "app-core-dependency",
+      "id": "BND-DEBT-J020",
+      "owner": "Backend Lead",
+      "targetPhase": "BND-02",
+      "expires": "2026-12-18"
+    },
+    {
+      "occurrences": 1,
+      "value": "vn.haui.dx.apps.servicedesk.triage.HttpIntelligenceTriageClient -> java.net.http.HttpClient",
+      "path": "backend/src/main/java/vn/haui/dx/apps/servicedesk/triage/HttpIntelligenceTriageClient.java",
+      "rule": "app-transport-dependency",
+      "id": "BND-DEBT-J021",
+      "owner": "Backend Lead",
+      "targetPhase": "BND-03",
+      "expires": "2026-12-18"
+    },
+    {
+      "occurrences": 1,
+      "value": "vn.haui.dx.apps.servicedesk.triage.HttpIntelligenceTriageClient -> java.net.http.HttpClient$Builder",
+      "path": "backend/src/main/java/vn/haui/dx/apps/servicedesk/triage/HttpIntelligenceTriageClient.java",
+      "rule": "app-transport-dependency",
+      "id": "BND-DEBT-J022",
+      "owner": "Backend Lead",
+      "targetPhase": "BND-03",
+      "expires": "2026-12-18"
+    },
+    {
+      "occurrences": 1,
+      "value": "vn.haui.dx.apps.servicedesk.triage.HttpIntelligenceTriageClient -> java.net.http.HttpClient$Redirect",
+      "path": "backend/src/main/java/vn/haui/dx/apps/servicedesk/triage/HttpIntelligenceTriageClient.java",
+      "rule": "app-transport-dependency",
+      "id": "BND-DEBT-J023",
+      "owner": "Backend Lead",
+      "targetPhase": "BND-03",
+      "expires": "2026-12-18"
+    },
+    {
+      "occurrences": 1,
+      "value": "vn.haui.dx.apps.servicedesk.triage.HttpIntelligenceTriageClient -> java.net.http.HttpHeaders",
+      "path": "backend/src/main/java/vn/haui/dx/apps/servicedesk/triage/HttpIntelligenceTriageClient.java",
+      "rule": "app-transport-dependency",
+      "id": "BND-DEBT-J024",
+      "owner": "Backend Lead",
+      "targetPhase": "BND-03",
+      "expires": "2026-12-18"
+    },
+    {
+      "occurrences": 1,
+      "value": "vn.haui.dx.apps.servicedesk.triage.HttpIntelligenceTriageClient -> java.net.http.HttpRequest",
+      "path": "backend/src/main/java/vn/haui/dx/apps/servicedesk/triage/HttpIntelligenceTriageClient.java",
+      "rule": "app-transport-dependency",
+      "id": "BND-DEBT-J025",
+      "owner": "Backend Lead",
+      "targetPhase": "BND-03",
+      "expires": "2026-12-18"
+    },
+    {
+      "occurrences": 1,
+      "value": "vn.haui.dx.apps.servicedesk.triage.HttpIntelligenceTriageClient -> java.net.http.HttpRequest$BodyPublishers",
+      "path": "backend/src/main/java/vn/haui/dx/apps/servicedesk/triage/HttpIntelligenceTriageClient.java",
+      "rule": "app-transport-dependency",
+      "id": "BND-DEBT-J026",
+      "owner": "Backend Lead",
+      "targetPhase": "BND-03",
+      "expires": "2026-12-18"
+    },
+    {
+      "occurrences": 1,
+      "value": "vn.haui.dx.apps.servicedesk.triage.HttpIntelligenceTriageClient -> java.net.http.HttpRequest$Builder",
+      "path": "backend/src/main/java/vn/haui/dx/apps/servicedesk/triage/HttpIntelligenceTriageClient.java",
+      "rule": "app-transport-dependency",
+      "id": "BND-DEBT-J027",
+      "owner": "Backend Lead",
+      "targetPhase": "BND-03",
+      "expires": "2026-12-18"
+    },
+    {
+      "occurrences": 1,
+      "value": "vn.haui.dx.apps.servicedesk.triage.HttpIntelligenceTriageClient -> java.net.http.HttpResponse",
+      "path": "backend/src/main/java/vn/haui/dx/apps/servicedesk/triage/HttpIntelligenceTriageClient.java",
+      "rule": "app-transport-dependency",
+      "id": "BND-DEBT-J028",
+      "owner": "Backend Lead",
+      "targetPhase": "BND-03",
+      "expires": "2026-12-18"
+    },
+    {
+      "occurrences": 1,
+      "value": "vn.haui.dx.apps.servicedesk.triage.HttpIntelligenceTriageClient -> java.net.http.HttpTimeoutException",
+      "path": "backend/src/main/java/vn/haui/dx/apps/servicedesk/triage/HttpIntelligenceTriageClient.java",
+      "rule": "app-transport-dependency",
+      "id": "BND-DEBT-J029",
+      "owner": "Backend Lead",
+      "targetPhase": "BND-03",
+      "expires": "2026-12-18"
+    },
+    {
+      "occurrences": 1,
+      "value": "vn.haui.dx.apps.servicedesk.triage.HttpIntelligenceTriageClient$LimitedBody -> java.net.http.HttpResponse$BodySubscriber",
+      "path": "backend/src/main/java/vn/haui/dx/apps/servicedesk/triage/HttpIntelligenceTriageClient.java",
+      "rule": "app-transport-dependency",
+      "id": "BND-DEBT-J030",
+      "owner": "Backend Lead",
+      "targetPhase": "BND-03",
+      "expires": "2026-12-18"
+    },
+    {
+      "occurrences": 1,
+      "value": "vn.haui.dx.apps.servicedesk.triage.TicketTriageController -> vn.haui.dx.core.common.CoreException",
+      "path": "backend/src/main/java/vn/haui/dx/apps/servicedesk/triage/TicketTriageController.java",
+      "rule": "app-core-dependency",
+      "id": "BND-DEBT-J031",
+      "owner": "Backend Lead",
+      "targetPhase": "BND-05",
+      "expires": "2026-12-18"
+    },
+    {
+      "occurrences": 1,
+      "value": "vn.haui.dx.apps.servicedesk.triage.TriageErrors -> vn.haui.dx.core.common.RequestContext",
+      "path": "backend/src/main/java/vn/haui/dx/apps/servicedesk/triage/TriageErrors.java",
+      "rule": "app-core-dependency",
+      "id": "BND-DEBT-J032",
+      "owner": "Backend Lead",
+      "targetPhase": "BND-05",
+      "expires": "2026-12-18"
+    },
+    {
+      "occurrences": 1,
+      "value": "vn.haui.dx.apps.servicedesk.triage.TriageValidator -> com.networknt.schema.JsonSchema",
+      "path": "backend/src/main/java/vn/haui/dx/apps/servicedesk/triage/TriageValidator.java",
+      "rule": "app-transport-dependency",
+      "id": "BND-DEBT-J033",
+      "owner": "Backend Lead",
+      "targetPhase": "BND-03",
+      "expires": "2026-12-18"
+    },
+    {
+      "occurrences": 1,
+      "value": "vn.haui.dx.apps.servicedesk.triage.TriageValidator -> com.networknt.schema.JsonSchemaFactory",
+      "path": "backend/src/main/java/vn/haui/dx/apps/servicedesk/triage/TriageValidator.java",
+      "rule": "app-transport-dependency",
+      "id": "BND-DEBT-J034",
+      "owner": "Backend Lead",
+      "targetPhase": "BND-03",
+      "expires": "2026-12-18"
+    },
+    {
+      "occurrences": 1,
+      "value": "vn.haui.dx.apps.servicedesk.triage.TriageValidator -> com.networknt.schema.SpecVersion$VersionFlag",
+      "path": "backend/src/main/java/vn/haui/dx/apps/servicedesk/triage/TriageValidator.java",
+      "rule": "app-transport-dependency",
+      "id": "BND-DEBT-J035",
+      "owner": "Backend Lead",
+      "targetPhase": "BND-03",
+      "expires": "2026-12-18"
+    }
+  ]
+}
