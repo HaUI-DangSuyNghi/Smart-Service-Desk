@@ -97,7 +97,7 @@ try {
         Run-Docker cp (Join-Path $evidence "$name.dump") "${restoreDatabase}:/tmp/$name.dump"
         Run-Docker exec $restoreDatabase pg_restore --exit-on-error --clean --if-exists --no-owner -U core -d $name "/tmp/$name.dump"
     }
-    Run-Docker compose -p $restore create core
+    Run-Docker compose -p $restore create platform
     $restoreCore = (Run-Docker compose -p $restore ps -aq platform).Trim()
     if ((Get-FileHash -LiteralPath (Join-Path $evidence 'files.tar') -Algorithm SHA256).Hash -ne $hashes['files.tar']) { throw 'Blob archive checksum mismatch' }
     Run-Docker run --rm --network none --read-only --user 0 --volumes-from $restoreCore --mount "type=bind,source=$evidence,target=/backup,readonly" --entrypoint tar dx-platform:0.1.0 -C /var/lib/dx/files -xpf /backup/files.tar
