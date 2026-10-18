@@ -57,7 +57,10 @@ services:
       timeout: 5s
       retries: 30
   gateway:
-    image: apache/apisix:3.11.0-redhat@sha256:d3c86dc739ade96bdcd0acaee0ab36b846a3ea2ce21ecf78c897d15500d19db0
+    image: dx-apisix:3.11.0-sec01
+    build:
+      context: .
+      dockerfile: infra/apisix/Dockerfile
     ports: ["127.0.0.1:9080:9080"]
     volumes:
       - ./infra/apisix/config.yaml:/usr/local/apisix/conf/config.yaml:ro

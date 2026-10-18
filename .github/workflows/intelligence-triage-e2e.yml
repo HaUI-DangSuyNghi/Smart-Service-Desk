@@ -133,7 +133,7 @@ jobs:
           from pathlib import Path
           import json, os, subprocess
           images = []
-          for suffix in ('core', 'intelligence'):
+          for suffix in ('core', 'intelligence', 'gateway'):
               tag = os.environ['INT01_PROJECT'] + '-' + suffix + ':ci'
               image, = json.loads(subprocess.check_output(['docker', 'image', 'inspect', tag]))
               revision = image['Config']['Labels']['org.opencontainers.image.revision']
@@ -144,7 +144,7 @@ jobs:
       - name: G9 image inventory and vulnerability assessment (not release approval)
         shell: pwsh
         run: |
-          ./scripts/scan-core.ps1 -Run "scan-$env:INT01_PROJECT" -CacheVolume "$env:INT01_PROJECT-trivy-cache" -Images @("$env:INT01_PROJECT-core:ci", "$env:INT01_PROJECT-intelligence:ci", 'postgres:16.15-bookworm@sha256:0ea6700a3b4f0ae6ce746519073558aed4d88a79d8d07622a9a644946c7319c4', 'quay.io/keycloak/keycloak:26.0.8@sha256:09a381c715ab0b111835b70f2905955274843a219c6f27efb348e4d9f4086858', 'apache/apisix:3.11.0-redhat@sha256:d3c86dc739ade96bdcd0acaee0ab36b846a3ea2ce21ecf78c897d15500d19db0') -ReportOnly
+          ./scripts/scan-core.ps1 -Run "scan-$env:INT01_PROJECT" -CacheVolume "$env:INT01_PROJECT-trivy-cache" -Images @("$env:INT01_PROJECT-core:ci", "$env:INT01_PROJECT-intelligence:ci", 'postgres:16.15-bookworm@sha256:0ea6700a3b4f0ae6ce746519073558aed4d88a79d8d07622a9a644946c7319c4', 'quay.io/keycloak/keycloak:26.0.8@sha256:09a381c715ab0b111835b70f2905955274843a219c6f27efb348e4d9f4086858', "$env:INT01_PROJECT-gateway:ci") -ReportOnly
       - name: Record exact tested commit and release gates
         if: always()
         run: python scripts/intelligence/summarize-integration.py
