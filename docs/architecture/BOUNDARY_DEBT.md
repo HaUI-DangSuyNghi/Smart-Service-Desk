@@ -6,7 +6,7 @@ claims of team approval. No unregistered exceptions may enter production code.
 | ID | From -> To | Why temporary | Replacement seam | Owner | Removal | Status |
 | --- | --- | --- | --- | --- | --- | --- |
 | BD-01 | TicketService -> workflow/identity/audit | baseline integration | ProcessCapability/HumanContext/ActivityJournal | Backend | ARC-06 | OPEN |
-| BD-02 | TicketRepository -> engine/Core SQL | baseline statistics | ProcessSnapshot | Backend | ARC-04 | OPEN |
+| BD-02 | TicketRepository -> engine/Core SQL | baseline statistics | ProcessSnapshot | Backend | ARC-04 | CLOSED |
 | BD-03 | Ticket -> Core ProcessRef | baseline DTO | ProcessHandle | Process | ARC-02 | CLOSED |
 | BD-04 | Core -> approval business policies | baseline probes | sample app contributions | Process | ARC-02 | CLOSED |
 | BD-05 | shared BPMN -> app processes | default deployment path | explicit resource ownership | Process | ARC-02 | CLOSED |
