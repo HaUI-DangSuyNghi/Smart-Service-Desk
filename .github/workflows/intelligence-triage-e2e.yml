@@ -43,7 +43,7 @@ jobs:
           echo "::add-mask::$password"
           export FILE_TEST_DB_PASSWORD="$password" WORKFLOW_TEST_DB_PASSWORD="$password" POSTGRES_PASSWORD="$password"
           printf 'FILE_TEST_DB_PASSWORD=%s\nWORKFLOW_TEST_DB_PASSWORD=%s\n' "$password" "$password" >> "$GITHUB_ENV"
-          docker run -d --name "$INT01_PROJECT-regression" -e POSTGRES_USER=workflow -e POSTGRES_DB=file_storage -e POSTGRES_PASSWORD -p 127.0.0.1:15432:5432 postgres:16.6-bookworm
+          docker run -d --name "$INT01_PROJECT-regression" -e POSTGRES_USER=workflow -e POSTGRES_DB=file_storage -e POSTGRES_PASSWORD -p 127.0.0.1:15432:5432 postgres:16.15-bookworm@sha256:0ea6700a3b4f0ae6ce746519073558aed4d88a79d8d07622a9a644946c7319c4
           for attempt in $(seq 1 30); do
             if docker exec "$INT01_PROJECT-regression" pg_isready -h 127.0.0.1 -U workflow -d file_storage; then break; fi
             sleep 1
@@ -143,11 +143,11 @@ jobs:
       - name: G9 image inventory and vulnerability assessment (not release approval)
         shell: pwsh
         run: |
-          ./scripts/scan-core.ps1 -Run "scan-$env:INT01_PROJECT" -CacheVolume "$env:INT01_PROJECT-trivy-cache" -Images @("$env:INT01_PROJECT-core:ci", "$env:INT01_PROJECT-intelligence:ci", 'postgres:16.6-bookworm', 'quay.io/keycloak/keycloak:26.0.7', 'apache/apisix:3.11.0-debian') -ReportOnly
+          ./scripts/scan-core.ps1 -Run "scan-$env:INT01_PROJECT" -CacheVolume "$env:INT01_PROJECT-trivy-cache" -Images @("$env:INT01_PROJECT-core:ci", "$env:INT01_PROJECT-intelligence:ci", 'postgres:16.15-bookworm@sha256:0ea6700a3b4f0ae6ce746519073558aed4d88a79d8d07622a9a644946c7319c4', 'quay.io/keycloak/keycloak:26.0.8@sha256:09a381c715ab0b111835b70f2905955274843a219c6f27efb348e4d9f4086858', 'apache/apisix:3.11.0-debian@sha256:178d1f79c2c39834f50213bf6ace90284f6b985dc8189cc50f3666d9fb1037ad') -ReportOnly
       - name: Record exact tested commit and release gates
         if: always()
         run: python scripts/intelligence/summarize-integration.py
-      - name: Upload only non-secret integration and security summaries
+      - name: Upload non-secret integration evidence and full vulnerability inventories
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
@@ -167,6 +167,7 @@ jobs:
             .local/ai04-e2e/summary.json
             .local/scan-int01-*/summary.json
             .local/scan-int01-*/scanner-version.txt
+            .local/scan-int01-*/image-*.json
       - name: Stop ONLY this run's disposable containers
         if: always()
         run: |

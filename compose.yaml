@@ -1,7 +1,7 @@
 name: dx-core
 services:
   postgres:
-    image: postgres:16.6-bookworm
+    image: postgres:16.15-bookworm@sha256:0ea6700a3b4f0ae6ce746519073558aed4d88a79d8d07622a9a644946c7319c4
     environment:
       POSTGRES_DB: core
       POSTGRES_USER: core
@@ -14,7 +14,7 @@ services:
       interval: 5s
       retries: 20
   keycloak:
-    image: quay.io/keycloak/keycloak:26.0.7
+    image: quay.io/keycloak/keycloak:26.0.8@sha256:09a381c715ab0b111835b70f2905955274843a219c6f27efb348e4d9f4086858
     command: [start-dev, --import-realm]
     environment:
       KC_DB: postgres
@@ -57,7 +57,7 @@ services:
       timeout: 5s
       retries: 30
   gateway:
-    image: apache/apisix:3.11.0-debian
+    image: apache/apisix:3.11.0-debian@sha256:178d1f79c2c39834f50213bf6ace90284f6b985dc8189cc50f3666d9fb1037ad
     ports: ["127.0.0.1:9080:9080"]
     volumes:
       - ./infra/apisix/config.yaml:/usr/local/apisix/conf/config.yaml:ro

@@ -1,6 +1,6 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0">
   <modelVersion>4.0.0</modelVersion>
-  <parent><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-parent</artifactId><version>3.3.4</version></parent>
+  <parent><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-parent</artifactId><version>3.3.13</version></parent>
   <groupId>vn.haui.dx</groupId><artifactId>dx-core</artifactId><version>0.1.0-SNAPSHOT</version>
   <properties><java.version>17</java.version></properties>
   <dependencies>
