@@ -5,4 +5,7 @@
 !contracts/intelligence/
 !contracts/intelligence/v1/
 !contracts/intelligence/v1/triage-*.schema.json
+!docs/
+!docs/architecture/
+!docs/architecture/boundary-debt.json
 backend/target/

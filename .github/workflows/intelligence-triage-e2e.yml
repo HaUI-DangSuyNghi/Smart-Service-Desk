@@ -133,7 +133,7 @@ jobs:
           from pathlib import Path
           import json, os, subprocess
           images = []
-          for suffix in ('core', 'intelligence'):
+          for suffix in ('platform', 'intelligence'):
               tag = os.environ['INT01_PROJECT'] + '-' + suffix + ':ci'
               image, = json.loads(subprocess.check_output(['docker', 'image', 'inspect', tag]))
               revision = image['Config']['Labels']['org.opencontainers.image.revision']
@@ -144,7 +144,7 @@ jobs:
       - name: G9 image inventory and vulnerability assessment (not release approval)
         shell: pwsh
         run: |
-          ./scripts/scan-core.ps1 -Run "scan-$env:INT01_PROJECT" -CacheVolume "$env:INT01_PROJECT-trivy-cache" -Images @("$env:INT01_PROJECT-core:ci", "$env:INT01_PROJECT-intelligence:ci", 'postgres:16.6-bookworm', 'quay.io/keycloak/keycloak:26.0.7', 'apache/apisix:3.11.0-debian') -ReportOnly
+          ./scripts/scan-core.ps1 -Run "scan-$env:INT01_PROJECT" -CacheVolume "$env:INT01_PROJECT-trivy-cache" -Images @("$env:INT01_PROJECT-platform:ci", "$env:INT01_PROJECT-intelligence:ci", 'postgres:16.6-bookworm', 'quay.io/keycloak/keycloak:26.0.7', 'apache/apisix:3.11.0-debian') -ReportOnly
       - name: Record exact tested commit and release gates
         if: always()
         run: python scripts/intelligence/summarize-integration.py

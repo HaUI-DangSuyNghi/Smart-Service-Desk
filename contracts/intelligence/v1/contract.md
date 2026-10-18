@@ -60,7 +60,7 @@ The [result schema](triage-result.schema.json) defines a generic response envelo
 Every result echoes `contractVersion`, `requestId`, `profile`, and the trusted
 `context.workspaceId` as top-level `workspaceId`.
 Category values are profile-defined rather than hard-coded in the generic schema.
-For this package, fixtures use [taxonomy](../../../intelligence/profiles/service-desk/taxonomy.yaml) and
+For this package, fixtures use [taxonomy](../../../apps/servicedesk/intelligence/profiles/service-desk/taxonomy.yaml) and
 [priority policy](../../../intelligence/docs/architecture/priority-policy.md). `SUCCESS` means suggestion produced,
 not a confirmed business decision. Ambiguous input can be SUCCESS with review.
 
@@ -137,7 +137,7 @@ Deleting any index/cache leaves Core records valid. Rebuild derived state from
 authorized Core data plus versioned AI configuration, keeping source bytes and
 provenance separate from normalized text. Synthetic examples are authoring fixtures,
 not a holdout set; split future evaluation by scenario/template to prevent leakage.
-The [normalization draft](../../../intelligence/profiles/service-desk/normalization.md) preserves original evidence
+The [normalization draft](../../../apps/servicedesk/intelligence/profiles/service-desk/normalization.md) preserves original evidence
 and Vietnamese diacritics; future normalization behavior must be versioned.
 
 Dependency/model/data adoption and corpus release remain pending. See

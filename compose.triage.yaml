@@ -21,7 +21,7 @@ services:
       interval: 10s
       timeout: 2s
       retries: 5
-  core:
+  platform:
     environment:
       INTELLIGENCE_TRIAGE_BASE_URL: ${INTELLIGENCE_TRIAGE_BASE_URL:-}
       INTELLIGENCE_TRIAGE_TOKEN: ${INTELLIGENCE_TRIAGE_TOKEN:-}

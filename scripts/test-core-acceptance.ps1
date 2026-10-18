@@ -32,7 +32,7 @@ $stage = 'postgresql'
 try {
     Run-Python -c 'import yaml, openapi_spec_validator, openapi_schema_validator'
     & "$PSScriptRoot/setup.ps1"
-    Run-Docker build --target build -t dx-core-build:0.1.0 -f backend/Dockerfile .
+    Run-Docker build --target build -t dx-platform-build:0.1.0 -f backend/Dockerfile .
     & "$PSScriptRoot/test-file.ps1"
     $results.postgresql = 'PASS'
     $stage = 'contracts'
@@ -57,9 +57,9 @@ try {
     $results.independentSecurityAndReuse = 'PASS'
     $stage = 'uploadDisabled'
     $override = Join-Path $evidence 'uploads-disabled.yaml'
-    [IO.File]::WriteAllText($override, "services:`n  core:`n    environment:`n      DX_ALLOW_UNSCANNED_UPLOAD: 'false'`n")
+    [IO.File]::WriteAllText($override, "services:`n  platform:`n    environment:`n      DX_ALLOW_UNSCANNED_UPLOAD: 'false'`n")
     $before = Run-Docker compose -p $Project exec -T postgres psql -U core -d core -Atc 'select count(*) from file_object'
-    Run-Docker compose -p $Project -f compose.yaml -f $override up -d --wait --wait-timeout 300 --force-recreate core gateway
+    Run-Docker compose -p $Project -f compose.yaml -f $override up -d --wait --wait-timeout 300 --force-recreate platform gateway
     Run-Python scripts/acceptance/core/verify-runtime.py upload-disabled $state
     $after = Run-Docker compose -p $Project exec -T postgres psql -U core -d core -Atc 'select count(*) from file_object'
     if ($before -ne $after) { throw 'Disabled upload persisted a file' }
@@ -72,12 +72,12 @@ try {
     Copy-Item -LiteralPath (Join-Path $evidence 'verify-http.json') -Destination (Join-Path $evidence 'restart-http.json')
     $results.restart = 'PASS'
     $stage = 'storageInventory'
-    Run-Docker compose -p $Project stop gateway core keycloak
-    $core = (Run-Docker compose -p $Project ps -aq core).Trim()
+    Run-Docker compose -p $Project stop gateway platform keycloak
+    $core = (Run-Docker compose -p $Project ps -aq platform).Trim()
     $database = (Run-Docker compose -p $Project ps -q postgres).Trim()
     $inventory = Run-Docker exec $database psql -U core -d core -Atc "select coalesce(json_agg(files),'[]'::json) from (select storage_key::text,byte_size,checksum from file_object order by storage_key) files"
     [IO.File]::WriteAllText((Join-Path $evidence 'storage-inventory.json'), ($inventory -join "`n"))
-    Run-Docker run --rm --network none --read-only --user 0 --volumes-from "${core}:ro" --mount "type=bind,source=$evidence,target=/backup" --entrypoint tar dx-core:0.1.0 -C /var/lib/dx/files -cpf /backup/files.tar .
+    Run-Docker run --rm --network none --read-only --user 0 --volumes-from "${core}:ro" --mount "type=bind,source=$evidence,target=/backup" --entrypoint tar dx-platform:0.1.0 -C /var/lib/dx/files -cpf /backup/files.tar .
     Run-Python scripts/acceptance/core/check-storage.py --self-test
     Run-Python scripts/acceptance/core/check-storage.py (Join-Path $evidence 'storage-inventory.json') (Join-Path $evidence 'files.tar')
     $results.storageInventory = 'PASS'
@@ -98,9 +98,9 @@ try {
         Run-Docker exec $restoreDatabase pg_restore --exit-on-error --clean --if-exists --no-owner -U core -d $name "/tmp/$name.dump"
     }
     Run-Docker compose -p $restore create core
-    $restoreCore = (Run-Docker compose -p $restore ps -aq core).Trim()
+    $restoreCore = (Run-Docker compose -p $restore ps -aq platform).Trim()
     if ((Get-FileHash -LiteralPath (Join-Path $evidence 'files.tar') -Algorithm SHA256).Hash -ne $hashes['files.tar']) { throw 'Blob archive checksum mismatch' }
-    Run-Docker run --rm --network none --read-only --user 0 --volumes-from $restoreCore --mount "type=bind,source=$evidence,target=/backup,readonly" --entrypoint tar dx-core:0.1.0 -C /var/lib/dx/files -xpf /backup/files.tar
+    Run-Docker run --rm --network none --read-only --user 0 --volumes-from $restoreCore --mount "type=bind,source=$evidence,target=/backup,readonly" --entrypoint tar dx-platform:0.1.0 -C /var/lib/dx/files -xpf /backup/files.tar
     Run-Docker compose -p $restore up -d --no-build --pull never --wait --wait-timeout 300
     Run-Python scripts/acceptance/core/verify-runtime.py verify $state
     Copy-Item -LiteralPath (Join-Path $evidence 'verify-http.json') -Destination (Join-Path $evidence 'restore-http.json')
@@ -111,7 +111,7 @@ try {
     Get-Content scripts/check-db.sql -Raw | & docker compose -p $restore exec -T postgres psql -U core -d core -v ON_ERROR_STOP=1
     if ($LASTEXITCODE -ne 0) { throw 'Restored DB consistency failed' }
     $results.backupRestore = 'PASS'
-    $images = foreach ($image in @('dx-core:0.1.0', 'postgres:16.6-bookworm', 'quay.io/keycloak/keycloak:26.0.7', 'apache/apisix:3.11.0-debian')) {
+    $images = foreach ($image in @('dx-platform:0.1.0', 'postgres:16.6-bookworm', 'quay.io/keycloak/keycloak:26.0.7', 'apache/apisix:3.11.0-debian')) {
         $inspection = (Run-Docker image inspect $image | ConvertFrom-Json)[0]
         if (!$inspection.Id) { throw "Missing image identity: $image" }
         $inspection | Select-Object Id,RepoTags,RepoDigests

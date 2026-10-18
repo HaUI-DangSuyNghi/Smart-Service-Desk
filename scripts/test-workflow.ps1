@@ -1,4 +1,4 @@
-param([string]$BuildImage = 'dx-core-build:0.1.0')
+param([string]$BuildImage = 'dx-platform-build:0.1.0')
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 $suffix = [guid]::NewGuid().ToString('N').Substring(0, 12)

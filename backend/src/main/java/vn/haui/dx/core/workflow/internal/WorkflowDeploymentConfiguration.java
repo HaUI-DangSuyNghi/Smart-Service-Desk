@@ -8,6 +8,10 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 class WorkflowDeploymentConfiguration {
+    @org.springframework.context.event.EventListener(org.springframework.boot.context.event.ApplicationReadyEvent.class)
+    public void validateProcesses(org.springframework.boot.context.event.ApplicationReadyEvent event) {
+        event.getApplicationContext().getBean(ProcessRegistry.class).policies();
+    }
     @Bean EngineConfigurationConfigurer<SpringProcessEngineConfiguration> contentAwareDeployment() {
         return configuration -> configuration.setDeploymentStrategies(List.of(new ContentAwareDeploymentStrategy()));
     }

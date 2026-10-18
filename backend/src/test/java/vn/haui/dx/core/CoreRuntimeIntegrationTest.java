@@ -57,6 +57,20 @@ class CoreRuntimeIntegrationTest {
     @Autowired ObjectMapper json;
     @Autowired JdbcTemplate jdbc;
 
+    @Test void compiledModulesMatchTheRequestedIsolationMode() throws Exception {
+        if (Boolean.getBoolean("dx.proof.core-only")) {
+            for (String type : List.of("vn.haui.dx.apps.servicedesk.Ticket", "vn.haui.dx.hpdi.process.api.ProcessCapability",
+                    "vn.haui.dx.assembly.DxOsApplication"))
+                assertThrows(ClassNotFoundException.class, () -> Class.forName(type));
+            assertNull(jdbc.queryForObject("select to_regclass('servicedesk_ticket')::text", String.class));
+            assertNull(getClass().getResource("/apps/servicedesk/process/service-desk.bpmn20.xml"));
+        } else {
+            assertNotNull(Class.forName("vn.haui.dx.assembly.DxOsApplication"));
+            assertNotNull(Class.forName("vn.haui.dx.hpdi.process.api.ProcessCapability"));
+        }
+    }
+
+
     private String signedToken(String issuer, String audience, java.time.Instant expires,
                                com.nimbusds.jose.jwk.RSAKey key) {
         var claims = org.springframework.security.oauth2.jwt.JwtClaimsSet.builder().issuer(issuer).subject("signed-runtime")

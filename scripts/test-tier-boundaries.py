@@ -36,6 +36,17 @@ class BoundaryGuardTest(unittest.TestCase):
     def test_hpdi_cannot_import_apps(self):
         self.mutation(JAVA + 'hpdi/process/Bad.java', 'import vn.haui.dx.apps.example.Ticket;', 'hpdi-app-import')
 
+    def test_lower_tiers_cannot_import_composition_root(self):
+        for tier, rule in (('core', 'core-upper-import'), ('hpdi', 'hpdi-assembly-import'), ('apps', 'apps-assembly-import')):
+            with self.subTest(tier=tier):
+                self.mutation(JAVA + tier + '/Bad.java', 'import vn.haui.dx.assembly.DxOsApplication;', rule)
+
+    def test_hpdi_cannot_hardcode_an_app_profile(self):
+        self.mutation(JAVA + 'hpdi/intelligence/Bad.java', 'String profile = "service-desk@0.2.0";', 'hpdi-domain-literal')
+
+    def test_app_contract_cannot_expose_core_dto(self):
+        self.mutation('contracts/apps/example/openapi.yaml', "$ref: 'core.yaml#/components/schemas/ProcessHistory'", 'app-core-contract-dto')
+
     def test_hpdi_api_cannot_import_even_public_core(self):
         self.mutation(JAVA + 'hpdi/process/api/Bad.java', 'import vn.haui.dx.core.workflow.api.ProcessRef;', 'hpdi-private-core-import')
 
@@ -101,7 +112,7 @@ class BoundaryGuardTest(unittest.TestCase):
         self.mutation('intelligence/src/hdpi/bad.py', 'PROFILE = "fake-domain"', 'python-app-literal')
 
     def test_runtime_cannot_bundle_new_app_profile(self):
-        self.mutation('apps/servicedesk/intelligence/profiles/fake/profile.yaml', 'profile: fake', 'bundled-app-profile')
+        self.mutation('intelligence/profiles/fake/profile.yaml', 'profile: fake', 'bundled-app-profile')
 
     def test_platform_cannot_statically_or_dynamically_import_apps(self):
         for statement in ('import { Ticket } from "../../apps/servicedesk/ticket";',

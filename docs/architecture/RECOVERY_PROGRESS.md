@@ -72,3 +72,20 @@ integration; develop and the legacy reference branch are not merged or rewritten
 - All migration exceptions are closed: source inventory=0, Java edges=0.
 - Validation: 147 Java tests passed with PostgreSQL on Linux/JDK 17;
   failures=0, errors=0, skipped=0, including trusted-context and provenance tests.
+
+## BND-06: explicit assembly and standalone Core
+
+- DxOsApplication owns bootstrap under `vn.haui.dx.assembly`; workflow readiness
+  validation lives with Core's workflow runtime. Production artifact/image/service
+  naming is `dx-platform` / `platform`; public API paths and JWT audience remain
+  compatible. Docker, gateway routing, acceptance scripts and CI use that name.
+- The Core-only Maven profile excludes application/HPDI/assembly classes, app
+  migrations and app resources. Test-only process contributions exercise the
+  standalone engine without bringing application production code into Core.
+- The isolation test checks absent upper-tier classes, Service Desk table and
+  Service Desk BPMN. Resource exclusions are applied once in the base resource
+  declaration to avoid Maven profile list-merging duplicates.
+- Assembly dependency and application OpenAPI DTO guards extend the source and
+  bytecode checks. The generic Python image verifies externally mounted profiles.
+- Validation: assembled Java regression passed; standalone Core passed 69 tests
+  with PostgreSQL, failures=0, errors=0, skipped=0. No migration exceptions remain.

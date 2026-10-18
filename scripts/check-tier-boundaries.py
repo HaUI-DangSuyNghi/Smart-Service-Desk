@@ -63,10 +63,12 @@ def violations(root=ROOT):
         for imported in re.findall(r'^\s*import\s+(?:static\s+)?([\w.*]+);', imports_source, re.M):
             imported = imported.removesuffix('.*')
             rule = None
-            if tier == 'core' and imported.startswith(('vn.haui.dx.hpdi.', 'vn.haui.dx.apps.')):
+            if tier == 'core' and imported.startswith(('vn.haui.dx.hpdi.', 'vn.haui.dx.apps.', 'vn.haui.dx.assembly.')):
                 rule = 'core-upper-import'
             elif tier == 'hpdi' and imported.startswith('vn.haui.dx.apps.'):
                 rule = 'hpdi-app-import'
+            elif tier in ('hpdi', 'apps') and imported.startswith('vn.haui.dx.assembly.'):
+                rule = tier + '-assembly-import'
             elif tier == 'apps' and imported.startswith('vn.haui.dx.core.'):
                 rule = 'app-core-import'
             elif tier == 'hpdi' and imported.startswith('vn.haui.dx.core.'):
@@ -85,6 +87,8 @@ def violations(root=ROOT):
         for literal in literals:
             if tier == 'core' and literal in process_keys:
                 report(path, 'core-domain-process-key', literal)
+            if tier == 'hpdi' and (literal in process_keys or any(profile in literal.lower().replace('_', '-') for profile in profiles)):
+                report(path, 'hpdi-domain-literal', literal)
             if tier == 'apps' and re.search(r'\b(?:select|insert\s+into|update|delete\s+from|join|references)\b', literal, re.I):
                 app_sql(path, literal, parts[1], ctes)
 
@@ -142,6 +146,11 @@ def violations(root=ROOT):
                 outside = specifier.startswith('.') and not (path.parent / specifier).resolve().is_relative_to((root / 'frontend/src/platform').resolve())
                 if outside or re.search(r'(?:^|/|@)apps(?:/|$)', specifier):
                     report(path, 'platform-app-import', specifier)
+    for path in list((root / 'contracts/openapi').glob('*.yaml')) + list((root / 'contracts/apps').rglob('*.yaml')):
+        source = path.read_text('utf-8')
+        if path.is_relative_to(root / 'contracts/apps') or '/api/apps/' in source:
+            for dto in re.findall(r'core\.yaml#/components/schemas/(\w+)', source):
+                report(path, 'app-core-contract-dto', dto)
     return observed
 
 

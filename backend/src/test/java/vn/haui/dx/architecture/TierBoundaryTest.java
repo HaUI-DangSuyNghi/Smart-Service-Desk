@@ -30,10 +30,11 @@ class TierBoundaryTest {
         boolean core = origin.startsWith(PREFIX + "core.");
         boolean hpdi = origin.startsWith(PREFIX + "hpdi.");
         boolean app = origin.startsWith(PREFIX + "apps.");
-        if (core && (target.startsWith(PREFIX + "hpdi.") || target.startsWith(PREFIX + "apps."))) {
+        if (core && (target.startsWith(PREFIX + "hpdi.") || target.startsWith(PREFIX + "apps.") || target.startsWith(PREFIX + "assembly."))) {
             rules.add("core-upper-dependency");
         }
         if (hpdi && target.startsWith(PREFIX + "apps.")) rules.add("hpdi-app-dependency");
+        if ((app || hpdi) && target.startsWith(PREFIX + "assembly.")) rules.add("lower-tier-assembly-dependency");
         if (app && target.startsWith(PREFIX + "core.")) rules.add("app-core-dependency");
         if (hpdi && target.startsWith(PREFIX + "core.")) {
             if (origin.matches("vn[.]haui[.]dx[.]hpdi[.][^.]+[.]api[.].*")
