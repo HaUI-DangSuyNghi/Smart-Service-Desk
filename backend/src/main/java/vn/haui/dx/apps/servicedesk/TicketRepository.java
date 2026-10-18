@@ -66,38 +66,20 @@ class TicketRepository {
         return new Page<>(items, page.page(), page.size(), total == null ? 0 : total);
     }
 
-    TicketStatistics statistics(String workspace, String creator, String query, Instant from, Instant to) {
+    record ProcessLink(UUID id, String creator, String processId) {}
+
+    List<ProcessLink> statisticsBatch(String workspace, String creator, String query, Instant from, Instant to,
+                                      UUID after, int limit) {
         List<Object> parameters = new ArrayList<>(List.of(workspace));
         String where = where(creator, query, from, to, parameters);
-        String sql = """
-            with states as (
-                select case
-                    when s.id is null or h.proc_inst_id_ is null then 'unclassified'
-                    when h.end_time_ is not null and h.delete_reason_ is null
-                        and h.end_act_id_='end' and tasks.total=0 then 'completed'
-                    when h.end_time_ is null and tasks.total=1 and tasks.handling=1 then 'handling'
-                    when h.end_time_ is null and tasks.total=1 and tasks.confirming=1 then 'confirming'
-                    else 'unclassified' end as state
-                from servicedesk_ticket t
-                left join process_scope s on s.id=t.process_instance_id and s.workspace=t.workspace
-                    and s.owner=t.creator and s.business_key=cast(t.id as varchar) and s.process_key='service-desk'
-                left join act_hi_procinst h on h.proc_inst_id_=s.id
-                left join lateral (
-                    select count(*) as total,
-                        count(*) filter (where task_def_key_='handle' and suspension_state_=1) as handling,
-                        count(*) filter (where task_def_key_='confirm' and suspension_state_=1) as confirming
-                    from act_ru_task where proc_inst_id_=s.id
-                ) tasks on true
-            """ + where + """
-            ) select count(*) as total,
-                count(*) filter (where state='handling') as handling,
-                count(*) filter (where state='confirming') as confirming,
-                count(*) filter (where state='completed') as completed,
-                count(*) filter (where state='unclassified') as unclassified from states
-            """;
-        return jdbc.queryForObject(sql, (row, rowNumber) -> new TicketStatistics(workspace,
-            creator == null ? "workspace" : "own", row.getLong("total"), row.getLong("handling"),
-            row.getLong("confirming"), row.getLong("completed"), row.getLong("unclassified")), parameters.toArray());
+        if (after != null) {
+            where += " and t.id>?";
+            parameters.add(after);
+        }
+        parameters.add(limit);
+        return jdbc.query("select t.id,t.creator,t.process_instance_id from servicedesk_ticket t" + where
+            + " order by t.id limit ?", (row, number) -> new ProcessLink(row.getObject("id", UUID.class),
+                row.getString("creator"), row.getString("process_instance_id")), parameters.toArray());
     }
 
     private static Ticket map(ResultSet row, int rowNumber) throws SQLException {

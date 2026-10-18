@@ -14,6 +14,6 @@ public class ServiceDeskProcess implements ProcessRegistration {
 
     @Override public List<ProcessPolicy> policies() {
         return List.of(new ProcessPolicy(KEY, Set.of(REQUESTER, AGENT, COORDINATOR), Set.of(),
-            Map.of("handle", Set.of("resolved"), "confirm", Set.of("accepted", "rework"))));
+            Map.of("handle", Set.of("resolved"), "confirm", Set.of("accepted", "rework")), Set.of(AGENT, COORDINATOR)));
     }
 }

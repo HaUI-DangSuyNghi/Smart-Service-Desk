@@ -70,6 +70,17 @@ class BoundaryGuardTest(unittest.TestCase):
         self.mutation('backend/src/main/resources/db/migration/V6__bad.sql',
                       'alter table "public"."servicedesk_ticket" add foreign key (process_id) references "public"."process_scope"(id);', 'cross-owner-fk')
 
+    def test_forward_migration_resolves_historical_foreign_key_without_editing_history(self):
+        self.write('backend/src/main/resources/db/migration/V5__ticket.sql',
+                   'CREATE TABLE servicedesk_ticket (\nprocess_instance_id varchar(100) REFERENCES process_scope(id));')
+        self.assertTrue(guard.violations(self.root))
+        self.write('backend/src/main/resources/db/migration/V6__decouple.sql',
+                   'ALTER TABLE servicedesk_ticket DROP CONSTRAINT unrelated;')
+        self.assertTrue(guard.violations(self.root))
+        self.write('backend/src/main/resources/db/migration/V6__decouple.sql',
+                   'ALTER TABLE servicedesk_ticket DROP CONSTRAINT servicedesk_ticket_process_instance_id_fkey;')
+        self.assertFalse(guard.violations(self.root))
+
     def test_core_process_resource_is_debt(self):
         self.mutation('backend/src/main/resources/processes/new-domain.bpmn20.xml',
                       '<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"><process id="new-domain"/></definitions>', 'app-process-resource')
@@ -90,7 +101,7 @@ class BoundaryGuardTest(unittest.TestCase):
         self.mutation('intelligence/src/hdpi/bad.py', 'PROFILE = "fake-domain"', 'python-app-literal')
 
     def test_runtime_cannot_bundle_new_app_profile(self):
-        self.mutation('intelligence/profiles/fake/profile.yaml', 'profile: fake', 'bundled-app-profile')
+        self.mutation('apps/servicedesk/intelligence/profiles/fake/profile.yaml', 'profile: fake', 'bundled-app-profile')
 
     def test_platform_cannot_statically_or_dynamically_import_apps(self):
         for statement in ('import { Ticket } from "../../apps/servicedesk/ticket";',

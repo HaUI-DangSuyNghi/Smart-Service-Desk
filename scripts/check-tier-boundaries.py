@@ -91,13 +91,19 @@ def violations(root=ROOT):
     for path in (root / RESOURCES / 'apps').rglob('*.sql'):
         app_sql(path, path.read_text('utf-8'), path.relative_to(root / RESOURCES / 'apps').parts[0])
     # Historical migrations stay immutable, but their cross-owner FK is debt.
-    for path in (root / RESOURCES).rglob('*.sql'):
+    foreign_keys = {}
+    migrations = sorted((root / RESOURCES).rglob('*.sql'), key=lambda path: (
+        tuple(int(part) for part in re.findall(r'\d+', path.name.split('__')[0])), path.as_posix()))
+    for path in migrations:
         source = re.sub(r'--[^\n]*|/\*[\s\S]*?\*/', '', path.read_text('utf-8'))
         for statement in source.split(';'):
             owner = re.search(rf'\b(?:create\s+table(?:\s+if\s+not\s+exists)?|alter\s+table)\s+({identifier}(?:\s*\.\s*{identifier})?)', statement, re.I)
             if not owner:
                 continue
             table = re.sub(r'["\s]', '', owner.group(1)).lower()
+            dropped = re.search(r'\bdrop\s+constraint\s+(?:if\s+exists\s+)?([\w"]+)', statement, re.I)
+            if dropped:
+                foreign_keys.pop((table, dropped.group(1).strip('"').lower()), None)
             def table_owner(name):
                 name = name.split('.')[-1]
                 if name.startswith('hpdi_'):
@@ -105,10 +111,17 @@ def violations(root=ROOT):
                 if name.startswith(('servicedesk_', 'roomrequest_')):
                     return name.split('_')[0]
                 return 'core'
-            for target in re.findall(rf'\breferences\s+({identifier}(?:\s*\.\s*{identifier})?)', statement, re.I):
-                target = re.sub(r'["\s]', '', target).lower()
+            for reference in re.finditer(rf'\breferences\s+({identifier}(?:\s*\.\s*{identifier})?)', statement, re.I):
+                target = re.sub(r'["\s]', '', reference.group(1)).lower()
                 if table_owner(table) != table_owner(target):
-                    report(path, 'cross-owner-fk', table + ' -> ' + target)
+                    prefix = statement[:reference.start()]
+                    named = re.search(r'\bconstraint\s+([\w"]+)\s+[^,]*$', prefix, re.I)
+                    explicit = re.search(r'\bforeign\s+key\s*\(\s*([\w"]+)\s*\)\s*$', prefix, re.I)
+                    column = explicit.group(1).strip('"') if explicit else prefix.strip().splitlines()[-1].strip().split()[0].strip('"')
+                    constraint = named.group(1).strip('"') if named else table.split('.')[-1] + '_' + column + '_fkey'
+                    foreign_keys[(table, constraint.lower())] = (path, table + ' -> ' + target)
+    for path, value in foreign_keys.values():
+        report(path, 'cross-owner-fk', value)
 
     for path in (root / 'intelligence/src').rglob('*.py'):
         for node in ast.walk(ast.parse(path.read_text('utf-8'), filename=str(path))):

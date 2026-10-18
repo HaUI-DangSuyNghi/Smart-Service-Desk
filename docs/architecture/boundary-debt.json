@@ -103,36 +103,6 @@
       "expires": "2026-12-18"
     },
     {
-      "id": "BND-DEBT-S011",
-      "path": "backend/src/main/java/vn/haui/dx/apps/servicedesk/TicketRepository.java",
-      "rule": "app-private-sql",
-      "value": "act_hi_procinst",
-      "occurrences": 1,
-      "owner": "Backend Lead",
-      "targetPhase": "BND-01",
-      "expires": "2026-12-18"
-    },
-    {
-      "id": "BND-DEBT-S012",
-      "path": "backend/src/main/java/vn/haui/dx/apps/servicedesk/TicketRepository.java",
-      "rule": "app-private-sql",
-      "value": "act_ru_task",
-      "occurrences": 1,
-      "owner": "Backend Lead",
-      "targetPhase": "BND-01",
-      "expires": "2026-12-18"
-    },
-    {
-      "id": "BND-DEBT-S013",
-      "path": "backend/src/main/java/vn/haui/dx/apps/servicedesk/TicketRepository.java",
-      "rule": "app-private-sql",
-      "value": "process_scope",
-      "occurrences": 1,
-      "owner": "Backend Lead",
-      "targetPhase": "BND-01",
-      "expires": "2026-12-18"
-    },
-    {
       "id": "BND-DEBT-S014",
       "path": "backend/src/main/java/vn/haui/dx/apps/servicedesk/TicketService.java",
       "rule": "app-core-import",
@@ -330,16 +300,6 @@
       "occurrences": 1,
       "owner": "Backend Lead",
       "targetPhase": "BND-02",
-      "expires": "2026-12-18"
-    },
-    {
-      "id": "BND-DEBT-S034",
-      "path": "backend/src/main/resources/db/migration/V5__servicedesk_ticket.sql",
-      "rule": "cross-owner-fk",
-      "value": "servicedesk_ticket -> process_scope",
-      "occurrences": 1,
-      "owner": "Backend Lead",
-      "targetPhase": "BND-01",
       "expires": "2026-12-18"
     },
     {

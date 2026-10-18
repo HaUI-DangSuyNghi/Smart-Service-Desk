@@ -31,6 +31,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+@org.springframework.context.annotation.Import(vn.haui.dx.core.workflow.internal.WorkflowStateFixture.class)
 @SpringBootTest
 @AutoConfigureMockMvc
 @EnabledIfEnvironmentVariable(named = "FILE_TEST_JDBC_URL", matches = ".+/file_storage")
@@ -50,8 +51,9 @@ class TicketIntegrationTest {
     @Autowired MockMvc mvc;
     @Autowired ObjectMapper json;
     @Autowired JdbcTemplate jdbc;
+    @Autowired vn.haui.dx.core.workflow.internal.WorkflowStateFixture engineState;
     @SpyBean WorkflowService workflow;
-    @Autowired org.flowable.engine.ProcessEngine engine;
+
 
     private RequestPostProcessor as(String subject, String workspace, String... roles) {
         return jwt().jwt(token -> token.subject(subject).claim("groups", Arrays.stream(roles)
@@ -77,8 +79,9 @@ class TicketIntegrationTest {
     }
 
     private long[] counts() {
-        return List.of("servicedesk_ticket", "process_scope", "act_hi_procinst", "act_ru_task", "audit_event")
-            .stream().mapToLong(table -> jdbc.queryForObject("select count(*) from " + table, Long.class)).toArray();
+        return java.util.stream.LongStream.concat(java.util.stream.LongStream.of(
+            jdbc.queryForObject("select count(*) from servicedesk_ticket", Long.class)),
+            java.util.Arrays.stream(engineState.counts())).toArray();
     }
 
     private JsonNode statistics(String workspace, String subject, String query, String... roles) throws Exception {
@@ -172,13 +175,13 @@ class TicketIntegrationTest {
         String marker = "unknown-" + UUID.randomUUID();
         var ticket = create("unknown-owner", marker, "requester");
         String process = ticket.path("process").path("processInstanceId").asText();
-        engine.getRuntimeService().suspendProcessInstanceById(process);
+        engineState.suspend(process);
         metrics(statistics("lab-a", "unknown-owner", marker, "requester"), 0, 0, 0, 1);
-        engine.getRuntimeService().activateProcessInstanceById(process);
+        engineState.activate(process);
         metrics(statistics("lab-a", "unknown-owner", marker, "requester"), 1, 0, 0, 0);
-        engine.getRuntimeService().deleteProcessInstance(process, "synthetic test cancellation");
+        engineState.cancel(process);
         metrics(statistics("lab-a", "unknown-owner", marker, "requester"), 0, 0, 0, 1);
-        engine.getHistoryService().deleteHistoricProcessInstance(process);
+        engineState.removeHistory(process);
         metrics(statistics("lab-a", "unknown-owner", marker, "requester"), 0, 0, 0, 1);
     }
 
@@ -190,11 +193,11 @@ class TicketIntegrationTest {
         metrics(statistics("lab-a", "standalone-stats", null, "requester"), 0, 0, 0, 0);
         var ticket = create("scope-stats", marker, "requester");
         String process = ticket.path("process").path("processInstanceId").asText();
-        jdbc.update("update process_scope set workspace='lab-b' where id=?", process);
+        engineState.changeWorkspace(process, "lab-b");
         try {
             metrics(statistics("lab-a", "scope-stats", marker, "requester"), 0, 0, 0, 1);
             metrics(statistics("lab-b", "scope-stats", marker, "agent"), 0, 0, 0, 0);
-        } finally { jdbc.update("update process_scope set workspace='lab-a' where id=?", process); }
+        } finally { engineState.changeWorkspace(process, "lab-a"); }
     }
 
     @Test void createPersistsCanonicalProcessAndRealAuditWithoutContent() throws Exception {
@@ -218,9 +221,8 @@ class TicketIntegrationTest {
         assertEquals(trace.toString(), audit.get("request_id"));
         assertEquals(Map.of("processInstanceId", ticket.path("process").path("processInstanceId").asText()),
             json.readValue((String) audit.get("details"), Map.class));
-        assertEquals(1L, jdbc.queryForObject("select count(*) from servicedesk_ticket ticket join process_scope scope "
-            + "on scope.id=ticket.process_instance_id where ticket.id=? and scope.workspace=ticket.workspace "
-            + "and scope.owner=ticket.creator and scope.business_key=ticket.id::text", Long.class, UUID.fromString(id)));
+        assertTrue(engineState.matches(ticket.path("process").path("processInstanceId").asText(),
+            "lab-a", "ticket-owner", id));
     }
 
     @Test void authenticationRolesAndWorkspaceIsolationAreEnforced() throws Exception {

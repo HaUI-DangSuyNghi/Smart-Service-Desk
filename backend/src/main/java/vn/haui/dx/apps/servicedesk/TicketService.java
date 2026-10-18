@@ -24,14 +24,16 @@ public class TicketService {
     private final WorkflowService workflow;
     private final AuditService audit;
     private final Validator validator;
+    private final TicketStatisticsService statistics;
 
     public TicketService(TicketRepository repository, WorkspaceAccess access, WorkflowService workflow,
-                         AuditService audit, Validator validator) {
+                         AuditService audit, Validator validator, TicketStatisticsService statistics) {
         this.repository = repository;
         this.access = access;
         this.workflow = workflow;
         this.audit = audit;
         this.validator = validator;
+        this.statistics = statistics;
     }
 
     @Transactional
@@ -68,7 +70,7 @@ public class TicketService {
     public TicketStatistics statistics(String workspace, String query, Instant from, Instant to) {
         var user = member(workspace);
         filters(query, from, to);
-        return repository.statistics(workspace, reader(user, workspace), query, from, to);
+        return statistics.statistics(workspace, reader(user, workspace), query, from, to);
     }
 
     private static void filters(String query, Instant from, Instant to) {
