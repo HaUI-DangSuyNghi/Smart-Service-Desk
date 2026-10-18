@@ -1,5 +1,7 @@
 name: Core acceptance
 on:
+  push:
+    branches: [develop]
   pull_request:
     branches: [develop]
     paths: ['backend/**', 'infra/**', 'compose.yaml', '.dockerignore', 'contracts/openapi/**', 'contracts/intelligence/**', 'scripts/**', '.github/workflows/core-acceptance.yml']
