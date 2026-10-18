@@ -56,3 +56,9 @@ Phía Java: ném `CoreException` với `ErrorCode` tương ứng, `Errors` tự 
 
 - Đổi interface trong `*.api` hoặc đổi request/response đã có → **báo cả nhóm** trước, vì ảnh hưởng mọi nơi đang gọi.
 - Sửa phần cài đặt (`internal`) không cần báo.
+
+
+Three-tier ownership: `openapi/core.yaml` is T1; `hpdi/openapi.yaml`, capability
+READMEs and `intelligence/v1` are T2; `openapi/servicedesk.yaml` (stable historical
+path) and `apps/roomrequest/openapi.yaml` are T3. Service Desk shared schema refs
+resolve to H-P-D-I. See `apps/servicedesk/README.md` for path compatibility.

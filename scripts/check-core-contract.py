@@ -15,7 +15,7 @@ spec = yaml.safe_load(spec_path.read_text(encoding="utf-8"))
 registry = Registry().with_resources(
     (path.resolve().as_uri(), Resource.from_contents(yaml.safe_load(path.read_text(encoding="utf-8")),
                                                     default_specification=DRAFT4))
-    for path in spec_path.parent.glob("*.yaml"))
+    for path in (root / "contracts").rglob("*.yaml"))
 
 responses = json.loads(Path(sys.argv[1]).read_text(encoding="utf-8-sig"))
 assert responses, "No HTTP responses captured"

@@ -9,7 +9,7 @@ Official HaUI PDF, section 4.2 D (page 4): unified data, metadata/provenance,
 search/filter/statistics, dashboard, REST or GraphQL. Core already supplies
 PostgreSQL, metadata with source/version/rights/checksum, file links and audit;
 Ticket Foundation supplies workspace/creator/createdAt, literal search and a
-canonical Core process reference. This change adds dashboard-ready REST counts
+canonical H-P-D-I process handle. This change adds dashboard-ready REST counts
 and shared creation-time filters. It does not complete the Data UI or general
 knowledge search. No new database, search engine, migration or dependency.
 
@@ -50,10 +50,12 @@ curl -G "$GATEWAY/api/apps/servicedesk/v1/workspaces/lab-a/tickets/statistics" \
 ## Metric provenance and accuracy boundary
 
 Counts are application-owned read-time aggregation, not a stored status column.
-One SQL statement gives a consistent snapshot. `servicedesk_ticket` is the sole
-ticket population, using identical scoped filters as list. Core `process_scope`
-must match process ID, workspace, owner, business key and `service-desk` key.
-Flowable 7.1.0 `act_hi_procinst` and `act_ru_task` are the state authority:
+A REPEATABLE_READ transaction gives a consistent snapshot. `servicedesk_ticket`
+is the sole ticket population, using identical scoped filters as list. The app reads
+only its own process links in bounded keyset batches, then uses H-P-D-I
+ProcessObservations. It matches process ID, workspace, owner, business key and
+`service-desk` key. Core alone resolves technical engine state; the app classifies
+the public snapshot into these ticket-specific metrics:
 
 | Metric | Exact meaning |
 | --- | --- |
@@ -66,8 +68,9 @@ Flowable 7.1.0 `act_hi_procinst` and `act_ru_task` are the state authority:
 The four state counts partition total. Rework returns a ticket to handling;
 claim alone does not change its bucket. Standalone Core processes are not tickets.
 Do not label unclassified as completed; display a data-quality warning instead.
-This query deliberately depends on the current Flowable schema/BPMN; rerun its
-PostgreSQL and lifecycle tests on engine/process upgrades. It does not calculate
+Only the Core observation adapter depends on the engine schema. Ticket metric
+semantics depend on the app-owned BPMN; rerun PostgreSQL and lifecycle tests on
+engine/process upgrades. It does not calculate
 SLA, completion throughput, historical status-at-date, AI labels or daily series.
 Use adjacent creation windows for period counts; these show current states of
 that creation cohort, not events that happened during the window.

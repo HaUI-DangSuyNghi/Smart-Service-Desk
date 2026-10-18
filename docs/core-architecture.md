@@ -1,73 +1,103 @@
-# Core architecture / ADR-001
+# DX-OS runtime architecture
 
-Integration update (2026-10-15): [current runtime and authorization](core-integration.md)
-supersede the probe-only implementation descriptions below. Core Acceptance remains pending.
-
-Status: local baseline, not the full competition product. Date: 2026-10-06.
+Current boundary definition: [ADR-005](architecture/ADR-005-dxos-three-tier-boundary.md).
+This page supersedes the initial ADR-001 probe-only topology. The backend remains
+one modular Spring Boot artifact; extraction does not require microservices.
 
 ```mermaid
 flowchart TD
-  App[Future tier 3: Service Desk / Equipment Request] --> HPDI[Future tier 2: H-P-D-I capabilities]
-  HPDI --> Gateway[APISIX: route allowlist and rate limit]
-  Probe[Headless PowerShell probes] --> Gateway
-  Probe --> IdP[Keycloak OIDC]
-  HPDI --> IdP
-  Gateway --> Core[Spring Boot assembly]
-  Core --> Identity[JWT issuer + audience + role + workspace guards]
-  Core --> Data[Metadata API]
-  Core --> Workflow[Workflow API / embedded Flowable]
-  Data --> Audit[Transactional audit]
-  Workflow --> Audit
-  Data --> DB[(PostgreSQL core database)]
-  Workflow --> DB
-  Audit --> DB
-  IdP --> IDB[(Separate keycloak database)]
-  Core -. File contract only .-> Files[(Dedicated volume)]
+  Apps["T3: Service Desk / Room Request"] --> HPDI["T2: H-P-D-I public capabilities"]
+  AppUI["T3: TypeScript app routes and clients"] --> PlatformUI["T2: TypeScript platform and extensions"]
+  HPDI --> Core["T1: identity / workflow / metadata / file / audit"]
+  HPDI --> AI["T2: domain-neutral Python Intelligence runtime"]
+  Core --> DB[(PostgreSQL)]
+  Core --> Files[(Private file volume)]
+  Core --> Identity[Keycloak JWT verification]
 ```
 
-## Boundaries and ownership
+| Tier | Production ownership | Public boundary |
+| --- | --- | --- |
+| T1 | `core.identity/workflow/data/audit/common` | technical `api` contracts and approved common primitives |
+| T2 | `hpdi.human` | HumanContext, Actor, ActivityJournal |
+| T2 | `hpdi.process` | ProcessCapability, WorkInbox, ProcessTimeline, ProcessObservations, ProcessContribution |
+| T2 | `hpdi.data` | KnowledgeCatalog and AuthorizedKnowledge |
+| T2 | `hpdi.intelligence` / `hdpi_intelligence` | trusted triage, authorized search/citation services, private adapter |
+| T3 | `apps.servicedesk`, `apps.roomrequest`, `apps.samples` | business APIs, rules, entities, app SQL, BPMN and profiles |
 
-- One Maven artifact under `backend/`, package modules `vn.haui.dx.core.identity`, `data`, `workflow`, `audit`; `vn.haui.dx.CoreApplication` assembles them. The `apps/`, root `frontend/` and `intelligence/` boundaries have README placeholders only, not initialized frameworks or additional Maven modules.
-- Identity owns users, credentials, memberships and realm roles. Only IdP admin configuration may grant these. Core never writes IdP tables.
-- APISIX standalone owns routing/rate limiting. JWT authentication and authorization are enforced by the backend, including requests bypassing the gateway inside the Docker network. Only gateway and IdP bind host loopback ports; DB/backend have no published ports.
-- Metadata owns source, usage rights, version, checksum, creator and workspace. Baseline metadata is workspace-shared, immutable after creation. A checksum is a caller-declared provenance field, not proof of uploaded content.
-- Workflow owns definitions, execution, task transitions and engine history. The adapter uses engine APIs only. `process_scope` belongs to Core, not to Flowable. No code imports a ticket entity, DTO or service.
-- Apps will own their business tables, link `businessKey` and process ID, and call Core APIs. They must not mutate engine or IdP internals. Baseline contains no TicketService, UI, RAG or model training.
-- Audit is append-only at the application API level and shares the business transaction. DB owner can still modify audit: tamper-evident storage is backlog.
+Core has no upper-tier dependencies. H-P-D-I depends only on Core public APIs
+and approved common technical primitives. Apps depend only on public H-P-D-I
+contracts. ArchUnit and cross-language source guards enforce these rules without
+waivers. Only Core workflow internals import Flowable. Test fixtures may inspect
+internal state to prove transactions, isolation and migration compatibility.
 
-## Authorization contract
+## Authorization and transaction behavior
 
-Keycloak signs `sub`, `groups` and `realm_access.roles`; Spring verifies signature, expiry, issuer and `dx-core` audience. Workspace and role come from group paths `/workspaces/{workspace}/{role}` (other group strings are ignored), not from an arbitrary client header. `requester`, `agent` and `coordinator` are defaults; new roles are new Keycloak groups. `platform-admin` is a realm role without implicit workspace access. Group changes become effective on token refresh/expiry (five-minute access tokens). Immediate revocation is backlog.
+Keycloak signs subject and workspace memberships; Core verifies issuer, audience,
+signature and expiry. HumanContext derives a trusted workspace Actor from that
+verified identity. Domain code never decodes JWTs. Realm platform-admin grants
+no implicit workspace access. A path/header/body cannot grant workspace rights.
 
-| Operation | Required authorization |
-| --- | --- |
-| `/me` | Valid JWT |
-| Metadata create | `agent` or `coordinator` in the workspace |
-| Metadata read | Any role in the workspace |
-| Start process | Any role in the workspace (interim until per-process starter roles) |
-| Tasks/history | Any role in the workspace + process creator |
-| Complete task | Task assignee (checked before the task key) + expected task key + allowed outcome; candidate steps also require a candidate group and forbid the initiator; `${initiator}` steps only the initiator |
+Service Desk keeps its requester/agent/coordinator visibility policy. Its create
+transaction spans ProcessCapability start, app-owned ticket persistence and
+ActivityJournal recording on the same datasource. Core audit still requires an
+active transaction and supplies actor/request correlation. The journal additionally
+validates event names and safe reference-only details. No ticket content is logged.
+Duplicate submission, workflow failure or audit failure rolls back all writes.
 
-Missing/invalid JWT: 401. Missing role/workspace: 403. Resource absent or process owned by another user: 404. Duplicate start or invalid/replayed transition: 409. Invalid body: 400. No admin bypass. Workspace and role are checked together; names such as `appId`, `resourceId`, `owner` or `initiator` cannot grant rights. Unknown JSON fields are rejected.
+Statistics read app-owned process links in bounded keyset batches and request
+authorized technical snapshots through H-P-D-I. One REPEATABLE_READ transaction
+preserves the population and state snapshot. Only the Core adapter reads engine
+tables. Ticket state classification remains application policy; missing, cancelled,
+suspended or mismatched state stays unclassified. No stored duplicate ticket status.
 
-## Workflow and transactions
+KnowledgeCatalog composes Human membership, metadata/file authorization, workspace
+binding and exact-byte checksum checks. Python authorized search retains its
+auth-before-scoring, immutable state validation and Core citation re-resolution.
 
-Two registered definitions are intentionally small: `document-review` has one coordinator review; `equipment-approval` has coordinator approval then agent handover. Both are probes, NOT finished business workflows. User tasks either go to workspace candidate groups `${workspace}:<role>` (claimed by someone other than the initiator) or are assigned to `${initiator}` for steps such as "requester confirms". Completion comments are stored as Flowable comments and returned in history. Delegate/cancel and a deployment API are backlog.
+## Resources and compatibility
 
-Input variables are deliberately bounded: `title` is caller input; `initiator` and `workspace` are server-derived. No arbitrary engine variables or client-supplied expressions. Adding definitions requires code/config review and task permission tests. The adapter remains independent of business-domain types.
+Apps own `resources/apps/<app>/process/*.bpmn20.xml`. ProcessContribution maps
+reviewed app policy into the technical engine registration. Core owns no domain
+process keys. Content-aware deployment compares exact deployed resource bytes,
+so ownership-path changes preserve definition IDs and running instances. Changed
+definitions retain the explicit version/migration checks; no instance is rewritten.
 
-`@Transactional` spans engine API calls, `process_scope`, metadata and audit on the same datasource. Unique `(workspace, process_key, business_key)` rejects duplicate starts, rolling back the second engine instance. Completion locks the Core scope row so concurrent calls serialize; the second call sees no live task and returns 409. Engine owns actual state/history, never a handwritten status enum.
+Historical Flyway V1-V5 remain byte-identical in the global stream. New V6 lives
+under `db/migration/apps/roomrequest`; the default recursive scan preserves one
+deterministic version order. Apps have no foreign keys to engine internals. The
+`core-only` and `second-domain` Maven profiles select resources for fresh disposable
+proof databases; they are not upgrade profiles for an existing shared database.
 
-Headless proof: smoke runs with no frontend at all. Reuse proof: different process keys and task counts use the same identity, gateway, workflow and audit implementation.
+Existing Core and Service Desk REST routes remain available. Core routes serve
+technical clients and acceptance probes. Application/HPDI code does not bypass
+its Java capability boundaries. Tier-2 projections are at `/api/hpdi/v1`, with
+[their own shared contract](../contracts/hpdi/openapi.yaml). Service Desk retains
+its established specification path and now references H-P-D-I schemas.
 
-## File and Audit contracts
+## Intelligence and frontend
 
-Implemented: `file_object`, `file_link` schema and dedicated Compose volume. No upload/download endpoint is registered. Planned File operations: create <=5 MiB object, link to `(resourceType,resourceId)`, read/download by UUID; server generates storage key, verifies checksum and media type, rejects traversal, and checks BOTH file access and linked-resource access. App adapters must prove linked resource authorization; raw resource IDs are not authorization. Volume permissions, atomic writes/DB compensation, content scanning and cross-workspace link prevention must be implemented before enabling these endpoints.
+The generic wheel contains runtime code and shared schemas, without app profiles.
+Registries require an explicit root/provider configuration; there is no app fallback.
+Service Desk and Room Request own distinct profiles. Evaluators receive fixture
+locations, runtime pins and evaluation gates as configuration. Historical authored
+fixtures retain their exact bytes and provenance; they are not runtime citations.
 
-Implemented audit fields: UUID, actor/sub, action, resource type, resource, workspace, UTC timestamp, request ID (from `X-Request-ID` when it is a UUID, otherwise generated) and JSON `details`. Callers use `AuditService.record`, which takes actor and request ID from the current request and must run inside the caller's transaction (`Propagation.MANDATORY`). Writes occur for metadata creation, process start and task completion. `GET /workspaces/{workspace}/audit` (newest first, filters `from`/`to`/`action`/`actor`, max page size 100) is limited to the workspace's coordinators and `platform-admin`. Export, retention, failed-access logging and immutable external sink are backlog. Do not publish placeholder endpoints returning fake success.
+The optional [private Java/Python adapter](../intelligence/docs/architecture/private-adapter.md)
+derives context before invoking AI, uses a separate service credential, bounds
+requests and applies timeout/fallback policy. Operational unavailability is explicit
+DEGRADED; authentication, contract and workspace ambiguity fail closed. The private
+endpoint is not published to a host port. Core runs without that optional service.
 
-## Deployment limits
+Frontend source and tests use strict TypeScript. Platform owns shared clients and
+an extension registry; apps own routes, API clients and rendering slots. Routes,
+menus, dashboard sources, renderers and process business-key resolvers register at
+the composition root. ESLint and source guards block reverse imports. This is a
+structural scaffold; rendered UI remains outside ARC-07.
 
-Local HTTP only; Keycloak start-dev and probe password grant are confined to loopback. Future browser clients must use Authorization Code + PKCE, not the probe client. Production needs TLS, separate DB roles, fixed image digests, vulnerability remediation, backup/restore tests and a controlled Flowable schema-upgrade procedure. Baseline uses Flyway for owned tables and Flowable's native auto-schema initialization for engine tables.
+## Executable evidence
 
-Component versions deliberately follow Flowable 7.1.0's upstream Boot 3.3.4 baseline. This verifies compatibility, NOT security currency or support in October 2026. Upgrade and vulnerability review are a release gate, not permission to expose this baseline publicly.
+Run `scripts/test-file.ps1` for full PostgreSQL regression, `-MavenProfile core-only`
+for standalone Core and the command in [Room Request](../apps/roomrequest/README.md)
+for H-P-D-I reuse without Service Desk. The proof jar excludes the disabled tiers.
+See [validation record](architecture/REFACTOR_VALIDATION.md) for actual results and
+the distinction between local execution and remote CI/review gates.

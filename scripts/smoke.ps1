@@ -1,5 +1,15 @@
-﻿param([string]$ComposeProject)
+﻿param([string]$ComposeProject,
+      [string]$GatewayUrl = 'http://localhost:9080',
+      [string]$IdentityUrl = 'http://localhost:8081')
 $ErrorActionPreference = 'Stop'
+foreach ($endpoint in @($GatewayUrl, $IdentityUrl)) {
+    $endpointUri = [Uri]$endpoint
+    if ($endpointUri.Scheme -ne 'http' -or !$endpointUri.IsLoopback -or $endpointUri.UserInfo) {
+        throw 'Smoke credentials may only be sent to loopback HTTP services'
+    }
+}
+$GatewayUrl = $GatewayUrl.TrimEnd('/')
+$IdentityUrl = $IdentityUrl.TrimEnd('/')
 Set-Location (Split-Path $PSScriptRoot -Parent)
 Add-Type -AssemblyName System.Net.Http
 $client = New-Object System.Net.Http.HttpClient
@@ -8,7 +18,7 @@ $contractResponses = New-Object 'System.Collections.Generic.List[object]'
 $password = (Get-Content .env | Where-Object { $_ -match '^DEMO_PASSWORD=' }) -replace '^DEMO_PASSWORD=', ''
 function Token($user) {
     $body = @{grant_type='password'; client_id='core-probe'; username=$user; password=$password}
-    (Invoke-RestMethod -Method Post -Uri 'http://localhost:8081/realms/dx-lab/protocol/openid-connect/token' -Body $body).access_token
+    (Invoke-RestMethod -Method Post -Uri "$IdentityUrl/realms/dx-lab/protocol/openid-connect/token" -Body $body).access_token
 }
 function Direct($path, $token, $expected) {
     $config = "url = `"http://localhost:8080/api/core/v1$path`"`n"
@@ -22,7 +32,7 @@ function Direct($path, $token, $expected) {
 function Upload($token, [byte[]]$bytes, $name, $type, $expected) {
     $request = New-Object System.Net.Http.HttpRequestMessage
     $request.Method = [System.Net.Http.HttpMethod]::Post
-    $request.RequestUri = 'http://localhost:9080/api/core/v1/workspaces/lab-a/files'
+    $request.RequestUri = "$GatewayUrl/api/core/v1/workspaces/lab-a/files"
     $request.Headers.Authorization = New-Object System.Net.Http.Headers.AuthenticationHeaderValue('Bearer', $token)
     $form = New-Object System.Net.Http.MultipartFormDataContent
     $part = New-Object System.Net.Http.ByteArrayContent(,$bytes)
@@ -50,7 +60,7 @@ function RaceComplete($path, $token, $body) {
         foreach ($attempt in 1..2) {
             $request = New-Object System.Net.Http.HttpRequestMessage
             $request.Method = [System.Net.Http.HttpMethod]::Post
-            $request.RequestUri = "http://localhost:9080/api/core/v1$path"
+            $request.RequestUri = "$GatewayUrl/api/core/v1$path"
             $request.Headers.Authorization = New-Object System.Net.Http.Headers.AuthenticationHeaderValue('Bearer', $token)
             $request.Content = New-Object System.Net.Http.StringContent(($body | ConvertTo-Json), [Text.Encoding]::UTF8, 'application/json')
             $requests += $request
@@ -68,7 +78,7 @@ function RaceComplete($path, $token, $body) {
 function Call($method, $path, $token, $body, $expected) {
     $request = New-Object System.Net.Http.HttpRequestMessage
     $request.Method = New-Object System.Net.Http.HttpMethod($method)
-    $request.RequestUri = "http://localhost:9080/api/core/v1$path"
+    $request.RequestUri = "$GatewayUrl/api/core/v1$path"
     if ($token) { $request.Headers.Authorization = New-Object System.Net.Http.Headers.AuthenticationHeaderValue('Bearer', $token) }
     if ($null -ne $body) { $request.Content = New-Object System.Net.Http.StringContent(($body | ConvertTo-Json -Depth 10), [Text.Encoding]::UTF8, 'application/json') }
     $response = $client.SendAsync($request).GetAwaiter().GetResult()
@@ -107,7 +117,7 @@ try {
     # Request ID: giữ X-Request-ID hợp lệ từ client/gateway, thay thế giá trị không hợp lệ
     $traceId = [guid]::NewGuid().ToString()
     foreach ($sent in @($traceId, 'not-a-uuid')) {
-        $echo = Invoke-WebRequest -UseBasicParsing 'http://localhost:9080/api/core/v1/me' -Headers @{Authorization="Bearer $requesterA"; 'X-Request-ID'=$sent}
+        $echo = Invoke-WebRequest -UseBasicParsing "$GatewayUrl/api/core/v1/me" -Headers @{Authorization="Bearer $requesterA"; 'X-Request-ID'=$sent}
         $returned = [string]$echo.Headers['X-Request-ID']
         $returnedGuid = [guid]::Empty
         if (![guid]::TryParse($returned, [ref]$returnedGuid) -or (($sent -eq $traceId) -ne ($returned -eq $traceId))) { throw "Unexpected X-Request-ID $returned for $sent" }
@@ -155,7 +165,7 @@ try {
     if ($linked.id -in @($foreignMatches.items.id)) { throw 'Cross-workspace search leak' }
     $download = New-Object System.Net.Http.HttpRequestMessage
     $download.Method = [System.Net.Http.HttpMethod]::Get
-    $download.RequestUri = "http://localhost:9080/api/core/v1/workspaces/lab-a/files/$($file.id)/content"
+    $download.RequestUri = "$GatewayUrl/api/core/v1/workspaces/lab-a/files/$($file.id)/content"
     $download.Headers.Authorization = New-Object System.Net.Http.Headers.AuthenticationHeaderValue('Bearer', $requesterA)
     $response = $client.SendAsync($download).GetAwaiter().GetResult()
     try {

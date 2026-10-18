@@ -60,3 +60,25 @@ jobs:
         if: matrix.proof == 'second-domain'
         shell: pwsh
         run: ./scripts/test-file.ps1 -MavenProfile second-domain -Tests 'RoomRequestIntegrationTest,TierBoundaryTest,CoreProcessCapabilitiesTest,CoreKnowledgeCatalogTest,TrustedIntelligenceCapabilityTest,WorkspaceActivityJournalTest'
+  real-three-tier-integration:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Install contract validators
+        run: |
+          python3 -m venv .local/tier-contracts
+          .local/tier-contracts/bin/pip install -r scripts/acceptance/requirements.txt
+      - name: Exercise real H-P-D-I and private Python runtime
+        shell: pwsh
+        run: ./scripts/test-tier-reuse.ps1 -Python .local/tier-contracts/bin/python
+      - name: Retain synthetic summary only
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: three-tier-reuse-summary
+          path: .local/tier-reuse-acceptance.json
+          include-hidden-files: true
+          retention-days: 7

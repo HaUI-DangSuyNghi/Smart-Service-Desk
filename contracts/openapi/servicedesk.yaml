@@ -2,7 +2,7 @@ openapi: 3.0.3
 info:
   title: Smart Service Desk Ticket Foundation
   version: 0.1.0
-  description: Application API. Core owns authentication, workflow and audit. No AI bridge or private attachments.
+  description: Application API consuming H-P-D-I Human, Process and ActivityJournal contracts. No private attachments or Service Desk AI endpoint.
 servers:
   - url: http://localhost:9080/api/apps/servicedesk/v1
 security:
@@ -10,7 +10,7 @@ security:
 paths:
   /workspaces/{workspace}/tickets:
     parameters:
-      - {$ref: 'core.yaml#/components/parameters/Workspace'}
+      - {$ref: '../hpdi/openapi.yaml#/components/parameters/Workspace'}
     post:
       operationId: createTicket
       description: Requester/agent/coordinator. Creator is the authenticated subject. Duplicate clientRequestId per creator/workspace returns 409, including concurrent requests.
@@ -28,11 +28,11 @@ paths:
           content:
             application/json:
               schema: {$ref: '#/components/schemas/Ticket'}
-        '400': {$ref: 'core.yaml#/components/responses/BadRequest'}
-        '401': {$ref: 'core.yaml#/components/responses/Unauthorized'}
-        '403': {$ref: 'core.yaml#/components/responses/Forbidden'}
-        '404': {$ref: 'core.yaml#/components/responses/NotFound'}
-        '409': {$ref: 'core.yaml#/components/responses/Conflict'}
+        '400': {$ref: '../hpdi/openapi.yaml#/components/responses/BadRequest'}
+        '401': {$ref: '../hpdi/openapi.yaml#/components/responses/Unauthorized'}
+        '403': {$ref: '../hpdi/openapi.yaml#/components/responses/Forbidden'}
+        '404': {$ref: '../hpdi/openapi.yaml#/components/responses/NotFound'}
+        '409': {$ref: '../hpdi/openapi.yaml#/components/responses/Conflict'}
     get:
       operationId: searchTickets
       description: Requester sees own tickets; agent/coordinator sees workspace tickets. Stable newest-first ordering by createdAt and id.
@@ -40,20 +40,20 @@ paths:
         - {$ref: '#/components/parameters/Query'}
         - {$ref: '#/components/parameters/From'}
         - {$ref: '#/components/parameters/To'}
-        - {$ref: 'core.yaml#/components/parameters/Page'}
-        - {$ref: 'core.yaml#/components/parameters/Size'}
+        - {$ref: '../hpdi/openapi.yaml#/components/parameters/Page'}
+        - {$ref: '../hpdi/openapi.yaml#/components/parameters/Size'}
       responses:
         '200':
           description: Authorized tickets only; total uses the same access filter.
           content:
             application/json:
               schema: {$ref: '#/components/schemas/TicketPage'}
-        '400': {$ref: 'core.yaml#/components/responses/BadRequest'}
-        '401': {$ref: 'core.yaml#/components/responses/Unauthorized'}
-        '403': {$ref: 'core.yaml#/components/responses/Forbidden'}
+        '400': {$ref: '../hpdi/openapi.yaml#/components/responses/BadRequest'}
+        '401': {$ref: '../hpdi/openapi.yaml#/components/responses/Unauthorized'}
+        '403': {$ref: '../hpdi/openapi.yaml#/components/responses/Forbidden'}
   /workspaces/{workspace}/tickets/statistics:
     parameters:
-      - {$ref: 'core.yaml#/components/parameters/Workspace'}
+      - {$ref: '../hpdi/openapi.yaml#/components/parameters/Workspace'}
     get:
       operationId: getTicketStatistics
       description: One workspace only. Requester counts own tickets; agent/coordinator counts workspace tickets, including tasks not yet claimed. Filters match Ticket List. Current workflow states of tickets created in the selected interval, not historical completion counts. No caching or separate status storage.
@@ -67,43 +67,43 @@ paths:
           content:
             application/json:
               schema: {$ref: '#/components/schemas/TicketStatistics'}
-        '400': {$ref: 'core.yaml#/components/responses/BadRequest'}
-        '401': {$ref: 'core.yaml#/components/responses/Unauthorized'}
-        '403': {$ref: 'core.yaml#/components/responses/Forbidden'}
+        '400': {$ref: '../hpdi/openapi.yaml#/components/responses/BadRequest'}
+        '401': {$ref: '../hpdi/openapi.yaml#/components/responses/Unauthorized'}
+        '403': {$ref: '../hpdi/openapi.yaml#/components/responses/Forbidden'}
   /workspaces/{workspace}/tickets/{id}:
     parameters:
-      - {$ref: 'core.yaml#/components/parameters/Workspace'}
+      - {$ref: '../hpdi/openapi.yaml#/components/parameters/Workspace'}
       - {$ref: '#/components/parameters/TicketId'}
     get:
       operationId: getTicket
-      description: Same visibility as list. Missing or hidden ticket returns 404. No stored status; use progress and Core inbox.
+      description: Same visibility as list. Missing or hidden ticket returns 404. No stored status; use progress and H-P-D-I inbox.
       responses:
         '200':
           description: Persisted ticket with canonical process reference.
           content:
             application/json:
               schema: {$ref: '#/components/schemas/Ticket'}
-        '400': {$ref: 'core.yaml#/components/responses/BadRequest'}
-        '401': {$ref: 'core.yaml#/components/responses/Unauthorized'}
-        '403': {$ref: 'core.yaml#/components/responses/Forbidden'}
-        '404': {$ref: 'core.yaml#/components/responses/NotFound'}
+        '400': {$ref: '../hpdi/openapi.yaml#/components/responses/BadRequest'}
+        '401': {$ref: '../hpdi/openapi.yaml#/components/responses/Unauthorized'}
+        '403': {$ref: '../hpdi/openapi.yaml#/components/responses/Forbidden'}
+        '404': {$ref: '../hpdi/openapi.yaml#/components/responses/NotFound'}
   /workspaces/{workspace}/tickets/{id}/progress:
     parameters:
-      - {$ref: 'core.yaml#/components/parameters/Workspace'}
+      - {$ref: '../hpdi/openapi.yaml#/components/parameters/Workspace'}
       - {$ref: '#/components/parameters/TicketId'}
     get:
       operationId: getTicketProgress
-      description: Ticket visibility plus unchanged Core history policy. Before claim an unrelated agent gets 404; discover work using Core candidate inbox, then claim. Creator, coordinator or prior assignee can read history.
+      description: Ticket visibility plus unchanged history authorization through H-P-D-I. Before claim an unrelated agent gets 404; discover work using the shared candidate inbox, then claim. Creator, coordinator or prior assignee can read history.
       responses:
         '200':
           description: Live Flowable history. handle resolved leads to confirm; confirm accepted ends, rework returns to handle.
           content:
             application/json:
-              schema: {$ref: 'core.yaml#/components/schemas/ProcessHistory'}
-        '400': {$ref: 'core.yaml#/components/responses/BadRequest'}
-        '401': {$ref: 'core.yaml#/components/responses/Unauthorized'}
-        '403': {$ref: 'core.yaml#/components/responses/Forbidden'}
-        '404': {$ref: 'core.yaml#/components/responses/NotFound'}
+              schema: {$ref: '../hpdi/openapi.yaml#/components/schemas/ProcessTimeline'}
+        '400': {$ref: '../hpdi/openapi.yaml#/components/responses/BadRequest'}
+        '401': {$ref: '../hpdi/openapi.yaml#/components/responses/Unauthorized'}
+        '403': {$ref: '../hpdi/openapi.yaml#/components/responses/Forbidden'}
+        '404': {$ref: '../hpdi/openapi.yaml#/components/responses/NotFound'}
 components:
   securitySchemes:
     bearer: {type: http, scheme: bearer, bearerFormat: JWT}
@@ -161,10 +161,10 @@ components:
         title: {type: string}
         description: {type: string}
         createdAt: {type: string, format: date-time}
-        process: {$ref: 'core.yaml#/components/schemas/ProcessRef'}
+        process: {$ref: '../hpdi/openapi.yaml#/components/schemas/ProcessHandle'}
     TicketPage:
       allOf:
-        - {$ref: 'core.yaml#/components/schemas/PageMeta'}
+        - {$ref: '../hpdi/openapi.yaml#/components/schemas/PageMeta'}
         - type: object
           required: [items]
           properties:

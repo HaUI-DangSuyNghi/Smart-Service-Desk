@@ -64,3 +64,21 @@ Create a hotfix from the affected `main` release, verify it, merge with `--no-ff
 Protect `main` and `develop`: require pull requests and at least one approval, block force pushes/deletion and require CI checks once an actual CI workflow is configured. Enable merge commits. Choose `develop` as the default branch if the team wants the active baseline visible by default; otherwise explicitly select `develop` when browsing/cloning for development.
 
 These are required team settings, not a claim that protection or CI has already been configured. The initial CLI bootstrap does not change GitHub repository settings or visibility. Source-license approval and security release gates remain in `docs/dependency-licenses.md`.
+
+
+## DX-OS boundary checks
+
+Follow [ADR-005](docs/architecture/ADR-005-dxos-three-tier-boundary.md): apps consume
+public H-P-D-I contracts, which compose public Core contracts. No reverse imports,
+private-adapter imports, app reads of Core/engine tables or implicit app profiles.
+Migration waivers have been removed. Historical V1-V5 and authored fixture/profile
+bytes remain immutable. New migrations have explicit ownership and unique versions.
+
+Run `python scripts/check-tier-boundaries.py` and `python scripts/test-tier-boundaries.py`.
+Backend regression uses `scripts/test-file.ps1`; standalone/reuse proof commands
+are in the runtime architecture and Room Request README. For frontend run
+`npm ci`, `npm run typecheck`, `npm run lint`, `npm test`, `npm run build` and
+`npm run build:platform` inside `frontend/`. Source and tests use TypeScript.
+
+Record actual local results separately from GitHub CI and team review evidence.
+Never mark an external approval or CI execution as completed from local checks.

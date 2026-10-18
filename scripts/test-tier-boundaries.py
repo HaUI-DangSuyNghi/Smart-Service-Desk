@@ -1,6 +1,5 @@
 """Mutation checks: guards must reject actual forbidden dependencies."""
 import importlib.util
-import json
 from pathlib import Path
 import tempfile
 import unittest
@@ -14,9 +13,6 @@ class BoundaryGuardTest(unittest.TestCase):
     def check_mutation(self, path, source, expected):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            config = root / 'docs/architecture/boundary-waivers.json'
-            config.parent.mkdir(parents=True)
-            config.write_text('{}', 'utf-8')
             target = root / path
             target.parent.mkdir(parents=True)
             target.write_text(source, 'utf-8')
@@ -31,6 +27,18 @@ class BoundaryGuardTest(unittest.TestCase):
         self.check_mutation('backend/src/main/java/vn/haui/dx/apps/example/Bad.java',
                             'String sql = "select * from act_ru_task";', 'internal-sql')
 
+    def test_schema_qualified_core_table_is_rejected(self):
+        self.check_mutation('backend/src/main/java/vn/haui/dx/apps/example/Bad.java',
+                            'String sql = "select * from core.metadata";', 'internal-sql')
+
+    def test_app_cannot_import_private_capability_adapter(self):
+        self.check_mutation('backend/src/main/java/vn/haui/dx/apps/example/Bad.java',
+                            'import vn.haui.dx.hpdi.process.internal.CoreProcessCapabilities;', 'nonpublic-hpdi-import')
+
+    def test_capability_cannot_import_core_web_controller(self):
+        self.check_mutation('backend/src/main/java/vn/haui/dx/hpdi/example/Bad.java',
+                            'import vn.haui.dx.core.data.FileApi;', 'nonpublic-core-import')
+
     def test_runtime_cannot_branch_on_app(self):
         self.check_mutation('intelligence/src/runtime/bad.py',
                             'if profile == "service-desk": pass', 'app-literal')
@@ -38,6 +46,10 @@ class BoundaryGuardTest(unittest.TestCase):
     def test_platform_cannot_import_app(self):
         self.check_mutation('frontend/src/platform/bad.ts',
                             'import { Ticket } from "../../apps/servicedesk/ticket";', 'platform imports apps')
+
+    def test_platform_dynamic_import_cannot_escape_to_app(self):
+        self.check_mutation('frontend/src/platform/bad.ts',
+                            'const ticket = import("../../apps/servicedesk/ticket");', 'platform imports apps')
 
 
 if __name__ == '__main__':

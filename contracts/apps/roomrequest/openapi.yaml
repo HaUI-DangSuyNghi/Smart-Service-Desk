@@ -1,0 +1,157 @@
+openapi: 3.0.3
+info:
+  title: Room Request reuse proof
+  version: 0.1.0
+security:
+- bearerAuth: []
+paths:
+  /api/apps/roomrequest/v1/workspaces/{workspace}/requests:
+    parameters:
+    - $ref: ../../hpdi/openapi.yaml#/components/parameters/Workspace
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+              - room
+              properties:
+                room:
+                  type: string
+                  minLength: 1
+                  maxLength: 50
+                knowledgeId:
+                  type: string
+                  format: uuid
+                  nullable: true
+      responses:
+        '201':
+          description: Room Request projection
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoomRequest'
+        '400':
+          $ref: ../../hpdi/openapi.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ../../hpdi/openapi.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ../../hpdi/openapi.yaml#/components/responses/Forbidden
+        '404':
+          $ref: ../../hpdi/openapi.yaml#/components/responses/NotFound
+        '409':
+          $ref: ../../hpdi/openapi.yaml#/components/responses/Conflict
+  /api/apps/roomrequest/v1/workspaces/{workspace}/requests/{id}:
+    parameters:
+    - $ref: ../../hpdi/openapi.yaml#/components/parameters/Workspace
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      responses:
+        '200':
+          description: Room Request projection
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoomRequest'
+        '400':
+          $ref: ../../hpdi/openapi.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ../../hpdi/openapi.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ../../hpdi/openapi.yaml#/components/responses/Forbidden
+        '404':
+          $ref: ../../hpdi/openapi.yaml#/components/responses/NotFound
+        '409':
+          $ref: ../../hpdi/openapi.yaml#/components/responses/Conflict
+  /api/apps/roomrequest/v1/workspaces/{workspace}/requests/{id}/progress:
+    parameters:
+    - $ref: ../../hpdi/openapi.yaml#/components/parameters/Workspace
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      responses:
+        '200':
+          description: Room Request projection
+          content:
+            application/json:
+              schema:
+                $ref: ../../hpdi/openapi.yaml#/components/schemas/ProcessTimeline
+        '400':
+          $ref: ../../hpdi/openapi.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ../../hpdi/openapi.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ../../hpdi/openapi.yaml#/components/responses/Forbidden
+        '404':
+          $ref: ../../hpdi/openapi.yaml#/components/responses/NotFound
+        '409':
+          $ref: ../../hpdi/openapi.yaml#/components/responses/Conflict
+  /api/apps/roomrequest/v1/workspaces/{workspace}/requests/{id}/suggestion:
+    parameters:
+    - $ref: ../../hpdi/openapi.yaml#/components/parameters/Workspace
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    post:
+      responses:
+        '200':
+          description: Room Request projection
+          content:
+            application/json:
+              schema:
+                $ref: ../../hpdi/openapi.yaml#/components/schemas/TriageSuggestion
+        '400':
+          $ref: ../../hpdi/openapi.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ../../hpdi/openapi.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ../../hpdi/openapi.yaml#/components/responses/Forbidden
+        '404':
+          $ref: ../../hpdi/openapi.yaml#/components/responses/NotFound
+        '409':
+          $ref: ../../hpdi/openapi.yaml#/components/responses/Conflict
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    RoomRequest:
+      type: object
+      required:
+      - id
+      - workspace
+      - creator
+      - room
+      - process
+      properties:
+        id:
+          type: string
+        workspace:
+          type: string
+        creator:
+          type: string
+        room:
+          type: string
+        knowledgeId:
+          type: string
+          format: uuid
+          nullable: true
+        process:
+          $ref: ../../hpdi/openapi.yaml#/components/schemas/ProcessHandle

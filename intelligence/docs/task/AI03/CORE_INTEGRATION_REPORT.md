@@ -1,3 +1,5 @@
+> Historical evidence before the three-tier extraction. Package/profile paths in recorded commands refer to that baseline; current commands and ownership are in the Intelligence README and ADR-005.
+
 # AI-03 — Bằng chứng tích hợp Core HTTP
 
 Ngày: 17/10/2026. Trạng thái: **INTEGRATION VERIFIED — REVIEW PENDING**.

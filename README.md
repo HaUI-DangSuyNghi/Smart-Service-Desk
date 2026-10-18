@@ -1,4 +1,4 @@
-# DX-Lab HaUI: Headless Core
+# DX-Lab HaUI: DX-OS three-tier platform
 
 <p align="center">
   <img src="https://img.shields.io/badge/Java-17-blue.svg" alt="Java 17" />
@@ -13,7 +13,7 @@
 Nền tảng headless Tier-1 dành cho DX-OS Open-Core (Smart Service Desk). Hệ thống cung cấp dịch vụ định danh tập trung, kiểm soát truy cập đa không gian làm việc (multi-workspace RBAC), động cơ quy trình nghiệp vụ BPMN (Flowable), quản lý siêu dữ liệu/tệp tin bảo mật và ghi vết kiểm toán giao dịch (transactional audit).
 
 > [!NOTE]
-> Core remains headless. Service Desk now has backend ticket APIs and a real Flowable process; frontend and the AI bridge are not implemented. See [Ticket Foundation](docs/servicedesk-ticket-foundation.md) and [application OpenAPI](contracts/openapi/servicedesk.yaml). The Python Intelligence library remains independent.
+> Core remains headless and domain-neutral. Applications consume shared H-P-D-I capabilities through strict public boundaries. Service Desk and Room Request provide executable reuse evidence; frontend source/tests use strict TypeScript. The optional private Intelligence adapter uses external app-owned profiles. See [ADR-005](docs/architecture/ADR-005-dxos-three-tier-boundary.md), [runtime architecture](docs/core-architecture.md) and [validation](docs/architecture/REFACTOR_VALIDATION.md).
 > Dashboard counts and shared time filters are documented in [Service Desk statistics](docs/servicedesk-statistics.md); dashboard UI remains a frontend task.
 
 ---
@@ -36,7 +36,7 @@ Nền tảng headless Tier-1 dành cho DX-OS Open-Core (Smart Service Desk). H�
 
 - **Xác thực & Phân quyền IAM:** Tích hợp Keycloak quản lý vai trò theo từng workspace (`/workspaces/{workspace}/{role}`). Xác thực JWT chặt chẽ (Issuer/Audience) và chuẩn hóa thông báo lỗi theo chuẩn RFC 7807 (Problem Details kèm `code` và `requestId`).
 - **Cổng kết nối API (API Gateway):** Apache APISIX chạy chế độ standalone, đảm nhiệm định tuyến và giới hạn tần suất truy cập (rate limit), bảo vệ API nội bộ và không mở công khai Admin API.
-- **Động cơ quy trình BPMN tích hợp:** Nhúng trực tiếp Flowable Engine quản lý vòng đời quy trình (`document-review`, `equipment-approval`), hỗ trợ danh sách nhiệm vụ (inbox), tiếp nhận/xử lý độc lập (claim/complete) và tra cứu lịch sử luồng.
+- **Động cơ quy trình BPMN tích hợp:** Nhúng Flowable Engine thực thi các quy trình do ứng dụng đăng ký qua H-P-D-I, hỗ trợ danh sách nhiệm vụ (inbox), tiếp nhận/xử lý độc lập (claim/complete) và tra cứu lịch sử luồng.
 - **Quản lý dữ liệu & Lưu trữ tệp an toàn:** Lưu trữ siêu dữ liệu trên PostgreSQL kèm phân trang, checksum, quyền sử dụng; hỗ trợ upload/download tệp tin private kèm kiểm tra dung lượng, loại tệp, bảo mật header tải về và liên kết kiểm toán.
 - **Kiểm toán giao dịch (Transactional Audit):** Ghi vết tự động mọi biến động dữ liệu/trạng thái qua `AuditService`, hỗ trợ chống tấn công phát lại (replay protection) và theo dõi luồng thông suốt với `X-Request-ID`.
 
@@ -45,27 +45,19 @@ Nền tảng headless Tier-1 dành cho DX-OS Open-Core (Smart Service Desk). H�
 ## 🏗️ Kiến trúc hệ thống
 
 ```text
-[ Trình duyệt / Client ]
-           │ (Authorization Code + PKCE)
-           ▼
-┌─────────────────────────────────────────────────────────────┐
-│ Apache APISIX Gateway (Port 9080)                           │
-│  - /health (Kiểm tra Gateway)                               │
-│  - /api/core/v1/* (Reverse Proxy + Rate Limiting)           │
-└──────────────┬──────────────────────────────────────────────┘
-               ▼
-┌─────────────────────────────────────────────────────────────┐
-│ DX-Core Backend (Spring Boot 3.3, Port 8080 nội bộ)         │
-│  ├── Identity: Xác thực JWT qua Keycloak JWKS               │
-│  ├── Workflow: Flowable BPMN Engine nhúng                   │
-│  ├── Data & Storage: Quản lý Metadata & Tệp tin private     │
-│  └── Audit: Transactional Audit Service                     │
-└──────────────┬───────────────────────────────┬──────────────┘
-               ▼                               ▼
-┌───────────────────────────────┐ ┌───────────────────────────┐
-│ PostgreSQL 16 (Port 5432)     │ │ Keycloak 26 (Port 8081)   │
-│  - DB core & DB keycloak      │ │  - Realm: dx-lab          │
-└───────────────────────────────┘ └───────────────────────────┘
+Tier 3: Service Desk / Room Request (business APIs, persistence, BPMN, AI profiles)
+                              |
+                   H-P-D-I public capability APIs
+                              v
+Tier 2: Human / Process / Data / Intelligence + TypeScript platform extensions
+                              |
+                       Core public contracts
+                              v
+Tier 1: Identity / Workflow engine / Metadata / Files / Audit
+                              |
+                    PostgreSQL / Keycloak / Storage
+
+APISIX routes: /api/apps/*, /api/hpdi/v1/* and technical /api/core/v1/* probes.
 ```
 
 ---
@@ -183,20 +175,27 @@ docker compose up -d --wait --wait-timeout 300
 ## 📂 Cấu trúc thư mục
 
 ```text
-.
-├── backend/                  # Mã nguồn Spring Boot, Dockerfile và Maven build
-│   └── src/main/java/vn/haui/dx/
-│       ├── CoreApplication.java  # Lớp khởi chạy ứng dụng
-│       └── core/                 # Identity, Workflow, Data, Audit
-├── contracts/                # Định nghĩa hợp đồng giao tiếp
-│   ├── openapi/core.yaml     # Hợp đồng API chuẩn OpenAPI 3.0
-│   └── intelligence/         # Hợp đồng đề xuất cho các tính năng AI
-├── fixtures/                 # Dữ liệu mẫu (synthetic fixtures) phục vụ kiểm thử
-├── infra/                    # Template cấu hình Keycloak, APISIX và PostgreSQL
-├── scripts/                  # Kịch bản kiểm thử và vận hành tự động (PowerShell)
-├── docs/                     # Tài liệu kiến trúc, bàn giao kỹ thuật và kiểm thử
-├── compose.yaml              # Orchestration file Docker Compose
-└── CHANGELOG.md              # Lịch sử phiên bản
+backend/src/main/java/vn/haui/dx/
+├── core/                       # Tier 1: technical engines and public APIs
+├── hpdi/                       # Tier 2: Human, Process, Data, Intelligence
+└── apps/                       # Tier 3: Service Desk, Room Request, samples
+backend/src/main/resources/
+├── apps/<app>/process/         # App-owned BPMN
+└── db/migration/               # Immutable V1-V5; new app-owned subdirectories
+apps/<app>/intelligence/        # App profiles and configuration
+intelligence/src/hdpi_intelligence/  # Generic Tier-2 Python runtime
+frontend/src/
+├── platform/                   # Tier-2 TypeScript clients and extensions
+└── apps/servicedesk/            # Tier-3 TypeScript routes and clients
+contracts/
+├── openapi/                    # Stable Core and Service Desk paths
+├── hpdi/                       # Shared Tier-2 capability contracts
+├── apps/                       # App contract ownership and Room Request
+└── intelligence/v1/            # Shared Intelligence schemas
+scripts/                        # Boundary checks, regression and acceptance
+infra/                          # Keycloak, APISIX and PostgreSQL configuration
+docs/architecture/              # ADR, ownership, debt register and evidence
+compose.yaml                    # Local runtime and optional private Intelligence
 ```
 
 ---

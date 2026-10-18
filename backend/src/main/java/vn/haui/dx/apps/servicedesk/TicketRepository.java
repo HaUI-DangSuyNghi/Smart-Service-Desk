@@ -66,10 +66,20 @@ class TicketRepository {
         return new Page<>(items, page.page(), page.size(), total == null ? 0 : total);
     }
 
-    List<Ticket> statisticsRows(String workspace, String creator, String query, Instant from, Instant to) {
+    record ProcessLink(UUID id, String creator, String processId) {}
+
+    List<ProcessLink> statisticsBatch(String workspace, String creator, String query, Instant from, Instant to,
+                                      UUID after, int limit) {
         List<Object> parameters = new ArrayList<>(List.of(workspace));
         String where = where(creator, query, from, to, parameters);
-        return jdbc.query("select t.* from servicedesk_ticket t" + where, TicketRepository::map, parameters.toArray());
+        if (after != null) {
+            where += " and t.id>?";
+            parameters.add(after);
+        }
+        parameters.add(limit);
+        return jdbc.query("select t.id,t.creator,t.process_instance_id from servicedesk_ticket t" + where
+            + " order by t.id limit ?", (row, number) -> new ProcessLink(row.getObject("id", UUID.class),
+                row.getString("creator"), row.getString("process_instance_id")), parameters.toArray());
     }
 
     private static Ticket map(ResultSet row, int rowNumber) throws SQLException {

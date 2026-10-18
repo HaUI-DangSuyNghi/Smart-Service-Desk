@@ -1,5 +1,6 @@
 import concurrent.futures
 import json
+import os
 from pathlib import Path
 import sys
 import urllib.error
@@ -7,13 +8,19 @@ import urllib.parse
 import urllib.request
 import uuid
 
+gateway = os.environ.get('DX_ACCEPTANCE_GATEWAY_URL', 'http://localhost:9080').rstrip('/')
+identity = os.environ.get('DX_ACCEPTANCE_IDENTITY_URL', 'http://localhost:8081').rstrip('/')
+for endpoint in (gateway, identity):
+    parsed = urllib.parse.urlsplit(endpoint)
+    if parsed.scheme != 'http' or parsed.hostname not in ('localhost', '127.0.0.1') or parsed.username or parsed.password:
+        raise ValueError('Acceptance credentials require loopback HTTP services')
 settings = dict(line.split("=", 1) for line in Path(".env").read_text().splitlines()
                 if "=" in line and not line.startswith("#"))
 tokens, subjects, responses = {}, {}, []
 for username in ("user1", "user2", "user3", "user4", "user7"):
     payload = urllib.parse.urlencode(dict(grant_type="password", client_id="core-probe",
                                          username=username, password=settings["DEMO_PASSWORD"])).encode()
-    with urllib.request.urlopen("http://localhost:8081/realms/dx-lab/protocol/openid-connect/token", payload, timeout=30) as response:
+    with urllib.request.urlopen(identity + "/realms/dx-lab/protocol/openid-connect/token", payload, timeout=30) as response:
         tokens[username] = json.load(response)["access_token"]
 
 
@@ -25,7 +32,7 @@ def call(method, path, user, expected, body=None, core=False):
     if payload is not None:
         headers["Content-Type"] = "application/json"
     prefix = "/api/core/v1" if core else "/api/apps/servicedesk/v1"
-    request = urllib.request.Request("http://localhost:9080" + prefix + path, payload, headers, method=method)
+    request = urllib.request.Request(gateway + prefix + path, payload, headers, method=method)
     try:
         response = urllib.request.urlopen(request, timeout=30)
     except urllib.error.HTTPError as error:

@@ -1,0 +1,528 @@
+openapi: 3.0.3
+info:
+  title: H-P-D-I shared capability API
+  version: 0.1.0
+  description: Tier-2 contracts; no engine or domain policy types. Java-only start/contribution/Intelligence
+    contracts are documented beside this specification.
+security:
+- bearerAuth: []
+paths:
+  /api/hpdi/v1/workspaces/{workspace}/actor:
+    parameters:
+    - &id001
+      $ref: '#/components/parameters/Workspace'
+    get:
+      responses:
+        '200':
+          description: Authorized capability projection
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Actor'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /api/hpdi/v1/workspaces/{workspace}/inbox:
+    parameters:
+    - *id001
+    get:
+      responses:
+        '200':
+          description: Authorized capability projection
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+      parameters:
+      - name: scope
+        in: query
+        schema:
+          type: string
+          enum:
+          - ASSIGNED
+          - CANDIDATE
+          default: CANDIDATE
+      - $ref: '#/components/parameters/Page'
+      - $ref: '#/components/parameters/Size'
+  /api/hpdi/v1/workspaces/{workspace}/instances/{id}/timeline:
+    parameters:
+    - *id001
+    - &id002
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    get:
+      responses:
+        '200':
+          description: Authorized capability projection
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProcessTimeline'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /api/hpdi/v1/workspaces/{workspace}/tasks/{id}/claim:
+    parameters:
+    - *id001
+    - *id002
+    post:
+      responses:
+        '200':
+          description: Authorized capability projection
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkItem'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /api/hpdi/v1/workspaces/{workspace}/tasks/{id}/complete:
+    parameters:
+    - *id001
+    - *id002
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+              - expectedTaskKey
+              - outcome
+              properties:
+                expectedTaskKey:
+                  type: string
+                outcome:
+                  type: string
+                comment:
+                  type: string
+      responses:
+        '204':
+          description: Completed
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /api/hpdi/v1/workspaces/{workspace}/knowledge/{id}:
+    parameters:
+    - *id001
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      responses:
+        '200':
+          description: Authorized capability projection
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthorizedKnowledge'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+components:
+  schemas:
+    Problem:
+      type: object
+      required:
+      - title
+      - status
+      - code
+      - requestId
+      properties:
+        type:
+          type: string
+          example: about:blank
+        title:
+          type: string
+          example: Forbidden
+        status:
+          type: integer
+          example: 403
+        detail:
+          type: string
+          example: Workspace access denied
+        instance:
+          type: string
+        code:
+          type: string
+          enum:
+          - VALIDATION_FAILED
+          - UNAUTHENTICATED
+          - FORBIDDEN
+          - NOT_FOUND
+          - CONFLICT
+          - PAYLOAD_TOO_LARGE
+          - UNSUPPORTED_MEDIA_TYPE
+        requestId:
+          type: string
+          description: Trùng header X-Request-ID
+    ProcessTimeline:
+      type: object
+      required:
+      - id
+      - processKey
+      - businessKey
+      - workspace
+      - initiator
+      - startedAt
+      - currentTasks
+      - steps
+      properties:
+        ended:
+          type: boolean
+          description: Legacy completion flag
+        tasks:
+          type: array
+          description: Legacy alias of steps
+          items:
+            $ref: '#/components/schemas/HistoryStep'
+        id:
+          type: string
+        processKey:
+          type: string
+        businessKey:
+          type: string
+        workspace:
+          type: string
+        initiator:
+          type: string
+        startedAt:
+          type: string
+          format: date-time
+        endedAt:
+          type: string
+          format: date-time
+          nullable: true
+        currentTasks:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkItem'
+        steps:
+          type: array
+          items:
+            $ref: '#/components/schemas/HistoryStep'
+    HistoryStep:
+      type: object
+      required:
+      - key
+      - name
+      - startedAt
+      properties:
+        id:
+          type: string
+        actor:
+          type: string
+          nullable: true
+          description: Legacy alias of assignee
+        key:
+          type: string
+        name:
+          type: string
+        assignee:
+          type: string
+          nullable: true
+        outcome:
+          type: string
+          nullable: true
+        comment:
+          type: string
+          nullable: true
+        startedAt:
+          type: string
+          format: date-time
+        claimedAt:
+          type: string
+          format: date-time
+          nullable: true
+        endedAt:
+          type: string
+          format: date-time
+          nullable: true
+    WorkItem:
+      type: object
+      required:
+      - id
+      - processInstanceId
+      - key
+      - name
+      - candidateGroups
+      - createdAt
+      - processKey
+      - businessKey
+      properties:
+        id:
+          type: string
+        processInstanceId:
+          type: string
+        key:
+          type: string
+          description: id của userTask trong BPMN
+        name:
+          type: string
+        candidateGroups:
+          type: array
+          items:
+            type: string
+            example: lab-a:coordinator
+        assignee:
+          type: string
+          nullable: true
+          description: null nếu chưa ai nhận
+        createdAt:
+          type: string
+          format: date-time
+        processKey:
+          type: string
+        businessKey:
+          type: string
+    ProcessHandle:
+      type: object
+      required:
+      - processInstanceId
+      - processKey
+      - businessKey
+      - workspace
+      properties:
+        id:
+          type: string
+          description: Legacy alias of processInstanceId
+        processInstanceId:
+          type: string
+        processKey:
+          type: string
+        businessKey:
+          type: string
+        workspace:
+          type: string
+    PageMeta:
+      type: object
+      required:
+      - page
+      - size
+      - total
+      properties:
+        page:
+          type: integer
+          minimum: 0
+        size:
+          type: integer
+          minimum: 1
+          maximum: 100
+        total:
+          type: integer
+          format: int64
+          minimum: 0
+    Actor:
+      type: object
+      required:
+      - subject
+      - workspace
+      - roles
+      - capabilities
+      properties:
+        subject:
+          type: string
+        workspace:
+          type: string
+        roles:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+        capabilities:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+    WorkPage:
+      allOf:
+      - $ref: '#/components/schemas/PageMeta'
+      - type: object
+        required:
+        - items
+        properties:
+          items:
+            type: array
+            items:
+              $ref: '#/components/schemas/WorkItem'
+    AuthorizedKnowledge:
+      type: object
+      required:
+      - metadataId
+      - workspace
+      - title
+      - version
+      - checksum
+      - usageRights
+      - mediaType
+      - content
+      properties:
+        workspace:
+          type: string
+        title:
+          type: string
+        version:
+          type: string
+        checksum:
+          type: string
+        usageRights:
+          type: string
+        mediaType:
+          type: string
+        metadataId:
+          type: string
+          format: uuid
+        content:
+          type: string
+          format: byte
+          description: Authorized exact bytes, Base64 encoded
+    TriageSuggestion:
+      type: object
+      required:
+      - status
+      - result
+      - evidence
+      - explanation
+      - needsReview
+      - profileVersion
+      properties:
+        status:
+          type: string
+          enum:
+          - SUCCESS
+          - DEGRADED
+        result:
+          type: object
+          nullable: true
+          properties:
+            category:
+              type: string
+            priority:
+              type: string
+            suggestedGroup:
+              type: string
+        evidence:
+          type: array
+          items:
+            type: object
+            required:
+            - field
+            - text
+            properties:
+              field:
+                type: string
+                enum:
+                - title
+                - description
+              text:
+                type: string
+        explanation:
+          type: string
+          nullable: true
+        needsReview:
+          type: boolean
+        profileVersion:
+          type: string
+          nullable: true
+  parameters:
+    Size:
+      name: size
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+    Page:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+    Workspace:
+      name: workspace
+      in: path
+      required: true
+      schema:
+        type: string
+        example: lab-a
+  responses:
+    Conflict:
+      description: Duplicate business key or task transition is no longer valid
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    NotFound:
+      description: Resource not found in caller scope
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Forbidden:
+      description: FORBIDDEN – không thuộc workspace hoặc thiếu vai trò
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Unauthorized:
+      description: UNAUTHENTICATED – thiếu/sai/hết hạn token
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    BadRequest:
+      description: Invalid input or unknown JSON property
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

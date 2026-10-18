@@ -1,6 +1,6 @@
 # Service Desk ticket foundation
 
-Base: `6f312eb`. Scope: backend only, not completed H-P-D-I.
+Original base: `6f312eb`. Current internal dependencies follow [ADR-005](architecture/ADR-005-dxos-three-tier-boundary.md); rendered UI remains outside this foundation.
 
 ## Contract
 
@@ -11,7 +11,7 @@ Base: `/api/apps/servicedesk/v1/workspaces/{workspace}/tickets`.
 | POST | base | 201 Ticket; body: clientRequestId UUID, title (1-200), description (1-4000) |
 | GET | base | Page of Tickets; q (literal title/description substring, max 200), page, size (1-100) |
 | GET | /{id} | Ticket with canonical process reference |
-| GET | /{id}/progress | Core ProcessHistory; no second stored status |
+| GET | /{id}/progress | H-P-D-I ProcessTimeline; existing wire fields, no second stored status |
 
 Requester reads own tickets; agent/coordinator reads workspace tickets. All three
 may create. Other roles and platform-admin have no implicit workspace access.
@@ -25,13 +25,13 @@ payload. Different creators/workspaces have independent submission namespaces.
 Application process service-desk: handle (independent workspace agent, outcome
 resolved) -> confirm (initiator, accepted ends; rework loops to handle). A creator
 with the agent role cannot handle their own ticket. Coordinator needs agent role
-to claim. Use existing Core claim/complete endpoints with expectedTaskKey.
+to claim. Use H-P-D-I inbox/claim/complete endpoints with expectedTaskKey.
 
 Core history authorization is unchanged: before claim an unrelated agent can read
 the ticket but progress returns 404. Use candidate inbox to discover work, claim,
 then read history. Creator/coordinator/prior assignees retain Core history access.
 
-WorkflowService.start, ticket insert and servicedesk.ticket.create audit share one
+ProcessCapability.start, ticket insert and ActivityJournal recording share one
 REQUIRED transaction/datasource. Any failure rolls back engine, scope, ticket and
 audit. Database uniqueness controls concurrent duplicate submissions. Audit uses
 IDs only, not title/description. Core never imports application types.
@@ -41,7 +41,7 @@ does not create a ticket. Only the application endpoint creates linked tickets.
 
 ## Handoff and limits
 
-FE consumes application OpenAPI and Core inbox/claim/complete/history with PKCE.
+FE consumes application OpenAPI and H-P-D-I inbox/claim/complete/timeline with PKCE.
 The process businessKey is the ticket UUID; Flowable is the progress authority.
 AI bridge is deferred: later adapter authorizes ticket access, derives trusted
 context, pins profiles server-side and permits manual handling during AI outage.

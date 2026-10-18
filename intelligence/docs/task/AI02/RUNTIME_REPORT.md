@@ -1,3 +1,5 @@
+> Historical evidence before the three-tier extraction. Package/profile paths in recorded commands refer to that baseline; current commands and ownership are in the Intelligence README and ADR-005.
+
 # Báo cáo AI-02 — runtime triage deterministic
 
 Ngày: **16/10/2026, Asia/Saigon**.

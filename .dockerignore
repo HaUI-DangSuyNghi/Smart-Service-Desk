@@ -1,0 +1,15 @@
+**
+!intelligence/
+!intelligence/pyproject.toml
+!intelligence/setup.py
+!intelligence/MANIFEST.in
+!intelligence/requirements.lock
+!intelligence/.python-version
+!intelligence/src/
+!intelligence/src/**
+!contracts/
+!contracts/intelligence/
+!contracts/intelligence/v1/
+!contracts/intelligence/v1/**
+**/__pycache__/**
+**/*.pyc

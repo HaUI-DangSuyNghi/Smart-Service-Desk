@@ -20,9 +20,9 @@ flowchart TD
 | approval probe policies/BPMN | Core | sample T3 contributions |
 | `resources/db/migration/V1..V5` | historical global stream | immutable historical stream |
 | `intelligence/src` | Service Desk named runtime | generic hdpi_intelligence |
-| `apps/servicedesk/intelligence/profiles` | app policy bundled with runtime | apps/servicedesk/intelligence |
+| historical `intelligence/profiles` | app policy bundled with runtime | apps/servicedesk/intelligence/profiles |
 | `fixtures/intelligence/service-desk` | authored app evaluation | T3-owned exact-byte fixtures; stable paths |
-| `frontend` | reserved, no framework | platform / apps with import guard |
+| `frontend` | reserved, no framework | strict TypeScript platform/apps, standalone build and import guard |
 | `contracts/openapi/core.yaml` | T1 wire API | stable path, T1 ownership |
 | `contracts/openapi/servicedesk.yaml` | T3 wire API | stable path, T3 ownership |
 | `contracts/intelligence/v1` | generic AI wire API | stable path, T2 ownership |
