@@ -64,8 +64,8 @@ class PrivateServer(ThreadingHTTPServer):
 
 
 def make_server(address, *, service_token, service=None, request_timeout=3):
-    if not isinstance(service_token, str) or not re.fullmatch(r'[A-Za-z0-9._~+/-]+=*', service_token):
-        raise ValueError('INTELLIGENCE_TRIAGE_TOKEN must be a nonempty bearer credential')
+    if not isinstance(service_token, str) or not re.fullmatch(r'[A-Za-z0-9._~+/-]{32,}=*', service_token):
+        raise ValueError('INTELLIGENCE_TRIAGE_TOKEN requires at least 32 bearer characters before padding')
     service = service if service is not None else TriageService()
     service.registry.get(PROFILE_ID, PROFILE_VERSION)
     expected_credential = ('Bearer ' + service_token).encode('ascii')

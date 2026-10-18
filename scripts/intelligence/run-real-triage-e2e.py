@@ -1,4 +1,4 @@
-"""Run against a clean, disposable PR #20 checkout and a real Python endpoint.
+"""Run current integrated Java and Python from the same clean revision.
 
 Timeout/malformed cases inject faults AFTER a real successful Python response;
 they are fault-injected integration, not normal production Python behavior.
@@ -18,7 +18,6 @@ from time import sleep
 from urllib.request import Request, urlopen
 import xml.etree.ElementTree as ET
 
-JAVA_SHA = '0050da1f4b840bde53b8b68f6e4dd74da50f960c'
 PACKAGE = 'vn.haui.dx.apps.servicedesk.triage.'
 TEST_NAME = 'AI04TicketTriagePythonE2E'
 
@@ -78,7 +77,9 @@ def main():
     if not os.environ['FILE_TEST_JDBC_URL'].endswith('/file_storage'):
         parser.error('Use a newly provisioned disposable file_storage database')
     head = subprocess.check_output(['git', '-C', str(root), 'rev-parse', 'HEAD'], text=True).strip()
-    assert head == JAVA_SHA, 'PR #20 SHA differs from reviewed baseline'
+    source_head = subprocess.check_output(['git', 'rev-parse', 'HEAD'],
+                                          cwd=Path(__file__).resolve().parents[2], text=True).strip()
+    assert head == source_head, 'Java and Python must use the same combined revision'
     assert not subprocess.check_output(['git', '-C', str(root), 'status', '--porcelain'], text=True).strip(), 'Clean disposable Java checkout required'
     source = Path(__file__).with_name(TEST_NAME + '.java')
     target = root / 'backend/src/test/java/vn/haui/dx/apps/servicedesk/triage' / source.name
@@ -119,8 +120,7 @@ def main():
                 run(mode, base_url, os.environ['INTELLIGENCE_TRIAGE_TOKEN'])
     finally:
         target.unlink()
-        summary = {'javaHead': head, 'pythonHead': subprocess.check_output(
-            ['git', 'rev-parse', 'HEAD'], cwd=source.parents[2], text=True).strip(),
+        summary = {'javaHead': head, 'pythonHead': source_head,
             'identity': 'MockMvc JWT fixtures; NOT Keycloak/gateway/browser E2E', 'results': results}
         (output / 'summary.json').write_text(json.dumps(summary, indent=2) + '\n', encoding='utf-8')
 

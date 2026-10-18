@@ -238,7 +238,8 @@ def test_output_correlation_and_profile_pin(payload, monkeypatch, field):
         assert call(address, payload) == (500, {'code': 'INTERNAL_ERROR'})
 
 
-@pytest.mark.parametrize('token', [None, '', 'a b', 'x\ny', '\u00e9'])
+@pytest.mark.parametrize('token', [None, '', 'short', 'a' * 31, 'a' * 31 + '=',
+                                 'a b', 'x\ny', '\u00e9', 'a' * 32 + '\r\nInjected: yes'])
 def test_no_default_or_malformed_credential(token):
     with pytest.raises(ValueError):
         make_server(('127.0.0.1', 0), service_token=token)

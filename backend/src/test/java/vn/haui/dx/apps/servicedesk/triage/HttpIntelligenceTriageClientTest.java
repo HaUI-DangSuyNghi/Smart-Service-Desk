@@ -36,7 +36,7 @@ class HttpIntelligenceTriageClientTest {
         server.setExecutor(executor);
         server.createContext("/internal/intelligence/v1/triage", this::respond);
         server.start();
-        client = configured("http://127.0.0.1:" + server.getAddress().getPort(), "synthetic-service-token");
+        client = configured("http://127.0.0.1:" + server.getAddress().getPort(), "synthetic-service-token-for-tests-only");
     }
 
     private HttpIntelligenceTriageClient configured(String base, String token) {
@@ -46,7 +46,7 @@ class HttpIntelligenceTriageClientTest {
     private void respond(HttpExchange exchange) throws java.io.IOException {
         calls.incrementAndGet();
         assertEquals("POST", exchange.getRequestMethod());
-        assertEquals("Bearer synthetic-service-token", exchange.getRequestHeaders().getFirst("Authorization"));
+        assertEquals("Bearer synthetic-service-token-for-tests-only", exchange.getRequestHeaders().getFirst("Authorization"));
         assertEquals("application/json", exchange.getRequestHeaders().getFirst("Content-Type"));
         assertEquals(json.valueToTree(TriageResponses.request()), json.readTree(exchange.getRequestBody()));
         try (exchange) {
@@ -115,19 +115,20 @@ class HttpIntelligenceTriageClientTest {
     @Test void connectionFailureAndDisabledAiDoNotPretendSuccess() throws Exception {
         int port;
         try (var socket = new ServerSocket(0)) { port = socket.getLocalPort(); }
-        var refused = configured("http://127.0.0.1:" + port, "synthetic-service-token");
+        var refused = configured("http://127.0.0.1:" + port, "synthetic-service-token-for-tests-only");
         assertEquals(503, assertThrows(TriageFailure.class, () -> refused.triage(TriageResponses.request())).status());
         assertEquals(503, assertThrows(TriageFailure.class, () -> configured("", "").triage(TriageResponses.request())).status());
     }
 
     @ParameterizedTest @ValueSource(strings = {"file:///secret", "http://user:pass@localhost", "http://localhost/path", "http://localhost?secret=x", "http://localhost#fragment", "http://localhost:99999"})
     void rejectsInvalidConfigurationWithoutNetwork(String base) {
-        assertEquals(502, assertThrows(TriageFailure.class, () -> configured(base, "token").triage(TriageResponses.request())).status());
+        assertEquals(502, assertThrows(TriageFailure.class, () -> configured(base, "synthetic-service-token-for-tests-only").triage(TriageResponses.request())).status());
     }
 
-    @Test void rejectsMissingOrHeaderInjectingCredential() {
-        for (String token : new String[] {null, "", "x\r\nAuthorization: evil"})
-            assertEquals(502, assertThrows(TriageFailure.class, () -> configured("http://127.0.0.1", token).triage(TriageResponses.request())).status());
+    @Test void rejectsMissingShortOrInvalidCredentialBeforeNetwork() {
+        for (String token : new String[] {null, "", "short", "a".repeat(31), "a".repeat(31) + "=", " ".repeat(32), "a".repeat(32) + "\r\nAuthorization: evil"})
+            assertEquals(502, assertThrows(TriageFailure.class, () -> configured("http://127.0.0.1:" + server.getAddress().getPort(), token).triage(TriageResponses.request())).status());
+        assertEquals(0, calls.get());
         assertFalse(new TriageConfiguration.Settings("http://host", "secret-value").toString().contains("secret-value"));
     }
 }

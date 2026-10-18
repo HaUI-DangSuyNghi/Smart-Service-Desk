@@ -45,7 +45,7 @@ public class HttpIntelligenceTriageClient implements IntelligenceTriageClient {
                     || base.getPort() == 0 || base.getPort() > 65535
                     || base.getUserInfo() != null || base.getQuery() != null || base.getFragment() != null
                     || !(base.getPath().isEmpty() || "/".equals(base.getPath()))
-                    || settings.token() == null || !settings.token().matches("[A-Za-z0-9._~+/-]+=*"))
+                    || settings.token() == null || !settings.token().matches("[A-Za-z0-9._~+/-]{32,}=*"))
                 throw TriageFailure.configuration();
             return base.resolve("/internal/intelligence/v1/triage");
         } catch (IllegalArgumentException exception) { throw TriageFailure.configuration(); }
