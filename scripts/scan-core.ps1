@@ -1,6 +1,6 @@
 param(
     [ValidatePattern('^scan-[a-z0-9-]{1,45}$')][string]$Run = "scan-$([guid]::NewGuid().ToString('N').Substring(0,12))",
-    [ValidateNotNullOrEmpty()][string[]]$Images = @('dx-core:0.1.0', 'postgres:16.15-bookworm@sha256:0ea6700a3b4f0ae6ce746519073558aed4d88a79d8d07622a9a644946c7319c4', 'quay.io/keycloak/keycloak:26.0.8@sha256:09a381c715ab0b111835b70f2905955274843a219c6f27efb348e4d9f4086858', 'apache/apisix:3.11.0-debian@sha256:178d1f79c2c39834f50213bf6ace90284f6b985dc8189cc50f3666d9fb1037ad', 'dx-core-build:0.1.0'),
+    [ValidateNotNullOrEmpty()][string[]]$Images = @('dx-core:0.1.0', 'postgres:16.15-bookworm@sha256:0ea6700a3b4f0ae6ce746519073558aed4d88a79d8d07622a9a644946c7319c4', 'quay.io/keycloak/keycloak:26.0.8@sha256:09a381c715ab0b111835b70f2905955274843a219c6f27efb348e4d9f4086858', 'apache/apisix:3.11.0-redhat@sha256:d3c86dc739ade96bdcd0acaee0ab36b846a3ea2ce21ecf78c897d15500d19db0', 'dx-core-build:0.1.0'),
     [switch]$ReportOnly,
     [ValidatePattern('^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,80}$')][string]$CacheVolume = 'dx-core-trivy-cache'
 )

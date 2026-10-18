@@ -57,7 +57,7 @@ services:
       timeout: 5s
       retries: 30
   gateway:
-    image: apache/apisix:3.11.0-debian@sha256:178d1f79c2c39834f50213bf6ace90284f6b985dc8189cc50f3666d9fb1037ad
+    image: apache/apisix:3.11.0-redhat@sha256:d3c86dc739ade96bdcd0acaee0ab36b846a3ea2ce21ecf78c897d15500d19db0
     ports: ["127.0.0.1:9080:9080"]
     volumes:
       - ./infra/apisix/config.yaml:/usr/local/apisix/conf/config.yaml:ro
