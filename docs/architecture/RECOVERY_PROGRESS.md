@@ -59,3 +59,16 @@ integration; develop and the legacy reference branch are not merged or rewritten
   CI verifies source, installed wheel, image configuration and immutable history.
 - Validation: 272 source tests and 272 installed-wheel tests passed, including
   external `fake-domain@1.0`; foundation validation and wheel isolation passed.
+
+## BND-05: Human/Data alignment and remaining Core dependencies
+
+- Service Desk uses HumanContext and a transaction-bound ActivityJournal for
+  identity, workspace context and safe audit references. Public pagination/errors
+  are HPDI contracts. Apps now have zero Core imports or bytecode dependencies.
+- KnowledgeCatalog composes authorized metadata/file access and verifies workspace,
+  immutable version, content length, checksum and supported media types before
+  returning provenance-bearing knowledge. Existing retrieval auth-before-scoring
+  and citation validation remain intact.
+- All migration exceptions are closed: source inventory=0, Java edges=0.
+- Validation: 147 Java tests passed with PostgreSQL on Linux/JDK 17;
+  failures=0, errors=0, skipped=0, including trusted-context and provenance tests.
