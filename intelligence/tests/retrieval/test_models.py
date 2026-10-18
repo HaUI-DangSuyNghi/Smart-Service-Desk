@@ -3,9 +3,9 @@ from hashlib import sha256
 
 import pytest
 
-from smart_service_intelligence.domain.errors import AuthorizationRejected, CitationVerificationError, EngineConfigurationError
-from smart_service_intelligence.domain.models import TrustedContext
-from smart_service_intelligence.retrieval.models import AuthorizedDocument, PartitionKey, RankedHit, scope_hash
+from hdpi_intelligence.domain.errors import AuthorizationRejected, CitationVerificationError, EngineConfigurationError
+from hdpi_intelligence.domain.models import TrustedContext
+from hdpi_intelligence.retrieval.models import AuthorizedDocument, PartitionKey, RankedHit, scope_hash
 
 
 def test_runtime_source_integrity_and_immutability():

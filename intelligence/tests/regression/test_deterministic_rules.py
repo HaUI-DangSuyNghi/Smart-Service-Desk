@@ -3,8 +3,8 @@ from dataclasses import asdict, replace
 
 import pytest
 
-from smart_service_intelligence.domain.models import TriageRequest, TrustedContext
-from smart_service_intelligence.profiles.models import freeze
+from hdpi_intelligence.domain.models import TriageRequest, TrustedContext
+from hdpi_intelligence.profiles.models import freeze
 
 
 def request(title, description):

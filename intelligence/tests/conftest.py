@@ -3,10 +3,12 @@ from pathlib import Path
 
 import pytest
 
-from smart_service_intelligence.domain.models import TrustedContext
-from smart_service_intelligence.services.triage import TriageService
+from hdpi_intelligence.domain.models import TrustedContext
+from hdpi_intelligence.services.triage import TriageService
 
 ROOT = Path(__file__).resolve().parents[2]
+import os
+os.environ.setdefault('HDPI_PROFILE_ROOT', str(ROOT / 'apps/servicedesk/intelligence/profiles'))
 
 
 @pytest.fixture(scope='session')

@@ -4,12 +4,12 @@ from unittest.mock import patch
 
 import pytest
 
-from smart_service_intelligence.domain.errors import AuthorizationRejected, CorpusUnavailable, EngineConfigurationError
-from smart_service_intelligence.normalization.v1 import NormalizerV1
-from smart_service_intelligence.retrieval.corpus import load_index, publish_index
-from smart_service_intelligence.retrieval.index import build_index
-from smart_service_intelligence.retrieval.registry import IndexRegistry
-from smart_service_intelligence.retrieval.tfidf.engine import fit_chunks, TfidfSearchEngine
+from hdpi_intelligence.domain.errors import AuthorizationRejected, CorpusUnavailable, EngineConfigurationError
+from hdpi_intelligence.normalization.v1 import NormalizerV1
+from hdpi_intelligence.retrieval.corpus import load_index, publish_index
+from hdpi_intelligence.retrieval.index import build_index
+from hdpi_intelligence.retrieval.registry import IndexRegistry
+from hdpi_intelligence.retrieval.tfidf.engine import fit_chunks, TfidfSearchEngine
 
 
 def test_rebuild_and_safe_snapshot(index, documents, partition, tmp_path):
@@ -22,7 +22,7 @@ def test_rebuild_and_safe_snapshot(index, documents, partition, tmp_path):
         assert other.manifest == index.manifest
         assert engine.search('đăng nhập', other, 3) == engine.search('đăng nhập', index, 3)
     before = path.read_bytes()
-    with patch('smart_service_intelligence.retrieval.corpus.load_index', side_effect=EngineConfigurationError):
+    with patch('hdpi_intelligence.retrieval.corpus.load_index', side_effect=EngineConfigurationError):
         with pytest.raises(EngineConfigurationError):
             publish_index(index, path)
     assert path.read_bytes() == before

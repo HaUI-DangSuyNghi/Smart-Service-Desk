@@ -11,9 +11,9 @@ from ..retrieval.tfidf.engine import fit_chunks, TfidfSearchEngine
 from .metrics import first_relevant_rank, retrieval_metrics
 
 
-def load_authoring_index(root: Path):
+def load_authoring_index(root: Path, fixtures_root: Path):
     root = root.resolve()
-    directory = root / 'fixtures/intelligence/service-desk/knowledge'
+    directory = fixtures_root.resolve() / 'knowledge'
     manifest = json.loads((directory / 'manifest.json').read_text('utf-8'))
     chunks, identifiers = [], set()
     for artifact in manifest['artifacts']:
@@ -30,9 +30,9 @@ def load_authoring_index(root: Path):
     return fit_chunks(tuple(chunks)), manifest
 
 
-def evaluate(root: Path):
-    index, manifest = load_authoring_index(root)
-    directory = root / 'fixtures/intelligence/service-desk'
+def evaluate(root: Path, fixtures_root: Path, *, gates=None):
+    index, manifest = load_authoring_index(root, fixtures_root)
+    directory = fixtures_root.resolve()
     tickets_raw = (directory / 'tickets/tickets-v0.1.jsonl').read_bytes()
     gold_raw = (directory / 'retrieval/gold-v0.1.json').read_bytes()
     tickets = [json.loads(line) for line in tickets_raw.decode('utf-8').splitlines()]
@@ -67,16 +67,17 @@ def evaluate(root: Path):
             'rankingUnit': 'artifact; max chunk score; stable first-occurrence deduplication',
             'sourceStateDigest': digest(manifest), 'ticketsChecksum': sha256(tickets_raw).hexdigest(),
             'goldChecksum': sha256(gold_raw).hexdigest(), **metrics,
-            'suggestedGates': {'hitAt1AtLeast10Of12': metrics['hitAt1'] >= 10/12,
-                               'hitAt3AllCases': metrics['hitAt3'] == 1}, 'cases': cases}
+            'suggestedGates': {metric: metrics[metric] >= threshold for metric, threshold in (gates or {}).items()}, 'cases': cases}
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--repo-root', required=True, type=Path)
     parser.add_argument('--output', type=Path)
+    parser.add_argument('--fixtures-root', required=True, type=Path)
+    parser.add_argument('--gates', type=json.loads, default={})
     args = parser.parse_args()
-    report = evaluate(args.repo_root)
+    report = evaluate(args.repo_root, args.fixtures_root, gates=args.gates)
     if args.output:
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(json.dumps(report, ensure_ascii=True, indent=2) + '\n', 'utf-8')

@@ -22,7 +22,7 @@ except ImportError:
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 CONTRACT_DIR = REPO_ROOT / "contracts/intelligence/v1"
-PROFILE_DIR = REPO_ROOT / "intelligence/profiles/service-desk"
+PROFILE_DIR = REPO_ROOT / "apps/servicedesk/intelligence/profiles/service-desk"
 FIXTURE_DIR = REPO_ROOT / "fixtures/intelligence/service-desk"
 KNOWLEDGE_DIR = FIXTURE_DIR / "knowledge/sources"
 SCHEMA_FILENAMES = (

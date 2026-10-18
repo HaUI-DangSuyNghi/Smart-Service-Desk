@@ -38,25 +38,5 @@
     "debt": "BD-01",
     "owner": "Backend",
     "removal": "ARC-06"
-  },
-  "intelligence/src/smart_service_intelligence/triage.py:app-literal:Exact immutable identity, e.g. service-desk@0.2.0": {
-    "debt": "BD-11",
-    "owner": "Intelligence",
-    "removal": "ARC-05"
-  },
-  "intelligence/src/smart_service_intelligence/evaluation/conformance.py:app-literal:service-desk@0.2.0": {
-    "debt": "BD-11",
-    "owner": "Intelligence",
-    "removal": "ARC-05"
-  },
-  "intelligence/src/smart_service_intelligence/evaluation/retrieval.py:app-literal:fixtures/intelligence/service-desk/knowledge": {
-    "debt": "BD-11",
-    "owner": "Intelligence",
-    "removal": "ARC-05"
-  },
-  "intelligence/src/smart_service_intelligence/evaluation/retrieval.py:app-literal:fixtures/intelligence/service-desk": {
-    "debt": "BD-11",
-    "owner": "Intelligence",
-    "removal": "ARC-05"
   }
 }

@@ -2,9 +2,9 @@ from hashlib import sha256
 
 import pytest
 
-from smart_service_intelligence.domain.models import TrustedContext
-from smart_service_intelligence.retrieval.index import build_index
-from smart_service_intelligence.retrieval.models import AuthorizedDocument, PartitionKey, scope_hash
+from hdpi_intelligence.domain.models import TrustedContext
+from hdpi_intelligence.retrieval.index import build_index
+from hdpi_intelligence.retrieval.models import AuthorizedDocument, PartitionKey, scope_hash
 
 
 @pytest.fixture

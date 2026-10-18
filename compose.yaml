@@ -38,6 +38,8 @@ services:
     image: dx-core:0.1.0
     build: ./backend
     environment:
+      DX_INTELLIGENCE_URL: ${DX_INTELLIGENCE_URL:-}
+      DX_INTELLIGENCE_SERVICE_TOKEN: ${DX_INTELLIGENCE_SERVICE_TOKEN:-}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Run scripts/setup.ps1}
       DATABASE_URL: jdbc:postgresql://postgres:5432/core
       DX_STORAGE_ROOT: /var/lib/dx/files
@@ -52,6 +54,17 @@ services:
       interval: 10s
       timeout: 5s
       retries: 30
+  intelligence:
+    profiles: [intelligence]
+    build:
+      context: .
+      dockerfile: intelligence/Dockerfile
+    environment:
+      HDPI_SERVICE_TOKEN: ${DX_INTELLIGENCE_SERVICE_TOKEN:-}
+    volumes:
+      - ./apps/servicedesk/intelligence/profiles:/profiles:ro
+    read_only: true
+    tmpfs: [/tmp]
   gateway:
     image: apache/apisix:3.11.0-debian
     ports: ["127.0.0.1:9080:9080"]

@@ -6,10 +6,10 @@ import runpy
 import tempfile
 import unittest
 
-from smart_service_intelligence.domain.errors import ProfileInvalid
-from smart_service_intelligence.profiles.validation import load_documents, read_yaml, validate_documents, verify_lock
+from hdpi_intelligence.domain.errors import ProfileInvalid
+from hdpi_intelligence.profiles.validation import load_documents, read_yaml, validate_documents, verify_lock
 
-ROOT = Path(__file__).resolve().parents[3] / 'intelligence/profiles'
+ROOT = Path(__file__).resolve().parents[3] / 'apps/servicedesk/intelligence/profiles'
 MANIFEST = 'service-desk/versions/0.2.0/profile.yaml'
 
 
@@ -65,7 +65,7 @@ class ExecutableProfileTests(unittest.TestCase):
                 verify_lock(root)
 
     def test_repinning_existing_version_is_rejected_against_git_history(self):
-        script = ROOT.parents[1] / 'scripts/intelligence/validate-executable-profiles.py'
+        script = Path(__file__).resolve().parents[3] / 'scripts/intelligence/validate-executable-profiles.py'
         history = runpy.run_path(str(script))['check_history']
         lock = verify_lock(ROOT)
         lock['service-desk/versions/0.2.0/rules.yaml'] = 'a' * 64

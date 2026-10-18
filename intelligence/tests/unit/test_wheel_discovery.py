@@ -10,7 +10,7 @@ installer = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(installer)
 
 
-def wheel(path, *, version='0.3.0', name='smart-service-intelligence'):
+def wheel(path, *, version='0.3.0', name='hdpi-intelligence'):
     with zipfile.ZipFile(path, 'w') as archive:
         archive.writestr('test.dist-info/METADATA', f'Name: {name}\nVersion: {version}\n')
 

@@ -19,15 +19,15 @@ from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 from uuid import uuid4
 
-from smart_service_intelligence.citations.verifier import CoreCitationVerifier
-from smart_service_intelligence.domain.errors import AuthorizationRejected, CitationVerificationError, CorpusUnavailable
-from smart_service_intelligence.integrations.core import CoreAuthorizedCorpusAdapter, CoreCorpusCatalog, CoreHttpClient
-from smart_service_intelligence.profiles.registry import ProfileRegistry
-from smart_service_intelligence.retrieval.index import build_authorized_index
-from smart_service_intelligence.retrieval.registry import IndexRegistry
-from smart_service_intelligence.retrieval.tfidf.engine import TfidfSearchEngine
-from smart_service_intelligence.services.search import SearchService
-from smart_service_intelligence.services.triage import TriageService
+from hdpi_intelligence.citations.verifier import CoreCitationVerifier
+from hdpi_intelligence.domain.errors import AuthorizationRejected, CitationVerificationError, CorpusUnavailable
+from hdpi_intelligence.integrations.core import CoreAuthorizedCorpusAdapter, CoreCorpusCatalog, CoreHttpClient
+from hdpi_intelligence.profiles.registry import ProfileRegistry
+from hdpi_intelligence.retrieval.index import build_authorized_index
+from hdpi_intelligence.retrieval.registry import IndexRegistry
+from hdpi_intelligence.retrieval.tfidf.engine import TfidfSearchEngine
+from hdpi_intelligence.services.search import SearchService
+from hdpi_intelligence.services.triage import TriageService
 
 
 def http(method, url, *, token=None, body=None, content_type=None, expected=200):
@@ -89,7 +89,7 @@ def main():
                           'username': username, 'password': password}).encode()
         return http('POST', url, body=data, content_type='application/x-www-form-urlencoded')['access_token']
 
-    report = {'evidenceClass': 'REAL_CORE_HTTP_ACCEPTANCE', 'packageVersion': version('smart-service-intelligence'),
+    report = {'evidenceClass': 'REAL_CORE_HTTP_ACCEPTANCE', 'packageVersion': version('hdpi-intelligence'),
               'coreBaseline': subprocess.check_output(['git', 'rev-parse', 'origin/develop'], text=True).strip(),
               'aiCommit': subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip(),
               'correlationId': marker, 'scenarios': [], 'limits': [

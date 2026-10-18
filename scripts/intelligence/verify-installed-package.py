@@ -1,26 +1,28 @@
 """Run with python -I after installing the wheel; never import from source."""
 
 from pathlib import Path
+import os
+os.environ['HDPI_PROFILE_ROOT'] = str(Path(__file__).resolve().parents[2] / 'apps/servicedesk/intelligence/profiles')
 from importlib.metadata import version
 import platform
 
-import smart_service_intelligence
-from smart_service_intelligence.domain.models import TrustedContext
-from smart_service_intelligence.resources import resource_root
-from smart_service_intelligence.services.triage import TriageService
+import hdpi_intelligence
+from hdpi_intelligence.domain.models import TrustedContext
+from hdpi_intelligence.resources import resource_root
+from hdpi_intelligence.services.triage import TriageService
 
 
 def verify_retrieval():
     # Independent authored bytes and FakeCore IDs; never bind repository knowledge.
     from hashlib import sha256
     import tempfile
-    from smart_service_intelligence.citations.verifier import CoreCitationVerifier
-    from smart_service_intelligence.profiles.registry import ProfileRegistry
-    from smart_service_intelligence.retrieval.corpus import load_index, publish_index
-    from smart_service_intelligence.retrieval.index import build_authorized_index
-    from smart_service_intelligence.retrieval.models import AuthorizedDocument, PartitionKey, scope_hash
-    from smart_service_intelligence.retrieval.registry import IndexRegistry
-    from smart_service_intelligence.services.search import SearchService
+    from hdpi_intelligence.citations.verifier import CoreCitationVerifier
+    from hdpi_intelligence.profiles.registry import ProfileRegistry
+    from hdpi_intelligence.retrieval.corpus import load_index, publish_index
+    from hdpi_intelligence.retrieval.index import build_authorized_index
+    from hdpi_intelligence.retrieval.models import AuthorizedDocument, PartitionKey, scope_hash
+    from hdpi_intelligence.retrieval.registry import IndexRegistry
+    from hdpi_intelligence.services.search import SearchService
 
     context = TrustedContext(workspace_id='fake-core-wheel', auth_scope_fingerprint='fake-core-scope@1')
     content = 'Hướng dẫn đăng nhập tài khoản.'.encode('utf-8')
@@ -62,14 +64,16 @@ def verify_retrieval():
 
 def main():
     expected_version = '0.3.0'
-    if version('smart-service-intelligence') != expected_version:
+    if version('hdpi-intelligence') != expected_version:
         raise RuntimeError('Installed package version must be ' + expected_version)
-    print(f'Python {platform.python_version()}; smart-service-intelligence {expected_version}')
-    location = Path(smart_service_intelligence.__file__).resolve()
+    print(f'Python {platform.python_version()}; hdpi-intelligence {expected_version}')
+    location = Path(hdpi_intelligence.__file__).resolve()
     if 'site-packages' not in location.parts:
         raise RuntimeError('Verification must load the installed wheel')
-    if '_resources' not in resource_root('profiles').parts or '_resources' not in resource_root('contracts').parts:
-        raise RuntimeError('Wheel must contain profiles and shared contracts')
+    if '_resources' not in resource_root('contracts').parts:
+        raise RuntimeError('Wheel must contain shared contracts')
+    if (location.parent / '_resources/profiles').exists():
+        raise RuntimeError('Generic wheel must not bundle application profiles')
     payload = {'contractVersion': '0.1.0', 'requestId': 'installed-wheel', 'profile': 'service-desk',
                'context': {'workspaceId': 'local-wheel-check'},
                'input': {'title': 'Wi-Fi chập chờn', 'description': 'Một máy bị ảnh hưởng; có thể chờ.'}}

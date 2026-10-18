@@ -19,8 +19,8 @@ def contracts():
 class BuildPy(build_py):
     def run(self):
         super().run()
-        destination = Path(self.build_lib) / 'smart_service_intelligence/_resources'
-        for name, source in [('profiles', ROOT / 'profiles'), ('contracts', contracts())]:
+        destination = Path(self.build_lib) / 'hdpi_intelligence/_resources'
+        for name, source in [('contracts', contracts())]:
             shutil.copytree(source, destination / name, dirs_exist_ok=True)
 
 

@@ -1,3 +1,6 @@
+> Current three-tier ownership: generic runtime wheel; external app profiles.
+> See [private adapter](docs/architecture/private-adapter.md) and [app assets](../apps/servicedesk/intelligence/README.md).
+
 # Intelligence — foundation, triage và truy xuất tri thức
 
 ## Truy xuất AI-03
@@ -16,8 +19,9 @@ quyền dữ liệu vẫn còn chờ; chưa coi là phê duyệt production.
 Sau khi cài wheel bằng bộ pin `requirements.lock`, chạy từ repository root:
 
 ```powershell
-python -I -m smart_service_intelligence.search --profile service-desk@0.2.0 --fixture-repo-root . --query "không đăng nhập được tài khoản" --top-k 3
-python -I -m smart_service_intelligence.evaluation.retrieval --repo-root . --output .local/ai03-evaluation.json
+$env:HDPI_PROFILE_ROOT = "apps/servicedesk/intelligence/profiles"
+python -I -m hdpi_intelligence.search --profile service-desk@0.2.0 --fixture-repo-root . --query "không đăng nhập được tài khoản" --top-k 3
+python -I -m hdpi_intelligence.evaluation.retrieval --repo-root . --fixtures-root fixtures/intelligence/service-desk --output .local/ai03-evaluation.json
 python -I scripts/intelligence/verify-installed-package.py
 python -I -m pytest -c scripts/intelligence/installed-pytest.ini intelligence/tests -q
 ```
@@ -139,8 +143,8 @@ Linux dùng `.local/ai02-venv/bin/python` thay cho đường dẫn `Scripts/pyth
 Developer CLI chạy sau khi cài wheel, chỉ dành cho engineering local:
 
 ```powershell
-.local/ai02-venv/Scripts/python -m smart_service_intelligence.triage --profile service-desk@0.2.0 --workspace lab-a --title "Wi-Fi chập chờn" --description "Một máy bị ảnh hưởng; có thể chờ." --trace
-.local/ai02-venv/Scripts/python -m smart_service_intelligence.evaluation.conformance --fixtures fixtures/intelligence/service-desk/tickets/tickets-v0.1.jsonl --output .local/ai02-conformance.json
+.local/ai02-venv/Scripts/python -m hdpi_intelligence.triage --profile service-desk@0.2.0 --workspace lab-a --title "Wi-Fi chập chờn" --description "Một máy bị ảnh hưởng; có thể chờ." --trace
+.local/ai02-venv/Scripts/python -m hdpi_intelligence.evaluation.conformance --fixtures fixtures/intelligence/service-desk/tickets/tickets-v0.1.jsonl --profile-version 0.2.0 --expected-runtime '{"engine":"rules","profileVersion":"service-desk@0.2.0","rulesVersion":"0.2.0"}' --normalization-version text-normalization@0.1.0 --output .local/ai02-conformance.json
 ```
 
 CLI không xác thực hay cấp quyền. Adapter Core HTTP phải authorize và truyền

@@ -1,7 +1,7 @@
 import pytest
 
-from smart_service_intelligence.domain.errors import ProfileNotFound, UnsupportedProfileVersion
-from smart_service_intelligence.profiles.registry import ProfileRegistry
+from hdpi_intelligence.domain.errors import ProfileNotFound, UnsupportedProfileVersion
+from hdpi_intelligence.profiles.registry import ProfileRegistry
 
 
 def test_exact_fail_closed_registry():

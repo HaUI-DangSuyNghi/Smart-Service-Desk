@@ -3,7 +3,7 @@ import unicodedata
 
 import pytest
 
-from smart_service_intelligence.normalization.v1 import NormalizerV1
+from hdpi_intelligence.normalization.v1 import NormalizerV1
 
 
 @pytest.mark.parametrize('original,expected', [

@@ -18,7 +18,7 @@ def discover_wheel(directory: Path, expected_version: str) -> Path:
         if len(metadata_files) != 1:
             raise ValueError('Wheel must have exactly one distribution metadata record')
         metadata = BytesParser().parsebytes(archive.read(metadata_files[0]))
-    if metadata['Name'] != 'smart-service-intelligence' or metadata['Version'] != expected_version:
+    if metadata['Name'] != 'hdpi-intelligence' or metadata['Version'] != expected_version:
         raise ValueError('Wheel distribution/version differs from the build declaration')
     return wheel.resolve()
 
