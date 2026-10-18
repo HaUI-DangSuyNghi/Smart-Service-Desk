@@ -22,6 +22,10 @@ flowable:
   async-executor-activate: false
   history-level: full
 dx:
+  intelligence:
+    triage:
+      base-url: ${INTELLIGENCE_TRIAGE_BASE_URL:}
+      token: ${INTELLIGENCE_TRIAGE_TOKEN:}
   storage:
     root: ${DX_STORAGE_ROOT:./.local/files}
     allow-unscanned-upload: ${DX_ALLOW_UNSCANNED_UPLOAD:false}

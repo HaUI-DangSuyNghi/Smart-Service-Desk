@@ -1,4 +1,9 @@
-# Resolution AI-02, CPython 3.12 (Linux/Windows); compatibility pins, not a CVE audit.
+# Resolution AI-02 + AI-03, CPython 3.12 (Linux/Windows); not a CVE audit.
+scikit-learn==1.6.1
+numpy==2.2.6
+scipy==1.15.3
+joblib==1.4.2
+threadpoolctl==3.6.0
 PyYAML==6.0.2
 jsonschema==4.23.0
 attrs==24.2.0
