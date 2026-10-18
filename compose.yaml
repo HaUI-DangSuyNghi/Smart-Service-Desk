@@ -62,7 +62,7 @@ services:
     environment:
       HDPI_SERVICE_TOKEN: ${DX_INTELLIGENCE_SERVICE_TOKEN:-}
     volumes:
-      - ./apps/servicedesk/intelligence/profiles:/profiles:ro
+      - "${DX_INTELLIGENCE_PROFILE_ROOT:-./apps/servicedesk/intelligence/profiles}:/profiles:ro"
     read_only: true
     tmpfs: [/tmp]
   gateway:

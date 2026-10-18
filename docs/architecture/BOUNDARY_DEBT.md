@@ -17,7 +17,7 @@ claims of team approval. No unregistered exceptions may enter production code.
 | BD-10 | generic wheel -> app profile | bundled config | external ProfileRegistry root | Intelligence | ARC-05 | CLOSED |
 | BD-11 | generic evaluator -> app pins | authored regression | explicit evaluation configuration | Intelligence | ARC-05 | CLOSED |
 | BD-12 | CI -> missing architecture tests | baseline | executable cross-language guards | Backend | ARC-01 | CLOSED |
-| BD-13 | reuse -> no second app | baseline | executable second-domain proof | Backend | ARC-08 | OPEN |
+| BD-13 | reuse -> no second app | baseline | executable second-domain proof | Backend | ARC-08 | CLOSED |
 | BD-14 | docs -> mixed dependency arrows | historical baseline | ADR-005 + current boundary map | Architecture | ARC-09 | OPEN |
 | BD-15 | raw Core APIs -> capability terminology | historical descriptions | semantic T2 contracts | Architecture | ARC-09 | OPEN |
 

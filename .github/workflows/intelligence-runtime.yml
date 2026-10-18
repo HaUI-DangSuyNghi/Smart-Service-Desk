@@ -4,7 +4,7 @@ on:
     branches: [develop]
     paths:
       - 'intelligence/**'
-      - 'apps/servicedesk/intelligence/**'
+      - 'apps/**/intelligence/**'
       - 'contracts/intelligence/**'
       - 'fixtures/intelligence/**'
       - 'scripts/intelligence/**'

@@ -38,3 +38,23 @@ jobs:
           npm run lint
           npm test
           npm run build:platform
+  tier-isolation-proofs:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 25
+    strategy:
+      matrix:
+        proof: [core-only, second-domain]
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Prepare Maven test environment
+        run: docker build --target build -t dx-core-build:0.1.0 backend
+      - name: Core without upper tiers
+        if: matrix.proof == 'core-only'
+        shell: pwsh
+        run: ./scripts/test-file.ps1 -MavenProfile core-only
+      - name: HPDI and second domain without Service Desk
+        if: matrix.proof == 'second-domain'
+        shell: pwsh
+        run: ./scripts/test-file.ps1 -MavenProfile second-domain -Tests 'RoomRequestIntegrationTest,TierBoundaryTest,CoreProcessCapabilitiesTest,CoreKnowledgeCatalogTest,TrustedIntelligenceCapabilityTest,WorkspaceActivityJournalTest'

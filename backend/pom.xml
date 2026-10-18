@@ -17,4 +17,44 @@
     <dependency><groupId>org.springframework.security</groupId><artifactId>spring-security-test</artifactId><scope>test</scope></dependency>
   </dependencies>
   <build><plugins><plugin><groupId>org.springframework.boot</groupId><artifactId>spring-boot-maven-plugin</artifactId></plugin></plugins></build>
+  <profiles>
+    <profile>
+      <id>core-only</id>
+      <build>
+        <resources><resource><directory>src/main/resources</directory><excludes>
+          <exclude>apps/**</exclude><exclude>db/migration/apps/**</exclude><exclude>db/migration/V5__servicedesk_ticket.sql</exclude>
+        </excludes></resource></resources>
+        <testResources>
+          <testResource><directory>src/test/resources</directory></testResource>
+          <testResource><directory>src/core-test/resources</directory></testResource>
+        </testResources>
+        <plugins>
+          <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-compiler-plugin</artifactId><configuration>
+            <excludes><exclude>vn/haui/dx/apps/**</exclude><exclude>vn/haui/dx/hpdi/**</exclude></excludes>
+            <testExcludes><testExclude>vn/haui/dx/apps/**</testExclude><testExclude>vn/haui/dx/hpdi/**</testExclude><testExclude>vn/haui/dx/architecture/**</testExclude></testExcludes>
+          </configuration></plugin>
+          <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-surefire-plugin</artifactId><configuration>
+            <systemPropertyVariables><spring.profiles.active>core-only</spring.profiles.active></systemPropertyVariables>
+          </configuration></plugin>
+        </plugins>
+      </build>
+    </profile>
+    <profile>
+      <id>second-domain</id>
+      <build>
+        <resources><resource><directory>src/main/resources</directory><excludes>
+          <exclude>apps/servicedesk/**</exclude><exclude>apps/samples/**</exclude><exclude>db/migration/V5__servicedesk_ticket.sql</exclude>
+        </excludes></resource></resources>
+        <plugins>
+          <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-compiler-plugin</artifactId><configuration>
+            <excludes><exclude>vn/haui/dx/apps/servicedesk/**</exclude><exclude>vn/haui/dx/apps/samples/**</exclude></excludes>
+            <testExcludes><testExclude>vn/haui/dx/apps/servicedesk/**</testExclude></testExcludes>
+          </configuration></plugin>
+          <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-surefire-plugin</artifactId><configuration>
+            <systemPropertyVariables><dx.proof.second-domain>true</dx.proof.second-domain></systemPropertyVariables>
+          </configuration></plugin>
+        </plugins>
+      </build>
+    </profile>
+  </profiles>
 </project>
