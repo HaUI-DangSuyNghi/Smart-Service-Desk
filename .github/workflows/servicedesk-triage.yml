@@ -12,7 +12,7 @@ jobs:
     timeout-minutes: 20
     services:
       postgres:
-        image: postgres:16.6-bookworm
+        image: postgres:16.15-bookworm@sha256:0ea6700a3b4f0ae6ce746519073558aed4d88a79d8d07622a9a644946c7319c4
         env:
           POSTGRES_USER: workflow
           POSTGRES_PASSWORD: isolated-ci-only
