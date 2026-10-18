@@ -6,8 +6,8 @@ import runpy
 import tempfile
 import unittest
 
-from smart_service_intelligence.domain.errors import ProfileInvalid
-from smart_service_intelligence.profiles.validation import load_documents, read_yaml, validate_documents, verify_lock
+from hdpi.domain.errors import ProfileInvalid
+from hdpi.profiles.validation import load_documents, read_yaml, validate_documents, verify_lock
 
 ROOT = Path(__file__).resolve().parents[3] / 'intelligence/profiles'
 MANIFEST = 'service-desk/versions/0.2.0/profile.yaml'

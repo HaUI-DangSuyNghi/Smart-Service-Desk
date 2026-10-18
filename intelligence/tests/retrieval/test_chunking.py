@@ -2,7 +2,7 @@ from hashlib import sha256
 
 import pytest
 
-from smart_service_intelligence.retrieval.chunking import chunk_text, MAX_CHARS
+from hdpi.retrieval.chunking import chunk_text, MAX_CHARS
 
 
 @pytest.mark.parametrize('text', ['', '   \r\n\r\n', '# Tài khoản\r\n\r\nĐăng nhập e\u0302.\r\n\r\n## Mạng\r\nWi-Fi.',

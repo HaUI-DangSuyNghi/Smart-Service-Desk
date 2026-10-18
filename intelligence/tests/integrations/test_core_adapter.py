@@ -8,15 +8,15 @@ from unittest.mock import Mock
 
 import pytest
 
-from smart_service_intelligence.citations.verifier import CoreCitationVerifier
-from smart_service_intelligence.domain.errors import (AuthorizationRejected, CitationVerificationError,
+from hdpi.citations.verifier import CoreCitationVerifier
+from hdpi.domain.errors import (AuthorizationRejected, CitationVerificationError,
     CorpusUnavailable, EngineConfigurationError)
-from smart_service_intelligence.integrations.core import CoreAuthorizedCorpusAdapter, CoreCorpusCatalog, CoreHttpClient
-from smart_service_intelligence.profiles.registry import ProfileRegistry
-from smart_service_intelligence.retrieval.index import build_authorized_index
-from smart_service_intelligence.retrieval.registry import IndexRegistry
-from smart_service_intelligence.retrieval.tfidf.engine import TfidfSearchEngine
-from smart_service_intelligence.services.search import SearchService
+from hdpi.integrations.core import CoreAuthorizedCorpusAdapter, CoreCorpusCatalog, CoreHttpClient
+from hdpi.profiles.registry import ProfileRegistry
+from hdpi.retrieval.index import build_authorized_index
+from hdpi.retrieval.registry import IndexRegistry
+from hdpi.retrieval.tfidf.engine import TfidfSearchEngine
+from hdpi.services.search import SearchService
 
 MID = '11111111-1111-4111-8111-111111111111'
 FID = '22222222-2222-4222-8222-222222222222'

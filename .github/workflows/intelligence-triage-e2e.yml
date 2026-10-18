@@ -127,7 +127,7 @@ jobs:
       - name: G8 real Core authorized retrieval provenance and citation regression
         run: |
           python -I scripts/acceptance/intelligence-retrieval.py --output .local/int01/authorized-retrieval.json
-          python -I -m smart_service_intelligence.evaluation.retrieval --repo-root . --output .local/int01/retrieval-evaluation.json
+          python -I -m hdpi.evaluation.retrieval --repo-root . --output .local/int01/retrieval-evaluation.json
           python - <<'PY'
           from pathlib import Path
           import json, os, subprocess

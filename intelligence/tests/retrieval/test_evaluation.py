@@ -2,8 +2,8 @@ from pathlib import Path
 
 import pytest
 
-from smart_service_intelligence.evaluation.metrics import first_relevant_rank, retrieval_metrics
-from smart_service_intelligence.evaluation.retrieval import evaluate
+from hdpi.evaluation.metrics import first_relevant_rank, retrieval_metrics
+from hdpi.evaluation.retrieval import evaluate
 
 ROOT = Path(__file__).resolve().parents[3]
 

@@ -10,7 +10,7 @@ import sys
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'intelligence/src'))
 
-from smart_service_intelligence.profiles.validation import load_documents, read_yaml, require, verify_lock
+from hdpi.profiles.validation import load_documents, read_yaml, require, verify_lock
 
 
 def check_history(root, lock, baseline):

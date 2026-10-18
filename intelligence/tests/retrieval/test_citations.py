@@ -4,13 +4,13 @@ from unittest.mock import Mock
 
 import pytest
 
-from smart_service_intelligence.citations.base import CitationCandidate
-from smart_service_intelligence.citations.verifier import CoreCitationVerifier
-from smart_service_intelligence.domain.errors import AuthorizationRejected, CitationVerificationError, CorpusUnavailable
-from smart_service_intelligence.profiles.registry import ProfileRegistry
-from smart_service_intelligence.retrieval.index import build_authorized_index
-from smart_service_intelligence.services.search import SearchService
-from smart_service_intelligence.retrieval.registry import IndexRegistry
+from hdpi.citations.base import CitationCandidate
+from hdpi.citations.verifier import CoreCitationVerifier
+from hdpi.domain.errors import AuthorizationRejected, CitationVerificationError, CorpusUnavailable
+from hdpi.profiles.registry import ProfileRegistry
+from hdpi.retrieval.index import build_authorized_index
+from hdpi.services.search import SearchService
+from hdpi.retrieval.registry import IndexRegistry
 
 
 class FakeCoreSourceResolver:

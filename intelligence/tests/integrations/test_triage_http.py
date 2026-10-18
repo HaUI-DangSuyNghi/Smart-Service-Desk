@@ -7,12 +7,12 @@ from time import monotonic, sleep
 
 import pytest
 
-from smart_service_intelligence.domain.errors import (
+from hdpi.domain.errors import (
     AuthorizationRejected, EngineConfigurationError, EngineUnavailable,
     ProfileInvalid, ProfileNotFound, UnsupportedProfileVersion,
 )
-from smart_service_intelligence.http_service import ENDPOINT, MAX_REQUEST, make_server
-from smart_service_intelligence.services.triage import TriageService
+from hdpi.http_service import ENDPOINT, MAX_REQUEST, make_server
+from hdpi.services.triage import TriageService
 
 TOKEN = 'synthetic-test-service-credential-only'
 

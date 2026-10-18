@@ -62,7 +62,7 @@ python3.12 -m venv .local/ai04-venv
 .local/ai04-venv/bin/pip install -r intelligence/requirements.lock
 .local/ai04-venv/bin/pip install --no-build-isolation --no-deps ./intelligence
 # Inject INTELLIGENCE_TRIAGE_TOKEN through your secret mechanism first.
-.local/ai04-venv/bin/python -m smart_service_intelligence.http_service --host 127.0.0.1 --port 8000
+.local/ai04-venv/bin/python -m hdpi.http_service --host 127.0.0.1 --port 8000
 ```
 
 Packaged schemas/profiles are loaded from the installed wheel, never a nonexistent apps/
@@ -119,8 +119,9 @@ Do not claim FULL KEYCLOAK/GATEWAY/BROWSER E2E from these results.
 
 ## AI-03 compatibility
 
-PR #19 retains its package path `smart_service_intelligence`, TriageService, resources,
-registry and rules APIs. This change adds one module without renames, dependency changes
+The current runtime package path is `hdpi` (renamed during BND-00 recovery).
+PR #19 originally retained `smart_service_intelligence`, TriageService, resources,
+registry and rules APIs. That bridge change added one module without renames, dependency changes
 or edits to AI-03-owned retrieval/corpus/citation files. Requirements and pyproject remain
 untouched; no Retrieval HTTP or Authorized Corpus Facade is introduced. A disposable
 combined checkout must still run the entire AI-03 suite before integrating both PRs.

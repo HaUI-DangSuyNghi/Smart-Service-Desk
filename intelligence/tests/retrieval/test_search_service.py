@@ -3,13 +3,13 @@ from unittest.mock import Mock
 
 import pytest
 
-from smart_service_intelligence.citations.base import VerifiedCitation
-from smart_service_intelligence.domain.errors import (AuthorizationRejected, CitationVerificationError,
+from hdpi.citations.base import VerifiedCitation
+from hdpi.domain.errors import (AuthorizationRejected, CitationVerificationError,
     ContractValidationError, CorpusUnavailable, EngineConfigurationError, EngineUnavailable)
-from smart_service_intelligence.retrieval.registry import IndexRegistry
-from smart_service_intelligence.retrieval.tfidf.engine import TfidfSearchEngine
-from smart_service_intelligence.services.search import SearchService
-from smart_service_intelligence.services.triage import TriageService
+from hdpi.retrieval.registry import IndexRegistry
+from hdpi.retrieval.tfidf.engine import TfidfSearchEngine
+from hdpi.services.search import SearchService
+from hdpi.services.triage import TriageService
 
 
 @pytest.fixture

@@ -6,8 +6,8 @@ import shutil
 import pytest
 import yaml
 
-from smart_service_intelligence.domain.errors import ProfileInvalid
-from smart_service_intelligence.profiles.registry import ProfileRegistry
+from hdpi.domain.errors import ProfileInvalid
+from hdpi.profiles.registry import ProfileRegistry
 
 ROOT = Path(__file__).resolve().parents[3] / 'intelligence/profiles'
 

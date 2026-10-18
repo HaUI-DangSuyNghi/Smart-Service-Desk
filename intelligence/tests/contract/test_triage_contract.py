@@ -4,12 +4,12 @@ from unittest.mock import Mock
 
 import pytest
 
-from smart_service_intelligence.contracts.validator import ContractValidator
-from smart_service_intelligence.domain.errors import (
+from hdpi.contracts.validator import ContractValidator
+from hdpi.domain.errors import (
     AuthorizationRejected, ContractValidationError, EngineConfigurationError, EngineUnavailable,
 )
-from smart_service_intelligence.domain.models import InputEvidence, TriageRequest, TrustedContext
-from smart_service_intelligence.services.triage import TriageService
+from hdpi.domain.models import InputEvidence, TriageRequest, TrustedContext
+from hdpi.services.triage import TriageService
 
 
 @pytest.mark.parametrize('field,value', [('title', ''), ('title', ' \t\n'), ('description', ''), ('description', '   ')])
