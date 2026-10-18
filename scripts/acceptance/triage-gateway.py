@@ -30,9 +30,13 @@ def http(method, url, *, token=None, payload=None, form=None, expected=200):
     except HTTPError as error:
         response = error
     with response:
-        assert response.status == expected, f'Expected HTTP {expected}, received {response.status}'
+        expected_statuses = (expected,) if isinstance(expected, int) else expected
+        assert response.status in expected_statuses, f'Expected HTTP {expected}, received {response.status}'
         raw = response.read()
-        return json.loads(raw) if raw and response.headers.get_content_type() in ('application/json', 'application/problem+json') else None
+        result = json.loads(raw) if raw and response.headers.get_content_type() in ('application/json', 'application/problem+json') else None
+        if response.status in (503, 504):
+            assert result['code'] == {503: 'INTELLIGENCE_UNAVAILABLE', 504: 'INTELLIGENCE_TIMEOUT'}[response.status]
+        return result
 
 
 def main():
@@ -125,8 +129,8 @@ def main():
         stopped = True
         route, ticket, owner = tickets[0]
         before = counts()
-        problem = http('POST', route + '/triage', token=owner, expected=503)
-        assert problem['code'] == 'INTELLIGENCE_UNAVAILABLE' and 'result' not in problem
+        problem = http('POST', route + '/triage', token=owner, expected=(503, 504))
+        assert 'result' not in problem
         assert before == counts() and http('GET', route, token=owner) == ticket
         progress = http('GET', route + '/progress', token=owner)
         task_id = progress['currentTasks'][0]['id']
@@ -135,7 +139,7 @@ def main():
         http('POST', task_route + '/claim', token=identities['user2'])
         http('POST', task_route + '/complete', token=identities['user2'], expected=204,
              payload={'expectedTaskKey': 'handle', 'outcome': 'resolved'})
-        cases.append('real-python-outage-503-and-manual-workflow-completion')
+        cases.append('real-python-outage-and-manual-workflow-completion')
     finally:
         if stopped:
             subprocess.run(compose + ['up', '-d', '--no-build', '--wait', '--wait-timeout', '60', 'intelligence'], check=True)
@@ -144,7 +148,7 @@ def main():
                  token=login('admin', settings['KC_ADMIN_PASSWORD'], admin=True), expected=204)
     report = {'status': 'PASS', 'sourceCommit': subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip(),
               'identity': 'Real Keycloak password login, JWT verification, APISIX and Java HTTP; no browser UI',
-              'project': args.project, 'cases': cases}
+              'project': args.project, 'outageCode': problem['code'], 'cases': cases}
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(report, indent=2) + '\n', encoding='utf-8')
     print(f'PASS real Keycloak/gateway/Java/Python acceptance: {len(cases)} checks')

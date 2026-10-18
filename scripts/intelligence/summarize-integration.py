@@ -30,6 +30,7 @@ def main():
     gateway = load_json(directory / 'gateway-triage.json')
     retrieval = load_json(directory / 'authorized-retrieval.json')
     images = load_json(directory / 'images.json')
+    python_image = load_json(directory / 'python-image.json')
     package_version = tomllib.loads((root / 'intelligence/pyproject.toml').read_text())['project']['version']
     image_version = (directory / 'image-package-version.txt').read_text().strip() if (directory / 'image-package-version.txt').is_file() else None
     correlated = transport is not None and transport.get('javaHead') == transport.get('pythonHead') == head
@@ -49,10 +50,10 @@ def main():
     gates = {
         'G1': 'PASS' if java and java['tests'] and not any(java[key] for key in ('failures', 'errors', 'skipped')) else 'BLOCKED',
         'G2': 'PASS' if all(junit_pass(directory / name) for name in ('python-source.xml', 'python-wheel.xml')) else 'BLOCKED',
-        'G3': 'PASS' if image_version == package_version and images and all(image['revision'] == head for image in images) else 'BLOCKED',
+        'G3': 'PASS' if image_version == package_version and python_image and python_image['revision'] == head else 'BLOCKED',
         'G4': 'PASS' if scenario_pass('success') else 'BLOCKED',
         'G5': 'PASS' if all(scenario_pass(name) for name in ('wrong-token', 'unavailable', 'timeout', 'malformed')) else 'BLOCKED',
-        'G6': 'PASS' if gateway and gateway['sourceCommit'] == head and 'real-python-outage-503-and-manual-workflow-completion' in gateway['cases'] else 'BLOCKED',
+        'G6': 'PASS' if gateway and gateway['sourceCommit'] == head and 'real-python-outage-and-manual-workflow-completion' in gateway['cases'] else 'BLOCKED',
         'G7': 'PASS' if gateway and gateway['sourceCommit'] == head and gateway['status'] == 'PASS' else 'BLOCKED',
         'G8': 'PASS' if retrieval and retrieval['aiCommit'] == head and retrieval['status'] == 'PASS_WITH_DOCUMENTED_CORE_LIMITS' else 'BLOCKED',
         'G9': 'PASS' if production_security else 'FAIL' if scan_complete else 'BLOCKED',

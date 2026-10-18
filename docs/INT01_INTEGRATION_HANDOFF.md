@@ -65,6 +65,12 @@ port/route, unchanged persisted counts and the real manual fallback. Synthetic i
 and knowledge exist only inside that run's disposable stack. Real G7 is HTTP acceptance,
 NOT browser UI E2E. Browser UI E2E remains NOT RUN.
 
+A stopped Compose service can refuse a connection (503) OR leave an unreachable container
+address until the Java deadline (504). G7 verifies the matching problem code for either
+physical outage, not a fabricated DEGRADED result. G5 separately proves deterministic
+refused-connection 503 and injected-delay 504. Database and service credentials are generated
+per run, not fixed historical passwords; all published test ports bind loopback only.
+
 No continue-on-error or test skip is allowed. Missing or skipped technical evidence fails
 the workflow. Image scanning uses the explicitly labeled assessment (`-ReportOnly`) mode:
 scanner failure fails CI, but successful scanning with vulnerabilities is a recorded G9 FAIL,

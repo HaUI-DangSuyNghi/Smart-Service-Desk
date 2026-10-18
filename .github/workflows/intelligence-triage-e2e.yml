@@ -13,20 +13,9 @@ jobs:
   combined-head:
     runs-on: ubuntu-24.04
     timeout-minutes: 60
-    services:
-      postgres:
-        image: postgres:16.6-bookworm
-        env:
-          POSTGRES_USER: workflow
-          POSTGRES_PASSWORD: isolated-int01-ci-only
-          POSTGRES_DB: file_storage
-        ports: ['5432:5432']
-        options: --health-cmd "pg_isready -U workflow -d file_storage" --health-interval 5s --health-retries 20
     env:
-      FILE_TEST_JDBC_URL: jdbc:postgresql://localhost:5432/file_storage
-      FILE_TEST_DB_PASSWORD: isolated-int01-ci-only
-      WORKFLOW_TEST_JDBC_URL: jdbc:postgresql://localhost:5432/workflow_approval
-      WORKFLOW_TEST_DB_PASSWORD: isolated-int01-ci-only
+      FILE_TEST_JDBC_URL: jdbc:postgresql://localhost:15432/file_storage
+      WORKFLOW_TEST_JDBC_URL: jdbc:postgresql://localhost:15432/workflow_approval
       INTELLIGENCE_TRIAGE_BASE_URL: http://127.0.0.1:18000
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
@@ -49,10 +38,17 @@ jobs:
           echo "INT01_SOURCE_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
           echo "INT01_PROJECT=int01-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_ENV"
       - name: G1 full Java and disposable PostgreSQL regression
-        env:
-          PGPASSWORD: isolated-int01-ci-only
         run: |
-          psql -h localhost -U workflow -d file_storage -c 'CREATE DATABASE workflow_approval'
+          password=$(openssl rand -hex 32)
+          echo "::add-mask::$password"
+          export FILE_TEST_DB_PASSWORD="$password" WORKFLOW_TEST_DB_PASSWORD="$password" POSTGRES_PASSWORD="$password"
+          printf 'FILE_TEST_DB_PASSWORD=%s\nWORKFLOW_TEST_DB_PASSWORD=%s\n' "$password" "$password" >> "$GITHUB_ENV"
+          docker run -d --name "$INT01_PROJECT-regression" -e POSTGRES_USER=workflow -e POSTGRES_DB=file_storage -e POSTGRES_PASSWORD -p 127.0.0.1:15432:5432 postgres:16.6-bookworm
+          for attempt in $(seq 1 30); do
+            if docker exec "$INT01_PROJECT-regression" pg_isready -U workflow -d file_storage; then break; fi
+            sleep 1
+          done
+          docker exec "$INT01_PROJECT-regression" psql -U workflow -d file_storage -c 'CREATE DATABASE workflow_approval'
           mvn -B -f backend/pom.xml verify
           python - <<'PY'
           from pathlib import Path
@@ -88,9 +84,15 @@ jobs:
           docker run --rm --entrypoint python "$INT01_PROJECT-intelligence:ci" -c "from importlib.metadata import version; import tomllib; print(version('smart-service-intelligence'))" > .local/int01/image-package-version.txt
           python - <<'PY'
           from pathlib import Path
+          import json, os, subprocess
           import tomllib
           expected = tomllib.loads(Path('intelligence/pyproject.toml').read_text())['project']['version']
           assert Path('.local/int01/image-package-version.txt').read_text().strip() == expected
+          tag = os.environ['INT01_PROJECT'] + '-intelligence:ci'
+          image, = json.loads(subprocess.check_output(['docker', 'image', 'inspect', tag]))
+          revision = image['Config']['Labels']['org.opencontainers.image.revision']
+          assert revision == os.environ['INT01_SOURCE_SHA']
+          Path('.local/int01/python-image.json').write_text(json.dumps(dict(tag=tag, id=image['Id'], revision=revision), indent=2))
           PY
       - name: G4 G5 G6 real current Java Python transport and failure boundaries
         run: |
@@ -160,6 +162,7 @@ jobs:
             .local/int01/retrieval-evaluation.json
             .local/int01/image-package-version.txt
             .local/int01/images.json
+            .local/int01/python-image.json
             .local/int01/python-*.xml
             .local/ai04-e2e/summary.json
             .local/scan-int01-*/summary.json
@@ -168,6 +171,7 @@ jobs:
         if: always()
         run: |
           docker rm -f "$INT01_PROJECT-python" 2>/dev/null || test -z "$(docker ps -aq --filter name=^/$INT01_PROJECT-python$)"
+          docker rm -f "$INT01_PROJECT-regression" 2>/dev/null || test -z "$(docker ps -aq --filter name=^/$INT01_PROJECT-regression$)"
           if test -n "$(docker ps -aq --filter label=com.docker.compose.project=$INT01_PROJECT)"; then
             docker compose -p "$INT01_PROJECT" -f compose.yaml -f compose.triage.yaml -f scripts/acceptance/integration-compose.yaml --profile intelligence stop
           fi
