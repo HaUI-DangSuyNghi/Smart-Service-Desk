@@ -1,4 +1,6 @@
-package vn.haui.dx.apps.servicedesk.triage;
+package vn.haui.dx.hpdi.intelligence.integration;
+
+import vn.haui.dx.hpdi.intelligence.api.IntelligenceFailure;
 
 import java.io.IOException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -27,23 +29,25 @@ public class TriageValidator {
         } catch (IOException exception) { throw new IllegalStateException("Cannot load Intelligence schema", exception); }
     }
 
-    public void request(TriageRequest request) {
-        if (!requestSchema.validate(json.valueToTree(request)).isEmpty()) throw TriageFailure.configuration();
+    public void request(TriageRequest.Envelope envelope) {
+        var request = envelope.request();
+        if (!requestSchema.validate(json.valueToTree(request)).isEmpty()) throw IntelligenceFailure.configuration();
     }
 
-    public void response(TriageRequest request, JsonNode response) {
-        if (response == null || !responseSchema.validate(response).isEmpty()) throw TriageFailure.invalid();
+    public void response(TriageRequest.Envelope envelope, JsonNode response) {
+        var request = envelope.request();
+        if (response == null || !responseSchema.validate(response).isEmpty()) throw IntelligenceFailure.invalid();
         if (!request.contractVersion().equals(response.path("contractVersion").asText())
                 || !request.requestId().equals(response.path("requestId").asText())
                 || !request.profile().equals(response.path("profile").asText())
                 || !request.context().workspaceId().equals(response.path("workspaceId").asText()))
-            throw TriageFailure.invalid();
+            throw IntelligenceFailure.invalid();
         if ("SUCCESS".equals(response.path("status").asText())
-                && !"service-desk@0.2.0".equals(response.path("runtime").path("profileVersion").asText()))
-            throw TriageFailure.invalid();
+                && !(request.profile() + "@" + envelope.profileVersion()).equals(response.path("runtime").path("profileVersion").asText()))
+            throw IntelligenceFailure.invalid();
         for (var evidence : response.path("evidence")) {
             String original = "title".equals(evidence.path("field").asText()) ? request.input().title() : request.input().description();
-            if (!original.contains(evidence.path("text").asText())) throw TriageFailure.invalid();
+            if (!original.contains(evidence.path("text").asText())) throw IntelligenceFailure.invalid();
         }
     }
 }

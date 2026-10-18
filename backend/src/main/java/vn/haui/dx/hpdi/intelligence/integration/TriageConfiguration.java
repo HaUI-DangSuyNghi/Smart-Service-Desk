@@ -1,4 +1,6 @@
-package vn.haui.dx.apps.servicedesk.triage;
+package vn.haui.dx.hpdi.intelligence.integration;
+
+import vn.haui.dx.hpdi.intelligence.api.IntelligenceFailure;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;

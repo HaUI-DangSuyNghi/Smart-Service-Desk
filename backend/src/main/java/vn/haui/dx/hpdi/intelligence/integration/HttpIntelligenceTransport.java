@@ -1,4 +1,6 @@
-package vn.haui.dx.apps.servicedesk.triage;
+package vn.haui.dx.hpdi.intelligence.integration;
+
+import vn.haui.dx.hpdi.intelligence.api.IntelligenceFailure;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -23,7 +25,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Component;
 
 @Component
-public class HttpIntelligenceTriageClient implements IntelligenceTriageClient {
+public class HttpIntelligenceTransport implements IntelligenceTransport {
     static final int MAX_REQUEST = 32 * 1024;
     static final int MAX_RESPONSE = 256 * 1024;
     private final TriageConfiguration.Settings settings;
@@ -31,14 +33,14 @@ public class HttpIntelligenceTriageClient implements IntelligenceTriageClient {
     private final HttpClient http = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(1))
         .followRedirects(HttpClient.Redirect.NEVER).build();
 
-    public HttpIntelligenceTriageClient(TriageConfiguration.Settings settings, ObjectMapper json) {
+    public HttpIntelligenceTransport(TriageConfiguration.Settings settings, ObjectMapper json) {
         this.settings = settings;
         this.json = json.copy().enable(JsonParser.Feature.STRICT_DUPLICATE_DETECTION)
             .enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS);
     }
 
     private URI endpoint() {
-        if (settings.baseUrl() == null || settings.baseUrl().isBlank()) throw TriageFailure.unavailable();
+        if (settings.baseUrl() == null || settings.baseUrl().isBlank()) throw IntelligenceFailure.unavailable();
         try {
             var base = URI.create(settings.baseUrl());
             if (!("http".equals(base.getScheme()) || "https".equals(base.getScheme())) || base.getHost() == null
@@ -46,18 +48,18 @@ public class HttpIntelligenceTriageClient implements IntelligenceTriageClient {
                     || base.getUserInfo() != null || base.getQuery() != null || base.getFragment() != null
                     || !(base.getPath().isEmpty() || "/".equals(base.getPath()))
                     || settings.token() == null || !settings.token().matches("[A-Za-z0-9._~+/-]{32,}=*"))
-                throw TriageFailure.configuration();
+                throw IntelligenceFailure.configuration();
             return base.resolve("/internal/intelligence/v1/triage");
-        } catch (IllegalArgumentException exception) { throw TriageFailure.configuration(); }
+        } catch (IllegalArgumentException exception) { throw IntelligenceFailure.configuration(); }
     }
 
     @Override
-    public JsonNode triage(TriageRequest input) {
+    public JsonNode triage(TriageRequest.Envelope input) {
         var endpoint = endpoint();
         byte[] body;
-        try { body = json.writeValueAsBytes(input); }
-        catch (IOException exception) { throw TriageFailure.configuration(); }
-        if (body.length > MAX_REQUEST) throw TriageFailure.configuration();
+        try { body = json.writeValueAsBytes(input.request()); }
+        catch (IOException exception) { throw IntelligenceFailure.configuration(); }
+        if (body.length > MAX_REQUEST) throw IntelligenceFailure.configuration();
         var request = HttpRequest.newBuilder(endpoint).timeout(Duration.ofSeconds(4))
             .header("Authorization", "Bearer " + settings.token()).header("Content-Type", "application/json")
             .header("Accept", "application/json").POST(HttpRequest.BodyPublishers.ofByteArray(body)).build();
@@ -65,25 +67,25 @@ public class HttpIntelligenceTriageClient implements IntelligenceTriageClient {
         try {
             var response = pending.get(4, TimeUnit.SECONDS);
             int status = response.statusCode();
-            if (status == 401 || status == 403) throw TriageFailure.configuration();
-            if (status == 429 || status >= 500 && status <= 599) throw TriageFailure.unavailable();
-            if (status != 200) throw TriageFailure.invalid();
+            if (status == 401 || status == 403) throw IntelligenceFailure.configuration();
+            if (status == 429 || status >= 500 && status <= 599) throw IntelligenceFailure.unavailable();
+            if (status != 200) throw IntelligenceFailure.invalid();
             String mediaType = response.headers().firstValue("Content-Type").orElse("").split(";", 2)[0].trim();
-            if (!"application/json".equalsIgnoreCase(mediaType)) throw TriageFailure.invalid();
+            if (!"application/json".equalsIgnoreCase(mediaType)) throw IntelligenceFailure.invalid();
             try { return json.readTree(response.body()); }
-            catch (IOException exception) { throw TriageFailure.invalid(); }
+            catch (IOException exception) { throw IntelligenceFailure.invalid(); }
         } catch (TimeoutException exception) {
             pending.cancel(true);
-            throw TriageFailure.timeout();
+            throw IntelligenceFailure.timeout();
         } catch (InterruptedException exception) {
             pending.cancel(true);
             Thread.currentThread().interrupt();
-            throw TriageFailure.unavailable();
+            throw IntelligenceFailure.unavailable();
         } catch (ExecutionException exception) {
             Throwable cause = exception.getCause();
-            if (cause instanceof HttpTimeoutException) throw TriageFailure.timeout();
-            if (cause instanceof TriageFailure failure) throw failure;
-            throw TriageFailure.unavailable();
+            if (cause instanceof HttpTimeoutException) throw IntelligenceFailure.timeout();
+            if (cause instanceof IntelligenceFailure failure) throw failure;
+            throw IntelligenceFailure.unavailable();
         }
     }
 
@@ -98,7 +100,7 @@ public class HttpIntelligenceTriageClient implements IntelligenceTriageClient {
             for (var buffer : buffers) {
                 if (buffer.remaining() > MAX_RESPONSE - bytes.size()) {
                     subscription.cancel();
-                    result.completeExceptionally(TriageFailure.invalid());
+                    result.completeExceptionally(IntelligenceFailure.invalid());
                     return;
                 }
                 byte[] chunk = new byte[buffer.remaining()];

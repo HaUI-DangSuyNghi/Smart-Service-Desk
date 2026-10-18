@@ -1,4 +1,6 @@
-package vn.haui.dx.apps.servicedesk.triage;
+package vn.haui.dx.hpdi.intelligence.integration;
+
+import vn.haui.dx.hpdi.intelligence.api.IntelligenceFailure;
 
 import java.util.function.Consumer;
 import java.util.stream.Stream;
@@ -11,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class TriageValidatorTest {
     private final TriageValidator validator = new TriageValidator(new ObjectMapper());
-    private final TriageRequest request = TriageResponses.request();
+    private final TriageRequest.Envelope request = TriageResponses.request();
 
     @Test void acceptsRealSchemaShapesAndReviewRequiredSuccess() {
         validator.request(request);
@@ -21,7 +23,7 @@ class TriageValidatorTest {
         ((ObjectNode) response.get("explanation")).put("reasonCode", "INSUFFICIENT_INFORMATION");
         response.put("needsReview", true);
         validator.response(request, response);
-        assertThrows(TriageFailure.class, () -> validator.response(request, null));
+        assertThrows(IntelligenceFailure.class, () -> validator.response(request, null));
     }
 
     static Stream<Consumer<ObjectNode>> invalidSuccesses() {
@@ -54,16 +56,16 @@ class TriageValidatorTest {
     void rejectsSchemaAndSemanticViolations(Consumer<ObjectNode> mutate) {
         var response = TriageResponses.success(request);
         mutate.accept(response);
-        assertEquals(502, assertThrows(TriageFailure.class, () -> validator.response(request, response)).status());
+        assertEquals(502, assertThrows(IntelligenceFailure.class, () -> validator.response(request, response)).status());
     }
 
     @Test void rejectsInvalidDegradedAndBlankRequest() {
         var response = TriageResponses.degraded(request);
         response.put("needsReview", false);
-        assertThrows(TriageFailure.class, () -> validator.response(request, response));
+        assertThrows(IntelligenceFailure.class, () -> validator.response(request, response));
         response.put("needsReview", true).set("result", TriageResponses.success(request).get("result"));
-        assertThrows(TriageFailure.class, () -> validator.response(request, response));
-        assertThrows(TriageFailure.class, () -> validator.request(new TriageRequest("0.1.0", "id", "service-desk",
-            new TriageRequest.Context("lab-a"), new TriageRequest.Input(" ", "description"))));
+        assertThrows(IntelligenceFailure.class, () -> validator.response(request, response));
+        assertThrows(IntelligenceFailure.class, () -> validator.request(TriageResponses.envelope(new TriageRequest("0.1.0", "id", "service-desk",
+            new TriageRequest.Context("lab-a"), new TriageRequest.Input(" ", "description")))));
     }
 }

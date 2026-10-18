@@ -1,5 +1,9 @@
 package vn.haui.dx.apps.servicedesk.triage;
 
+import vn.haui.dx.hpdi.intelligence.integration.IntelligenceTransport;
+import vn.haui.dx.hpdi.intelligence.integration.TriageResponses;
+import vn.haui.dx.hpdi.intelligence.api.IntelligenceFailure;
+
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
@@ -47,7 +51,7 @@ class TicketTriageIntegrationTest {
     @Autowired ObjectMapper json;
     @Autowired JdbcTemplate jdbc;
     @Autowired vn.haui.dx.core.workflow.internal.WorkflowStateFixture engineState;
-    @MockBean IntelligenceTriageClient intelligence;
+    @MockBean IntelligenceTransport intelligence;
 
     @BeforeEach void fake() {
         doAnswer(invocation -> {
@@ -91,9 +95,9 @@ class TicketTriageIntegrationTest {
             mvc.perform(post(route).with(as(subject, "triage-a", role)))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("SUCCESS"));
         }
-        verify(intelligence, times(3)).triage(argThat(request -> request.input().title().equals(ticket.path("title").asText())
-            && request.input().description().equals(ticket.path("description").asText())
-            && request.context().workspaceId().equals("triage-a")));
+        verify(intelligence, times(3)).triage(argThat(request -> request.request().input().title().equals(ticket.path("title").asText())
+            && request.request().input().description().equals(ticket.path("description").asText())
+            && request.request().context().workspaceId().equals("triage-a")));
     }
 
     @Test void rejectsEveryNonemptyBodyIncludingEmptyObjectAndChunkedInput() throws Exception {
@@ -115,7 +119,7 @@ class TicketTriageIntegrationTest {
         mvc.perform(post(route + "/triage").with(as("triage-owner", "triage-a", "requester")))
             .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("DEGRADED"))
             .andExpect(jsonPath("$.needsReview").value(true));
-        for (TriageFailure failure : List.of(TriageFailure.invalid(), TriageFailure.configuration(), TriageFailure.unavailable(), TriageFailure.timeout())) {
+        for (IntelligenceFailure failure : List.of(IntelligenceFailure.invalid(), IntelligenceFailure.configuration(), IntelligenceFailure.unavailable(), IntelligenceFailure.timeout())) {
             doThrow(failure).when(intelligence).triage(any());
             mvc.perform(post(route + "/triage").with(as("triage-owner", "triage-a", "requester")))
                 .andExpect(status().is(failure.status())).andExpect(content().contentTypeCompatibleWith("application/problem+json"))

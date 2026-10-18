@@ -1,4 +1,6 @@
-package vn.haui.dx.apps.servicedesk.triage;
+package vn.haui.dx.hpdi.intelligence.integration;
+
+import vn.haui.dx.hpdi.intelligence.api.IntelligenceFailure;
 
 import java.net.InetSocketAddress;
 import java.net.ServerSocket;
@@ -17,11 +19,11 @@ import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.params.provider.ValueSource;
 import static org.junit.jupiter.api.Assertions.*;
 
-class HttpIntelligenceTriageClientTest {
+class HttpIntelligenceTransportTest {
     private final ObjectMapper json = new ObjectMapper();
     private HttpServer server;
     private ExecutorService executor;
-    private HttpIntelligenceTriageClient client;
+    private HttpIntelligenceTransport client;
     private int status = 200;
     private String body;
     private String mediaType = "application/json";
@@ -39,8 +41,8 @@ class HttpIntelligenceTriageClientTest {
         client = configured("http://127.0.0.1:" + server.getAddress().getPort(), "synthetic-service-token-for-tests-only");
     }
 
-    private HttpIntelligenceTriageClient configured(String base, String token) {
-        return new HttpIntelligenceTriageClient(new TriageConfiguration.Settings(base, token), json);
+    private HttpIntelligenceTransport configured(String base, String token) {
+        return new HttpIntelligenceTransport(new TriageConfiguration.Settings(base, token), json);
     }
 
     private void respond(HttpExchange exchange) throws java.io.IOException {
@@ -48,7 +50,7 @@ class HttpIntelligenceTriageClientTest {
         assertEquals("POST", exchange.getRequestMethod());
         assertEquals("Bearer synthetic-service-token-for-tests-only", exchange.getRequestHeaders().getFirst("Authorization"));
         assertEquals("application/json", exchange.getRequestHeaders().getFirst("Content-Type"));
-        assertEquals(json.valueToTree(TriageResponses.request()), json.readTree(exchange.getRequestBody()));
+        assertEquals(json.valueToTree(TriageResponses.request().request()), json.readTree(exchange.getRequestBody()));
         try (exchange) {
             if (delayHeaders) Thread.sleep(5000);
             exchange.getResponseHeaders().set("Content-Type", mediaType);
@@ -76,7 +78,7 @@ class HttpIntelligenceTriageClientTest {
         status = upstream;
         var followed = new AtomicInteger();
         server.createContext("/must-not-follow", exchange -> { followed.incrementAndGet(); exchange.close(); });
-        assertEquals(expected, assertThrows(TriageFailure.class, () -> client.triage(TriageResponses.request())).status());
+        assertEquals(expected, assertThrows(IntelligenceFailure.class, () -> client.triage(TriageResponses.request())).status());
         assertEquals(1, calls.get());
         assertEquals(0, followed.get());
     }
@@ -84,50 +86,50 @@ class HttpIntelligenceTriageClientTest {
     @ParameterizedTest @ValueSource(strings = {"not-json", "{} {}", "{\"status\":1,\"status\":2}"})
     void rejectsMalformedDuplicateAndTrailingJson(String value) {
         body = value;
-        assertEquals(502, assertThrows(TriageFailure.class, () -> client.triage(TriageResponses.request())).status());
+        assertEquals(502, assertThrows(IntelligenceFailure.class, () -> client.triage(TriageResponses.request())).status());
     }
 
     @Test void capsResponseAndRejectsWrongMediaType() {
-        body = "x".repeat(HttpIntelligenceTriageClient.MAX_RESPONSE + 1);
-        assertEquals(502, assertThrows(TriageFailure.class, () -> client.triage(TriageResponses.request())).status());
+        body = "x".repeat(HttpIntelligenceTransport.MAX_RESPONSE + 1);
+        assertEquals(502, assertThrows(IntelligenceFailure.class, () -> client.triage(TriageResponses.request())).status());
         body = "{}";
         mediaType = "text/html";
-        assertEquals(502, assertThrows(TriageFailure.class, () -> client.triage(TriageResponses.request())).status());
+        assertEquals(502, assertThrows(IntelligenceFailure.class, () -> client.triage(TriageResponses.request())).status());
     }
 
     @Test void rejectsOversizedUtf8RequestBeforeIo() {
         var input = new TriageRequest("0.1.0", "id", "service-desk", new TriageRequest.Context("lab-a"),
-            new TriageRequest.Input("title", "x".repeat(HttpIntelligenceTriageClient.MAX_REQUEST)));
-        assertEquals(502, assertThrows(TriageFailure.class, () -> client.triage(input)).status());
+            new TriageRequest.Input("title", "x".repeat(HttpIntelligenceTransport.MAX_REQUEST)));
+        assertEquals(502, assertThrows(IntelligenceFailure.class, () -> client.triage(TriageResponses.envelope(input))).status());
         assertEquals(0, calls.get());
     }
 
     @Test void deadlineIncludesHeaders() {
         delayHeaders = true;
-        assertEquals(504, assertThrows(TriageFailure.class, () -> client.triage(TriageResponses.request())).status());
+        assertEquals(504, assertThrows(IntelligenceFailure.class, () -> client.triage(TriageResponses.request())).status());
     }
 
     @Test void deadlineIncludesStalledBody() {
         delayBody = true;
-        assertEquals(504, assertThrows(TriageFailure.class, () -> client.triage(TriageResponses.request())).status());
+        assertEquals(504, assertThrows(IntelligenceFailure.class, () -> client.triage(TriageResponses.request())).status());
     }
 
     @Test void connectionFailureAndDisabledAiDoNotPretendSuccess() throws Exception {
         int port;
         try (var socket = new ServerSocket(0)) { port = socket.getLocalPort(); }
         var refused = configured("http://127.0.0.1:" + port, "synthetic-service-token-for-tests-only");
-        assertEquals(503, assertThrows(TriageFailure.class, () -> refused.triage(TriageResponses.request())).status());
-        assertEquals(503, assertThrows(TriageFailure.class, () -> configured("", "").triage(TriageResponses.request())).status());
+        assertEquals(503, assertThrows(IntelligenceFailure.class, () -> refused.triage(TriageResponses.request())).status());
+        assertEquals(503, assertThrows(IntelligenceFailure.class, () -> configured("", "").triage(TriageResponses.request())).status());
     }
 
     @ParameterizedTest @ValueSource(strings = {"file:///secret", "http://user:pass@localhost", "http://localhost/path", "http://localhost?secret=x", "http://localhost#fragment", "http://localhost:99999"})
     void rejectsInvalidConfigurationWithoutNetwork(String base) {
-        assertEquals(502, assertThrows(TriageFailure.class, () -> configured(base, "synthetic-service-token-for-tests-only").triage(TriageResponses.request())).status());
+        assertEquals(502, assertThrows(IntelligenceFailure.class, () -> configured(base, "synthetic-service-token-for-tests-only").triage(TriageResponses.request())).status());
     }
 
     @Test void rejectsMissingShortOrInvalidCredentialBeforeNetwork() {
         for (String token : new String[] {null, "", "short", "a".repeat(31), "a".repeat(31) + "=", " ".repeat(32), "a".repeat(32) + "\r\nAuthorization: evil"})
-            assertEquals(502, assertThrows(TriageFailure.class, () -> configured("http://127.0.0.1:" + server.getAddress().getPort(), token).triage(TriageResponses.request())).status());
+            assertEquals(502, assertThrows(IntelligenceFailure.class, () -> configured("http://127.0.0.1:" + server.getAddress().getPort(), token).triage(TriageResponses.request())).status());
         assertEquals(0, calls.get());
         assertFalse(new TriageConfiguration.Settings("http://host", "secret-value").toString().contains("secret-value"));
     }

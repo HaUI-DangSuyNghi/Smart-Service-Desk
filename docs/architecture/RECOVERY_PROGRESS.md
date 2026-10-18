@@ -31,3 +31,18 @@ integration; develop and the legacy reference branch are not merged or rewritten
 - Added the reusable WorkInbox and ProcessTimeline contracts and adapters.
 - Validation: 142 Java tests passed with PostgreSQL on Linux/JDK 17,
   failures=0, errors=0, skipped=0; compiled debt was reduced, without new edges.
+
+## BND-03: Java Intelligence capability
+
+- Service Desk calls IntelligenceCapability using persisted ticket input and an
+  app-owned immutable profile identity. It owns the public TicketTriageView.
+- HPDI owns HTTP transport/configuration, bearer credentials, bounded request and
+  response handling, absolute deadlines, strict JSON parsing and contract checks.
+  The existing error/status and DEGRADED behavior remains intact.
+- HumanContext derives the verified actor/workspace. The capability constructs
+  correlation and independently trusted context before invoking the transport.
+  Only the current flat private wire protocol remains until BND-04 updates both
+  Java and Python together to use the versioned trusted envelope.
+- Existing 142 Java regression tests passed with PostgreSQL, without skips;
+  additional arbitrary-profile and denied/mismatched-actor tests cover the new
+  trusted adapter. Transport and schema negative tests moved with their owner.
