@@ -57,5 +57,22 @@
         </plugins>
       </build>
     </profile>
+    <profile>
+      <id>second-domain</id>
+      <properties>
+        <dx.resource.app1>apps/servicedesk/**</dx.resource.app1><dx.resource.app2>apps/samples/**</dx.resource.app2>
+        <dx.resource.migration1>db/migration/V5__servicedesk_ticket.sql</dx.resource.migration1>
+        <dx.resource.migration2>db/migration/V6__decouple_servicedesk_workflow_reference.sql</dx.resource.migration2>
+      </properties>
+      <build><plugins>
+        <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-compiler-plugin</artifactId><configuration>
+          <excludes><exclude>vn/haui/dx/apps/servicedesk/**</exclude><exclude>vn/haui/dx/apps/samples/**</exclude></excludes>
+          <testExcludes><testExclude>vn/haui/dx/apps/servicedesk/**</testExclude></testExcludes>
+        </configuration></plugin>
+        <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-surefire-plugin</artifactId><configuration>
+          <systemPropertyVariables><dx.proof.second-domain>true</dx.proof.second-domain></systemPropertyVariables>
+        </configuration></plugin>
+      </plugins></build>
+    </profile>
   </profiles>
 </project>

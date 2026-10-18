@@ -89,3 +89,23 @@ integration; develop and the legacy reference branch are not merged or rewritten
   bytecode checks. The generic Python image verifies externally mounted profiles.
 - Validation: assembled Java regression passed; standalone Core passed 69 tests
   with PostgreSQL, failures=0, errors=0, skipped=0. No migration exceptions remain.
+
+## BND-07: second-domain proof and strict closure
+
+- Room Request owns a minimal request model, REST projections, process contribution,
+  BPMN, V7 migration and external Intelligence profile. It uses the existing
+  Human, Process, Data and Intelligence public capabilities without modifying
+  Core production, HPDI production or generic Python runtime source.
+- The `second-domain` profile excludes Service Desk classes/resources/migrations.
+  Tests assert absent Service Desk classes/table, exact knowledge provenance,
+  shared inbox/process completion, trusted identity and visibility enforcement.
+- The real second-domain HTTP test uses the unchanged generic Python image with
+  only the Room Request profile; it returns BOOKING/NORMAL through the actual
+  application -> HPDI -> Python flow while Service Desk is absent.
+- Strict mode rejects every migration exception. CI runs isolated Core, isolated
+  second-domain and real second-domain Python gates. Application/HPDI OpenAPI
+  contracts and cross-document local validation cover the public projections.
+- Validation: 151 assembled Java/PostgreSQL tests, 11 isolated second-domain tests,
+  1 real second-domain Java/Python test and 29 source mutation tests passed, all
+  without failures/errors/skips. Real Core retrieval acceptance also passed all
+  eight authorization/provenance scenarios through Keycloak/APISIX.

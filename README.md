@@ -1,8 +1,11 @@
-# DX-Lab HaUI: Headless Core
+# DX-Lab HaUI: DX-OS platform
 
 Post-merge integration: see [BE-POSTMERGE-01](docs/BE_POSTMERGE01.md) for the
 isolated Java/Python demo, FE proxy, acceptance evidence and release blockers.
-The default startup is Core-only; enable Intelligence with the documented overlays.
+The default startup assembles Core, HPDI and applications; enable the private Python runtime with the documented overlays.
+Strict boundary recovery BND-00 through BND-07 is implemented; see
+[ownership and gates](docs/architecture/BOUNDARY_DEBT.md) and
+[runtime configuration](docs/architecture/STRICT_BOUNDARY_OPERATIONS.md).
 Production security G9 remains FAIL; release remains BLOCKED.
 
 <p align="center">

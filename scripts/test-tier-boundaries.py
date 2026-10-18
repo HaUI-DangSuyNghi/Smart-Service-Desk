@@ -165,6 +165,12 @@ class BoundaryGuardTest(unittest.TestCase):
         self.write(path, 'class Good {}')
         self.assertTrue(any('stale debt' in error for error in guard.check(self.root)))
 
+    def test_strict_mode_permits_no_migration_exception(self):
+        self.write(JAVA + 'apps/example/Bad.java', 'import vn.haui.dx.core.workflow.api.ProcessRef;')
+        baseline = self.baseline()
+        baseline['mode'] = 'strict'
+        self.assertTrue(any('no migration exceptions' in error for error in guard.validate_baseline(baseline)))
+
     def test_invalid_expired_wildcard_duplicate_or_incomplete_debt_fails(self):
         self.write(JAVA + 'apps/example/Bad.java', 'import vn.haui.dx.core.workflow.api.ProcessRef;')
         for field, value in (('expires', '2026-10-18'), ('expires', 'yesterday'), ('owner', ''),

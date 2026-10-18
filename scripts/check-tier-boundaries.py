@@ -159,6 +159,10 @@ def validate_baseline(baseline, today=None):
     errors, ids = [], set()
     if baseline.get('schemaVersion') != 1:
         errors.append('Unsupported boundary baseline schemaVersion')
+    if baseline.get('mode', 'recovery') not in ('recovery', 'strict'):
+        errors.append('Invalid boundary enforcement mode')
+    if baseline.get('mode') == 'strict' and (baseline.get('source') or baseline.get('java')):
+        errors.append('Strict mode permits no migration exceptions')
     for section in ('source', 'java'):
         entries = baseline.get(section)
         if not isinstance(entries, list):

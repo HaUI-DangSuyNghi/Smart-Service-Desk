@@ -1,6 +1,6 @@
 # ADR-005: strict DX-OS boundaries and incremental recovery
 
-Date: 2026-10-18. Status: recovery baseline implemented; integration pending.
+Date: 2026-10-19. Status: strict recovery implemented locally; integration pending.
 Functional baseline: `develop@728cdc3`. Architecture reference:
 `refactor/dxos-three-tier-boundary@cdca19f`.
 
@@ -37,24 +37,27 @@ explicit recovery instruction; the existing wheel distribution identity remains
 
 ## BND-00 enforcement
 
-Current develop does not satisfy the strict target. The source scanner and
-ArchUnit test enforce an explicit, expiring inventory in
+The original develop baseline did not satisfy the strict target. The source scanner
+and ArchUnit test recorded and reduced an exact, expiring inventory in
 [boundary-debt.json](boundary-debt.json). Exceptions match exact paths, rules
 and values; they do not disable an entire file or package. New edges, extra
 source occurrences, stale entries, duplicate entries, missing owners and expired
 entries fail checks. Zero-debt directions are enforced immediately.
 
-The inventory is migration debt, not approval for new dependencies. Changes
+All inventory entries are now closed and strict mode permits no migration exceptions.
+The original inventory was migration debt, not approval for new dependencies. Changes
 must remove relevant entries as debt is paid. Reviewers must reject additions
 which merely hide new architecture drift. See [BOUNDARY_DEBT.md](BOUNDARY_DEBT.md)
 for phases, limits and verification commands.
 
 ## Scope and consequences
 
-BND-00 changes architecture checks and documentation without runtime refactoring.
+BND-00 established architecture checks without runtime refactoring; BND-01 through
+BND-07 now implement workflow data isolation, public HPDI contracts, external profiles,
+Human/Data alignment, assembly separation and second-domain reuse.
 The explicitly requested `hdpi` rename is a separate change on the same recovery
 branch, including import sites, packaging resources, Docker entrypoint and CI.
-Frontend restructuring, RoomRequest, profile extraction and broad layout changes
-remain in later phases. Functional CI stays enabled alongside architecture CI.
-This baseline does not assert that strict recovery or second-domain reuse is
-complete.
+Frontend restructuring remains outside this recovery. Room Request is a minimal
+reuse proof; its profiles/resources and semantics belong to that application. Functional CI stays enabled alongside architecture CI.
+Local evidence is recorded in REFACTOR_VALIDATION.md; remote integration approval
+and branch-protection configuration remain external.

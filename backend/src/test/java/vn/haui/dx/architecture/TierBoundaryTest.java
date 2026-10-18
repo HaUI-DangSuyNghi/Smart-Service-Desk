@@ -95,6 +95,8 @@ class TierBoundaryTest {
         var baseline = mapper.readTree(root.resolve("docs/architecture/boundary-debt.json").toFile());
         var errors = new ArrayList<String>();
         assertTrue(baseline.path("schemaVersion").asInt() == 1 && baseline.path("java").isArray(), "Invalid baseline schema");
+        if ("strict".equals(baseline.path("mode").asText()) && !baseline.path("java").isEmpty())
+            errors.add("Strict mode permits no migration exceptions");
         Map<Edge, JsonNode> known = new TreeMap<>();
         var ids = new java.util.HashSet<String>();
         for (JsonNode entry : baseline.path("java")) {

@@ -2,5 +2,6 @@
   "schemaVersion": 1,
   "baselineCommit": "728cdc3",
   "source": [],
-  "java": []
+  "java": [],
+  "mode": "strict"
 }

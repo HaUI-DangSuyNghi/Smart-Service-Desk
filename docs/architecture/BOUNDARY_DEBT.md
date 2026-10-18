@@ -1,78 +1,64 @@
-# BND-00 recovery inventory
+# Strict boundary debt: closed
 
-The functional source of truth is `develop@728cdc3`; the old architecture branch
-is a design reference. Only BND-00 is implemented on this branch. Start BND-01
-from develop after BND-00 merges; do not stack all remaining phases here.
+Recovery status: BND-00 through BND-07 implemented. The authoritative
+[boundary-debt.json](boundary-debt.json) is in `strict` mode with **zero source
+exceptions and zero Java dependency exceptions**. Strict mode rejects new waivers.
+The original baseline inventoried 51 source violations and 35 compiled edges;
+[RECOVERY_PROGRESS.md](RECOVERY_PROGRESS.md) records their removal by phase.
 
-The authoritative inventory is [boundary-debt.json](boundary-debt.json):
-51 source entries and 35 compiled class dependency edges, reviewed against the
-current source. These overlap intentionally: a source import and the resulting
-compiled edge are distinct guard observations of the same architecture debt.
-Every entry has an exact repository path, rule, value, occurrence count, unique
-ID, accountable role, removal phase and expiry (`2026-12-18`, exclusive).
+## Enforced ownership
 
-| Removal phase | Current debt / required correction |
-| --- | --- |
-| BND-01 | TicketRepository reads `process_scope`, `act_hi_procinst`, `act_ru_task`; historical V5 has a cross-owner FK. Use authorized observations and a forward migration. |
-| BND-02 | Direct workflow imports and exposed Core process models; three BPMN resources in shared process resources; two business process keys in ApprovalProcesses. Add Process capability and preserve deployment identities. |
-| BND-03 | Service Desk Java HTTP and schema-validator dependencies. Re-home transport and trusted context in H-P-D-I Intelligence. |
-| BND-04 | Service Desk constants in Python runtime/evaluation/CLI; nine bundled profile artifacts. Make the runtime profile-driven and app profiles external. |
-| BND-05 | Direct Core identity, audit, pagination and error/context contracts. Introduce the required Human/Data or public capability contracts and app representations. |
-| BND-06 | Bootstrap/composition ownership remains to be separated; no runtime rename in BND-00. |
-| BND-07 | Add second-domain reuse and standalone-Core proof, then close all remaining debt. |
+- Applications call public HPDI capabilities and own their REST projections,
+  persistence, BPMN, profile/taxonomy and business policy.
+- HPDI public APIs are Core-independent. Implementations consume Core public
+  contracts; private Core implementations and application imports are forbidden.
+- Core has no upper-tier dependency. Only workflow internals depend on Flowable.
+  No lower tier imports assembly. HPDI and Python runtime contain no app literals.
+- Production app SQL reads app-owned tables. Historical V5's cross-owner FK is
+  removed by V6; historical V1-V5 remain unchanged. Room Request V7 has no cross-owner FK.
+- Generic wheels carry runtime/contracts, with explicit external profile roots.
+  Public app OpenAPI schemas do not reference Core DTOs.
+
+The source SQL scanner checks literal SQL, CTEs, qualified tables and effective
+forward FK changes; it is not a general dynamic-SQL evaluator. App table prefixes
+are part of the ownership convention. Compiled Java checks also catch fully
+qualified and signature dependencies that bypass source imports.
 
 ## Gates
-
-Run from the repository root (Python 3.12 and Java 17):
 
 ```sh
 python scripts/check-tier-boundaries.py
 python scripts/test-tier-boundaries.py
-mvn -B -f backend/pom.xml -Dtest=TierBoundaryTest test
+mvn -B -f backend/pom.xml clean verify
+mvn -B -f backend/pom.xml -Pcore-only clean verify
+mvn -B -f backend/pom.xml -Psecond-domain -Dtest=RoomRequestIntegrationTest,TierBoundaryTest,CoreKnowledgeCatalogTest,CoreProcessCapabilitiesTest,WorkspaceActivityJournalTest,TrustedIntelligenceCapabilityTest clean verify
 ```
 
-Source rules cover Java imports, app SQL literals/resources, cross-owner FKs in
-migrations, process resource placement, Core process keys, Python AST app literals
-and imports, bundled profile artifacts and existing frontend platform imports.
-The SQL guard recognizes normal literal SQL, CTE aliases and schema-qualified
-tables; it is not a complete SQL parser and does not evaluate dynamically built
-identifiers. The migration ownership vocabulary currently includes Core,
-`hpdi_*`, `servicedesk_*` and `roomrequest_*`; extend it with ownership tests when
-adding another domain. Refactoring SQL through a capability remains mandatory.
+Database-backed tests require disposable `file_storage` and `workflow_approval`
+PostgreSQL databases, through `FILE_TEST_*` and `WORKFLOW_TEST_*` settings. Use
+Linux/JDK 17 for filesystem permission/symlink regression. `scripts/test-file.ps1`
+provisions isolated databases and rejects skipped tests; it accepts `-MavenProfile`
+and `-Tests`. Build its `dx-platform-build:0.1.0` image from the repository root.
 
-The Java gate imports production bytecode, excluding tests, and checks exact
-origin-class/target-class edges. It also catches fully qualified references
-which do not appear in imports. Source occurrences cannot grow within an
-existing exception; compiled exceptions allow only the recorded class pair.
+CI's Tier boundaries workflow enforces source/bytecode rules, Core-only and
+second-domain isolation, and real second-domain Java/Python reuse. Existing
+functional and security acceptance workflows remain active. Repository branch
+protection is configured externally; a local run does not assert remote CI status.
 
-New Application APIs must use application-owned representations. Existing
-`ProcessRef`/`ProcessHistory` exposure is inventoried as Core dependencies;
-OpenAPI representation migration follows BND-02. Standalone-Core and second-domain
-runtime tests, generic wheel profile isolation and composition-root proof are
-later-phase gates, not claimed by the BND-00 CI workflow.
+The diagnostic `--inventory` and `-Dboundary.inventory=true` options never update
+or waive the strict baseline. Do not change enforcement to recovery mode to hide
+new dependencies. Define a public capability or fix ownership instead.
 
-CI runs both architecture jobs for every pull request into develop, on develop
-pushes and manually. Existing functional workflows are unchanged except for
-the requested Python module path. Gate status alone does not configure GitHub
-branch protection; require these job checks in repository settings as appropriate.
+## Reuse proof
 
-## Paying debt
+Room Request is a small architecture proof using Human, Process, Data and
+Intelligence. It contributes its own process, migration, public representations
+and profile. Its addition changes **zero Core production files, zero HPDI
+production files and zero hdpi runtime files** relative to the completed
+composition baseline. The second-domain profile excludes Service Desk code,
+resources and migrations; its real Python test supplies only the Room Request
+profile. The default Service Desk deployment keeps the Service Desk profile root.
+This proof does not represent a new Room Request product roadmap.
 
-Remove an entry when its exact violation disappears, or decrease its occurrence
-count when only some duplicates are removed. Both stale and expired entries fail
-checks. Adding a new entry or extending expiry requires architecture review of
-the concrete dependency, owner and removal plan; do not regenerate the baseline
-as a routine way to make CI pass.
-
-Diagnostic inventory commands do not update the baseline and do not constitute
-an enforcement result:
-
-```sh
-python scripts/check-tier-boundaries.py --inventory
-mvn -B -f backend/pom.xml -Dtest=TierBoundaryTest -Dboundary.inventory=true test
-# Java diagnostic output: backend/target/boundary-java-inventory.json
-```
-
-Historical migrations, immutable profiles and business behavior are preserved in
-this phase. The legacy refactor branch remains untouched; no remote snapshot tag
-or push is required for this local recovery commit.
+See [STRICT_BOUNDARY_OPERATIONS.md](STRICT_BOUNDARY_OPERATIONS.md) for runtime
+configuration and [REFACTOR_VALIDATION.md](REFACTOR_VALIDATION.md) for evidence.
