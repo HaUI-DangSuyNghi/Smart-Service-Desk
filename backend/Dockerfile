@@ -1,8 +1,9 @@
 FROM maven:3.9.9-eclipse-temurin-17 AS build
 WORKDIR /build
-COPY pom.xml .
+COPY backend/pom.xml .
 RUN mvn -B dependency:go-offline
-COPY src src
+COPY backend/src src
+COPY contracts/intelligence/v1 /contracts/intelligence/v1
 RUN mvn -B verify
 FROM eclipse-temurin:17.0.12_7-jre-jammy
 WORKDIR /app

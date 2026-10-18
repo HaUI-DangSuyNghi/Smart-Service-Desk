@@ -9,6 +9,7 @@ Reviewed 2026-10-07. Versions are compatibility pins, not claims of latest relea
 
 | Component | Pinned version / origin | Upstream license | Role |
 | --- | --- | --- | --- |
+| networknt JSON Schema Validator | `com.networknt:json-schema-validator:1.5.9`, Maven Central | Apache-2.0 | Application triage Draft 2020-12 schema validation; resolved transitive inventory/security still requires release review |
 | Spring Boot | 3.3.4; `org.springframework.boot:spring-boot-starter-parent` from Maven Central | Apache-2.0 | Web, validation, resource-server, actuator, JDBC dependency management |
 | Flowable OSS | 7.1.0; `org.flowable:flowable-spring-boot-starter-process` from Maven Central | Apache-2.0 | Embedded BPMN runtime/history |
 | Keycloak | `quay.io/keycloak/keycloak:26.0.7` | Apache-2.0; image includes additional OS packages | Identity provider |

@@ -32,7 +32,7 @@ $stage = 'postgresql'
 try {
     Run-Python -c 'import yaml, openapi_spec_validator, openapi_schema_validator'
     & "$PSScriptRoot/setup.ps1"
-    Run-Docker build --target build -t dx-core-build:0.1.0 ./backend
+    Run-Docker build --target build -t dx-core-build:0.1.0 -f backend/Dockerfile .
     & "$PSScriptRoot/test-file.ps1"
     $results.postgresql = 'PASS'
     $stage = 'contracts'

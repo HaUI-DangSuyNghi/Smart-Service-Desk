@@ -2,12 +2,44 @@ openapi: 3.0.3
 info:
   title: Smart Service Desk Ticket Foundation
   version: 0.1.0
-  description: Application API. Core owns authentication, workflow and audit. No AI bridge or private attachments.
+  description: Application API. Core owns authentication, workflow and audit. Triage is transient and never changes Ticket or Workflow state. Private attachments are out of scope.
 servers:
   - url: http://localhost:9080/api/apps/servicedesk/v1
 security:
   - bearer: []
 paths:
+  /workspaces/{workspace}/tickets/{id}/triage:
+    parameters:
+      - {$ref: 'core.yaml#/components/parameters/Workspace'}
+      - {$ref: '#/components/parameters/TicketId'}
+    post:
+      operationId: triageTicket
+      description: 'No request body is allowed: any body bytes, including {}, return 400. Requester sees own tickets; agent/coordinator sees workspace tickets. Input and profile are server-selected. The response is validated against contracts/intelligence/v1/triage-result.schema.json plus correlation, pinned profile and literal evidence checks. SUCCESS is advice only. DEGRADED has null result/explanation/runtime, empty evidence and needsReview=true. Never infer authorization or workflow actions from a suggestion.'
+      responses:
+        '200':
+          description: Valid logical SUCCESS or DEGRADED envelope, unchanged. Neither is a confirmed business decision.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/TriageResponse'}
+        '400': {$ref: 'core.yaml#/components/responses/BadRequest'}
+        '401': {$ref: 'core.yaml#/components/responses/Unauthorized'}
+        '403': {$ref: 'core.yaml#/components/responses/Forbidden'}
+        '404': {$ref: 'core.yaml#/components/responses/NotFound'}
+        '502':
+          description: Upstream contract failure or integration authentication/configuration failure; never an end-user login challenge.
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/TriageProblem'}
+        '503':
+          description: AI not configured, connection failure, upstream 429 or upstream 5xx. Manual workflow remains available.
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/TriageProblem'}
+        '504':
+          description: AI overall HTTP deadline exceeded, including response-body transfer.
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/TriageProblem'}
   /workspaces/{workspace}/tickets:
     parameters:
       - {$ref: 'core.yaml#/components/parameters/Workspace'}
@@ -129,6 +161,75 @@ components:
       required: true
       schema: {type: string, format: uuid}
   schemas:
+    TriageProblem:
+      type: object
+      required: [type, title, status, detail, code]
+      properties:
+        type: {type: string}
+        title: {type: string}
+        status: {type: integer, enum: [502, 503, 504]}
+        detail: {type: string}
+        instance: {type: string}
+        requestId: {type: string}
+        code: {type: string, enum: [INTELLIGENCE_CONTRACT_FAILED, INTELLIGENCE_INTEGRATION_FAILED, INTELLIGENCE_UNAVAILABLE, INTELLIGENCE_TIMEOUT]}
+    TriageResponse:
+      type: object
+      additionalProperties: false
+      required: [contractVersion, requestId, profile, workspaceId, status, result, evidence, explanation, runtime, needsReview, error]
+      properties:
+        contractVersion: {type: string, enum: ['0.1.0']}
+        requestId: {type: string, minLength: 1}
+        profile: {type: string, enum: [service-desk]}
+        workspaceId: {type: string, minLength: 1}
+        status: {type: string, enum: [SUCCESS, DEGRADED]}
+        needsReview: {type: boolean}
+        result:
+          type: object
+          nullable: true
+          additionalProperties: false
+          required: [category, priority, suggestedGroup]
+          properties:
+            category: {type: string, minLength: 1}
+            priority: {type: string, minLength: 1}
+            suggestedGroup: {type: string, minLength: 1}
+        evidence:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [type, field, text]
+            properties:
+              type: {type: string, enum: [INPUT]}
+              field: {type: string, enum: [title, description]}
+              text: {type: string, minLength: 1}
+        explanation:
+          type: object
+          nullable: true
+          additionalProperties: false
+          required: [matchedRules, impact, urgency, reasonCode, text]
+          properties:
+            matchedRules: {type: array, uniqueItems: true, items: {type: string, minLength: 1}}
+            impact: {type: string, nullable: true}
+            urgency: {type: string, nullable: true}
+            reasonCode: {type: string, enum: [CLASSIFIED, ROOT_CAUSE_CONFLICT, INSUFFICIENT_INFORMATION]}
+            text: {type: string, minLength: 1}
+        runtime:
+          type: object
+          nullable: true
+          additionalProperties: false
+          required: [engine, profileVersion]
+          properties:
+            engine: {type: string, minLength: 1}
+            profileVersion: {type: string, enum: ['service-desk@0.2.0']}
+            rulesVersion: {type: string, minLength: 1}
+            modelVersion: {type: string, minLength: 1}
+        error:
+          type: object
+          nullable: true
+          additionalProperties: false
+          required: [code]
+          properties:
+            code: {type: string, enum: [INTELLIGENCE_UNAVAILABLE]}
     TicketStatistics:
       type: object
       additionalProperties: false
