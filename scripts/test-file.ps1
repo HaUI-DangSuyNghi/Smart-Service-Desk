@@ -13,7 +13,7 @@ try {
     docker network create --internal $network | Out-Null
     if ($LASTEXITCODE -ne 0) { throw 'Cannot create isolated network' }
     $networkCreated = $true
-    docker run -d --name $database --network $network --network-alias database --tmpfs /var/lib/postgresql/data -e POSTGRES_DB=file_storage -e POSTGRES_USER=workflow -e "POSTGRES_PASSWORD=$password" postgres:16.6-bookworm | Out-Null
+    docker run -d --name $database --network $network --network-alias database --tmpfs /var/lib/postgresql/data -e POSTGRES_DB=file_storage -e POSTGRES_USER=workflow -e "POSTGRES_PASSWORD=$password" postgres:16.15-bookworm@sha256:0ea6700a3b4f0ae6ce746519073558aed4d88a79d8d07622a9a644946c7319c4 | Out-Null
     if ($LASTEXITCODE -ne 0) { throw 'Cannot start isolated database' }
     $databaseCreated = $true
     $ready = $false
@@ -37,7 +37,7 @@ try {
         if ([int]$suite.skipped -ne 0 -or [int]$suite.failures -ne 0 -or [int]$suite.errors -ne 0) { throw "Non-passing tests in $($report.Name)" }
         $total += [int]$suite.tests
     }
-    Write-Host "PASS $total tests; failures=0 errors=0 skipped=0 (PostgreSQL 16.6)"
+    Write-Host "PASS $total tests; failures=0 errors=0 skipped=0 (PostgreSQL 16.15)"
 } finally {
     if ($databaseCreated) { docker rm -f -v $database | Out-Null }
     if ($networkCreated) { docker network rm $network | Out-Null }

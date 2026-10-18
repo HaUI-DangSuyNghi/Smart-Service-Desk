@@ -11,7 +11,7 @@ try {
     docker network create --internal $network | Out-Null
     if ($LASTEXITCODE -ne 0) { throw 'Cannot create isolated network' }
     $networkCreated = $true
-    docker run -d --name $database --network $network --network-alias database --tmpfs /var/lib/postgresql/data -e POSTGRES_DB=workflow_approval -e POSTGRES_USER=workflow -e "POSTGRES_PASSWORD=$password" postgres:16.6-bookworm | Out-Null
+    docker run -d --name $database --network $network --network-alias database --tmpfs /var/lib/postgresql/data -e POSTGRES_DB=workflow_approval -e POSTGRES_USER=workflow -e "POSTGRES_PASSWORD=$password" postgres:16.15-bookworm@sha256:0ea6700a3b4f0ae6ce746519073558aed4d88a79d8d07622a9a644946c7319c4 | Out-Null
     if ($LASTEXITCODE -ne 0) { throw 'Cannot start isolated database' }
     $databaseCreated = $true
     $ready = $false

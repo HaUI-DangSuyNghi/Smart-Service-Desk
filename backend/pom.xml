@@ -1,9 +1,11 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0">
   <modelVersion>4.0.0</modelVersion>
-  <parent><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-parent</artifactId><version>3.3.4</version></parent>
+  <parent><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-parent</artifactId><version>3.3.13</version></parent>
   <groupId>vn.haui.dx</groupId><artifactId>dx-platform</artifactId><version>0.1.0-SNAPSHOT</version>
   <properties>
     <java.version>17</java.version>
+    <tomcat.version>10.1.61</tomcat.version>
+    <postgresql.version>42.7.12</postgresql.version>
     <dx.resource.app1>__none__</dx.resource.app1><dx.resource.app2>__none__</dx.resource.app2>
     <dx.resource.migration1>__none__</dx.resource.migration1><dx.resource.migration2>__none__</dx.resource.migration2><dx.resource.migration3>__none__</dx.resource.migration3>
   </properties>

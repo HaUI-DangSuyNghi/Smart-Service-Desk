@@ -12,6 +12,10 @@ services:
       JWT_ISSUER: http://localhost:${INT01_KEYCLOAK_PORT:-18081}/realms/dx-lab
       INTELLIGENCE_TRIAGE_BASE_URL: http://intelligence:8000
   gateway:
+    image: ${INT01_PROJECT:?Use a fresh int01 project}-gateway:ci
+    build:
+      labels:
+        org.opencontainers.image.revision: ${INT01_SOURCE_SHA:?Set current commit SHA}
     ports: !override ["127.0.0.1:${INT01_GATEWAY_PORT:-19080}:9080"]
   intelligence:
     image: ${INT01_PROJECT:?Use a fresh int01 project}-intelligence:ci
