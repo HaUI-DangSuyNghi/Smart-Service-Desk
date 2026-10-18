@@ -38,6 +38,32 @@ jobs:
           git rev-parse HEAD | tee .local/int01/source-commit.txt
           echo "INT01_SOURCE_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"
           echo "INT01_PROJECT=int01-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}" >> "$GITHUB_ENV"
+      - name: Validation-only combined ancestry and hosted runner provenance
+        run: |
+          git merge-base --is-ancestor 728cdc3d1b8847b6fd70dca210fa7a8455293e3e HEAD
+          git merge-base --is-ancestor 43df9d745cbfb190cdfca8ac9c08f080c0851b36 HEAD
+          git merge-base --is-ancestor 0d69276caa73f4a0fb30899e7db7c4d8db16a990 HEAD
+          test "$(git diff --name-only 0d69276caa73f4a0fb30899e7db7c4d8db16a990 HEAD)" = '.github/workflows/intelligence-triage-e2e.yml'
+          docker version --format '{{json .}}' > .local/int01/docker-version.json
+          cat /etc/os-release > .local/int01/runner-os.txt
+          python - <<'PY'
+          import json, os, subprocess
+          from pathlib import Path
+          assert os.environ['RUNNER_ENVIRONMENT'] == 'github-hosted'
+          assert os.environ['RUNNER_OS'] == 'Linux'
+          def git(*args):
+              return subprocess.check_output(['git', *args], text=True).strip()
+          report = dict(developParent='728cdc3d1b8847b6fd70dca210fa7a8455293e3e',
+                        securitySource='43df9d745cbfb190cdfca8ac9c08f080c0851b36',
+                        combinedMergeCommit='0d69276caa73f4a0fb30899e7db7c4d8db16a990',
+                        combinedSourceTree=git('rev-parse', '0d69276caa73f4a0fb30899e7db7c4d8db16a990^{tree}'),
+                        checkedOutCommit=git('rev-parse', 'HEAD'), checkedOutTree=git('rev-parse', 'HEAD^{tree}'),
+                        githubSha=os.environ['GITHUB_SHA'], runId=os.environ['GITHUB_RUN_ID'],
+                        runAttempt=os.environ['GITHUB_RUN_ATTEMPT'], runnerName=os.environ['RUNNER_NAME'],
+                        runnerEnvironment=os.environ['RUNNER_ENVIRONMENT'], runnerOs=os.environ['RUNNER_OS'])
+          Path('.local/int01/hosted-provenance.json').write_text(json.dumps(report, indent=2))
+          print(json.dumps(report, indent=2))
+          PY
       - name: G1 full Java and disposable PostgreSQL regression
         run: |
           password=$(openssl rand -hex 32)
@@ -66,6 +92,11 @@ jobs:
           Path('.local/int01/java-regression.json').write_text(json.dumps(totals, indent=2))
           print('PASS all Java/PostgreSQL tests without skips:', totals)
           PY
+      - name: Validation-only pinned PostgreSQL identity and SQL diagnostics
+        run: |
+          docker image inspect postgres:16.15-bookworm@sha256:0ea6700a3b4f0ae6ce746519073558aed4d88a79d8d07622a9a644946c7319c4 > .local/int01/postgres-image.json
+          docker logs "$INT01_PROJECT-regression" > .local/int01/postgres-startup.log 2>&1
+          docker exec "$INT01_PROJECT-regression" psql -v ON_ERROR_STOP=1 -U workflow -d file_storage -Atc 'SELECT current_user, current_database(), version(); SELECT 1;' | tee .local/int01/postgres-sql.txt
       - name: G2 current AI-02 AI-03 and HTTP source and installed-wheel regression
         run: |
           python -m pip install -r intelligence/requirements.lock
@@ -141,10 +172,14 @@ jobs:
               images.append(dict(tag=tag, id=image['Id'], revision=revision))
           Path('.local/int01/images.json').write_text(json.dumps(images, indent=2))
           PY
+      - name: Validation-only real loopback PKCE protocol (not browser UI)
+        run: python scripts/acceptance/browser-pkce.py --identity-url http://localhost:18081 --core-url http://localhost:19080 --output .local/int01/browser-pkce.json
       - name: G9 image inventory and vulnerability assessment (not release approval)
         shell: pwsh
         run: |
           ./scripts/scan-core.ps1 -Run "scan-$env:INT01_PROJECT" -CacheVolume "$env:INT01_PROJECT-trivy-cache" -Images @("$env:INT01_PROJECT-core:ci", "$env:INT01_PROJECT-intelligence:ci", 'postgres:16.15-bookworm@sha256:0ea6700a3b4f0ae6ce746519073558aed4d88a79d8d07622a9a644946c7319c4', 'quay.io/keycloak/keycloak:26.0.8@sha256:09a381c715ab0b111835b70f2905955274843a219c6f27efb348e4d9f4086858', "$env:INT01_PROJECT-gateway:ci") -ReportOnly
+          python scripts/security/export-inventory.py ".local/scan-$env:INT01_PROJECT" ".local/scan-$env:INT01_PROJECT/inventory.csv"
+          if ($LASTEXITCODE -ne 0) { throw 'Finding inventory export failed' }
       - name: Record exact tested commit and release gates
         if: always()
         run: python scripts/intelligence/summarize-integration.py
@@ -156,6 +191,13 @@ jobs:
           include-hidden-files: true
           path: |
             .local/int01/source-commit.txt
+            .local/int01/hosted-provenance.json
+            .local/int01/docker-version.json
+            .local/int01/runner-os.txt
+            .local/int01/postgres-image.json
+            .local/int01/postgres-startup.log
+            .local/int01/postgres-sql.txt
+            .local/int01/browser-pkce.json
             .local/int01/*summary.json
             .local/int01/java-regression.json
             .local/int01/gateway-triage.json
@@ -169,6 +211,7 @@ jobs:
             .local/scan-int01-*/summary.json
             .local/scan-int01-*/scanner-version.txt
             .local/scan-int01-*/image-*.json
+            .local/scan-int01-*/inventory.csv
       - name: Stop ONLY this run's disposable containers
         if: always()
         run: |
