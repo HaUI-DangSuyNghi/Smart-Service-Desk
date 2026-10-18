@@ -1,0 +1,132 @@
+{
+  "backend/src/main/java/vn/haui/dx/apps/servicedesk/ServiceDeskProcess.java:core-import:vn.haui.dx.core.workflow.api.ProcessPolicy": {
+    "debt": "BD-01",
+    "owner": "Backend",
+    "removal": "ARC-06"
+  },
+  "backend/src/main/java/vn/haui/dx/apps/servicedesk/ServiceDeskProcess.java:core-import:vn.haui.dx.core.workflow.api.ProcessRegistration": {
+    "debt": "BD-01",
+    "owner": "Backend",
+    "removal": "ARC-06"
+  },
+  "backend/src/main/java/vn/haui/dx/apps/servicedesk/ServiceDeskProcess.java:core-import:vn.haui.dx.core.identity.api.WorkspaceRole.*": {
+    "debt": "BD-01",
+    "owner": "Backend",
+    "removal": "ARC-06"
+  },
+  "backend/src/main/java/vn/haui/dx/apps/servicedesk/Ticket.java:core-import:vn.haui.dx.core.workflow.api.ProcessRef": {
+    "debt": "BD-01",
+    "owner": "Backend",
+    "removal": "ARC-06"
+  },
+  "backend/src/main/java/vn/haui/dx/apps/servicedesk/TicketController.java:core-import:vn.haui.dx.core.common.Page": {
+    "debt": "BD-01",
+    "owner": "Backend",
+    "removal": "ARC-06"
+  },
+  "backend/src/main/java/vn/haui/dx/apps/servicedesk/TicketController.java:core-import:vn.haui.dx.core.common.PageRequest": {
+    "debt": "BD-01",
+    "owner": "Backend",
+    "removal": "ARC-06"
+  },
+  "backend/src/main/java/vn/haui/dx/apps/servicedesk/TicketController.java:core-import:vn.haui.dx.core.workflow.api.ProcessHistory": {
+    "debt": "BD-01",
+    "owner": "Backend",
+    "removal": "ARC-06"
+  },
+  "backend/src/main/java/vn/haui/dx/apps/servicedesk/TicketRepository.java:core-import:vn.haui.dx.core.common.Page": {
+    "debt": "BD-01",
+    "owner": "Backend",
+    "removal": "ARC-06"
+  },
+  "backend/src/main/java/vn/haui/dx/apps/servicedesk/TicketRepository.java:core-import:vn.haui.dx.core.common.PageRequest": {
+    "debt": "BD-01",
+    "owner": "Backend",
+    "removal": "ARC-06"
+  },
+  "backend/src/main/java/vn/haui/dx/apps/servicedesk/TicketRepository.java:core-import:vn.haui.dx.core.workflow.api.ProcessRef": {
+    "debt": "BD-01",
+    "owner": "Backend",
+    "removal": "ARC-06"
+  },
+  "backend/src/main/java/vn/haui/dx/apps/servicedesk/TicketRepository.java:internal-sql:act_ru_task": {
+    "debt": "BD-02",
+    "owner": "Backend",
+    "removal": "ARC-04"
+  },
+  "backend/src/main/java/vn/haui/dx/apps/servicedesk/TicketRepository.java:internal-sql:act_hi_procinst": {
+    "debt": "BD-02",
+    "owner": "Backend",
+    "removal": "ARC-04"
+  },
+  "backend/src/main/java/vn/haui/dx/apps/servicedesk/TicketRepository.java:internal-sql:process_scope": {
+    "debt": "BD-02",
+    "owner": "Backend",
+    "removal": "ARC-04"
+  },
+  "backend/src/main/java/vn/haui/dx/apps/servicedesk/TicketService.java:core-import:vn.haui.dx.core.audit.api.AuditService": {
+    "debt": "BD-01",
+    "owner": "Backend",
+    "removal": "ARC-06"
+  },
+  "backend/src/main/java/vn/haui/dx/apps/servicedesk/TicketService.java:core-import:vn.haui.dx.core.common.CoreException": {
+    "debt": "BD-01",
+    "owner": "Backend",
+    "removal": "ARC-06"
+  },
+  "backend/src/main/java/vn/haui/dx/apps/servicedesk/TicketService.java:core-import:vn.haui.dx.core.common.Page": {
+    "debt": "BD-01",
+    "owner": "Backend",
+    "removal": "ARC-06"
+  },
+  "backend/src/main/java/vn/haui/dx/apps/servicedesk/TicketService.java:core-import:vn.haui.dx.core.common.PageRequest": {
+    "debt": "BD-01",
+    "owner": "Backend",
+    "removal": "ARC-06"
+  },
+  "backend/src/main/java/vn/haui/dx/apps/servicedesk/TicketService.java:core-import:vn.haui.dx.core.identity.api.CurrentUser": {
+    "debt": "BD-01",
+    "owner": "Backend",
+    "removal": "ARC-06"
+  },
+  "backend/src/main/java/vn/haui/dx/apps/servicedesk/TicketService.java:core-import:vn.haui.dx.core.identity.api.WorkspaceAccess": {
+    "debt": "BD-01",
+    "owner": "Backend",
+    "removal": "ARC-06"
+  },
+  "backend/src/main/java/vn/haui/dx/apps/servicedesk/TicketService.java:core-import:vn.haui.dx.core.workflow.api.ProcessHistory": {
+    "debt": "BD-01",
+    "owner": "Backend",
+    "removal": "ARC-06"
+  },
+  "backend/src/main/java/vn/haui/dx/apps/servicedesk/TicketService.java:core-import:vn.haui.dx.core.workflow.api.WorkflowService": {
+    "debt": "BD-01",
+    "owner": "Backend",
+    "removal": "ARC-06"
+  },
+  "backend/src/main/java/vn/haui/dx/apps/servicedesk/TicketService.java:core-import:vn.haui.dx.core.identity.api.WorkspaceRole.*": {
+    "debt": "BD-01",
+    "owner": "Backend",
+    "removal": "ARC-06"
+  },
+  "intelligence/src/smart_service_intelligence/triage.py:app-literal:Exact immutable identity, e.g. service-desk@0.2.0": {
+    "debt": "BD-11",
+    "owner": "Intelligence",
+    "removal": "ARC-05"
+  },
+  "intelligence/src/smart_service_intelligence/evaluation/conformance.py:app-literal:service-desk@0.2.0": {
+    "debt": "BD-11",
+    "owner": "Intelligence",
+    "removal": "ARC-05"
+  },
+  "intelligence/src/smart_service_intelligence/evaluation/retrieval.py:app-literal:fixtures/intelligence/service-desk/knowledge": {
+    "debt": "BD-11",
+    "owner": "Intelligence",
+    "removal": "ARC-05"
+  },
+  "intelligence/src/smart_service_intelligence/evaluation/retrieval.py:app-literal:fixtures/intelligence/service-desk": {
+    "debt": "BD-11",
+    "owner": "Intelligence",
+    "removal": "ARC-05"
+  }
+}

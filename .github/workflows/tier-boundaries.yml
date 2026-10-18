@@ -1,0 +1,24 @@
+name: Tier boundaries
+on:
+  pull_request:
+    branches: [develop]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  source-boundaries:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - run: python3 scripts/check-tier-boundaries.py
+      - run: python3 scripts/test-tier-boundaries.py
+  architecture-java:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Compile and run architecture rules
+        run: docker build --target build -t dx-core-build:0.1.0 backend
