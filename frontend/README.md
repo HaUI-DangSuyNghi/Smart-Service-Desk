@@ -1,7 +1,15 @@
-# Frontend (reserved)
+# Frontend boundaries
 
-Owner: FE member. Future tier 2/3 user interface; no framework or dependencies initialized.
+This is the ARC-07 structural scaffold. There is no rendered UI or chosen UI framework yet.
+`src/platform` owns shared auth/workspace/H-P-D-I clients and the extension registry.
+`src/apps/servicedesk` owns domain routes, API clients, page and component slots.
+`src/main.js` is the composition root registering applications.
 
-During the Core phase, work in `infra/`, `scripts/` and root `compose.yaml`. The Keycloak template is `infra/keycloak/realm-template.json`; generated `.local/` files must not be edited or committed.
+Run `npm ci`, `npm run lint`, `npm test` and `npm run build:platform`.
+The platform build reads only `src/platform` and works without Service Desk.
+ESLint and the repository boundary guard reject platform imports of applications.
+Register routes, menus, dashboard sources, renderers and process business-key
+resolvers through the registry; do not add domain branches to the platform.
 
-Start UI implementation after the Core acceptance gate. Consume `contracts/openapi/core.yaml` through the gateway; never access databases or engine internals directly. Use Authorization Code + PKCE for browser login.
+Browser identity uses Authorization Code + PKCE. Token acquisition is an injected
+auth adapter; domain code never parses JWTs or grants workspace authority.

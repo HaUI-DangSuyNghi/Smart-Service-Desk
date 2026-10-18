@@ -22,3 +22,19 @@ jobs:
           persist-credentials: false
       - name: Compile and run architecture rules
         run: docker build --target build -t dx-core-build:0.1.0 backend
+  architecture-frontend:
+    runs-on: ubuntu-24.04
+    container: node:24.12.0-bookworm
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Install locked frontend tooling
+        working-directory: frontend
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Enforce imports and verify extensions
+        working-directory: frontend
+        run: |
+          npm run lint
+          npm test
+          npm run build:platform
