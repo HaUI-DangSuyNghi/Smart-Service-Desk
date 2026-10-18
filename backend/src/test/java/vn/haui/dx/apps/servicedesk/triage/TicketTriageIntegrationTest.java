@@ -48,10 +48,10 @@ class TicketTriageIntegrationTest {
     @MockBean IntelligenceTriageClient intelligence;
 
     @BeforeEach void fake() {
-        when(intelligence.triage(any())).thenAnswer(invocation -> {
+        doAnswer(invocation -> {
             assertFalse(TransactionSynchronizationManager.isActualTransactionActive());
             return TriageResponses.success(invocation.getArgument(0));
-        });
+        }).when(intelligence).triage(any());
     }
 
     private RequestPostProcessor as(String subject, String workspace, String... roles) {
@@ -108,7 +108,7 @@ class TicketTriageIntegrationTest {
         String route = BASE + "/" + ticket.path("id").asText();
         long[] before = counts();
         mvc.perform(post(route + "/triage").with(as("triage-owner", "lab-a", "requester"))).andExpect(status().isOk());
-        when(intelligence.triage(any())).thenAnswer(invocation -> TriageResponses.degraded(invocation.getArgument(0)));
+        doAnswer(invocation -> TriageResponses.degraded(invocation.getArgument(0))).when(intelligence).triage(any());
         mvc.perform(post(route + "/triage").with(as("triage-owner", "lab-a", "requester")))
             .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("DEGRADED"))
             .andExpect(jsonPath("$.needsReview").value(true));
@@ -132,7 +132,7 @@ class TicketTriageIntegrationTest {
 
     @Test void malformedUpstreamIsAProblemNotASuggestion() throws Exception {
         String route = BASE + "/" + create().path("id").asText() + "/triage";
-        when(intelligence.triage(any())).thenReturn(json.createObjectNode().put("confidence", 1));
+        doReturn(json.createObjectNode().put("confidence", 1)).when(intelligence).triage(any());
         mvc.perform(post(route).with(as("triage-owner", "lab-a", "requester")))
             .andExpect(status().isBadGateway()).andExpect(jsonPath("$.code").value("INTELLIGENCE_CONTRACT_FAILED"));
     }
