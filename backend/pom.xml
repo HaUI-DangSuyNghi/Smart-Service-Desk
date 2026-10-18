@@ -1,8 +1,12 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0">
   <modelVersion>4.0.0</modelVersion>
-  <parent><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-parent</artifactId><version>3.3.4</version></parent>
+  <parent><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-parent</artifactId><version>3.3.13</version></parent>
   <groupId>vn.haui.dx</groupId><artifactId>dx-core</artifactId><version>0.1.0-SNAPSHOT</version>
-  <properties><java.version>17</java.version></properties>
+  <properties>
+    <java.version>17</java.version>
+    <tomcat.version>10.1.61</tomcat.version>
+    <postgresql.version>42.7.12</postgresql.version>
+  </properties>
   <dependencies>
     <dependency><groupId>com.networknt</groupId><artifactId>json-schema-validator</artifactId><version>1.5.9</version></dependency>
     <dependency><groupId>org.springframework.boot</groupId><artifactId>spring-boot-starter-web</artifactId></dependency>
