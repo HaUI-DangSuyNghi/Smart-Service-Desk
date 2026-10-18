@@ -31,7 +31,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @EnabledIfEnvironmentVariable(named = "FILE_TEST_JDBC_URL", matches = ".+/file_storage")
 class TicketTriageIntegrationTest {
-    private static final String BASE = "/api/apps/servicedesk/v1/workspaces/lab-a/tickets";
+    private static final String BASE = "/api/apps/servicedesk/v1/workspaces/triage-a/tickets";
     private static final Path STORAGE = Path.of(System.getProperty("java.io.tmpdir"), "triage-test-" + UUID.randomUUID());
 
     @DynamicPropertySource static void properties(DynamicPropertyRegistry properties) {
@@ -60,7 +60,7 @@ class TicketTriageIntegrationTest {
     }
 
     private JsonNode create() throws Exception {
-        return json.readTree(mvc.perform(post(BASE).with(as("triage-owner", "lab-a", "requester"))
+        return json.readTree(mvc.perform(post(BASE).with(as("triage-owner", "triage-a", "requester"))
             .contentType("application/json").content(json.writeValueAsString(Map.of("clientRequestId", UUID.randomUUID(),
                 "title", "Stored network support", "description", "Persisted synthetic description"))))
             .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString());
@@ -76,30 +76,30 @@ class TicketTriageIntegrationTest {
         String route = BASE + "/" + ticket.path("id").asText() + "/triage";
         mvc.perform(post(route)).andExpect(status().isUnauthorized());
         mvc.perform(post(route).header("Authorization", "Bearer invalid")).andExpect(status().isUnauthorized());
-        mvc.perform(post(route).with(as("foreign", "lab-b", "requester"))).andExpect(status().isForbidden());
-        mvc.perform(post(route).with(as("hidden", "lab-a", "requester"))).andExpect(status().isNotFound());
-        mvc.perform(post(route).with(as("observer", "lab-a", "observer"))).andExpect(status().isForbidden());
-        mvc.perform(post(route.replace("lab-a", "lab-b")).with(as("foreign", "lab-b", "agent"))).andExpect(status().isNotFound());
-        mvc.perform(post(BASE + "/" + UUID.randomUUID() + "/triage").with(as("triage-owner", "lab-a", "requester")))
+        mvc.perform(post(route).with(as("foreign", "triage-b", "requester"))).andExpect(status().isForbidden());
+        mvc.perform(post(route).with(as("hidden", "triage-a", "requester"))).andExpect(status().isNotFound());
+        mvc.perform(post(route).with(as("observer", "triage-a", "observer"))).andExpect(status().isForbidden());
+        mvc.perform(post(route.replace("triage-a", "triage-b")).with(as("foreign", "triage-b", "agent"))).andExpect(status().isNotFound());
+        mvc.perform(post(BASE + "/" + UUID.randomUUID() + "/triage").with(as("triage-owner", "triage-a", "requester")))
             .andExpect(status().isNotFound());
         verifyNoInteractions(intelligence);
         for (String role : List.of("requester", "agent", "coordinator")) {
             String subject = role.equals("requester") ? "triage-owner" : "triage-" + role;
-            mvc.perform(post(route).with(as(subject, "lab-a", role)))
+            mvc.perform(post(route).with(as(subject, "triage-a", role)))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("SUCCESS"));
         }
         verify(intelligence, times(3)).triage(argThat(request -> request.input().title().equals(ticket.path("title").asText())
             && request.input().description().equals(ticket.path("description").asText())
-            && request.context().workspaceId().equals("lab-a")));
+            && request.context().workspaceId().equals("triage-a")));
     }
 
     @Test void rejectsEveryNonemptyBodyIncludingEmptyObjectAndChunkedInput() throws Exception {
         String route = BASE + "/" + create().path("id").asText() + "/triage";
         for (String body : List.of("{}", " ", "null", "[]", "{\"title\":\"override\"}"))
-            mvc.perform(post(route).with(as("triage-owner", "lab-a", "requester"))
+            mvc.perform(post(route).with(as("triage-owner", "triage-a", "requester"))
                 .header("Transfer-Encoding", "chunked").contentType("application/json").content(body))
                 .andExpect(status().isBadRequest()).andExpect(jsonPath("$.code").value("VALIDATION_FAILED"));
-        mvc.perform(post(BASE + "/bad-id/triage").with(as("triage-owner", "lab-a", "requester"))).andExpect(status().isBadRequest());
+        mvc.perform(post(BASE + "/bad-id/triage").with(as("triage-owner", "triage-a", "requester"))).andExpect(status().isBadRequest());
         verifyNoInteractions(intelligence);
     }
 
@@ -107,33 +107,33 @@ class TicketTriageIntegrationTest {
         var ticket = create();
         String route = BASE + "/" + ticket.path("id").asText();
         long[] before = counts();
-        mvc.perform(post(route + "/triage").with(as("triage-owner", "lab-a", "requester"))).andExpect(status().isOk());
+        mvc.perform(post(route + "/triage").with(as("triage-owner", "triage-a", "requester"))).andExpect(status().isOk());
         doAnswer(invocation -> TriageResponses.degraded(invocation.getArgument(0))).when(intelligence).triage(any());
-        mvc.perform(post(route + "/triage").with(as("triage-owner", "lab-a", "requester")))
+        mvc.perform(post(route + "/triage").with(as("triage-owner", "triage-a", "requester")))
             .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("DEGRADED"))
             .andExpect(jsonPath("$.needsReview").value(true));
         for (TriageFailure failure : List.of(TriageFailure.invalid(), TriageFailure.configuration(), TriageFailure.unavailable(), TriageFailure.timeout())) {
             doThrow(failure).when(intelligence).triage(any());
-            mvc.perform(post(route + "/triage").with(as("triage-owner", "lab-a", "requester")))
+            mvc.perform(post(route + "/triage").with(as("triage-owner", "triage-a", "requester")))
                 .andExpect(status().is(failure.status())).andExpect(content().contentTypeCompatibleWith("application/problem+json"))
                 .andExpect(jsonPath("$.code").value(failure.code()));
         }
         assertArrayEquals(before, counts());
-        mvc.perform(get(route).with(as("triage-owner", "lab-a", "requester")))
+        mvc.perform(get(route).with(as("triage-owner", "triage-a", "requester")))
             .andExpect(status().isOk()).andExpect(content().json(ticket.toString()));
-        var progress = json.readTree(mvc.perform(get(route + "/progress").with(as("triage-owner", "lab-a", "requester")))
+        var progress = json.readTree(mvc.perform(get(route + "/progress").with(as("triage-owner", "triage-a", "requester")))
             .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
         String task = progress.path("currentTasks").get(0).path("id").asText();
-        String taskRoute = "/api/core/v1/workspaces/lab-a/instances/" + ticket.path("process").path("processInstanceId").asText() + "/tasks/" + task;
-        mvc.perform(post(taskRoute + "/claim").with(as("triage-handler", "lab-a", "agent"))).andExpect(status().isOk());
-        mvc.perform(post(taskRoute + "/complete").with(as("triage-handler", "lab-a", "agent")).contentType("application/json")
+        String taskRoute = "/api/core/v1/workspaces/triage-a/instances/" + ticket.path("process").path("processInstanceId").asText() + "/tasks/" + task;
+        mvc.perform(post(taskRoute + "/claim").with(as("triage-handler", "triage-a", "agent"))).andExpect(status().isOk());
+        mvc.perform(post(taskRoute + "/complete").with(as("triage-handler", "triage-a", "agent")).contentType("application/json")
             .content("{\"expectedTaskKey\":\"handle\",\"outcome\":\"resolved\"}")).andExpect(status().isNoContent());
     }
 
     @Test void malformedUpstreamIsAProblemNotASuggestion() throws Exception {
         String route = BASE + "/" + create().path("id").asText() + "/triage";
         doReturn(json.createObjectNode().put("confidence", 1)).when(intelligence).triage(any());
-        mvc.perform(post(route).with(as("triage-owner", "lab-a", "requester")))
+        mvc.perform(post(route).with(as("triage-owner", "triage-a", "requester")))
             .andExpect(status().isBadGateway()).andExpect(jsonPath("$.code").value("INTELLIGENCE_CONTRACT_FAILED"));
     }
 }
