@@ -45,7 +45,7 @@ jobs:
           printf 'FILE_TEST_DB_PASSWORD=%s\nWORKFLOW_TEST_DB_PASSWORD=%s\n' "$password" "$password" >> "$GITHUB_ENV"
           docker run -d --name "$INT01_PROJECT-regression" -e POSTGRES_USER=workflow -e POSTGRES_DB=file_storage -e POSTGRES_PASSWORD -p 127.0.0.1:15432:5432 postgres:16.6-bookworm
           for attempt in $(seq 1 30); do
-            if docker exec "$INT01_PROJECT-regression" pg_isready -U workflow -d file_storage; then break; fi
+            if docker exec "$INT01_PROJECT-regression" pg_isready -h 127.0.0.1 -U workflow -d file_storage; then break; fi
             sleep 1
           done
           docker exec "$INT01_PROJECT-regression" psql -U workflow -d file_storage -c 'CREATE DATABASE workflow_approval'

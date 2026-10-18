@@ -96,7 +96,11 @@ export WORKFLOW_TEST_DB_PASSWORD="$FILE_TEST_DB_PASSWORD"
 export FILE_TEST_JDBC_URL=jdbc:postgresql://localhost:15432/file_storage
 export WORKFLOW_TEST_JDBC_URL=jdbc:postgresql://localhost:15432/workflow_approval
 docker run -d --name "$INT01_PROJECT-regression" -e POSTGRES_USER=workflow -e POSTGRES_DB=file_storage -e POSTGRES_PASSWORD="$FILE_TEST_DB_PASSWORD" -p 127.0.0.1:15432:5432 postgres:16.6-bookworm
-# Wait until pg_isready -U workflow -d file_storage succeeds before creating the second DB.
+# Wait for TCP readiness (-h 127.0.0.1); the entrypoint's temporary Unix-only server is not ready.
+for attempt in $(seq 1 30); do
+  if docker exec "$INT01_PROJECT-regression" pg_isready -h 127.0.0.1 -U workflow -d file_storage; then break; fi
+  sleep 1
+done
 docker exec "$INT01_PROJECT-regression" psql -U workflow -d file_storage -c 'CREATE DATABASE workflow_approval'
 mvn -B -f backend/pom.xml verify
 python3.12 -m venv .local/int01-venv
