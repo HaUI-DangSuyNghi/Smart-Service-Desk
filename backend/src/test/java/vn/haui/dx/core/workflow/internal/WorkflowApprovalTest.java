@@ -408,4 +408,3 @@ class WorkflowApprovalTest {
         assertThrows(IllegalArgumentException.class, () -> new ProcessRegistry(List.of(missingTask), engine.getRepositoryService()));
     }
 }
-

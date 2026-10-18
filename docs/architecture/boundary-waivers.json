@@ -54,21 +54,6 @@
     "owner": "Backend",
     "removal": "ARC-06"
   },
-  "backend/src/main/java/vn/haui/dx/apps/servicedesk/TicketService.java:core-import:vn.haui.dx.core.identity.api.CurrentUser": {
-    "debt": "BD-01",
-    "owner": "Backend",
-    "removal": "ARC-06"
-  },
-  "backend/src/main/java/vn/haui/dx/apps/servicedesk/TicketService.java:core-import:vn.haui.dx.core.identity.api.WorkspaceAccess": {
-    "debt": "BD-01",
-    "owner": "Backend",
-    "removal": "ARC-06"
-  },
-  "backend/src/main/java/vn/haui/dx/apps/servicedesk/TicketService.java:core-import:vn.haui.dx.core.identity.api.WorkspaceRole.*": {
-    "debt": "BD-01",
-    "owner": "Backend",
-    "removal": "ARC-06"
-  },
   "intelligence/src/smart_service_intelligence/triage.py:app-literal:Exact immutable identity, e.g. service-desk@0.2.0": {
     "debt": "BD-11",
     "owner": "Intelligence",

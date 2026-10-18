@@ -11,21 +11,21 @@ import vn.haui.dx.core.audit.api.AuditService;
 import vn.haui.dx.core.common.CoreException;
 import vn.haui.dx.core.common.Page;
 import vn.haui.dx.core.common.PageRequest;
-import vn.haui.dx.core.identity.api.CurrentUser;
-import vn.haui.dx.core.identity.api.WorkspaceAccess;
+import vn.haui.dx.hpdi.human.api.Actor;
+import vn.haui.dx.hpdi.human.api.HumanContext;
 import vn.haui.dx.hpdi.process.api.ProcessTimeline;
 import vn.haui.dx.hpdi.process.api.ProcessCapability;
-import static vn.haui.dx.core.identity.api.WorkspaceRole.*;
+
 
 @Service
 public class TicketService {
     private final TicketRepository repository;
-    private final WorkspaceAccess access;
+    private final HumanContext access;
     private final ProcessCapability workflow;
     private final AuditService audit;
     private final Validator validator;
 
-    public TicketService(TicketRepository repository, WorkspaceAccess access, ProcessCapability workflow,
+    public TicketService(TicketRepository repository, HumanContext access, ProcessCapability workflow,
                          AuditService audit, Validator validator) {
         this.repository = repository;
         this.access = access;
@@ -42,7 +42,7 @@ public class TicketService {
         text(input.description(), 4000, true);
         UUID id = UUID.randomUUID();
         var process = workflow.start(workspace, ServiceDeskProcess.KEY, id.toString(), Map.of());
-        var ticket = repository.insert(id, workspace, user.sub(), input, process.processInstanceId());
+        var ticket = repository.insert(id, workspace, user.subject(), input, process.processInstanceId());
         audit.record("servicedesk.ticket.create", "servicedesk.ticket", id.toString(), workspace,
             Map.of("processInstanceId", process.processInstanceId()));
         return ticket;
@@ -89,15 +89,15 @@ public class TicketService {
         return workflow.timeline(workspace, get(workspace, id).process().processInstanceId());
     }
 
-    private CurrentUser member(String workspace) {
-        var user = access.current();
-        if (workspace == null || !user.hasRole(workspace, REQUESTER, AGENT, COORDINATOR))
+    private Actor member(String workspace) {
+        var user = access.currentActor(workspace);
+        if (workspace == null || !user.hasRole("requester", "agent", "coordinator"))
             throw CoreException.forbidden("Service Desk workspace role required");
         return user;
     }
 
-    private static String reader(CurrentUser user, String workspace) {
-        return user.hasRole(workspace, AGENT, COORDINATOR) ? null : user.sub();
+    private static String reader(Actor user, String workspace) {
+        return user.hasRole("agent", "coordinator") ? null : user.subject();
     }
 
     private static void text(String value, int limit, boolean multiline) {

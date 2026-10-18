@@ -35,6 +35,18 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @EnabledIfEnvironmentVariable(named = "FILE_TEST_JDBC_URL", matches = ".+/file_storage")
 class TicketIntegrationTest {
+    @Test void humanContextUsesVerifiedWorkspaceMembershipAndIgnoresSpoofedHeaders() throws Exception {
+        String actor = "/api/hpdi/v1/workspaces/lab-a/actor";
+        mvc.perform(get(actor).with(as("human-subject", "lab-a", "requester"))
+            .header("X-Workspace", "lab-b").header("X-Actor", "admin").header("X-Roles", "coordinator"))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.subject").value("human-subject"))
+            .andExpect(jsonPath("$.workspace").value("lab-a"))
+            .andExpect(jsonPath("$.roles[0]").value("requester"));
+        mvc.perform(get(actor).with(as("foreign", "lab-b", "coordinator"))).andExpect(status().isForbidden());
+        mvc.perform(get(actor).with(jwt().jwt(token -> token.subject("platform-admin")
+            .claim("realm_access", Map.of("roles", List.of("platform-admin")))))).andExpect(status().isForbidden());
+        mvc.perform(get(actor)).andExpect(status().isUnauthorized());
+    }
     @Test void hpdiInboxAndTimelineExposeAppIndependentCorrelation() throws Exception {
         var ticket = create("hpdi-owner", "HPDI correlation", "requester");
         String process = ticket.path("process").path("processInstanceId").asText();
