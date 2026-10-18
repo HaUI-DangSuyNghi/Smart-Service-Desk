@@ -7,8 +7,8 @@ RUN rpm_arch="$(rpm --eval '%{_arch}')" \
             python_sha=7dc7ded57b383dc29e0ea0ab028f9c6fcd543aad07e0a6f3c7bb87a4c66357ca ;; \
         *) echo "Unsupported RPM architecture: $rpm_arch" >&2; exit 1 ;; \
     esac \
-    && wget -q -O /tmp/unbound-libs.rpm "https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi8/8/$rpm_arch/appstream/os/Packages/u/unbound-libs-1.16.2-5.14.el8_10.4.$rpm_arch.rpm" \
-    && wget -q -O /tmp/python3-unbound.rpm "https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi8/8/$rpm_arch/appstream/os/Packages/p/python3-unbound-1.16.2-5.14.el8_10.4.$rpm_arch.rpm" \
+    && curl -fsSL --retry 3 -o /tmp/unbound-libs.rpm "https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi8/8/$rpm_arch/appstream/os/Packages/u/unbound-libs-1.16.2-5.14.el8_10.4.$rpm_arch.rpm" \
+    && curl -fsSL --retry 3 -o /tmp/python3-unbound.rpm "https://cdn-ubi.redhat.com/content/public/ubi/dist/ubi8/8/$rpm_arch/appstream/os/Packages/p/python3-unbound-1.16.2-5.14.el8_10.4.$rpm_arch.rpm" \
     && printf '%s  %s\n' "$unbound_sha" /tmp/unbound-libs.rpm "$python_sha" /tmp/python3-unbound.rpm | sha256sum -c - \
     && yum --disablerepo='*' install -y /tmp/unbound-libs.rpm /tmp/python3-unbound.rpm \
     && yum clean all \
