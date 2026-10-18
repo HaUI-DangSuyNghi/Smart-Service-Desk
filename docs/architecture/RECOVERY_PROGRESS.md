@@ -18,3 +18,16 @@ integration; develop and the legacy reference branch are not merged or rewritten
   support, preserving the Service Desk characterization assertions.
 - Validation: 139 Java tests passed on Linux/JDK 17 with PostgreSQL 16.6;
   failures=0, errors=0, skipped=0. Source guard/ratchet suite: 25 tests passed.
+
+## BND-02: Process capability and application representations
+
+- Service Desk uses HPDI ProcessCapability, contributions and observations.
+  TicketProcessView and TicketProgress own the existing public wire shape;
+  application OpenAPI process/page schemas no longer point at Core DTOs.
+- Apps own all three existing BPMN resources and their process policies.
+  Core reader/observer authorization is driven by contributed role sets.
+- Content-aware deployment retains identical process definition IDs when only
+  resource ownership paths change. A running-instance/restart test proves it.
+- Added the reusable WorkInbox and ProcessTimeline contracts and adapters.
+- Validation: 142 Java tests passed with PostgreSQL on Linux/JDK 17,
+  failures=0, errors=0, skipped=0; compiled debt was reduced, without new edges.

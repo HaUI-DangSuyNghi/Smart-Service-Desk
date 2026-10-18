@@ -209,7 +209,7 @@ public final class FlowableWorkflowService implements WorkflowService {
 
     private Map<String, Object> readable(CurrentUser user, String workspace, String id) {
         var scope = scope(workspace, id);
-        if (!user.sub().equals(scope.get("owner")) && !user.hasRole(workspace, WorkspaceRole.COORDINATOR)
+        if (!user.sub().equals(scope.get("owner")) && !user.hasRole(workspace, registry.require((String) scope.get("process_key")).readerRoles().toArray(WorkspaceRole[]::new))
                 && engine.getHistoryService().createHistoricTaskInstanceQuery().processInstanceId(id).taskAssignee(user.sub()).count() == 0)
             throw CoreException.notFound("Process not found");
         return scope;
@@ -228,11 +228,13 @@ public final class FlowableWorkflowService implements WorkflowService {
     }
 
     private TaskView view(Task task) {
+        var reference = jdbc.queryForMap("select process_key,business_key from process_scope where id=?", task.getProcessInstanceId());
         var candidates = engine.getTaskService().getIdentityLinksForTask(task.getId()).stream()
             .filter(link -> "candidate".equals(link.getType()) && link.getGroupId() != null)
             .map(link -> link.getGroupId()).sorted().toList();
         return new TaskView(task.getId(), task.getProcessInstanceId(), task.getTaskDefinitionKey(), task.getName(),
-            candidates, task.getAssignee(), instant(task.getCreateTime()));
+            candidates, task.getAssignee(), instant(task.getCreateTime()),
+            (String) reference.get("process_key"), (String) reference.get("business_key"));
     }
 
     private List<String> groups(CurrentUser user, String workspace) {
