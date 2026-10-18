@@ -150,6 +150,27 @@ def test_oversized_body_rejected_without_reading():
             assert b' 413 ' in connection.recv(4096)
 
 
+def test_exact_request_cap_and_success_log_privacy(payload, capsys):
+    payload['input']['description'] = 'x'
+    payload['input']['description'] += 'x' * (MAX_REQUEST - len(json.dumps(payload).encode('utf-8')))
+    raw = json.dumps(payload).encode('utf-8')
+    assert len(raw) == MAX_REQUEST
+    with running() as address:
+        assert call(address, raw=raw)[0] == 200
+    captured = capsys.readouterr()
+    assert captured.out == captured.err == ''
+
+
+def test_truncated_body_does_not_reach_engine():
+    with running() as address:
+        with socket.create_connection(address, timeout=1) as connection:
+            connection.sendall((f'POST {ENDPOINT} HTTP/1.1\r\nHost: localhost\r\n'
+                                f'Authorization: Bearer {TOKEN}\r\nContent-Type: application/json\r\n'
+                                'Content-Length: 100\r\n\r\n{}').encode('ascii'))
+            connection.shutdown(socket.SHUT_WR)
+            assert b' 400 ' in connection.recv(4096)
+
+
 @pytest.mark.parametrize('phase', ['headers', 'body'])
 def test_absolute_deadline_bounds_slow_drip(phase):
     with running(timeout=0.2) as address:
@@ -166,7 +187,10 @@ def test_absolute_deadline_bounds_slow_drip(phase):
                 except OSError:
                     break
                 sleep(0.03)
-            assert connection.recv(4096) == b''
+            try:
+                assert connection.recv(4096) == b''
+            except (ConnectionResetError, ConnectionAbortedError):
+                pass
             assert monotonic() - started < 1
 
 
@@ -229,3 +253,14 @@ def test_startup_rejects_non_executable_profile(monkeypatch):
     monkeypatch.setattr(service.registry, 'get', unavailable)
     with pytest.raises(UnsupportedProfileVersion):
         make_server(('127.0.0.1', 0), service_token=TOKEN, service=service)
+
+
+def test_operational_service_failure_is_not_fabricated_degraded(payload, monkeypatch):
+    service = TriageService()
+
+    def fail(*args, **kwargs):
+        raise EngineUnavailable('Synthetic service boundary failure')
+
+    monkeypatch.setattr(service, 'triage', fail)
+    with running(service) as address:
+        assert call(address, payload) == (503, {'code': 'INTELLIGENCE_UNAVAILABLE'})
