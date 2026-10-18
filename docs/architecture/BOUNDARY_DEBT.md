@@ -21,7 +21,9 @@ The original baseline inventoried 51 source violations and 35 compiled edges;
 
 The source SQL scanner checks literal SQL, CTEs, qualified tables and effective
 forward FK changes; it is not a general dynamic-SQL evaluator. App table prefixes
-are part of the ownership convention. Compiled Java checks also catch fully
+are part of the ownership convention and are discovered from application source,
+resource and migration directories. Reserved platform/engine prefixes cannot be
+claimed by naming an application after them. Compiled Java checks also catch fully
 qualified and signature dependencies that bypass source imports.
 
 ## Gates

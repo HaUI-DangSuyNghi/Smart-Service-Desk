@@ -109,3 +109,13 @@ integration; develop and the legacy reference branch are not merged or rewritten
   1 real second-domain Java/Python test and 29 source mutation tests passed, all
   without failures/errors/skips. Real Core retrieval acceptance also passed all
   eight authorization/provenance scenarios through Keycloak/APISIX.
+
+## Final acceptance
+
+Real Keycloak/APISIX triage passed 11 checks. The same-revision real Java/Python
+transport suite passed all five success/failure scenarios (six Java tests).
+Room Request gateway reuse passed all five H/P/D/I scenarios; six app and four
+HPDI responses matched their contracts. Service Desk acceptance passed with 73
+real HTTP responses matching its application-owned contract. The final guard
+suite has 31 passing tests, including new-domain FK discovery and reserved engine
+prefix protection. Detailed execution scope is in REFACTOR_VALIDATION.md.

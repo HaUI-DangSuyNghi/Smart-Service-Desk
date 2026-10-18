@@ -64,6 +64,14 @@ class BoundaryGuardTest(unittest.TestCase):
             with self.subTest(table=table):
                 self.mutation(JAVA + 'apps/example/Bad.java', 'String sql = """select * from ' + table + '""";', 'app-private-sql')
 
+    def test_reserved_engine_prefix_cannot_be_claimed_by_an_application_name(self):
+        self.mutation(JAVA + 'apps/act/Bad.java', 'String sql = "select * from act_ru_task";', 'app-private-sql')
+
+    def test_new_domain_foreign_key_is_detected_without_editing_the_guard(self):
+        self.write(JAVA + 'apps/crm/Lead.java', 'class Lead {}')
+        self.mutation('backend/src/main/resources/db/migration/apps/crm/V8__lead.sql',
+                      'CREATE TABLE crm_lead (\nid uuid REFERENCES metadata_record(id));', 'cross-owner-fk')
+
     def test_apps_cannot_use_private_capabilities(self):
         self.mutation(JAVA + 'apps/example/Bad.java', 'import vn.haui.dx.hpdi.process.internal.Adapter;', 'app-private-hpdi-import')
 

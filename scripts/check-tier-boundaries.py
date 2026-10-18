@@ -45,12 +45,31 @@ def violations(root=ROOT):
             report(path, 'app-process-resource', path.name)
 
     identifier = r'(?:"[a-z_][\w$]*"|[a-z_][\w$]*)'
+    app_names = set()
+    for directory in (root / JAVA / 'apps', root / 'apps', root / RESOURCES / 'apps', root / RESOURCES / 'db/migration/apps'):
+        if directory.is_dir():
+            app_names.update(path.name.lower() for path in directory.iterdir() if path.is_dir())
+    core_tables = {'process_scope', 'metadata', 'metadata_record', 'file_object', 'file_link', 'audit_event', 'workspace_membership'}
+
+    def private_platform_table(name):
+        return name in core_tables or name.startswith(('act_', 'core_', 'hpdi_'))
+
+    def table_owner(name):
+        name = name.split('.')[-1]
+        if name.startswith('hpdi_'):
+            return 'hpdi'
+        if private_platform_table(name):
+            return 'core'
+        for app in sorted(app_names, key=len, reverse=True):
+            if name.startswith(app + '_'):
+                return 'app:' + app
+        return 'undeclared:' + name.split('_')[0]
 
     def app_sql(path, sql, app, ctes=()):
         ctes = set(ctes) | {name.lower() for name in re.findall(r'\b(?:with|,)\s*([a-z_]\w*)\s+as\s*\(', sql, re.I)}
         for match in re.finditer(rf'\b(?:from|join|into|update|references)\s+({identifier}(?:\s*\.\s*{identifier})?)', sql, re.I):
             table = re.sub(r'["\s]', '', match.group(1)).lower()
-            if table != 'lateral' and table not in ctes and ('.' in table or not table.startswith(app + '_')):
+            if table != 'lateral' and table not in ctes and (private_platform_table(table) or '.' in table or not table.startswith(app + '_')):
                 report(path, 'app-private-sql', table)
 
     for path in (root / JAVA).rglob('*.java'):
@@ -108,13 +127,6 @@ def violations(root=ROOT):
             dropped = re.search(r'\bdrop\s+constraint\s+(?:if\s+exists\s+)?([\w"]+)', statement, re.I)
             if dropped:
                 foreign_keys.pop((table, dropped.group(1).strip('"').lower()), None)
-            def table_owner(name):
-                name = name.split('.')[-1]
-                if name.startswith('hpdi_'):
-                    return 'hpdi'
-                if name.startswith(('servicedesk_', 'roomrequest_')):
-                    return name.split('_')[0]
-                return 'core'
             for reference in re.finditer(rf'\breferences\s+({identifier}(?:\s*\.\s*{identifier})?)', statement, re.I):
                 target = re.sub(r'["\s]', '', reference.group(1)).lower()
                 if table_owner(table) != table_owner(target):
