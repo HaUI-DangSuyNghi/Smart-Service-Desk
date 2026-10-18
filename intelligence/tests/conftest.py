@@ -23,3 +23,8 @@ def service():
 @pytest.fixture
 def trusted():
     return TrustedContext(workspace_id='lab-a', subject='test-subject')
+
+
+@pytest.fixture(autouse=True)
+def configured_app_profiles(monkeypatch):
+    monkeypatch.setenv('HDPI_PROFILE_ROOT', str(ROOT / 'apps/servicedesk/intelligence/profiles'))

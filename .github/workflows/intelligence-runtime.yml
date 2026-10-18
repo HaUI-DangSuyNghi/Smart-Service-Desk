@@ -6,6 +6,7 @@ on:
     branches: [develop]
     paths:
       - 'intelligence/**'
+      - 'apps/**'
       - 'contracts/intelligence/**'
       - 'fixtures/intelligence/**'
       - 'scripts/intelligence/**'
@@ -21,6 +22,8 @@ permissions:
   contents: read
 jobs:
   verify:
+    env:
+      HDPI_PROFILE_ROOT: ${{ github.workspace }}/apps/servicedesk/intelligence/profiles
     strategy:
       matrix:
         os: [ubuntu-24.04, windows-2022]
@@ -53,12 +56,14 @@ jobs:
       - name: Run regression and security suite against installed wheel
         run: python -I -m pytest -c scripts/intelligence/installed-pytest.ini intelligence/tests -q
       - name: Record authored retrieval evaluation (not a production benchmark)
-        run: python -I -m hdpi.evaluation.retrieval --repo-root . --output .local/ai03-evaluation.json
+        run: python -I -m hdpi.evaluation.retrieval --repo-root . --fixtures-root fixtures/intelligence/service-desk --gates '{"hitAt1":0.8333333333333334,"hitAt3":1}' --output .local/ai03-evaluation.json
       - name: Verify diff whitespace
         env:
           INTELLIGENCE_PR_BASE_SHA: ${{ github.event.pull_request.base.sha || '' }}
         run: python scripts/intelligence/verify-pr-range.py
   core-integration:
+    env:
+      HDPI_PROFILE_ROOT: ${{ github.workspace }}/apps/servicedesk/intelligence/profiles
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:

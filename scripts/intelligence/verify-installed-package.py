@@ -68,8 +68,12 @@ def main():
     location = Path(hdpi.__file__).resolve()
     if 'site-packages' not in location.parts:
         raise RuntimeError('Verification must load the installed wheel')
-    if '_resources' not in resource_root('profiles').parts or '_resources' not in resource_root('contracts').parts:
-        raise RuntimeError('Wheel must contain profiles and shared contracts')
+    if (location.parent / '_resources/profiles').exists():
+        raise RuntimeError('Generic wheel must not bundle application profiles')
+    if resource_root('profiles').is_relative_to(location.parent):
+        raise RuntimeError('Application profiles must be supplied externally')
+    if '_resources' not in resource_root('contracts').parts:
+        raise RuntimeError('Wheel must contain the shared contracts')
     payload = {'contractVersion': '0.1.0', 'requestId': 'installed-wheel', 'profile': 'service-desk',
                'context': {'workspaceId': 'local-wheel-check'},
                'input': {'title': 'Wi-Fi chập chờn', 'description': 'Một máy bị ảnh hưởng; có thể chờ.'}}

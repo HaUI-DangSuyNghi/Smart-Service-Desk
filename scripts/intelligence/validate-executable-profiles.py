@@ -22,20 +22,23 @@ def check_history(root, lock, baseline):
     # Reject bad refs rather than silently skipping the history gate.
     result = subprocess.run(['git', 'rev-parse', '--verify', baseline + '^{commit}'], cwd=ROOT, capture_output=True)
     require(result.returncode == 0, 'Immutable history baseline does not exist')
-    previous = read_git('intelligence/profiles/immutable-artifacts.json')
+    prefix = 'apps/servicedesk/intelligence/profiles/'
+    if read_git(prefix + 'immutable-artifacts.json') is None:
+        prefix = 'intelligence/profiles/'  # Pre-recovery immutable history, not a runtime fallback.
+    previous = read_git(prefix + 'immutable-artifacts.json')
     if previous is not None:
         old_lock = json.loads(previous)
         require(all(lock.get(path) == digest for path, digest in old_lock.items()), 'Reused immutable version or removed historical artifact')
     # Also protects the initial v0.1 artifacts before a lock existed on develop.
     for relative, digest in lock.items():
-        historical = read_git('intelligence/profiles/' + relative)
+        historical = read_git(prefix + relative)
         if historical is not None:
             require(hashlib.sha256(historical).hexdigest() == digest, 'Historical version content changed: ' + relative)
     print('PASS immutable profile history against ' + baseline)
 
 
 def main():
-    root = ROOT / 'intelligence/profiles'
+    root = ROOT / 'apps/servicedesk/intelligence/profiles'
     registry = read_yaml(root / 'registry.yaml')
     require(registry['registryVersion'] == '1', 'Unsupported registry version')
     lock = verify_lock(root)

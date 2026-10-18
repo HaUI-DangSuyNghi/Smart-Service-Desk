@@ -1,5 +1,5 @@
 from contextlib import contextmanager
-from http.client import HTTPConnection
+from http.client import HTTPResponse
 import json
 import socket
 from threading import Thread
@@ -39,20 +39,30 @@ def running(service=None, timeout=3):
         assert not thread.is_alive()
 
 
+def envelope(payload):
+    return {'request': payload, 'trustedContext': {'workspaceId': (payload or {}).get('context', {}).get('workspaceId', 'lab-a'),
+            'subject': 'verified-actor'}, 'profileVersion': '0.2.0'}
+
+
 def call(address, payload=None, *, raw=None, token=TOKEN, method='POST', path=ENDPOINT, headers=None):
-    body = raw if raw is not None else json.dumps(payload).encode('utf-8')
+    body = raw if raw is not None else json.dumps(envelope(payload)).encode('utf-8')
     request_headers = {'Content-Type': 'application/json'}
     if token is not None:
         request_headers['Authorization'] = 'Bearer ' + token
     request_headers.update(headers or {})
-    connection = HTTPConnection(*address, timeout=2)
-    try:
-        connection.request(method, path, body, request_headers)
-        response = connection.getresponse()
-        raw_response = response.read()
-        return response.status, json.loads(raw_response) if raw_response else None
-    finally:
-        connection.close()
+    # Coalesce headers and body so fail-fast rejections do not race a second
+    # client write on Windows; assertions still require the exact HTTP status.
+    if 'Transfer-Encoding' not in request_headers:
+        request_headers.setdefault('Content-Length', str(len(body)))
+    header_block = ''.join(f'{key}: {value}\r\n' for key, value in request_headers.items())
+    packet = f'{method} {path} HTTP/1.1\r\nHost: localhost\r\n{header_block}\r\n'.encode('ascii') + body
+    with socket.create_connection(address, timeout=2) as connection:
+        connection.sendall(packet)
+        with HTTPResponse(connection, method=method) as response:
+            response.begin()
+            raw_response = response.read()
+            return response.status, json.loads(raw_response) if raw_response else None
+
 
 
 def test_real_rules_success_and_authenticated_workspace_assertion(payload, monkeypatch):
@@ -152,8 +162,8 @@ def test_oversized_body_rejected_without_reading():
 
 def test_exact_request_cap_and_success_log_privacy(payload, capsys):
     payload['input']['description'] = 'x'
-    payload['input']['description'] += 'x' * (MAX_REQUEST - len(json.dumps(payload).encode('utf-8')))
-    raw = json.dumps(payload).encode('utf-8')
+    payload['input']['description'] += 'x' * (MAX_REQUEST - len(json.dumps(envelope(payload)).encode('utf-8')))
+    raw = json.dumps(envelope(payload)).encode('utf-8')
     assert len(raw) == MAX_REQUEST
     with running() as address:
         assert call(address, raw=raw)[0] == 200
@@ -253,7 +263,7 @@ def test_startup_rejects_non_executable_profile(monkeypatch):
 
     monkeypatch.setattr(service.registry, 'get', unavailable)
     with pytest.raises(UnsupportedProfileVersion):
-        make_server(('127.0.0.1', 0), service_token=TOKEN, service=service)
+        make_server(('127.0.0.1', 0), service_token=TOKEN, service=service, required_profiles=(('service-desk', '0.2.0'),))
 
 
 def test_operational_service_failure_is_not_fabricated_degraded(payload, monkeypatch):
@@ -265,3 +275,23 @@ def test_operational_service_failure_is_not_fabricated_degraded(payload, monkeyp
     monkeypatch.setattr(service, 'triage', fail)
     with running(service) as address:
         assert call(address, payload) == (503, {'code': 'INTELLIGENCE_UNAVAILABLE'})
+
+
+def test_trusted_workspace_is_independent_of_request_context(payload):
+    body = envelope(payload)
+    body['trustedContext']['workspaceId'] = 'another-workspace'
+    with running() as address:
+        assert call(address, raw=json.dumps(body).encode())[0] == 403
+
+
+def test_public_flat_payload_cannot_supply_trusted_context(payload):
+    with running() as address:
+        assert call(address, raw=json.dumps(payload).encode())[0] == 400
+
+
+@pytest.mark.parametrize('field,value', [('subject', ''), ('roles', ['admin']), ('workspaceId', None)])
+def test_context_cannot_self_grant_roles_or_omit_verified_identity(payload, field, value):
+    body = envelope(payload)
+    body['trustedContext'][field] = value
+    with running() as address:
+        assert call(address, raw=json.dumps(body).encode())[0] == 400

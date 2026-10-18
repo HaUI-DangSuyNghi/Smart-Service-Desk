@@ -57,7 +57,7 @@ public class HttpIntelligenceTransport implements IntelligenceTransport {
     public JsonNode triage(TriageRequest.Envelope input) {
         var endpoint = endpoint();
         byte[] body;
-        try { body = json.writeValueAsBytes(input.request()); }
+        try { body = json.writeValueAsBytes(input); }
         catch (IOException exception) { throw IntelligenceFailure.configuration(); }
         if (body.length > MAX_REQUEST) throw IntelligenceFailure.configuration();
         var request = HttpRequest.newBuilder(endpoint).timeout(Duration.ofSeconds(4))

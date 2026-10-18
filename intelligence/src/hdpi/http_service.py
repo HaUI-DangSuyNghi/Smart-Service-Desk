@@ -17,8 +17,6 @@ from .domain.models import TrustedContext
 from .services.triage import TriageService
 
 ENDPOINT = '/internal/intelligence/v1/triage'
-PROFILE_ID = 'service-desk'
-PROFILE_VERSION = '0.2.0'
 MAX_REQUEST = 32 * 1024
 MAX_RESPONSE = 256 * 1024
 
@@ -63,11 +61,12 @@ class PrivateServer(ThreadingHTTPServer):
         pass
 
 
-def make_server(address, *, service_token, service=None, request_timeout=3):
+def make_server(address, *, service_token, service=None, request_timeout=3, required_profiles=()):
     if not isinstance(service_token, str) or not re.fullmatch(r'[A-Za-z0-9._~+/-]{32,}=*', service_token):
         raise ValueError('INTELLIGENCE_TRIAGE_TOKEN requires at least 32 bearer characters before padding')
     service = service if service is not None else TriageService()
-    service.registry.get(PROFILE_ID, PROFILE_VERSION)
+    for profile_id, version in required_profiles:
+        service.registry.get(profile_id, version)
     expected_credential = ('Bearer ' + service_token).encode('ascii')
 
     class Handler(BaseHTTPRequestHandler):
@@ -141,25 +140,34 @@ def make_server(address, *, service_token, service=None, request_timeout=3):
                 raw = self.rfile.read(length)
                 if len(raw) != length:
                     raise ValueError('Incomplete request')
-                payload = json.loads(raw.decode('utf-8'), object_pairs_hook=unique_object,
-                                     parse_constant=reject_constant)
+                envelope = json.loads(raw.decode('utf-8'), object_pairs_hook=unique_object,
+                                      parse_constant=reject_constant)
+                if not isinstance(envelope, dict) or set(envelope) != {'request', 'trustedContext', 'profileVersion'}:
+                    raise ValueError('Invalid capability envelope')
+                context = envelope['trustedContext']
+                if (not isinstance(context, dict) or set(context) != {'workspaceId', 'subject'}
+                        or any(not isinstance(context[key], str) or not context[key].strip()
+                               or len(context[key]) > 100 for key in context)):
+                    raise ValueError('Invalid trusted context')
+                version = envelope['profileVersion']
+                if not isinstance(version, str) or not version or len(version) > 100:
+                    raise ValueError('Invalid profile identity')
+                payload = envelope['request']
                 service.contract.request(payload)
-                if payload['profile'] != PROFILE_ID:
-                    raise ValueError('Unsupported profile')
-            except (ValueError, UnicodeError, RecursionError, ContractValidationError):
+                service.registry.get(payload['profile'], version)
+            except (ValueError, UnicodeError, RecursionError, ContractValidationError, ProfileNotFound, UnsupportedProfileVersion):
                 self.respond(400, {'code': 'INVALID_REQUEST'})
                 return
             except OSError:
                 self.respond(408, {'code': 'REQUEST_TIMEOUT'})
                 return
             try:
-                trusted = TrustedContext(workspace_id=payload['context']['workspaceId'],
-                                         subject='java-triage-service')
+                trusted = TrustedContext(workspace_id=context['workspaceId'], subject=context['subject'])
                 response = service.triage(payload, trusted_context=trusted,
-                                          profile_version=PROFILE_VERSION).response
+                                          profile_version=version).response
                 service.contract.response(response, payload)
                 if (response['status'] == 'SUCCESS'
-                        and response['runtime']['profileVersion'] != f'{PROFILE_ID}@{PROFILE_VERSION}'):
+                        and response['runtime']['profileVersion'] != f'{payload["profile"]}@{version}'):
                     raise ContractValidationError('Unexpected runtime profile')
                 if len(json.dumps(response, ensure_ascii=False).encode('utf-8')) > MAX_RESPONSE:
                     raise ContractValidationError('Oversized response')
@@ -186,7 +194,11 @@ def main():
     parser.add_argument('--port', type=int, default=8000)
     args = parser.parse_args()
     try:
-        server = make_server((args.host, args.port), service_token=os.environ.get('INTELLIGENCE_TRIAGE_TOKEN'))
+        required_profiles = [identity.rsplit('@', 1) for identity in os.environ.get('HDPI_REQUIRED_PROFILES', '').split(',') if identity]
+        if any(len(identity) != 2 or not all(identity) for identity in required_profiles):
+            raise ValueError('Invalid required profile configuration')
+        server = make_server((args.host, args.port), service_token=os.environ.get('INTELLIGENCE_TRIAGE_TOKEN'),
+                             required_profiles=required_profiles)
     except Exception:
         parser.exit(1, 'Intelligence service configuration failed\n')
     try:

@@ -20,8 +20,8 @@ def test_metrics_document_dedup_and_no_matches():
 
 
 def test_authored_evaluation_is_deterministic_and_honest():
-    report = evaluate(ROOT)
-    assert report == evaluate(ROOT)
+    report = evaluate(ROOT, ROOT / 'fixtures/intelligence/service-desk', gates={'hitAt1': 10/12, 'hitAt3': 1})
+    assert report == evaluate(ROOT, ROOT / 'fixtures/intelligence/service-desk', gates={'hitAt1': 10/12, 'hitAt3': 1})
     assert report['benchmarkClaim'] is False and report['runtimeCitations'] is False
     assert report['rightsStatus'] == 'PENDING_OWNER_APPROVAL'
     assert report['caseCount'] == 12
@@ -30,5 +30,5 @@ def test_authored_evaluation_is_deterministic_and_honest():
     assert report['hitAt1'] == 7/12
     assert report['hitAt3'] == 11/12
     assert report['mrr'] == pytest.approx(.7388888888888889)
-    assert report['suggestedGates'] == {'hitAt1AtLeast10Of12': False, 'hitAt3AllCases': False}
+    assert report['suggestedGates'] == {'hitAt1': False, 'hitAt3': False}
     assert next(c for c in report['cases'] if c['ticketId'] == 'TICKET-011')['firstRelevantRank'] == 5

@@ -62,6 +62,8 @@ python3.12 -m venv .local/ai04-venv
 .local/ai04-venv/bin/pip install -r intelligence/requirements.lock
 .local/ai04-venv/bin/pip install --no-build-isolation --no-deps ./intelligence
 # Inject INTELLIGENCE_TRIAGE_TOKEN through your secret mechanism first.
+export HDPI_PROFILE_ROOT="$PWD/apps/servicedesk/intelligence/profiles"
+export HDPI_REQUIRED_PROFILES=service-desk@0.2.0
 .local/ai04-venv/bin/python -m hdpi.http_service --host 127.0.0.1 --port 8000
 ```
 

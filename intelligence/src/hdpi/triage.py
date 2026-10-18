@@ -12,7 +12,7 @@ from .services.triage import TriageService
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--profile', required=True, help='Exact immutable identity, e.g. service-desk@0.2.0')
+    parser.add_argument('--profile', required=True, help='Exact immutable identity ID@version')
     parser.add_argument('--workspace', required=True, help='Local test context only; no authorization grant')
     parser.add_argument('--title', required=True)
     parser.add_argument('--description', required=True)

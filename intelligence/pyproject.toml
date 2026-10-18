@@ -15,6 +15,7 @@ dev = ["pytest==8.3.5", "build==1.2.2.post1"]
 
 [tool.setuptools.packages.find]
 where = ["src"]
+include = ["hdpi*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

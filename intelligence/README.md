@@ -7,6 +7,21 @@ The wheel distribution remains `smart-service-intelligence==0.3.0` for artifact
 compatibility. Historical AI-02/AI-03 reports record the package names used at
 their validation time. The former Python import path is no longer provided.
 
+Application profiles are external configuration. From the repository root in PowerShell:
+
+```powershell
+$env:HDPI_PROFILE_ROOT = (Resolve-Path apps/servicedesk/intelligence/profiles).Path
+$env:HDPI_REQUIRED_PROFILES = 'service-desk@0.2.0'
+```
+
+The generic wheel contains contracts and runtime code. `ProfileRegistry(root=...)`
+or `HDPI_PROFILE_ROOT` is required; there is no bundled application fallback.
+The private HTTP endpoint accepts an HPDI envelope with `request`, `profileVersion`
+and independently verified `trustedContext` (`workspaceId`, `subject`). The Java
+capability constructs this envelope after authorization; the public ticket endpoint
+continues to reject request bodies. Compose mounts the selected app profile root
+read-only at `/profiles`.
+
 ## Truy xuất AI-03
 
 [Báo cáo thực thi](docs/task/AI03/RUNTIME_REPORT.md) ghi kết quả kiểm thử và giới
@@ -24,7 +39,7 @@ Sau khi cài wheel bằng bộ pin `requirements.lock`, chạy từ repository r
 
 ```powershell
 python -I -m hdpi.search --profile service-desk@0.2.0 --fixture-repo-root . --query "không đăng nhập được tài khoản" --top-k 3
-python -I -m hdpi.evaluation.retrieval --repo-root . --output .local/ai03-evaluation.json
+python -I -m hdpi.evaluation.retrieval --repo-root . --fixtures-root fixtures/intelligence/service-desk --gates '{"hitAt1":0.8333333333333334,"hitAt3":1}' --output .local/ai03-evaluation.json
 python -I scripts/intelligence/verify-installed-package.py
 python -I -m pytest -c scripts/intelligence/installed-pytest.ini intelligence/tests -q
 ```
@@ -147,7 +162,7 @@ Developer CLI chạy sau khi cài wheel, chỉ dành cho engineering local:
 
 ```powershell
 .local/ai02-venv/Scripts/python -m hdpi.triage --profile service-desk@0.2.0 --workspace lab-a --title "Wi-Fi chập chờn" --description "Một máy bị ảnh hưởng; có thể chờ." --trace
-.local/ai02-venv/Scripts/python -m hdpi.evaluation.conformance --fixtures fixtures/intelligence/service-desk/tickets/tickets-v0.1.jsonl --output .local/ai02-conformance.json
+.local/ai02-venv/Scripts/python -m hdpi.evaluation.conformance --fixtures fixtures/intelligence/service-desk/tickets/tickets-v0.1.jsonl --profile-version 0.2.0 --expected-runtime '{"engine":"rules","profileVersion":"service-desk@0.2.0","rulesVersion":"0.2.0"}' --normalization-version text-normalization@0.1.0 --output .local/ai02-conformance.json
 ```
 
 CLI không xác thực hay cấp quyền. Adapter Core HTTP phải authorize và truyền

@@ -50,7 +50,7 @@ class HttpIntelligenceTransportTest {
         assertEquals("POST", exchange.getRequestMethod());
         assertEquals("Bearer synthetic-service-token-for-tests-only", exchange.getRequestHeaders().getFirst("Authorization"));
         assertEquals("application/json", exchange.getRequestHeaders().getFirst("Content-Type"));
-        assertEquals(json.valueToTree(TriageResponses.request().request()), json.readTree(exchange.getRequestBody()));
+        assertEquals(json.valueToTree(TriageResponses.request()), json.readTree(exchange.getRequestBody()));
         try (exchange) {
             if (delayHeaders) Thread.sleep(5000);
             exchange.getResponseHeaders().set("Content-Type", mediaType);

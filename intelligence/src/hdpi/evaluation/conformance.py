@@ -14,10 +14,10 @@ def require(condition, message):
         raise AssertionError(message)
 
 
-def check_case(fixture, service):
+def check_case(fixture, service, *, profile_version, expected_runtime, normalization_version):
     request, expected = fixture['request'], fixture['expected']
     run = service.triage(request, trusted_context=TrustedContext(workspace_id=request['context']['workspaceId']),
-                         profile_version='0.2.0')
+                         profile_version=profile_version)
     actual = run.response
     require(actual['status'] == expected['status'], 'Status mismatch')
     require(actual['result'] == expected['result'], 'Category/priority/routing mismatch')
@@ -25,8 +25,8 @@ def check_case(fixture, service):
     for field in ('impact', 'urgency', 'reasonCode'):
         require(actual['explanation'][field] == expected['explanation'][field], field)
     require(set(expected['explanation']['matchedRules']) <= set(actual['explanation']['matchedRules']), 'Required rule missing')
-    require(actual['runtime'] == {'engine': 'rules', 'profileVersion': 'service-desk@0.2.0', 'rulesVersion': '0.2.0'}, 'Runtime version mismatch')
-    require(run.trace.normalization_version == 'text-normalization@0.1.0', 'Normalization trace mismatch')
+    require(actual['runtime'] == expected_runtime, 'Runtime version mismatch')
+    require(run.trace.normalization_version == normalization_version, 'Normalization trace mismatch')
     require('confidence' not in actual and 'normalizationVersion' not in actual['runtime'], 'Unsupported wire property')
     return run
 
@@ -35,11 +35,15 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--fixtures', type=Path, required=True)
     parser.add_argument('--output', type=Path)
+    parser.add_argument('--profile-version', required=True)
+    parser.add_argument('--expected-runtime', required=True, type=json.loads)
+    parser.add_argument('--normalization-version', required=True)
     args = parser.parse_args()
     service, cases = TriageService(), []
     for line in args.fixtures.read_text(encoding='utf-8').splitlines():
         fixture = json.loads(line)
-        run = check_case(fixture, service)
+        run = check_case(fixture, service, profile_version=args.profile_version,
+                         expected_runtime=args.expected_runtime, normalization_version=args.normalization_version)
         cases.append({'id': fixture['id'], 'status': 'PASS', 'trace': asdict(run.trace)})
     report = {'evidenceClass': 'AUTHORED_CONFORMANCE', 'passed': len(cases), 'total': len(cases),
               'statement': f'{len(cases)}/{len(cases)} kịch bản conformance tự biên soạn đạt với rules deterministic.',

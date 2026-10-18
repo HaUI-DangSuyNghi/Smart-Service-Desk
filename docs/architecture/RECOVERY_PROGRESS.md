@@ -46,3 +46,16 @@ integration; develop and the legacy reference branch are not merged or rewritten
 - Existing 142 Java regression tests passed with PostgreSQL, without skips;
   additional arbitrary-profile and denied/mismatched-actor tests cover the new
   trusted adapter. Transport and schema negative tests moved with their owner.
+
+## BND-04: external application profiles and generic Python runtime
+
+- Service Desk owns its registry, immutable profiles, taxonomy and policies under
+  `apps/servicedesk/intelligence`. Profile bytes and historical checks are retained.
+- The `hdpi` wheel contains generic runtime/contracts only. Explicit profile root
+  configuration is required. Build logic rejects stale bundled profile content.
+- Java and Python use the same private envelope: request, immutable profile
+  version, and independently trusted workspace/subject. HTTP hardening is retained.
+- CLI/evaluation inputs and gates are explicit. Compose mounts profiles read-only;
+  CI verifies source, installed wheel, image configuration and immutable history.
+- Validation: 272 source tests and 272 installed-wheel tests passed, including
+  external `fake-domain@1.0`; foundation validation and wheel isolation passed.

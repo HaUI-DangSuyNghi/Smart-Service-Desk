@@ -1,0 +1,5 @@
+registryVersion: '1'
+profiles:
+  fake-domain@1.0:
+    file: profile.yaml
+    executable: true
