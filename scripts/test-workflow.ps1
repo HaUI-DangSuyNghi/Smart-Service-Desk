@@ -21,7 +21,7 @@ try {
         Start-Sleep -Seconds 1
     }
     if (-not $ready) { throw 'Database readiness timed out' }
-    docker run --rm --network $network --mount "type=bind,source=$root,target=/workspace" -w /workspace/backend -e WORKFLOW_TEST_JDBC_URL=jdbc:postgresql://database:5432/workflow_approval -e "WORKFLOW_TEST_DB_PASSWORD=$password" $BuildImage mvn -B -o clean verify
+    docker run --rm --network $network --mount "type=bind,source=$(Join-Path $root 'backend'),target=/work" --mount "type=bind,source=$(Join-Path $root 'contracts/intelligence/v1'),target=/contracts/intelligence/v1,readonly" -w /work -e WORKFLOW_TEST_JDBC_URL=jdbc:postgresql://database:5432/workflow_approval -e "WORKFLOW_TEST_DB_PASSWORD=$password" $BuildImage mvn -B -o clean verify
     if ($LASTEXITCODE -ne 0) { throw 'Workflow tests failed' }
 } finally {
     if ($databaseCreated) { docker rm -f -v $database | Out-Null }

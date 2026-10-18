@@ -2,7 +2,7 @@ name: Service Desk triage bridge
 on:
   pull_request:
     branches: [develop]
-    paths: ['backend/**', 'contracts/**', 'compose.yaml', 'scripts/test-*.ps1', '.github/workflows/servicedesk-triage.yml']
+    paths: ['backend/**', 'contracts/**', 'compose.yaml', '.dockerignore', 'scripts/test-*.ps1', '.github/workflows/servicedesk-triage.yml']
   workflow_dispatch:
 permissions:
   contents: read

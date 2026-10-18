@@ -1,0 +1,8 @@
+**
+!backend/
+!backend/**
+!contracts/
+!contracts/intelligence/
+!contracts/intelligence/v1/
+!contracts/intelligence/v1/triage-*.schema.json
+backend/target/

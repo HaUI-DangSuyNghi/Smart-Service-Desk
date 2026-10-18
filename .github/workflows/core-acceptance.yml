@@ -2,7 +2,7 @@ name: Core acceptance
 on:
   pull_request:
     branches: [develop]
-    paths: ['backend/**', 'infra/**', 'compose.yaml', 'contracts/openapi/**', 'scripts/**', '.github/workflows/core-acceptance.yml']
+    paths: ['backend/**', 'infra/**', 'compose.yaml', '.dockerignore', 'contracts/openapi/**', 'contracts/intelligence/**', 'scripts/**', '.github/workflows/core-acceptance.yml']
   workflow_dispatch:
 permissions:
   contents: read
