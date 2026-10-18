@@ -4,8 +4,8 @@ import java.util.UUID;
 import java.time.Instant;
 import jakarta.validation.Valid;
 import org.springframework.web.bind.annotation.*;
-import vn.haui.dx.core.common.Page;
-import vn.haui.dx.core.common.PageRequest;
+import vn.haui.dx.hpdi.common.api.Page;
+import vn.haui.dx.hpdi.common.api.PageRequest;
 import vn.haui.dx.hpdi.process.api.ProcessTimeline;
 import static org.springframework.http.HttpStatus.CREATED;
 

@@ -12,6 +12,12 @@ class TierBoundaryTest {
         noClasses().that().resideInAPackage("vn.haui.dx.core..")
             .should().dependOnClassesThat().resideInAnyPackage("vn.haui.dx.hpdi..", "vn.haui.dx.apps..")
             .check(classes);
+        noClasses().that().resideInAPackage("vn.haui.dx.apps..")
+            .should().dependOnClassesThat().resideInAPackage("vn.haui.dx.core..")
+            .check(classes);
+        noClasses().that().resideInAPackage("vn.haui.dx.hpdi..api..")
+            .should().dependOnClassesThat().resideInAPackage("vn.haui.dx.core..")
+            .check(classes);
         noClasses().that().resideInAPackage("vn.haui.dx.hpdi..")
             .should().dependOnClassesThat().resideInAPackage("vn.haui.dx.apps..")
             .allowEmptyShould(true).check(classes);

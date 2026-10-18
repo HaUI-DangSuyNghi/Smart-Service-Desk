@@ -10,8 +10,8 @@ import java.util.Optional;
 import java.util.UUID;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Repository;
-import vn.haui.dx.core.common.Page;
-import vn.haui.dx.core.common.PageRequest;
+import vn.haui.dx.hpdi.common.api.Page;
+import vn.haui.dx.hpdi.common.api.PageRequest;
 import vn.haui.dx.hpdi.process.api.ProcessHandle;
 
 @Repository
