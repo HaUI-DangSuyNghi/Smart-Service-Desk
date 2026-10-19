@@ -1,0 +1,38 @@
+{
+  "caseCount": 12,
+  "components": {
+    "knowledge": "115d078dc2ac4264108968fc064e5894674ee26fc0cc92e15a1bff0eb01683a9",
+    "retrieval": "2a6879067b04e7b3e9fffd869916a6c71fb5105c097f8e523d1688a51080767a",
+    "ticketManifest": "ace43d5db26f2b8f617a798a552ae399327cf28509e74ea703a4c7b974993fb5",
+    "tickets": "317a844338ae12e6c0cde109f8d7cc15879f8bf4c5d2f1a02e71a4e0cbf692f5"
+  },
+  "dataset": {
+    "digest": "sha256:f4a08ef239f08e9f93f40258f6b8dfc193437a9180e8ad873694159fbe01029f",
+    "id": "service-desk-authored-eval",
+    "version": "0.1.0"
+  },
+  "evaluatorVersion": "evaluation@1.0",
+  "gatedMetrics": [
+    "hitAt1",
+    "hitAt3"
+  ],
+  "metricVersion": "artifact-retrieval@1.0",
+  "metrics": {
+    "hitAt1": 0.5833333333333334,
+    "hitAt3": 0.9166666666666666,
+    "mrr": 0.7388888888888889,
+    "recallAt3": 0.875
+  },
+  "referenceEvidence": "Inherited AI03 test_authored_evaluation_is_deterministic_and_honest at develop 8a3cdb6; measured 7/12 and 11/12, old suggested targets 10/12 and 1 already failed. Initial gate adoption requires review.",
+  "reviewStatus": "PROPOSED",
+  "schemaVersion": "1.0",
+  "system": {
+    "chunkPolicyVersion": "markdown-paragraph@0.1.0",
+    "engine": "tfidf",
+    "engineConfigVersion": "tfidf-config@0.1.0",
+    "engineVersion": "0.1.0",
+    "normalizationVersion": "text-normalization@0.1.0",
+    "numericalRuntime": "scikit-learn@1.6.1;numpy@2.2.6;scipy@1.15.3",
+    "queryStrategyVersion": "title+newline+description@0.1.0"
+  }
+}

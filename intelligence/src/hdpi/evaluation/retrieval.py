@@ -1,91 +1,81 @@
-"""Local authored retrieval regression; kb-* identifiers are NEVER runtime citations."""
+"""Authored document retrieval regression; local IDs are never runtime citations."""
 import argparse
-from hashlib import sha256
 import json
 from pathlib import Path
+import sys
 
 from ..normalization.v1 import NormalizerV1
-from ..retrieval.chunking import chunk_text
-from ..retrieval.models import CHUNK_POLICY, ENGINE_CONFIG, NORMALIZATION, digest
-from ..retrieval.tfidf.engine import fit_chunks, TfidfSearchEngine
-from .metrics import first_relevant_rank, retrieval_metrics
+from .baseline import load_baseline
+from .candidates import TfidfCandidate
+from .comparison import compare_candidate
+from .dataset import load_dataset, require
+from .errors import EvaluationError
+from .evidence import build_report, write_report
 from .gates import evaluate_gates, exit_code
+from .metrics import METRIC_VERSION, evaluate_retrieval_metrics, first_relevant_rank
 
 
-def load_authoring_index(root: Path, fixtures_root: Path):
-    root = root.resolve()
-    directory = fixtures_root.resolve() / 'knowledge'
-    manifest = json.loads((directory / 'manifest.json').read_text('utf-8'))
-    chunks, identifiers = [], set()
-    for artifact in manifest['artifacts']:
-        identifier = artifact['artifactId']
-        path = (root / artifact['path']).resolve()
-        if not path.is_relative_to(directory.resolve()) or identifier in identifiers:
-            raise ValueError('Invalid authoring artifact path or duplicate identity')
-        identifiers.add(identifier)
-        raw = path.read_bytes()
-        if len(raw) != artifact['byteSize'] or sha256(raw).hexdigest() != artifact['checksum']:
-            raise ValueError('Authoring fixture exact-byte mismatch')
-        chunks.extend(chunk_text(raw.decode('utf-8'), source_id=identifier,
-                                 source_state=(artifact['version'], artifact['checksum'])))
-    return fit_chunks(tuple(chunks)), manifest
+def load_authoring_index(root, fixtures_root):
+    """Compatibility entry point, now validating the complete dataset."""
+    dataset = load_dataset(fixtures_root, root)
+    return TfidfCandidate().build(dataset.sources), dataset.knowledge
 
 
-def evaluate(root: Path, fixtures_root: Path, *, gates=None):
-    index, manifest = load_authoring_index(root, fixtures_root)
-    directory = fixtures_root.resolve()
-    tickets_raw = (directory / 'tickets/tickets-v0.1.jsonl').read_bytes()
-    gold_raw = (directory / 'retrieval/gold-v0.1.json').read_bytes()
-    tickets = [json.loads(line) for line in tickets_raw.decode('utf-8').splitlines()]
-    by_id = {t['id']: t for t in tickets}
-    gold = json.loads(gold_raw)
-    if (gold['annotationKind'], gold['benchmarkStatus'], gold['outputKind']) != (
-            'MANUAL_EXPECTED', 'NOT BENCHMARK', 'NOT ENGINE OUTPUT'):
-        raise ValueError('Unexpected authored evaluation classification')
-    ids = [c['ticketId'] for c in gold['cases']]
-    if len(by_id) != len(tickets) or len(set(ids)) != len(ids) or set(ids) != set(by_id):
-        raise ValueError('Ticket/gold associations are incomplete or duplicated')
-    known = {a['artifactId'] for a in manifest['artifacts']}
-    engine, normalizer, cases, pairs = TfidfSearchEngine(), NormalizerV1(), [], []
-    for case in gold['cases']:
+def evaluate(root: Path, fixtures_root: Path, *, gates=None, baseline=None, candidate=None):
+    dataset = load_dataset(fixtures_root, root)
+    candidate = candidate or TfidfCandidate()
+    require(candidate.system['normalizationVersion'] == NormalizerV1.version, 'Unsupported query normalization')
+    index = candidate.build(dataset.sources)
+    by_id = {ticket['id']: ticket for ticket in dataset.tickets}
+    known = {source[0] for source in dataset.sources}
+    normalizer, cases, pairs = NormalizerV1(), [], []
+    for case in dataset.gold['cases']:
         fields = by_id[case['ticketId']]['request']['input']
         query = normalizer.normalize(fields['title'] + '\n' + fields['description']).value
+        ranked = list(dict.fromkeys(candidate.rank(query, index)))
+        require(all(isinstance(item, str) for item in ranked) and set(ranked) <= known, 'Candidate returned unknown artifact')
         relevant = case['expectedRelevantLocalArtifacts']
-        if not relevant or not set(relevant) <= known:
-            raise ValueError('Gold references an unknown or empty relevance set')
-        hits = engine.rank(query, index)
-        ranked = list(dict.fromkeys(h.chunk.source_id for h in hits))
         pairs.append((ranked, relevant))
         cases.append({'ticketId': case['ticketId'], 'rankedLocalArtifacts': ranked,
                       'expectedRelevantLocalArtifacts': relevant,
                       'firstRelevantRank': first_relevant_rank(ranked, set(relevant))})
-    metrics = retrieval_metrics(pairs)
-    return {'evidenceClass': 'AUTHORED_RETRIEVAL_REGRESSION', 'benchmarkClaim': False,
-            'runtimeCitations': False, 'rightsStatus': gold['rightsStatus'],
-            'datasetVersion': gold['datasetVersion'], 'engine': engine.name, 'engineVersion': engine.version,
-            'engineConfigVersion': ENGINE_CONFIG, 'chunkPolicyVersion': CHUNK_POLICY,
-            'normalizationVersion': NORMALIZATION, 'queryStrategy': 'title+newline+description@0.1.0',
-            'rankingUnit': 'artifact; max chunk score; stable first-occurrence deduplication',
-            'sourceStateDigest': digest(manifest), 'ticketsChecksum': sha256(tickets_raw).hexdigest(),
-            'goldChecksum': sha256(gold_raw).hexdigest(), **metrics,
-            'suggestedGates': {metric: metrics[metric] >= threshold for metric, threshold in (gates or {}).items()}, 'cases': cases}
+    measured = evaluate_retrieval_metrics(pairs)
+    case_count = measured.pop('caseCount')
+    policy, extra = dict(gates or {}), {}
+    if baseline is not None:
+        reference = load_baseline(baseline) if isinstance(baseline, Path) else baseline
+        extra['comparison'] = compare_candidate(dataset=dataset.identity, components=dataset.component_digests,
+            metric_version=METRIC_VERSION, case_count=case_count, metrics=measured, baseline=reference)
+        for name in reference['gatedMetrics']:
+            policy[name] = max(policy.get(name, 0), reference['metrics'][name])
+    decision = evaluate_gates(metrics=measured, policy=policy)
+    report = build_report(evidence_class='AUTHORED_RETRIEVAL_REGRESSION', dataset=dataset, system=candidate.system,
+        metric_version=METRIC_VERSION, metrics=measured, cases=cases, gates=decision,
+        runtimeCitations=False, rightsStatus=dataset.gold['rightsStatus'], **extra)
+    # Compatibility for AI-03 library consumers; CLI emits only the stable schema.
+    return {**report, **measured, 'suggestedGates': {key: measured[key] >= value for key, value in policy.items()}}
+
+
+def stable_report(report):
+    return {key: value for key, value in report.items() if key not in report['metrics'] and key != 'suggestedGates'}
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--repo-root', required=True, type=Path)
-    parser.add_argument('--output', type=Path)
-    parser.add_argument('--fixtures-root', required=True, type=Path)
+    parser.add_argument('--repo-root', type=Path, default=Path('.'))
+    parser.add_argument('--dataset', '--fixtures-root', dest='dataset', required=True, type=Path)
+    parser.add_argument('--baseline', type=Path)
     parser.add_argument('--gates', type=json.loads, default={})
+    parser.add_argument('--output', type=Path)
     args = parser.parse_args()
-    report = evaluate(args.repo_root, args.fixtures_root, gates=args.gates)
-    report['gates'] = evaluate_gates(metrics=report, policy=args.gates)
-    report['result'] = report['gates']['result']
-    if args.output:
-        args.output.parent.mkdir(parents=True, exist_ok=True)
-        args.output.write_text(json.dumps(report, ensure_ascii=True, indent=2) + '\n', 'utf-8')
-    print(json.dumps({key: report[key] for key in ('evidenceClass', 'caseCount', 'hitAt1', 'hitAt3', 'mrr', 'suggestedGates')}))
-    return exit_code(report)
+    try:
+        report = stable_report(evaluate(args.repo_root, args.dataset, gates=args.gates, baseline=args.baseline))
+        write_report(report, args.output)
+        print(json.dumps({key: report[key] for key in ('evidenceClass', 'dataset', 'caseCount', 'metrics', 'gates', 'result')}, sort_keys=True))
+        return exit_code(report)
+    except (EvaluationError, OSError, ValueError, TypeError, KeyError) as error:
+        print('Evaluation rejected: ' + str(error), file=sys.stderr)
+        return 2
 
 
 if __name__ == '__main__':
