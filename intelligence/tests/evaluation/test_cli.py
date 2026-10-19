@@ -29,3 +29,18 @@ def test_retrieval_cli_returns_real_quality_decision(tmp_path, threshold, expect
     report = json.loads(output.read_text('utf-8'))
     assert report['result'] == ('PASS' if expected == 0 else 'FAIL')
     assert bool(report['gates']['violations']) == bool(expected)
+
+
+def test_invalid_dataset_returns_nonzero(tmp_path):
+    result = cli('hdpi.evaluation.retrieval', ['--dataset', tmp_path / 'missing'])
+    assert result.returncode == 2
+
+
+def test_incompatible_baseline_returns_nonzero(tmp_path):
+    baseline = json.loads((DATASET / 'evaluation/baseline-v0.1.json').read_text('utf-8'))
+    baseline['dataset']['id'] = 'different-authored-dataset'
+    path = tmp_path / 'baseline.json'
+    path.write_text(json.dumps(baseline), 'utf-8')
+    result = cli('hdpi.evaluation.retrieval', ['--repo-root', ROOT, '--dataset', DATASET, '--baseline', path])
+    assert result.returncode == 2
+    assert 'Incompatible baseline dataset' in result.stderr

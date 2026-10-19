@@ -25,7 +25,7 @@ class DegradedCandidate(TfidfCandidate):
 
 
 def test_candidate_injection_and_baseline_regression():
-    report = evaluate(ROOT, DATASET, baseline=BASELINE, candidate=DegradedCandidate())
+    report = evaluate(ROOT, DATASET, baseline=BASELINE, candidate=DegradedCandidate(), gates={'hitAt1': 0, 'hitAt3': 0})
     assert report['result'] == 'FAIL'
     assert report['metrics'] == dict(hitAt1=0, hitAt3=0, mrr=0, recallAt3=0)
     assert len(report['gates']['violations']) == 2

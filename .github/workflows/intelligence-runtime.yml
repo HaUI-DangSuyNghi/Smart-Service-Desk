@@ -9,6 +9,10 @@ on:
       - 'contracts/intelligence/**'
       - 'fixtures/intelligence/**'
       - 'scripts/intelligence/**'
+      - 'scripts/check-tier-boundaries.py'
+      - 'scripts/test-tier-boundaries.py'
+      - 'docs/architecture/AI04_EVALUATION_ARCHITECTURE.md'
+      - 'docs/intelligence/AI04_EVALUATION.md'
       - 'scripts/acceptance/intelligence-*'
       - 'backend/src/main/java/vn/haui/dx/core/**'
       - 'backend/src/main/resources/**'
@@ -45,22 +49,78 @@ jobs:
         env:
           INTELLIGENCE_PROFILE_BASE_REF: ${{ github.event.pull_request.base.sha || github.sha }}
         run: python scripts/intelligence/validate-foundation.py
+      - name: Strict evaluation ownership
+        run: python scripts/check-tier-boundaries.py
+      - name: Boundary mutation proofs
+        run: python scripts/test-tier-boundaries.py
       - name: Unit, contract, conformance and regression tests
-        run: python -m pytest intelligence/tests -q
+        id: source-tests
+        run: python -m pytest intelligence/tests -q --junitxml=.local/ai04/source-tests.xml
+      - name: Source evaluation and executable quality security provenance gates
+        if: ${{ !cancelled() && steps.source-tests.outcome != 'skipped' }}
+        run: >-
+          python scripts/intelligence/run-evaluation.py
+          --dataset fixtures/intelligence/service-desk
+          --baseline fixtures/intelligence/service-desk/evaluation/baseline-v0.1.json
+          --checks fixtures/intelligence/service-desk/evaluation/security-checks.json
+          --conformance-config fixtures/intelligence/service-desk/evaluation/conformance-config.json
+          --junit .local/ai04/source-tests.xml --output .local/ai04/source
       - name: Build source distribution and wheel without new resolution
-        run: python -m build --no-isolation --outdir .local/ai03-dist intelligence
+        run: python -m build --no-isolation --outdir .local/ai04-dist intelligence
       - name: Install built wheel
-        run: python scripts/intelligence/install-built-wheel.py --dist .local/ai03-dist
+        run: python scripts/intelligence/install-built-wheel.py --dist .local/ai04-dist
       - name: Verify installed package without source imports
         run: python -I scripts/intelligence/verify-installed-package.py
       - name: Run regression and security suite against installed wheel
-        run: python -I -m pytest -c scripts/intelligence/installed-pytest.ini intelligence/tests -q
-      - name: Record authored retrieval evaluation (not a production benchmark)
-        run: python -I -m hdpi.evaluation.retrieval --repo-root . --fixtures-root fixtures/intelligence/service-desk --gates '{"hitAt1":0.8333333333333334,"hitAt3":1}' --output .local/ai03-evaluation.json
+        id: wheel-tests
+        run: python -I -m pytest -c scripts/intelligence/installed-pytest.ini intelligence/tests -q --junitxml=.local/ai04/wheel-tests.xml
+      - name: Evaluate shipped wheel with executable gates
+        if: ${{ !cancelled() && steps.wheel-tests.outcome != 'skipped' }}
+        run: >-
+          python -I scripts/intelligence/run-evaluation.py --installed
+          --dataset fixtures/intelligence/service-desk
+          --baseline fixtures/intelligence/service-desk/evaluation/baseline-v0.1.json
+          --checks fixtures/intelligence/service-desk/evaluation/security-checks.json
+          --conformance-config fixtures/intelligence/service-desk/evaluation/conformance-config.json
+          --junit .local/ai04/wheel-tests.xml --output .local/ai04/wheel
+      - name: Require source and installed wheel evidence to agree
+        run: python -I scripts/intelligence/verify-evaluation-equivalence.py .local/ai04/source .local/ai04/wheel
+      - name: Retain safe authored evaluation evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ai04-evaluation-${{ matrix.os }}
+          path: |
+            .local/ai04/source/*.json
+            .local/ai04/wheel/*.json
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7
       - name: Verify diff whitespace
         env:
           INTELLIGENCE_PR_BASE_SHA: ${{ github.event.pull_request.base.sha || '' }}
         run: python scripts/intelligence/verify-pr-range.py
+  evaluation-equivalence:
+    needs: verify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Download evaluation evidence from both operating systems
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          gh run download "$RUN_ID" --name ai04-evaluation-ubuntu-24.04 --dir .local/ai04-linux
+          gh run download "$RUN_ID" --name ai04-evaluation-windows-2022 --dir .local/ai04-windows
+      - name: Require equivalent rankings metrics gates and fingerprints
+        run: python3 -I scripts/intelligence/verify-evaluation-equivalence.py .local/ai04-linux/wheel .local/ai04-windows/wheel
   core-integration:
     env:
       HDPI_PROFILE_ROOT: ${{ github.workspace }}/intelligence/src/apps/servicedesk/intelligence/profiles
