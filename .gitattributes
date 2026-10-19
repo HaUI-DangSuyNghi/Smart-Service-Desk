@@ -6,6 +6,7 @@ contracts/intelligence/**/*.json text eol=lf
 fixtures/intelligence/**/*.md text eol=lf
 fixtures/intelligence/**/*.json text eol=lf
 fixtures/intelligence/**/*.jsonl text eol=lf
+fixtures/intelligence/**/*.yaml text eol=lf
 scripts/intelligence/*.py text eol=lf
 intelligence/** text eol=lf
 scripts/acceptance/core/*.ps1 text eol=lf
