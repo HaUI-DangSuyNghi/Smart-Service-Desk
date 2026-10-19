@@ -1,3 +1,3 @@
-# Workspace capability
+# workspace
 
-Shared frontend capability boundary. Consume HPDI public contracts; register app-specific UI through extensions. No domain imports or domain policy belongs here.
+Gọi /me, chọn workspace, lọc menu theo vai trò. Chưa cài đặt.

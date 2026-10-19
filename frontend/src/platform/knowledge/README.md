@@ -1,3 +1,3 @@
-# Knowledge capability
+# knowledge
 
-Shared frontend capability boundary. Consume HPDI public contracts; register app-specific UI through extensions. No domain imports or domain policy belongs here.
+Knowledge Hub: tìm, xem, tải tài liệu tri thức. Chưa cài đặt.
