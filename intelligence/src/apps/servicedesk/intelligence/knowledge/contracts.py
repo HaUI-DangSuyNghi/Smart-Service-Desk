@@ -16,7 +16,10 @@ def validate_schema(value, name, root):
     try:
         Draft202012Validator(schema).validate(value)
     except ValidationError as error:
-        raise EvaluationError('Invalid ' + name + ': ' + error.message) from error
+        location = '.'.join(str(part) for part in error.absolute_path) or '<root>'
+        raise EvaluationError(
+            f'Invalid {name} at {location}: {error.validator} check failed'
+        ) from error
     return value
 
 
