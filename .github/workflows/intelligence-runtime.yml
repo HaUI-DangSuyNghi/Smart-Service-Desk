@@ -11,8 +11,6 @@ on:
       - 'scripts/intelligence/**'
       - 'scripts/check-tier-boundaries.py'
       - 'scripts/test-tier-boundaries.py'
-      - 'docs/architecture/AI04_EVALUATION_ARCHITECTURE.md'
-      - 'docs/intelligence/AI04_EVALUATION.md'
       - 'scripts/acceptance/intelligence-*'
       - 'backend/src/main/java/vn/haui/dx/core/**'
       - 'backend/src/main/resources/**'
