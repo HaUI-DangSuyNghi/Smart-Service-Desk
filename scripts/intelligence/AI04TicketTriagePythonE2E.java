@@ -20,6 +20,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+@org.springframework.context.annotation.Import(vn.haui.dx.core.workflow.internal.WorkflowStateFixture.class)
 @SpringBootTest
 @AutoConfigureMockMvc
 class AI04TicketTriagePythonE2E {
@@ -37,14 +38,16 @@ class AI04TicketTriagePythonE2E {
     @Autowired MockMvc mvc;
     @Autowired ObjectMapper json;
     @Autowired JdbcTemplate jdbc;
+    @Autowired vn.haui.dx.core.workflow.internal.WorkflowStateFixture engineState;
 
     private RequestPostProcessor as(String subject, String workspace, String role) {
         return jwt().jwt(token -> token.subject(subject).claim("groups", List.of("/workspaces/" + workspace + "/" + role)));
     }
 
     private long[] counts() {
-        return List.of("servicedesk_ticket", "process_scope", "act_hi_procinst", "act_ru_task", "audit_event")
-            .stream().mapToLong(table -> jdbc.queryForObject("select count(*) from " + table, Long.class)).toArray();
+        return java.util.stream.LongStream.concat(java.util.stream.LongStream.of(
+            jdbc.queryForObject("select count(*) from servicedesk_ticket", Long.class)),
+            java.util.Arrays.stream(engineState.counts())).toArray();
     }
 
     @Test void realTransportPreservesAuthorizationStateAndManualFallback() throws Exception {

@@ -131,7 +131,7 @@ paths:
           description: Live Flowable history. handle resolved leads to confirm; confirm accepted ends, rework returns to handle.
           content:
             application/json:
-              schema: {$ref: 'core.yaml#/components/schemas/ProcessHistory'}
+              schema: {$ref: '#/components/schemas/TicketProgress'}
         '400': {$ref: 'core.yaml#/components/responses/BadRequest'}
         '401': {$ref: 'core.yaml#/components/responses/Unauthorized'}
         '403': {$ref: 'core.yaml#/components/responses/Forbidden'}
@@ -240,7 +240,7 @@ components:
         total: {type: integer, format: int64, minimum: 0}
         awaitingHandling: {type: integer, format: int64, minimum: 0, description: Exactly one active handle task; includes claimed tasks.}
         awaitingConfirmation: {type: integer, format: int64, minimum: 0, description: Exactly one active confirm task.}
-        completed: {type: integer, format: int64, minimum: 0, description: Normal service-desk end event in Flowable history and no runtime tasks; excludes deleted processes.}
+        completed: {type: integer, format: int64, minimum: 0, description: Normal ticket completion with no remaining work; excludes cancelled processes.}
         unclassified: {type: integer, format: int64, minimum: 0, description: 'Missing or mismatched scope/history, suspended, deleted or unexpected task configuration; never assumed completed.'}
     NewTicket:
       type: object
@@ -262,11 +262,72 @@ components:
         title: {type: string}
         description: {type: string}
         createdAt: {type: string, format: date-time}
-        process: {$ref: 'core.yaml#/components/schemas/ProcessRef'}
+        process: {$ref: '#/components/schemas/TicketProcessView'}
     TicketPage:
       allOf:
-        - {$ref: 'core.yaml#/components/schemas/PageMeta'}
+        - {$ref: '#/components/schemas/TicketPageMeta'}
         - type: object
           required: [items]
           properties:
             items: {type: array, items: {$ref: '#/components/schemas/Ticket'}}
+
+    TicketProcessView:
+      type: object
+      required: [processInstanceId, processKey, businessKey, workspace]
+      properties:
+        id: {type: string, description: Legacy alias of processInstanceId}
+        processInstanceId: {type: string}
+        processKey: {type: string}
+        businessKey: {type: string}
+        workspace: {type: string}
+
+    TicketProgress:
+      type: object
+      required: [id, processKey, businessKey, workspace, initiator, startedAt, currentTasks, steps]
+      properties:
+        ended: {type: boolean, description: Legacy completion flag}
+        tasks: {type: array, description: Legacy alias of steps, items: {$ref: '#/components/schemas/TicketStep'}}
+        id: {type: string}
+        processKey: {type: string}
+        businessKey: {type: string}
+        workspace: {type: string}
+        initiator: {type: string}
+        startedAt: {type: string, format: date-time}
+        endedAt: {type: string, format: date-time, nullable: true}
+        currentTasks: {type: array, items: {$ref: '#/components/schemas/TicketTask'}}
+        steps: {type: array, items: {$ref: '#/components/schemas/TicketStep'}}
+
+    TicketTask:
+      type: object
+      required: [id, processInstanceId, key, name, candidateGroups, createdAt]
+      properties:
+        id: {type: string}
+        processInstanceId: {type: string}
+        key: {type: string, description: id của userTask trong BPMN}
+        name: {type: string}
+        candidateGroups: {type: array, items: {type: string, example: 'lab-a:coordinator'}}
+        assignee: {type: string, nullable: true, description: null nếu chưa ai nhận}
+        createdAt: {type: string, format: date-time}
+
+    TicketStep:
+      type: object
+      required: [key, name, startedAt]
+      properties:
+        id: {type: string}
+        actor: {type: string, nullable: true, description: Legacy alias of assignee}
+        key: {type: string}
+        name: {type: string}
+        assignee: {type: string, nullable: true}
+        outcome: {type: string, nullable: true}
+        comment: {type: string, nullable: true}
+        startedAt: {type: string, format: date-time}
+        claimedAt: {type: string, format: date-time, nullable: true}
+        endedAt: {type: string, format: date-time, nullable: true}
+
+    TicketPageMeta:
+      type: object
+      required: [page, size, total]
+      properties:
+        page: {type: integer, minimum: 0}
+        size: {type: integer, minimum: 1, maximum: 100}
+        total: {type: integer, format: int64, minimum: 0}

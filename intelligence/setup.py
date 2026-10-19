@@ -1,4 +1,4 @@
-"""Bundle authoritative profile/schema files without a second committed copy."""
+"""Bundle shared contracts while keeping application profiles external."""
 
 from pathlib import Path
 import shutil
@@ -19,8 +19,14 @@ def contracts():
 class BuildPy(build_py):
     def run(self):
         super().run()
-        destination = Path(self.build_lib) / 'smart_service_intelligence/_resources'
-        for name, source in [('profiles', ROOT / 'profiles'), ('contracts', contracts())]:
+        destination = Path(self.build_lib) / 'hdpi/_resources'
+        # A wheel rebuilt in the same worktree must not retain old bundled profiles.
+        stale = (destination / 'profiles').resolve()
+        if stale.is_dir():
+            if not stale.is_relative_to(Path(self.build_lib).resolve()):
+                raise RuntimeError('Resource path escapes the build directory')
+            shutil.rmtree(stale)
+        for name, source in [('contracts', contracts())]:
             shutil.copytree(source, destination / name, dirs_exist_ok=True)
 
 

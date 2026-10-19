@@ -1,5 +1,9 @@
 package vn.haui.dx.apps.servicedesk.triage;
 
+import vn.haui.dx.hpdi.intelligence.integration.IntelligenceTransport;
+import vn.haui.dx.hpdi.intelligence.integration.TriageResponses;
+import vn.haui.dx.hpdi.intelligence.api.IntelligenceFailure;
+
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.List;
@@ -27,6 +31,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
+@org.springframework.context.annotation.Import(vn.haui.dx.core.workflow.internal.WorkflowStateFixture.class)
 @SpringBootTest
 @AutoConfigureMockMvc
 @EnabledIfEnvironmentVariable(named = "FILE_TEST_JDBC_URL", matches = ".+/file_storage")
@@ -45,7 +50,8 @@ class TicketTriageIntegrationTest {
     @Autowired MockMvc mvc;
     @Autowired ObjectMapper json;
     @Autowired JdbcTemplate jdbc;
-    @MockBean IntelligenceTriageClient intelligence;
+    @Autowired vn.haui.dx.core.workflow.internal.WorkflowStateFixture engineState;
+    @MockBean IntelligenceTransport intelligence;
 
     @BeforeEach void fake() {
         doAnswer(invocation -> {
@@ -67,8 +73,9 @@ class TicketTriageIntegrationTest {
     }
 
     private long[] counts() {
-        return List.of("servicedesk_ticket", "process_scope", "act_hi_procinst", "act_ru_task", "audit_event")
-            .stream().mapToLong(table -> jdbc.queryForObject("select count(*) from " + table, Long.class)).toArray();
+        return java.util.stream.LongStream.concat(java.util.stream.LongStream.of(
+            jdbc.queryForObject("select count(*) from servicedesk_ticket", Long.class)),
+            java.util.Arrays.stream(engineState.counts())).toArray();
     }
 
     @Test void authorizationAndVisibilityRunBeforeAi() throws Exception {
@@ -88,9 +95,9 @@ class TicketTriageIntegrationTest {
             mvc.perform(post(route).with(as(subject, "triage-a", role)))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("SUCCESS"));
         }
-        verify(intelligence, times(3)).triage(argThat(request -> request.input().title().equals(ticket.path("title").asText())
-            && request.input().description().equals(ticket.path("description").asText())
-            && request.context().workspaceId().equals("triage-a")));
+        verify(intelligence, times(3)).triage(argThat(request -> request.request().input().title().equals(ticket.path("title").asText())
+            && request.request().input().description().equals(ticket.path("description").asText())
+            && request.request().context().workspaceId().equals("triage-a")));
     }
 
     @Test void rejectsEveryNonemptyBodyIncludingEmptyObjectAndChunkedInput() throws Exception {
@@ -112,7 +119,7 @@ class TicketTriageIntegrationTest {
         mvc.perform(post(route + "/triage").with(as("triage-owner", "triage-a", "requester")))
             .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("DEGRADED"))
             .andExpect(jsonPath("$.needsReview").value(true));
-        for (TriageFailure failure : List.of(TriageFailure.invalid(), TriageFailure.configuration(), TriageFailure.unavailable(), TriageFailure.timeout())) {
+        for (IntelligenceFailure failure : List.of(IntelligenceFailure.invalid(), IntelligenceFailure.configuration(), IntelligenceFailure.unavailable(), IntelligenceFailure.timeout())) {
             doThrow(failure).when(intelligence).triage(any());
             mvc.perform(post(route + "/triage").with(as("triage-owner", "triage-a", "requester")))
                 .andExpect(status().is(failure.status())).andExpect(content().contentTypeCompatibleWith("application/problem+json"))

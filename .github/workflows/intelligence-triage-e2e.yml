@@ -14,6 +14,7 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 60
     env:
+      HDPI_PROFILE_ROOT: ${{ github.workspace }}/intelligence/src/apps/servicedesk/intelligence/profiles
       FILE_TEST_JDBC_URL: jdbc:postgresql://localhost:15432/file_storage
       WORKFLOW_TEST_JDBC_URL: jdbc:postgresql://localhost:15432/workflow_approval
       INTELLIGENCE_TRIAGE_BASE_URL: http://127.0.0.1:18000
@@ -81,7 +82,7 @@ jobs:
           echo "::add-mask::$token"
           echo "INTELLIGENCE_TRIAGE_TOKEN=$token" >> "$GITHUB_ENV"
           docker build --no-cache --label "org.opencontainers.image.revision=$INT01_SOURCE_SHA" -f intelligence/Dockerfile -t "$INT01_PROJECT-intelligence:ci" .
-          docker run --rm --read-only --tmpfs /tmp:rw,noexec,nosuid,size=16m --cap-drop ALL --entrypoint python -v "$PWD/scripts/intelligence/verify-installed-package.py:/verify.py:ro" "$INT01_PROJECT-intelligence:ci" -I /verify.py
+          docker run --rm --read-only --tmpfs /tmp:rw,noexec,nosuid,size=16m --cap-drop ALL --entrypoint python -v "$PWD/scripts/intelligence/verify-installed-package.py:/verify.py:ro" -v "$HDPI_PROFILE_ROOT:/profiles:ro" -e HDPI_PROFILE_ROOT=/profiles "$INT01_PROJECT-intelligence:ci" -I /verify.py
           docker run --rm --entrypoint python "$INT01_PROJECT-intelligence:ci" -c "from importlib.metadata import version; import tomllib; print(version('smart-service-intelligence'))" > .local/int01/image-package-version.txt
           python - <<'PY'
           from pathlib import Path
@@ -97,7 +98,7 @@ jobs:
           PY
       - name: G4 G5 G6 real current Java Python transport and failure boundaries
         run: |
-          docker run -d --name "$INT01_PROJECT-python" --read-only --cap-drop ALL --security-opt no-new-privileges --pids-limit 64 --memory 256m -e INTELLIGENCE_TRIAGE_TOKEN -p 127.0.0.1:18000:8000 "$INT01_PROJECT-intelligence:ci"
+          docker run -d --name "$INT01_PROJECT-python" --read-only --cap-drop ALL --security-opt no-new-privileges --pids-limit 64 --memory 256m -e INTELLIGENCE_TRIAGE_TOKEN -e HDPI_PROFILE_ROOT=/profiles -e HDPI_REQUIRED_PROFILES=service-desk@0.2.0 -v "$HDPI_PROFILE_ROOT:/profiles:ro" -p 127.0.0.1:18000:8000 "$INT01_PROJECT-intelligence:ci"
           python - <<'PY'
           import time
           from urllib.error import HTTPError, URLError
@@ -128,12 +129,12 @@ jobs:
       - name: G8 real Core authorized retrieval provenance and citation regression
         run: |
           python -I scripts/acceptance/intelligence-retrieval.py --output .local/int01/authorized-retrieval.json
-          python -I -m smart_service_intelligence.evaluation.retrieval --repo-root . --output .local/int01/retrieval-evaluation.json
+          python -I -m hdpi.evaluation.retrieval --repo-root . --fixtures-root fixtures/intelligence/service-desk --gates '{"hitAt1":0.8333333333333334,"hitAt3":1}' --output .local/int01/retrieval-evaluation.json
           python - <<'PY'
           from pathlib import Path
           import json, os, subprocess
           images = []
-          for suffix in ('core', 'intelligence', 'gateway'):
+          for suffix in ('platform', 'intelligence', 'gateway'):
               tag = os.environ['INT01_PROJECT'] + '-' + suffix + ':ci'
               image, = json.loads(subprocess.check_output(['docker', 'image', 'inspect', tag]))
               revision = image['Config']['Labels']['org.opencontainers.image.revision']
@@ -144,7 +145,7 @@ jobs:
       - name: G9 image inventory and vulnerability assessment (not release approval)
         shell: pwsh
         run: |
-          ./scripts/scan-core.ps1 -Run "scan-$env:INT01_PROJECT" -CacheVolume "$env:INT01_PROJECT-trivy-cache" -Images @("$env:INT01_PROJECT-core:ci", "$env:INT01_PROJECT-intelligence:ci", 'postgres:16.15-bookworm@sha256:0ea6700a3b4f0ae6ce746519073558aed4d88a79d8d07622a9a644946c7319c4', 'quay.io/keycloak/keycloak:26.0.8@sha256:09a381c715ab0b111835b70f2905955274843a219c6f27efb348e4d9f4086858', "$env:INT01_PROJECT-gateway:ci") -ReportOnly
+          ./scripts/scan-core.ps1 -Run "scan-$env:INT01_PROJECT" -CacheVolume "$env:INT01_PROJECT-trivy-cache" -Images @("$env:INT01_PROJECT-platform:ci", "$env:INT01_PROJECT-intelligence:ci", 'postgres:16.15-bookworm@sha256:0ea6700a3b4f0ae6ce746519073558aed4d88a79d8d07622a9a644946c7319c4', 'quay.io/keycloak/keycloak:26.0.8@sha256:09a381c715ab0b111835b70f2905955274843a219c6f27efb348e4d9f4086858', "$env:INT01_PROJECT-gateway:ci") -ReportOnly
       - name: Record exact tested commit and release gates
         if: always()
         run: python scripts/intelligence/summarize-integration.py

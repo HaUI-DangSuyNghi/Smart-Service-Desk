@@ -6,15 +6,15 @@ from unittest.mock import Mock, patch
 
 import pytest
 
-from smart_service_intelligence.contracts.search import SearchContractValidator
-from smart_service_intelligence.domain.errors import (AuthorizationRejected, CitationVerificationError,
+from hdpi.contracts.search import SearchContractValidator
+from hdpi.domain.errors import (AuthorizationRejected, CitationVerificationError,
     ContractValidationError, EngineConfigurationError)
-from smart_service_intelligence.retrieval.corpus import load_index, publish_index
-from smart_service_intelligence.retrieval.index import build_index
-from smart_service_intelligence.retrieval.models import RankedHit, MAX_SOURCE_BYTES
-from smart_service_intelligence.retrieval.registry import IndexRegistry
-from smart_service_intelligence.retrieval.tfidf.engine import TfidfSearchEngine
-from smart_service_intelligence.services.search import SearchService
+from hdpi.retrieval.corpus import load_index, publish_index
+from hdpi.retrieval.index import build_index
+from hdpi.retrieval.models import RankedHit, MAX_SOURCE_BYTES
+from hdpi.retrieval.registry import IndexRegistry
+from hdpi.retrieval.tfidf.engine import TfidfSearchEngine
+from hdpi.services.search import SearchService
 
 
 def service_for(index, partition, hits):
@@ -101,7 +101,7 @@ def test_source_and_runtime_version_guards(documents, partition):
     content = b'x' * (MAX_SOURCE_BYTES + 1)
     with pytest.raises(CitationVerificationError):
         replace(documents[0], content=content, source_checksum=sha256(content).hexdigest())
-    with patch('smart_service_intelligence.retrieval.tfidf.config.version', return_value='unknown'):
+    with patch('hdpi.retrieval.tfidf.config.version', return_value='unknown'):
         with pytest.raises(EngineConfigurationError):
             build_index(documents, partition)
 

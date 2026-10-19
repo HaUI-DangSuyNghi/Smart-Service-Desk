@@ -1,6 +1,6 @@
 param(
     [ValidatePattern('^scan-[a-z0-9-]{1,45}$')][string]$Run = "scan-$([guid]::NewGuid().ToString('N').Substring(0,12))",
-    [ValidateNotNullOrEmpty()][string[]]$Images = @('dx-core:0.1.0', 'postgres:16.15-bookworm@sha256:0ea6700a3b4f0ae6ce746519073558aed4d88a79d8d07622a9a644946c7319c4', 'quay.io/keycloak/keycloak:26.0.8@sha256:09a381c715ab0b111835b70f2905955274843a219c6f27efb348e4d9f4086858', 'dx-apisix:3.11.0-sec01', 'dx-core-build:0.1.0'),
+    [ValidateNotNullOrEmpty()][string[]]$Images = @('dx-platform:0.1.0', 'postgres:16.15-bookworm@sha256:0ea6700a3b4f0ae6ce746519073558aed4d88a79d8d07622a9a644946c7319c4', 'quay.io/keycloak/keycloak:26.0.8@sha256:09a381c715ab0b111835b70f2905955274843a219c6f27efb348e4d9f4086858', 'dx-apisix:3.11.0-sec01', 'dx-platform-build:0.1.0'),
     [switch]$ReportOnly,
     [ValidatePattern('^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,80}$')][string]$CacheVolume = 'dx-core-trivy-cache'
 )
@@ -26,7 +26,7 @@ foreach ($image in $Images) {
         $report = Get-Content -LiteralPath (Join-Path $directory "image-$index.json") -Raw | ConvertFrom-Json
         if (!$report.Metadata -or !$report.SchemaVersion) { throw 'Invalid scanner report' }
         if (!$report.Metadata.OS -or !@($report.Results | Where-Object Class -eq os-pkgs).Count) { throw 'Missing OS package scan' }
-        if ($image -match '^(dx-core(?:-build)?:|int01-[a-z0-9-]+-core:|quay.io/keycloak/)' -and !@($report.Results | Where-Object Type -eq jar).Count) { throw 'Missing packaged Java dependency scan' }
+        if ($image -match '^(dx-platform(?:-build)?:|int01-[a-z0-9-]+-platform:|quay.io/keycloak/)' -and !@($report.Results | Where-Object Type -eq jar).Count) { throw 'Missing packaged Java dependency scan' }
         if ($image -match '-intelligence:' -and !@($report.Results | Where-Object Type -eq 'python-pkg').Count) { throw 'Missing installed Python dependency scan' }
         $entry['targets'] = @($report.Results | Select-Object Target,Class,Type)
         $vulnerabilities = @($report.Results | ForEach-Object { $_.Vulnerabilities } | Where-Object { $null -ne $_ })

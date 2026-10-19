@@ -3,8 +3,8 @@ from pathlib import Path
 
 import pytest
 
-from smart_service_intelligence.domain.models import TrustedContext
-from smart_service_intelligence.services.triage import TriageService
+from hdpi.domain.models import TrustedContext
+from hdpi.services.triage import TriageService
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -23,3 +23,8 @@ def service():
 @pytest.fixture
 def trusted():
     return TrustedContext(workspace_id='lab-a', subject='test-subject')
+
+
+@pytest.fixture(autouse=True)
+def configured_app_profiles(monkeypatch):
+    monkeypatch.setenv('HDPI_PROFILE_ROOT', str(ROOT / 'intelligence/src/apps/servicedesk/intelligence/profiles'))

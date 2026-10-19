@@ -13,7 +13,7 @@ function Token($user) {
 function Direct($path, $token, $expected) {
     $config = "url = `"http://localhost:8080/api/core/v1$path`"`n"
     if ($token) { $config += "header = `"Authorization: Bearer $token`"`n" }
-    $reply = @($config | docker compose -p $ComposeProject exec -T core curl -sS --config - -w '\n%{http_code}')
+    $reply = @($config | docker compose -p $ComposeProject exec -T platform curl -sS --config - -w '\n%{http_code}')
     if ($LASTEXITCODE -ne 0 -or [int]$reply[-1] -ne $expected) { throw "Direct backend $path expected $expected" }
     $text = $reply[0..($reply.Count - 2)] -join "`n"
     $contractResponses.Add(@{method='GET'; path=$path; status=$expected; bodyJson=$text; source='direct-backend'})

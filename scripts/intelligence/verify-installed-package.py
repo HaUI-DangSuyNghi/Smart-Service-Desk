@@ -4,23 +4,23 @@ from pathlib import Path
 from importlib.metadata import version
 import platform
 
-import smart_service_intelligence
-from smart_service_intelligence.domain.models import TrustedContext
-from smart_service_intelligence.resources import resource_root
-from smart_service_intelligence.services.triage import TriageService
+import hdpi
+from hdpi.domain.models import TrustedContext
+from hdpi.resources import resource_root
+from hdpi.services.triage import TriageService
 
 
 def verify_retrieval():
     # Independent authored bytes and FakeCore IDs; never bind repository knowledge.
     from hashlib import sha256
     import tempfile
-    from smart_service_intelligence.citations.verifier import CoreCitationVerifier
-    from smart_service_intelligence.profiles.registry import ProfileRegistry
-    from smart_service_intelligence.retrieval.corpus import load_index, publish_index
-    from smart_service_intelligence.retrieval.index import build_authorized_index
-    from smart_service_intelligence.retrieval.models import AuthorizedDocument, PartitionKey, scope_hash
-    from smart_service_intelligence.retrieval.registry import IndexRegistry
-    from smart_service_intelligence.services.search import SearchService
+    from hdpi.citations.verifier import CoreCitationVerifier
+    from hdpi.profiles.registry import ProfileRegistry
+    from hdpi.retrieval.corpus import load_index, publish_index
+    from hdpi.retrieval.index import build_authorized_index
+    from hdpi.retrieval.models import AuthorizedDocument, PartitionKey, scope_hash
+    from hdpi.retrieval.registry import IndexRegistry
+    from hdpi.services.search import SearchService
 
     context = TrustedContext(workspace_id='fake-core-wheel', auth_scope_fingerprint='fake-core-scope@1')
     content = 'Hướng dẫn đăng nhập tài khoản.'.encode('utf-8')
@@ -65,11 +65,15 @@ def main():
     if version('smart-service-intelligence') != expected_version:
         raise RuntimeError('Installed package version must be ' + expected_version)
     print(f'Python {platform.python_version()}; smart-service-intelligence {expected_version}')
-    location = Path(smart_service_intelligence.__file__).resolve()
+    location = Path(hdpi.__file__).resolve()
     if 'site-packages' not in location.parts:
         raise RuntimeError('Verification must load the installed wheel')
-    if '_resources' not in resource_root('profiles').parts or '_resources' not in resource_root('contracts').parts:
-        raise RuntimeError('Wheel must contain profiles and shared contracts')
+    if (location.parent / '_resources/profiles').exists():
+        raise RuntimeError('Generic wheel must not bundle application profiles')
+    if resource_root('profiles').is_relative_to(location.parent):
+        raise RuntimeError('Application profiles must be supplied externally')
+    if '_resources' not in resource_root('contracts').parts:
+        raise RuntimeError('Wheel must contain the shared contracts')
     payload = {'contractVersion': '0.1.0', 'requestId': 'installed-wheel', 'profile': 'service-desk',
                'context': {'workspaceId': 'local-wheel-check'},
                'input': {'title': 'Wi-Fi chập chờn', 'description': 'Một máy bị ảnh hưởng; có thể chờ.'}}

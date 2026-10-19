@@ -19,15 +19,15 @@ from urllib.parse import urlencode
 from urllib.request import Request, urlopen
 from uuid import uuid4
 
-from smart_service_intelligence.citations.verifier import CoreCitationVerifier
-from smart_service_intelligence.domain.errors import AuthorizationRejected, CitationVerificationError, CorpusUnavailable
-from smart_service_intelligence.integrations.core import CoreAuthorizedCorpusAdapter, CoreCorpusCatalog, CoreHttpClient
-from smart_service_intelligence.profiles.registry import ProfileRegistry
-from smart_service_intelligence.retrieval.index import build_authorized_index
-from smart_service_intelligence.retrieval.registry import IndexRegistry
-from smart_service_intelligence.retrieval.tfidf.engine import TfidfSearchEngine
-from smart_service_intelligence.services.search import SearchService
-from smart_service_intelligence.services.triage import TriageService
+from hdpi.citations.verifier import CoreCitationVerifier
+from hdpi.domain.errors import AuthorizationRejected, CitationVerificationError, CorpusUnavailable
+from hdpi.integrations.core import CoreAuthorizedCorpusAdapter, CoreCorpusCatalog, CoreHttpClient
+from hdpi.profiles.registry import ProfileRegistry
+from hdpi.retrieval.index import build_authorized_index
+from hdpi.retrieval.registry import IndexRegistry
+from hdpi.retrieval.tfidf.engine import TfidfSearchEngine
+from hdpi.services.search import SearchService
+from hdpi.services.triage import TriageService
 
 
 def http(method, url, *, token=None, body=None, content_type=None, expected=200):

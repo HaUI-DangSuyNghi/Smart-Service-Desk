@@ -2,8 +2,6 @@
 !intelligence/
 !intelligence/src/
 !intelligence/src/**
-!intelligence/profiles/
-!intelligence/profiles/**
 !intelligence/pyproject.toml
 !intelligence/setup.py
 !intelligence/MANIFEST.in
@@ -15,3 +13,4 @@
 !contracts/intelligence/v1/*.schema.json
 **/__pycache__/
 **/*.pyc
+intelligence/src/apps/

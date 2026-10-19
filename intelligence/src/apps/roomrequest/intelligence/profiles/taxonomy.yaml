@@ -1,0 +1,13 @@
+status: PROPOSED
+taxonomyVersion: '1'
+categories:
+  BOOKING:
+    definition: Room booking request
+    exclusions:
+    - Unrelated request
+    suggestedGroup: FACILITIES
+  OTHER:
+    definition: Needs manual review
+    exclusions:
+    - Known booking request
+    suggestedGroup: ROOM-REVIEW

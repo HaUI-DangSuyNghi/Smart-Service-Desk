@@ -11,7 +11,7 @@ from urllib.parse import urlencode, urlsplit
 from urllib.request import Request, urlopen
 from uuid import uuid4
 
-from smart_service_intelligence.contracts.validator import ContractValidator
+from hdpi.contracts.validator import ContractValidator
 
 
 def http(method, url, *, token=None, payload=None, form=None, expected=200):

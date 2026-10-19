@@ -1,2 +1,1 @@
 include .python-version requirements.lock
-recursive-include profiles *.yaml *.json *.md

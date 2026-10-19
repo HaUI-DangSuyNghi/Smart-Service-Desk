@@ -1,11 +1,17 @@
-# Hợp đồng API của Core
+# Hợp đồng API theo tầng
 
 Có hai loại hợp đồng, phải luôn khớp nhau:
 
 | Loại | Ở đâu | Ai dùng |
 |---|---|---|
 | REST (HTTP) | `contracts/openapi/` | Frontend, script `smoke.ps1`, app bên ngoài |
-| Java | `backend/.../core/<module>/api/` | Module backend gọi nhau, app Tầng 3 |
+| Java Core | `backend/.../core/<module>/api/` | HPDI implementation, Core integration |
+| Java HPDI | `backend/.../hpdi/<capability>/api/` | App Tầng 3 |
+
+HPDI REST nằm tại [hpdi/openapi.yaml](hpdi/openapi.yaml). Service Desk giữ
+[openapi/servicedesk.yaml](openapi/servicedesk.yaml); Room Request sở hữu
+[apps/roomrequest/openapi.yaml](apps/roomrequest/openapi.yaml). App gọi HPDI public
+API và sở hữu REST projection; không import Core DTO hoặc adapter nội bộ.
 
 ## File trong `openapi/`
 
@@ -27,7 +33,7 @@ python -m openapi_spec_validator contracts/openapi/core-target.yaml
 
 | Quy ước | Giá trị |
 |---|---|
-| Tiền tố | `/api/core/v1` (core), `/api/apps/<app>/v1` (Tầng 3) |
+| Tiền tố | `/api/core/v1` (T1), `/api/hpdi/v1` (T2), `/api/apps/<app>/v1` (T3) |
 | Workspace | Tài nguyên thuộc workspace nằm dưới `/workspaces/{workspace}/...`. Workspace lấy từ URL, không lấy từ header/body. |
 | Xác thực | `Authorization: Bearer <access token>` |
 | Định dạng | JSON UTF-8, tên trường `camelCase`; upload dùng `multipart/form-data` |
@@ -50,7 +56,7 @@ python -m openapi_spec_validator contracts/openapi/core-target.yaml
 | 413 | `PAYLOAD_TOO_LARGE` | File vượt 5 MiB |
 | 415 | `UNSUPPORTED_MEDIA_TYPE` | Loại file không cho phép |
 
-Phía Java: ném `CoreException` với `ErrorCode` tương ứng, `Errors` tự chuyển thành body lỗi.
+Phía Core dùng `CoreException`; phía app dùng `hpdi.common.api.CapabilityException`. Error advice của từng tầng giữ cùng hợp đồng Problem Details.
 
 ## Đổi hợp đồng
 
