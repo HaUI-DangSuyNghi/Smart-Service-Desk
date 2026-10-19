@@ -9,6 +9,7 @@ from ..retrieval.chunking import chunk_text
 from ..retrieval.models import CHUNK_POLICY, ENGINE_CONFIG, NORMALIZATION, digest
 from ..retrieval.tfidf.engine import fit_chunks, TfidfSearchEngine
 from .metrics import first_relevant_rank, retrieval_metrics
+from .gates import evaluate_gates, exit_code
 
 
 def load_authoring_index(root: Path, fixtures_root: Path):
@@ -78,11 +79,14 @@ def main():
     parser.add_argument('--gates', type=json.loads, default={})
     args = parser.parse_args()
     report = evaluate(args.repo_root, args.fixtures_root, gates=args.gates)
+    report['gates'] = evaluate_gates(metrics=report, policy=args.gates)
+    report['result'] = report['gates']['result']
     if args.output:
         args.output.parent.mkdir(parents=True, exist_ok=True)
         args.output.write_text(json.dumps(report, ensure_ascii=True, indent=2) + '\n', 'utf-8')
     print(json.dumps({key: report[key] for key in ('evidenceClass', 'caseCount', 'hitAt1', 'hitAt3', 'mrr', 'suggestedGates')}))
+    return exit_code(report)
 
 
 if __name__ == '__main__':
-    main()
+    raise SystemExit(main())
