@@ -8,7 +8,7 @@ from pathlib import Path
 from ..domain.models import TrustedContext
 from ..services.triage import TriageService
 from ..retrieval.models import digest
-from .dataset import load_dataset, require as require_dataset
+from .dataset import load_dataset, parse_json, require as require_dataset
 from .evidence import build_report, write_report
 from .gates import evaluate_gates, exit_code
 
@@ -72,18 +72,26 @@ def main():
     parser.add_argument('--fixtures', type=Path)
     parser.add_argument('--dataset', type=Path)
     parser.add_argument('--repo-root', type=Path, default=Path('.'))
+    parser.add_argument('--config', type=Path, help='Application-owned JSON conformance pins')
     parser.add_argument('--output', type=Path)
-    parser.add_argument('--profile-version', required=True)
-    parser.add_argument('--expected-runtime', required=True, type=json.loads)
-    parser.add_argument('--normalization-version', required=True)
+    parser.add_argument('--profile-version')
+    parser.add_argument('--expected-runtime', type=json.loads)
+    parser.add_argument('--normalization-version')
     args = parser.parse_args()
     dataset_root = args.dataset or (args.fixtures.parent.parent if args.fixtures else None)
     if dataset_root is None:
         parser.error('--dataset is required')
+    config = parse_json(args.config.read_bytes()) if args.config else {
+        'profileVersion': args.profile_version, 'expectedRuntime': args.expected_runtime,
+        'normalizationVersion': args.normalization_version}
+    if not all(config.get(key) for key in ('profileVersion', 'expectedRuntime', 'normalizationVersion')):
+        parser.error('Provide --config or all three explicit conformance pins')
     if args.fixtures:
-        require_dataset(args.fixtures.resolve().is_relative_to(dataset_root.resolve()), 'Fixture outside dataset')
-    report = evaluate(args.repo_root, dataset_root, profile_version=args.profile_version,
-                      expected_runtime=args.expected_runtime, normalization_version=args.normalization_version)
+        dataset = load_dataset(dataset_root, args.repo_root)
+        expected_path = dataset_root / dataset.manifest['components']['tickets']['path']
+        require_dataset(args.fixtures.resolve() == expected_path.resolve(), 'Fixture differs from declared dataset tickets')
+    report = evaluate(args.repo_root, dataset_root, profile_version=config['profileVersion'],
+                      expected_runtime=config['expectedRuntime'], normalization_version=config['normalizationVersion'])
     write_report(report, args.output)
     print(json.dumps({key: report[key] for key in ('evidenceClass', 'caseCount', 'metrics', 'result')}, sort_keys=True))
     return exit_code(report)
