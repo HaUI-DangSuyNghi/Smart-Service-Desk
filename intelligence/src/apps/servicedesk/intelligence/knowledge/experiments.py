@@ -36,7 +36,9 @@ FAILURE_TAXONOMY = (
 )
 
 
-def evaluate_family_control(root, directory, *, enriched, reference, candidate=None):
+def evaluate_family_control(
+    root, directory, *, enriched, reference, candidate=None, experiment_id=None
+):
     manifest = load_dataset(root, directory).manifest
     sources, projection = project(root, directory, enriched=enriched, allow_draft=True)
     legacy = load_legacy(directory, root)
@@ -73,7 +75,7 @@ def evaluate_family_control(root, directory, *, enriched, reference, candidate=N
     floor = reference['metrics']
     invariants = (
         {}
-        if not enriched
+        if not enriched or experiment_id == 'A3'
         else {
             'hitAt1DidNotImprove': int(metrics['hitAt1'] <= floor['hitAt1']),
             'mrrDidNotImprove': int(metrics['mrr'] <= floor['mrr']),
@@ -100,7 +102,7 @@ def evaluate_family_control(root, directory, *, enriched, reference, candidate=N
     )
     system = candidate.system | {
         'projectionVersion': projection['projectionVersion'],
-        'experiment': 'A2' if enriched else 'A1',
+        'experiment': experiment_id or ('A2' if enriched else 'A1'),
         'rankingUnit': 'legacy-source-family; max child score; first-occurrence deduplication',
     }
     return build_report(

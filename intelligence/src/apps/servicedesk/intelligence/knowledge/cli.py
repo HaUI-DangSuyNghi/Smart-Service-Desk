@@ -157,6 +157,32 @@ def evaluate(args):
     return 0
 
 
+def chunk_experiment(args):
+    from .section_experiment import compare_chunking
+
+    reports = compare_chunking(args.repo_root, args.dataset)
+    args.output.mkdir(parents=True, exist_ok=True)
+    for identifier, report in reports.items():
+        write_report(report, args.output / (identifier.lower() + '-report.json'))
+
+    accepted = reports['A3']['result'] == 'PASS'
+    summary = {
+        'schemaVersion': '0.2.0',
+        'benchmarkClaim': False,
+        'holdout': 'NOT_EVALUATED',
+        'runtimePolicyUnchanged': True,
+        'recommendation': 'REVIEW_EXPERIMENT_ONLY' if accepted else 'REJECT_SECTION_POLICY',
+        'reports': {
+            identifier: {'metrics': report['metrics'], 'result': report['result']}
+            for identifier, report in reports.items()
+        },
+    }
+    write_json(args.output / 'chunk-comparison.json', summary)
+    print(json.dumps(summary, sort_keys=True))
+    # Rejection is an experiment outcome. Runtime still uses the paragraph policy.
+    return 0
+
+
 def accept(args):
     reports = acceptance(args.repo_root, args.dataset)
     result = 'PASS' if all(row['gates']['result'] == 'PASS' for row in reports.values()) else 'FAIL'
@@ -182,13 +208,15 @@ def parser():
         ('compare', comparison),
         ('evaluate', evaluate),
         ('acceptance', accept),
+        ('chunk-experiment', chunk_experiment),
     ]:
         command = commands.add_parser(name)
         command.set_defaults(handler=handler)
         command.add_argument(
             '--output',
             type=Path,
-            required=name in ('project', 'worksheet', 'compare', 'evaluate', 'acceptance'),
+            required=name
+            in ('project', 'worksheet', 'compare', 'evaluate', 'acceptance', 'chunk-experiment'),
         )
         if name == 'validate':
             command.add_argument('--require-reviewed', action='store_true')
