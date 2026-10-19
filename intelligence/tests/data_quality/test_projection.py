@@ -3,7 +3,6 @@ from pathlib import Path
 
 import pytest
 import yaml
-
 from hdpi.evaluation.errors import EvaluationError
 from servicedesk.intelligence.knowledge.lexicon import validate_lexicon
 from servicedesk.intelligence.knowledge.projection import load_corpus, project, render
@@ -18,7 +17,10 @@ def test_projection_is_rebuildable_and_preserves_lineage():
     assert len(first[0]) == 10 and first[1]['status'] == 'DRAFT_ONLY'
     assert first[1]['runtimeCitations'] is False
     assert all(row['sourceChecksum'] and row['metadataDigest'] for row in first[1]['lineage'])
-    assert project(ROOT, DATA, enriched=False, allow_draft=True)[1]['projectionDigest'] != first[1]['projectionDigest']
+    assert (
+        project(ROOT, DATA, enriched=False, allow_draft=True)[1]['projectionDigest']
+        != first[1]['projectionDigest']
+    )
 
 
 def test_no_implicit_approval_or_query_expansion():
@@ -31,7 +33,10 @@ def test_metadata_changes_projection_bytes():
     item = deepcopy(manifest['artifacts'][0])
     before = render(item, bodies[item['artifactId']], concepts, enriched=True, allow_draft=True)
     item['positiveSignals'].append('Synthetic additional observation')
-    assert render(item, bodies[item['artifactId']], concepts, enriched=True, allow_draft=True) != before
+    assert (
+        render(item, bodies[item['artifactId']], concepts, enriched=True, allow_draft=True)
+        != before
+    )
 
 
 @pytest.mark.parametrize('kind', ['alias', 'conflict', 'broad', 'approval'])

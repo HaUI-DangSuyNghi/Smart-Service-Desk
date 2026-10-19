@@ -1,4 +1,5 @@
 """Controlled domain terms are data; they never change runtime normalization."""
+
 from hdpi.evaluation.dataset import require
 from hdpi.normalization.v1 import NormalizerV1
 
@@ -22,10 +23,16 @@ def validate_lexicon(value, root):
             require(bool(spelling) and spelling not in own, 'Duplicate alias in concept')
             own.add(spelling)
             normalized = normalize(term).value
-            require(normalized not in owners or owners[normalized] == identifier, 'Alias has conflicting concept ownership')
+            require(
+                normalized not in owners or owners[normalized] == identifier,
+                'Alias has conflicting concept ownership',
+            )
             owners[normalized] = identifier
-    require(next(c for c in value['concepts'] if c['conceptId'] == 'broad-network')['ambiguity'] == 'high',
-            'Broad network vocabulary must not expand automatically')
+    require(
+        next(c for c in value['concepts'] if c['conceptId'] == 'broad-network')['ambiguity']
+        == 'high',
+        'Broad network vocabulary must not expand automatically',
+    )
     return {concept['conceptId']: concept for concept in value['concepts']}
 
 
@@ -34,7 +41,12 @@ def phrases(metadata, concepts, *, allow_draft=False):
     for identifier in metadata['conceptIds']:
         require(identifier in concepts, 'Unknown lexicon concept')
         concept = concepts[identifier]
-        require(allow_draft or concept['reviewStatus'] == 'REVIEWED', 'Unreviewed lexicon cannot be published')
-        require(concept['ambiguity'] != 'high', 'Ambiguous broad term cannot expand into projection')
+        require(
+            allow_draft or concept['reviewStatus'] == 'REVIEWED',
+            'Unreviewed lexicon cannot be published',
+        )
+        require(
+            concept['ambiguity'] != 'high', 'Ambiguous broad term cannot expand into projection'
+        )
         result.extend([concept['preferredTerm'], *concept['variants']])
     return tuple(dict.fromkeys(result))
