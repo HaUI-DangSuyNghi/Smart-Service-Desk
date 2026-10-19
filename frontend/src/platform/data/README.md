@@ -1,3 +1,3 @@
-# Data capability
+# data
 
-Shared frontend capability boundary. Consume HPDI public contracts; register app-specific UI through extensions. No domain imports or domain policy belongs here.
+Tìm metadata, khung dashboard, audit. Chưa cài đặt.

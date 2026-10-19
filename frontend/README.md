@@ -1,26 +1,23 @@
-# Frontend boundaries
+# Frontend
 
-The legacy ARC-07 structural scaffold is preserved on the recovery branch.
-There is no rendered UI or chosen UI framework yet.
-`src/platform` owns shared auth/workspace/H-P-D-I clients and the extension registry.
-`src/apps/servicedesk` owns domain routes, API clients, page and component slots.
-`src/main.ts` is the composition root registering applications.
+Giao diện Smart Service Desk: React + TypeScript + Vite.
 
-All source and tests use TypeScript with strict checking. Run `npm ci`,
-`npm run typecheck`, `npm run lint`, `npm test`, `npm run build` and
-`npm run build:platform`. Node 24 runs the TypeScript tests directly.
-The platform compiler reads only `src/platform` and emits `dist-platform`,
-without application inputs. The full build emits `dist` JavaScript and declarations.
-ESLint and the repository boundary guard reject platform imports of applications.
-Register routes, menus, dashboard sources, renderers and process business-key
-resolvers through the registry; do not add domain branches to the platform.
+```text
+src/
+├─ App.tsx          ghép platform với các app (nơi duy nhất import cả hai)
+├─ platform/        Tầng 2, dùng chung, không import apps/
+│  ├─ router/       registry để app đăng ký route, menu, link process
+│  ├─ layout/       khung trang, trang chủ, 404
+│  └─ auth/ workspace/ process/ knowledge/ data/
+└─ apps/
+   └─ servicedesk/  Tầng 3, nghiệp vụ Service Desk
+test/               test, cấu trúc giống src/
+```
 
-Browser identity uses Authorization Code + PKCE. Token acquisition is an injected
-auth adapter; domain code never parses JWTs or grants workspace authority.
+```bash
+npm install
+npm run dev        # http://localhost:5173, /api chuyển tới gateway :9080
+npm run format     # format toàn bộ src
+```
 
-The Service Desk client retains the current API: query/time-filtered search and
-statistics, progress and bodyless triage for persisted tickets. Its ticket,
-progress and triage projections belong to the application; they are separate
-from shared HPDI work inbox and timeline contracts. Suggestions remain advice,
-and failed HTTP responses are surfaced as errors. Build output and installed
-dependencies are ignored by Git.
+Trước khi push, chạy đủ như CI: `typecheck`, `lint`, `test`, `build`, `build:platform`.

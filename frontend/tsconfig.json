@@ -1,27 +1,21 @@
 {
+  "files": [],
+  "references": [
+    {
+      "path": "./tsconfig.app.json"
+    },
+    {
+      "path": "./tsconfig.node.json"
+    },
+    {
+      "path": "./tsconfig.test.json"
+    }
+  ],
   "compilerOptions": {
-    "target": "ES2022",
-    "module": "NodeNext",
-    "moduleResolution": "NodeNext",
-    "lib": [
-      "ES2022",
-      "DOM",
-      "DOM.Iterable"
-    ],
-    "strict": true,
-    "noEmitOnError": true,
-    "noUncheckedIndexedAccess": true,
-    "exactOptionalPropertyTypes": true,
-    "verbatimModuleSyntax": true,
-    "erasableSyntaxOnly": true,
-    "isolatedModules": true,
-    "rewriteRelativeImportExtensions": true,
-    "declaration": true,
-    "rootDir": "src",
-    "outDir": "dist",
-    "types": []
-  },
-  "include": [
-    "src/**/*.ts"
-  ]
+    "paths": {
+      "@/*": [
+        "./src/*"
+      ]
+    }
+  }
 }
