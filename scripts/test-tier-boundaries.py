@@ -130,6 +130,10 @@ class BoundaryGuardTest(unittest.TestCase):
         self.write('intelligence/src/apps/example/policy.py', 'PROFILE = "fake-domain"')
         self.assertFalse(guard.violations(self.root))
 
+    def test_evaluation_cannot_import_apps_or_embed_application_policy(self):
+        self.mutation('intelligence/src/hdpi/evaluation/bad.py', 'from apps.example import policy', 'python-app-import')
+        self.mutation('intelligence/src/hdpi/evaluation/policy.py', 'PROFILE = "service-desk"', 'python-app-literal')
+
     def test_platform_cannot_statically_or_dynamically_import_apps(self):
         for statement in ('import { Ticket } from "../../apps/servicedesk/ticket";',
                           'const ticket = import("../../apps/servicedesk/ticket");',
