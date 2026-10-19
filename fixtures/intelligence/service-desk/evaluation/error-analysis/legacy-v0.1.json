@@ -1,0 +1,359 @@
+{
+  "baseRevision": "23a70d9cbd41a3a204dbacd63673d8b14684d9c8",
+  "benchmarkClaim": false,
+  "corpusTag": "legacy-corpus@0.1.0",
+  "errorAnalysis": [
+    {
+      "firstRelevantRank": 3,
+      "hypotheses": [
+        "MULTI_INTENT_QUERY",
+        "CROSS_CUTTING_POLICY_COLLISION"
+      ],
+      "reviewStatus": "PROPOSED",
+      "ticketId": "TICKET-002"
+    },
+    {
+      "firstRelevantRank": 2,
+      "hypotheses": [
+        "LEXICAL_SIGNAL_DILUTION",
+        "CROSS_CUTTING_POLICY_COLLISION"
+      ],
+      "reviewStatus": "PROPOSED",
+      "ticketId": "TICKET-005"
+    },
+    {
+      "firstRelevantRank": 2,
+      "hypotheses": [
+        "DOCUMENT_TOO_BROAD"
+      ],
+      "reviewStatus": "PROPOSED",
+      "ticketId": "TICKET-007"
+    },
+    {
+      "firstRelevantRank": 3,
+      "hypotheses": [
+        "GENERIC_OPERATIONAL_LANGUAGE_COLLISION"
+      ],
+      "reviewStatus": "PROPOSED",
+      "ticketId": "TICKET-008"
+    },
+    {
+      "firstRelevantRank": 5,
+      "hypotheses": [
+        "QREL_INCOMPLETENESS",
+        "AMBIGUOUS_QUERY"
+      ],
+      "reviewStatus": "PROPOSED",
+      "ticketId": "TICKET-011"
+    }
+  ],
+  "pins": [
+    {
+      "byteSize": 771,
+      "path": "fixtures/intelligence/service-desk/dataset.yaml",
+      "sha256": "e35635b6cb9391f93dff201778d8215166a741d56f627db6a1ab9234568e04df"
+    },
+    {
+      "byteSize": 1486,
+      "path": "fixtures/intelligence/service-desk/evaluation/baseline-v0.1.json",
+      "sha256": "5dd07a16432d042db536276f20239086a57c5496c0b1b1ac2c10a3d0ada31ab5"
+    },
+    {
+      "byteSize": 209,
+      "path": "fixtures/intelligence/service-desk/evaluation/conformance-config.json",
+      "sha256": "1c2617862f30cc7e2f3a7a6c2d2178444973da011c88f95522242816407aa2ad"
+    },
+    {
+      "byteSize": 3255,
+      "path": "fixtures/intelligence/service-desk/evaluation/security-checks.json",
+      "sha256": "1126f6adc5ceac893f441f985dfa57241eae8350d770b2e050bae4db5742004f"
+    },
+    {
+      "byteSize": 3448,
+      "path": "fixtures/intelligence/service-desk/knowledge/manifest.json",
+      "sha256": "115d078dc2ac4264108968fc064e5894674ee26fc0cc92e15a1bff0eb01683a9"
+    },
+    {
+      "byteSize": 1759,
+      "path": "fixtures/intelligence/service-desk/knowledge/sources/account-access-guide.md",
+      "sha256": "04f92c09efa6637a86ef9214d73e046f1c51e62ef8294f238158ca6b911d5585"
+    },
+    {
+      "byteSize": 1780,
+      "path": "fixtures/intelligence/service-desk/knowledge/sources/priority-policy.md",
+      "sha256": "6982ce09a24e4b9c42c0c485229b549cde03c05b23290f55a7016c3484eba787"
+    },
+    {
+      "byteSize": 1674,
+      "path": "fixtures/intelligence/service-desk/knowledge/sources/service-desk-escalation.md",
+      "sha256": "f5e0558d843a0a7e2fe346dd97548eacdbad18a97378b0c250e666f64b8d3d32"
+    },
+    {
+      "byteSize": 1561,
+      "path": "fixtures/intelligence/service-desk/knowledge/sources/software-hardware-first-check.md",
+      "sha256": "7829c4def0cc2c3e0a713c9b2a7c56b359156c198082469a42eec180d4af47ef"
+    },
+    {
+      "byteSize": 1885,
+      "path": "fixtures/intelligence/service-desk/knowledge/sources/wifi-troubleshooting.md",
+      "sha256": "5a98bcfae95775ac519004ae2d019f517474ad186626959b124adb94ae0985bc"
+    },
+    {
+      "byteSize": 2123,
+      "path": "fixtures/intelligence/service-desk/retrieval/gold-v0.1.json",
+      "sha256": "2a6879067b04e7b3e9fffd869916a6c71fb5105c097f8e523d1688a51080767a"
+    },
+    {
+      "byteSize": 728,
+      "path": "fixtures/intelligence/service-desk/tickets/manifest.json",
+      "sha256": "ace43d5db26f2b8f617a798a552ae399327cf28509e74ea703a4c7b974993fb5"
+    },
+    {
+      "byteSize": 16124,
+      "path": "fixtures/intelligence/service-desk/tickets/tickets-v0.1.jsonl",
+      "sha256": "317a844338ae12e6c0cde109f8d7cc15879f8bf4c5d2f1a02e71a4e0cbf692f5"
+    },
+    {
+      "byteSize": 309,
+      "path": "fixtures/intelligence/service-desk/tickets/triage-degraded-v0.1.json",
+      "sha256": "f6a2fbc2f198e2d4357f7c26f77ad34e3bfee1f83639bfcd0e9c6e5feddabc8f"
+    }
+  ],
+  "report": {
+    "benchmarkClaim": false,
+    "caseCount": 12,
+    "cases": [
+      {
+        "expectedRelevantLocalArtifacts": [
+          "kb-network-001",
+          "kb-priority-001"
+        ],
+        "firstRelevantRank": 1,
+        "rankedLocalArtifacts": [
+          "kb-network-001",
+          "kb-priority-001",
+          "kb-escalation-001",
+          "kb-account-001",
+          "kb-software-hardware-001"
+        ],
+        "ticketId": "TICKET-001"
+      },
+      {
+        "expectedRelevantLocalArtifacts": [
+          "kb-network-001"
+        ],
+        "firstRelevantRank": 3,
+        "rankedLocalArtifacts": [
+          "kb-priority-001",
+          "kb-account-001",
+          "kb-network-001",
+          "kb-software-hardware-001",
+          "kb-escalation-001"
+        ],
+        "ticketId": "TICKET-002"
+      },
+      {
+        "expectedRelevantLocalArtifacts": [
+          "kb-account-001"
+        ],
+        "firstRelevantRank": 1,
+        "rankedLocalArtifacts": [
+          "kb-account-001",
+          "kb-priority-001",
+          "kb-network-001",
+          "kb-escalation-001",
+          "kb-software-hardware-001"
+        ],
+        "ticketId": "TICKET-003"
+      },
+      {
+        "expectedRelevantLocalArtifacts": [
+          "kb-account-001",
+          "kb-priority-001"
+        ],
+        "firstRelevantRank": 1,
+        "rankedLocalArtifacts": [
+          "kb-account-001",
+          "kb-network-001",
+          "kb-priority-001",
+          "kb-escalation-001",
+          "kb-software-hardware-001"
+        ],
+        "ticketId": "TICKET-004"
+      },
+      {
+        "expectedRelevantLocalArtifacts": [
+          "kb-software-hardware-001"
+        ],
+        "firstRelevantRank": 2,
+        "rankedLocalArtifacts": [
+          "kb-priority-001",
+          "kb-software-hardware-001",
+          "kb-account-001",
+          "kb-network-001",
+          "kb-escalation-001"
+        ],
+        "ticketId": "TICKET-005"
+      },
+      {
+        "expectedRelevantLocalArtifacts": [
+          "kb-software-hardware-001",
+          "kb-priority-001"
+        ],
+        "firstRelevantRank": 1,
+        "rankedLocalArtifacts": [
+          "kb-software-hardware-001",
+          "kb-priority-001",
+          "kb-account-001",
+          "kb-network-001",
+          "kb-escalation-001"
+        ],
+        "ticketId": "TICKET-006"
+      },
+      {
+        "expectedRelevantLocalArtifacts": [
+          "kb-software-hardware-001"
+        ],
+        "firstRelevantRank": 2,
+        "rankedLocalArtifacts": [
+          "kb-priority-001",
+          "kb-software-hardware-001",
+          "kb-account-001",
+          "kb-escalation-001",
+          "kb-network-001"
+        ],
+        "ticketId": "TICKET-007"
+      },
+      {
+        "expectedRelevantLocalArtifacts": [
+          "kb-software-hardware-001"
+        ],
+        "firstRelevantRank": 3,
+        "rankedLocalArtifacts": [
+          "kb-network-001",
+          "kb-priority-001",
+          "kb-software-hardware-001",
+          "kb-escalation-001",
+          "kb-account-001"
+        ],
+        "ticketId": "TICKET-008"
+      },
+      {
+        "expectedRelevantLocalArtifacts": [
+          "kb-escalation-001",
+          "kb-priority-001"
+        ],
+        "firstRelevantRank": 1,
+        "rankedLocalArtifacts": [
+          "kb-priority-001",
+          "kb-account-001",
+          "kb-network-001",
+          "kb-software-hardware-001",
+          "kb-escalation-001"
+        ],
+        "ticketId": "TICKET-009"
+      },
+      {
+        "expectedRelevantLocalArtifacts": [
+          "kb-account-001",
+          "kb-network-001"
+        ],
+        "firstRelevantRank": 1,
+        "rankedLocalArtifacts": [
+          "kb-account-001",
+          "kb-priority-001",
+          "kb-network-001",
+          "kb-escalation-001",
+          "kb-software-hardware-001"
+        ],
+        "ticketId": "TICKET-010"
+      },
+      {
+        "expectedRelevantLocalArtifacts": [
+          "kb-escalation-001"
+        ],
+        "firstRelevantRank": 5,
+        "rankedLocalArtifacts": [
+          "kb-software-hardware-001",
+          "kb-network-001",
+          "kb-account-001",
+          "kb-priority-001",
+          "kb-escalation-001"
+        ],
+        "ticketId": "TICKET-011"
+      },
+      {
+        "expectedRelevantLocalArtifacts": [
+          "kb-software-hardware-001"
+        ],
+        "firstRelevantRank": 1,
+        "rankedLocalArtifacts": [
+          "kb-software-hardware-001",
+          "kb-account-001",
+          "kb-network-001",
+          "kb-priority-001",
+          "kb-escalation-001"
+        ],
+        "ticketId": "TICKET-012"
+      }
+    ],
+    "comparison": {
+      "baselineSystem": {
+        "chunkPolicyVersion": "markdown-paragraph@0.1.0",
+        "engine": "tfidf",
+        "engineConfigVersion": "tfidf-config@0.1.0",
+        "engineVersion": "0.1.0",
+        "normalizationVersion": "text-normalization@0.1.0",
+        "numericalRuntime": "scikit-learn@1.6.1;numpy@2.2.6;scipy@1.15.3",
+        "queryStrategyVersion": "title+newline+description@0.1.0"
+      },
+      "benchmarkClaim": false,
+      "deltas": {
+        "hitAt1": 0.0,
+        "hitAt3": 0.0,
+        "mrr": 0.0,
+        "recallAt3": 0.0
+      },
+      "evidenceClass": "CANDIDATE_COMPARISON"
+    },
+    "components": {
+      "knowledge": "115d078dc2ac4264108968fc064e5894674ee26fc0cc92e15a1bff0eb01683a9",
+      "retrieval": "2a6879067b04e7b3e9fffd869916a6c71fb5105c097f8e523d1688a51080767a",
+      "ticketManifest": "ace43d5db26f2b8f617a798a552ae399327cf28509e74ea703a4c7b974993fb5",
+      "tickets": "317a844338ae12e6c0cde109f8d7cc15879f8bf4c5d2f1a02e71a4e0cbf692f5"
+    },
+    "dataset": {
+      "digest": "sha256:f4a08ef239f08e9f93f40258f6b8dfc193437a9180e8ad873694159fbe01029f",
+      "id": "service-desk-authored-eval",
+      "version": "0.1.0"
+    },
+    "evaluatorVersion": "evaluation@1.0",
+    "evidenceClass": "AUTHORED_RETRIEVAL_REGRESSION",
+    "fingerprint": "sha256:2eab4f8344f76a0ada329a846265175721e39b9acf64621df33fa5a3a806106e",
+    "gates": {
+      "result": "PASS",
+      "violations": []
+    },
+    "metricVersion": "artifact-retrieval@1.0",
+    "metrics": {
+      "hitAt1": 0.5833333333333334,
+      "hitAt3": 0.9166666666666666,
+      "mrr": 0.7388888888888889,
+      "recallAt3": 0.875
+    },
+    "result": "PASS",
+    "rightsStatus": "PENDING_OWNER_APPROVAL",
+    "runtimeCitations": false,
+    "schemaVersion": "1.0",
+    "system": {
+      "chunkPolicyVersion": "markdown-paragraph@0.1.0",
+      "engine": "tfidf",
+      "engineConfigVersion": "tfidf-config@0.1.0",
+      "engineVersion": "0.1.0",
+      "normalizationVersion": "text-normalization@0.1.0",
+      "numericalRuntime": "scikit-learn@1.6.1;numpy@2.2.6;scipy@1.15.3",
+      "queryStrategyVersion": "title+newline+description@0.1.0"
+    }
+  },
+  "schemaVersion": "1.0"
+}
