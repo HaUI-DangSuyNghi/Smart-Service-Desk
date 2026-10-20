@@ -1,0 +1,27 @@
+{
+  "schemaVersion": "0.2.0",
+  "kind": "AI_ASSISTED_REVIEW_EVIDENCE",
+  "authoritative": false,
+  "benchmarkClaim": false,
+  "datasetVersion": "0.2.0",
+  "source": {
+    "queriesDigest": "9a4d0b026b17357e53072c91bdadf291c2e48d003ec95410bbca79cc434ad060",
+    "collectionDigest": "d00a2ac8ed1027bfe3953dd3a8abe9e002d158cba4a219393a64353d1f5552ab",
+    "annotationPolicyVersion": "0.2.0"
+  },
+  "candidate": {
+    "path": "fixtures/intelligence/service-desk/retrieval/ai-assisted/qrels-candidate-v0.2.json",
+    "sha256": "ad180a83f65bc0b9b2276c13ffb0a9fe07ba1198dfa4b86ab0bda50b3de1c50c",
+    "byteSize": 273959,
+    "totalQueries": 72,
+    "totalArtifacts": 10,
+    "totalJudgments": 720
+  },
+  "governance": {
+    "mayPopulateAuthoritativeQrelsAutomatically": false,
+    "humanIndependentReviewRequired": true,
+    "excludedFromDatasetIdentity": true,
+    "excludedFromBenchmarkMetrics": true,
+    "usage": "POST_HOC_REVIEW_ASSISTANCE_ONLY"
+  }
+}
