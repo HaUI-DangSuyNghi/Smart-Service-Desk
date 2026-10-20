@@ -32,16 +32,16 @@ components:
 schemas:
   knowledge-metadata:
     path: contracts/apps/servicedesk/intelligence/knowledge-metadata.schema.json
-    sha256: 823157f717c5a998f08e1b50bbddd60de22437a57a6b59bc34517c0ceda6a154
-    byteSize: 4847
+    sha256: a925be3cb02ce2cee4754bb70d521e25451abf49304e6bf973402139313132e0
+    byteSize: 5006
   lexicon:
     path: contracts/apps/servicedesk/intelligence/lexicon.schema.json
     sha256: 070a87fb9d0ce2c04c743b49459235ffb67e524a7c54ffe48cef282b19e04d65
     byteSize: 2504
   query:
     path: contracts/apps/servicedesk/intelligence/query.schema.json
-    sha256: 955e2b662e6fed95018e537775b0f2ea2faa8c6471d53e2f816280bfadd06649
-    byteSize: 1918
+    sha256: 0d8d5da719f0a9c5e6a0e43102e76bde9802b7a08e8ac628b6f76f9a6c4ce046
+    byteSize: 2368
   qrels:
     path: contracts/apps/servicedesk/intelligence/qrels.schema.json
     sha256: 5ed0c2775828f7e92480bee8cf9ddb7d0f3d611f98da8eef664f8839854ac270
