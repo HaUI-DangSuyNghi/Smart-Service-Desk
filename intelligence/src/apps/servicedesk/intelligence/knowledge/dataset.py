@@ -135,14 +135,16 @@ def phrase_overlap(queries, bodies):
     return findings
 
 
-def validate_release(root, directory, spec, manifest, concepts, components, collection, findings):
+def validate_release(root, directory, spec, manifest, concepts, components, collection, queries, findings):
     require(
         spec['status'] == 'REVIEWED' and spec['rightsStatus'] == 'APPROVED_INTERNAL_EVAL',
         'Dataset review/rights pending',
     )
     require(
         all(
-            a['status'] == 'REVIEWED' and a['rightsStatus'] == 'APPROVED_INTERNAL_EVAL'
+            a['status'] == 'REVIEWED'
+            and a['rightsStatus'] == 'APPROVED_INTERNAL_EVAL'
+            and a.get('reviewDecision') == 'DOCUMENT_ACCEPT'
             for a in manifest['artifacts']
         ),
         'Corpus review/rights pending',
@@ -153,6 +155,10 @@ def validate_release(root, directory, spec, manifest, concepts, components, coll
     require(
         findings['unreviewedQueryCount'] == 0 and findings['pendingJudgmentCount'] == 0,
         'Human annotation pending',
+    )
+    require(
+        all(query.get('reviewDecision') == 'QUERY_ACCEPT' for query in queries),
+        'Query review decisions are not all accepted',
     )
     require(not findings['phraseOverlapReview'], 'Unresolved query/document overlap review')
     require(
@@ -223,7 +229,7 @@ def load_dataset(root, directory, *, require_reviewed=False):
     )
     if reviewed:
         validate_release(
-            root, directory, spec, manifest, concepts, components, collection, findings
+            root, directory, spec, manifest, concepts, components, collection, queries, findings
         )
     else:
         require(
