@@ -13,7 +13,7 @@ from hdpi.retrieval.models import digest
 from .annotations import validate_judgments
 from .contracts import SCHEMA_DIRECTORY, read_pin, review_consistency, validate_schema
 from .projection import load_corpus, project
-from .quality import jaccard, longest_phrase, safety_findings, tokens
+from .quality import jaccard, longest_phrase, safety_findings, tokens, trigram_containment
 
 
 @dataclass(frozen=True)
@@ -122,9 +122,15 @@ def phrase_overlap(queries, bodies):
         text = query['title'] + '\n' + query['description']
         for identifier, body in bodies.items():
             count = longest_phrase(text, body)
-            if count > 8:
+            trigram = trigram_containment(text, body)
+            if count > 8 or trigram > 0.35:
                 findings.append(
-                    {'queryId': query['id'], 'artifactId': identifier, 'wordCount': count}
+                    {
+                        'queryId': query['id'],
+                        'artifactId': identifier,
+                        'wordCount': count,
+                        'trigramContainment': trigram,
+                    }
                 )
     return findings
 
