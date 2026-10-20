@@ -323,8 +323,10 @@ lock
 Recommended annotation-quality targets:
 
 ```text
-raw agreement >= 85%
-weighted Cohen's kappa >= 0.70
+raw agreement >= 88%
+linear weighted Cohen's kappa >= 0.70
+ordinal Krippendorff's alpha >= 0.70
+positive specific agreement >= 0.75
 ```
 
 These are review-quality targets, not metrics to game.
@@ -689,7 +691,7 @@ Required before declaring AI-04.5 fully complete:
 - [ ] HOLDOUT independently reviewed.
 - [ ] Disagreements adjudicated.
 - [ ] Holdout locked.
-- [ ] Agreement metrics reviewed.
+- [ ] Agreement metrics reviewed against the v0.2 policy (raw/linear κ/ordinal α/positive agreement).
 - [ ] Final acceptance evaluation executed.
 
 ---
