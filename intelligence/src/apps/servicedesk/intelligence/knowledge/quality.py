@@ -60,6 +60,16 @@ def jaccard(first, second):
     return len(left & right) / len(left | right) if left | right else 1
 
 
+def trigram_containment(query, document):
+    left, right = shingles(query), shingles(document)
+    return len(left & right) / len(left) if left else 0
+
+
+def token_containment(query, document):
+    left, right = tokens(query), set(tokens(document))
+    return sum(token in right for token in left) / len(left) if left else 0
+
+
 def analyze_corpus(bodies, queries, *, include_holdout=False):
     # Default reports expose DEV findings only; tuning tools never rank HOLDOUT.
     observed = [q for q in queries if include_holdout or q['split'] == 'DEV']
@@ -87,12 +97,28 @@ def analyze_corpus(bodies, queries, *, include_holdout=False):
         text = query['title'] + '\n' + query['description']
         for identifier, body in sorted(bodies.items()):
             overlap = longest_phrase(text, body)
-            if overlap > 8:
+            trigram = trigram_containment(text, body)
+            containment = token_containment(text, body)
+            if overlap > 8 or trigram > 0.35:
                 leakage.append(
                     {
                         'queryId': query['id'],
                         'artifactId': identifier,
                         'longestPhraseWords': overlap,
+                        'trigramContainment': trigram,
+                        'tokenContainment': containment,
+                        'triggers': [
+                            name
+                            for name, active in (
+                                ('LCS_GT_8', overlap > 8),
+                                ('TRIGRAM_CONTAINMENT_GT_0_35', trigram > 0.35),
+                                (
+                                    'TOKEN_CONTAINMENT_REVIEW_GT_0_75',
+                                    len(tokens(text)) >= 12 and containment > 0.75,
+                                ),
+                            )
+                            if active
+                        ],
                     }
                 )
     return {
