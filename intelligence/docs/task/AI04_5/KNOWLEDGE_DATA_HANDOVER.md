@@ -16,8 +16,12 @@ is claimed. The user requested blank worksheets because human qrels are absent.
   rendering needs an explicit `--draft`; generated text is not edited by hand.
 - Seventy-two LLM-drafted synthetic queries: eight DEV and four proposed HOLDOUT
   cases for each of NETWORK, ACCOUNT, SOFTWARE, HARDWARE, OTHER and AMBIGUOUS.
-- A complete 72 × 10 annotation worksheet with null grades, empty reviewer lists
-  and no adjudications. Every query, corpus artifact and concept still needs review.
+- A complete authoritative 72 × 10 annotation worksheet with null grades, empty reviewer lists
+  and no adjudications. It now pins `annotationPolicyVersion=0.2.0` and explicit
+  `rationaleCode=null` for every pending cell.
+- A separate exact-byte-pinned AI-assisted candidate matrix with 720/720 proposed
+  grades/rationales at `retrieval/ai-assisted/qrels-candidate-v0.2.json`. This is review
+  assistance only, excluded from benchmark metrics and dataset identity.
 - Graded metrics ready for reviewed data: PrimaryHit@1, RecallRelevant@3 and
   nDCG@3, alongside the inherited Hit@1, Hit@3, MRR and Recall@3.
 - Validation for schemas, exact bytes, NFC/LF, paths, lineage, aliases, duplicate
@@ -65,7 +69,8 @@ expose DEV findings and the experiments rank only the legacy queries.
 | Domain schemas | `contracts/apps/servicedesk/intelligence/` |
 | Draft corpus and snapshots | `fixtures/intelligence/service-desk/knowledge/` |
 | Queries | `fixtures/intelligence/service-desk/tickets/tickets-v0.2.jsonl` |
-| Blank matrix and guidelines | `fixtures/intelligence/service-desk/retrieval/` |
+| Authoritative blank matrix and guidelines | `fixtures/intelligence/service-desk/retrieval/` |
+| AI-assisted candidate + review-evidence manifest | `fixtures/intelligence/service-desk/retrieval/ai-assisted/` |
 | Versioned pins | `fixtures/intelligence/service-desk/dataset-v0.2.yaml` |
 | Frozen legacy evidence | `fixtures/intelligence/service-desk/evaluation/error-analysis/legacy-v0.1.json` |
 | Reproducible experiment evidence | `fixtures/intelligence/service-desk/evaluation/corpus-experiments/` |
@@ -211,3 +216,47 @@ Krippendorff's Alpha (ordinal), Positive Specific Agreement and disagreements cl
 The research/example matrix supplied outside the repository must not be imported into
 `qrels-v0.2.json`: it uses different query identifiers/wording from the current
 `TICKET-V2-*` collection. It is reference material only.
+
+
+## Final fixture state before AI-05
+
+The v0.2 fixture set is now internally aligned:
+
+```text
+10 curated knowledge artifacts          PINNED
+19 controlled lexicon concepts          PINNED
+72 TICKET-V2-* queries                  PINNED
+720 authoritative qrel cells            PINNED / NULL pending human review
+720 AI-assisted candidate labels        PINNED / NON-AUTHORITATIVE
+annotation policy                       0.2.0
+review-assistance manifest              PINNED
+legacy A0/A1/A2/A3 evidence             RETAINED
+```
+
+The AI-assisted candidate file is deliberately **not** a component of
+`dataset-v0.2.yaml`; therefore changing or removing review assistance cannot silently
+change the benchmark/evaluator dataset identity. Its own manifest pins exact bytes and
+explicitly declares:
+
+```text
+authoritative=false
+benchmarkClaim=false
+excludedFromDatasetIdentity=true
+excludedFromBenchmarkMetrics=true
+```
+
+### AI-05 entry rule
+
+AI-05 may start engineering work against the frozen v0.2 corpus/query structure and may
+use the existing legacy A0/A1/A2 controls for implementation regression.
+
+AI-05 must **not** claim final 72-query benchmark superiority until:
+
+1. corpus/lexicon/query human review is accepted;
+2. authoritative qrels are human-reviewed/adjudicated;
+3. agreement gates pass;
+4. HOLDOUT is locked;
+5. the final same-dataset comparison is executed.
+
+This lets BM25/Dense/Hybrid implementation proceed without letting candidate labels become
+self-fulfilling ground truth.
