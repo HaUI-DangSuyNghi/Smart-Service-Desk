@@ -1,7 +1,7 @@
 # AI-05 Entry Readiness — Retrieval Intelligence Upgrade
 
-> Source phase: AI-04.5 Knowledge Data Quality & Corpus Enrichment  
-> Target phase: AI-05 BM25 / Dense / Hybrid Retrieval  
+> Source phase: AI-04.5 Knowledge Data Quality & Corpus Enrichment
+> Target phase: AI-05 BM25 / Dense / Hybrid Retrieval
 > Status: **GO FOR ENGINEERING / BENCHMARK ACCEPTANCE GATED**
 
 ## 1. Entry decision
