@@ -1,0 +1,573 @@
+{
+  "schemaVersion": "0.2.0",
+  "corpusVersion": "0.2.0",
+  "status": "DRAFT_AWAITING_HUMAN_REVIEW",
+  "artifacts": [
+    {
+      "schemaVersion": "0.2.0",
+      "artifactId": "kb-network-connectivity-001",
+      "version": "0.2.0",
+      "title": "Kết nối Wi-Fi và truy cập Internet",
+      "status": "DRAFT",
+      "language": "vi-en",
+      "domain": "service-desk",
+      "primaryIntent": "network-connectivity",
+      "categories": [
+        "NETWORK"
+      ],
+      "conceptIds": [
+        "wifi",
+        "internet"
+      ],
+      "positiveSignals": [
+        "Wi-Fi ngắt kết nối hoặc không thấy SSID",
+        "Không truy cập được nhiều dịch vụ mạng"
+      ],
+      "negativeSignals": [
+        "Một ứng dụng lỗi trong khi các trang khác vẫn hoạt động",
+        "Thông báo tài khoản bị khóa sau bước xác thực"
+      ],
+      "relatedArtifacts": [
+        "kb-intake-evidence-quality-001",
+        "kb-credential-security-handling-001"
+      ],
+      "owner": "Service Desk Process Owner",
+      "sourceClass": "TEAM_AUTHORED_SYNTHETIC",
+      "rightsStatus": "PENDING_OWNER_APPROVAL",
+      "provenance": {
+        "generationSource": "LLM_DRAFT",
+        "humanReviewed": false,
+        "reviewer": null
+      },
+      "createdAt": "2026-10-19",
+      "reviewedAt": null,
+      "legacyFamily": "kb-network-001",
+      "raw": {
+        "path": "fixtures/intelligence/service-desk/knowledge/raw/v0.2/network-connectivity.md",
+        "sha256": "339f5bfa3f68c94807c9f4ae737864bc970892b19577ef39c34cd03ce1a66eed",
+        "byteSize": 1717
+      },
+      "curated": {
+        "path": "fixtures/intelligence/service-desk/knowledge/curated/network-connectivity.md",
+        "sha256": "339f5bfa3f68c94807c9f4ae737864bc970892b19577ef39c34cd03ce1a66eed",
+        "byteSize": 1717
+      },
+      "derivedFrom": [
+        {
+          "artifactId": "kb-network-001",
+          "path": "fixtures/intelligence/service-desk/knowledge/sources/wifi-troubleshooting.md",
+          "sha256": "5a98bcfae95775ac519004ae2d019f517474ad186626959b124adb94ae0985bc"
+        }
+      ]
+    },
+    {
+      "schemaVersion": "0.2.0",
+      "artifactId": "kb-account-authentication-001",
+      "version": "0.2.0",
+      "title": "Xác thực tài khoản và quyền truy cập",
+      "status": "DRAFT",
+      "language": "vi-en",
+      "domain": "service-desk",
+      "primaryIntent": "account-authentication",
+      "categories": [
+        "ACCOUNT"
+      ],
+      "conceptIds": [
+        "authentication",
+        "account-lock",
+        "permission"
+      ],
+      "positiveSignals": [
+        "Đăng nhập bị từ chối hoặc tài khoản báo khóa",
+        "Người dùng khác truy cập được cùng dịch vụ"
+      ],
+      "negativeSignals": [
+        "Máy không bật được nguồn",
+        "Không truy cập được bất kỳ dịch vụ Internet nào"
+      ],
+      "relatedArtifacts": [
+        "kb-intake-evidence-quality-001",
+        "kb-credential-security-handling-001"
+      ],
+      "owner": "Service Desk Process Owner",
+      "sourceClass": "TEAM_AUTHORED_SYNTHETIC",
+      "rightsStatus": "PENDING_OWNER_APPROVAL",
+      "provenance": {
+        "generationSource": "LLM_DRAFT",
+        "humanReviewed": false,
+        "reviewer": null
+      },
+      "createdAt": "2026-10-19",
+      "reviewedAt": null,
+      "legacyFamily": "kb-account-001",
+      "raw": {
+        "path": "fixtures/intelligence/service-desk/knowledge/raw/v0.2/account-authentication.md",
+        "sha256": "d8fcd51779eedf541efcb3a4608295f8f83f6e20906ff92fb9ca2aba3e311ad9",
+        "byteSize": 1719
+      },
+      "curated": {
+        "path": "fixtures/intelligence/service-desk/knowledge/curated/account-authentication.md",
+        "sha256": "d8fcd51779eedf541efcb3a4608295f8f83f6e20906ff92fb9ca2aba3e311ad9",
+        "byteSize": 1719
+      },
+      "derivedFrom": [
+        {
+          "artifactId": "kb-account-001",
+          "path": "fixtures/intelligence/service-desk/knowledge/sources/account-access-guide.md",
+          "sha256": "04f92c09efa6637a86ef9214d73e046f1c51e62ef8294f238158ca6b911d5585"
+        }
+      ]
+    },
+    {
+      "schemaVersion": "0.2.0",
+      "artifactId": "kb-software-application-001",
+      "version": "0.2.0",
+      "title": "Ứng dụng không chạy hoặc hoạt động bất thường",
+      "status": "DRAFT",
+      "language": "vi-en",
+      "domain": "service-desk",
+      "primaryIntent": "software-application",
+      "categories": [
+        "SOFTWARE"
+      ],
+      "conceptIds": [
+        "application-crash",
+        "application-update"
+      ],
+      "positiveSignals": [
+        "Ứng dụng đóng sau khi mở trong khi hệ điều hành hoạt động",
+        "Lỗi xuất hiện sau cập nhật cần được kiểm chứng"
+      ],
+      "negativeSignals": [
+        "Nút nguồn không phản hồi",
+        "Màn hình báo mất tín hiệu trước khi hệ điều hành chạy"
+      ],
+      "relatedArtifacts": [
+        "kb-intake-evidence-quality-001",
+        "kb-credential-security-handling-001"
+      ],
+      "owner": "Service Desk Process Owner",
+      "sourceClass": "TEAM_AUTHORED_SYNTHETIC",
+      "rightsStatus": "PENDING_OWNER_APPROVAL",
+      "provenance": {
+        "generationSource": "LLM_DRAFT",
+        "humanReviewed": false,
+        "reviewer": null
+      },
+      "createdAt": "2026-10-19",
+      "reviewedAt": null,
+      "legacyFamily": "kb-software-hardware-001",
+      "raw": {
+        "path": "fixtures/intelligence/service-desk/knowledge/raw/v0.2/software-application.md",
+        "sha256": "556de1a5dd9c62353989a7db5124d7e5f1bfca6e9620bbb43bf9a89541153eac",
+        "byteSize": 1684
+      },
+      "curated": {
+        "path": "fixtures/intelligence/service-desk/knowledge/curated/software-application.md",
+        "sha256": "556de1a5dd9c62353989a7db5124d7e5f1bfca6e9620bbb43bf9a89541153eac",
+        "byteSize": 1684
+      },
+      "derivedFrom": [
+        {
+          "artifactId": "kb-software-hardware-001",
+          "path": "fixtures/intelligence/service-desk/knowledge/sources/software-hardware-first-check.md",
+          "sha256": "7829c4def0cc2c3e0a713c9b2a7c56b359156c198082469a42eec180d4af47ef"
+        }
+      ]
+    },
+    {
+      "schemaVersion": "0.2.0",
+      "artifactId": "kb-hardware-power-001",
+      "version": "0.2.0",
+      "title": "Thiết bị không khởi động nguồn",
+      "status": "DRAFT",
+      "language": "vi-en",
+      "domain": "service-desk",
+      "primaryIntent": "hardware-power",
+      "categories": [
+        "HARDWARE"
+      ],
+      "conceptIds": [
+        "no-power"
+      ],
+      "positiveSignals": [
+        "Không sáng đèn nguồn và nút nguồn không phản hồi",
+        "Thiết bị hoàn toàn không khởi động"
+      ],
+      "negativeSignals": [
+        "Đèn máy vẫn sáng và màn hình báo mất tín hiệu",
+        "Hệ điều hành chạy nhưng một chương trình bị đóng"
+      ],
+      "relatedArtifacts": [
+        "kb-intake-evidence-quality-001",
+        "kb-credential-security-handling-001"
+      ],
+      "owner": "Service Desk Process Owner",
+      "sourceClass": "TEAM_AUTHORED_SYNTHETIC",
+      "rightsStatus": "PENDING_OWNER_APPROVAL",
+      "provenance": {
+        "generationSource": "LLM_DRAFT",
+        "humanReviewed": false,
+        "reviewer": null
+      },
+      "createdAt": "2026-10-19",
+      "reviewedAt": null,
+      "legacyFamily": "kb-software-hardware-001",
+      "raw": {
+        "path": "fixtures/intelligence/service-desk/knowledge/raw/v0.2/hardware-power.md",
+        "sha256": "bd9f5d40fbf051e13752cbfbc542432e65ba41b348a4b550b4b8a82ef2e72946",
+        "byteSize": 1531
+      },
+      "curated": {
+        "path": "fixtures/intelligence/service-desk/knowledge/curated/hardware-power.md",
+        "sha256": "bd9f5d40fbf051e13752cbfbc542432e65ba41b348a4b550b4b8a82ef2e72946",
+        "byteSize": 1531
+      },
+      "derivedFrom": [
+        {
+          "artifactId": "kb-software-hardware-001",
+          "path": "fixtures/intelligence/service-desk/knowledge/sources/software-hardware-first-check.md",
+          "sha256": "7829c4def0cc2c3e0a713c9b2a7c56b359156c198082469a42eec180d4af47ef"
+        }
+      ]
+    },
+    {
+      "schemaVersion": "0.2.0",
+      "artifactId": "kb-hardware-display-peripheral-001",
+      "version": "0.2.0",
+      "title": "Hiển thị và thiết bị ngoại vi",
+      "status": "DRAFT",
+      "language": "vi-en",
+      "domain": "service-desk",
+      "primaryIntent": "hardware-display-peripheral",
+      "categories": [
+        "HARDWARE"
+      ],
+      "conceptIds": [
+        "no-signal",
+        "peripheral"
+      ],
+      "positiveSignals": [
+        "Màn hình báo không có tín hiệu khi thân máy còn chạy",
+        "Bàn phím hoặc chuột không được nhận"
+      ],
+      "negativeSignals": [
+        "Không có dấu hiệu nguồn ở thân máy",
+        "Chỉ một ứng dụng gặp lỗi trong màn hình đang hoạt động"
+      ],
+      "relatedArtifacts": [
+        "kb-intake-evidence-quality-001",
+        "kb-credential-security-handling-001"
+      ],
+      "owner": "Service Desk Process Owner",
+      "sourceClass": "TEAM_AUTHORED_SYNTHETIC",
+      "rightsStatus": "PENDING_OWNER_APPROVAL",
+      "provenance": {
+        "generationSource": "LLM_DRAFT",
+        "humanReviewed": false,
+        "reviewer": null
+      },
+      "createdAt": "2026-10-19",
+      "reviewedAt": null,
+      "legacyFamily": "kb-software-hardware-001",
+      "raw": {
+        "path": "fixtures/intelligence/service-desk/knowledge/raw/v0.2/hardware-display-peripheral.md",
+        "sha256": "42830dfa484470a16ba25038abacbed9d025c9f471d4294ed2f005235d92f706",
+        "byteSize": 1458
+      },
+      "curated": {
+        "path": "fixtures/intelligence/service-desk/knowledge/curated/hardware-display-peripheral.md",
+        "sha256": "42830dfa484470a16ba25038abacbed9d025c9f471d4294ed2f005235d92f706",
+        "byteSize": 1458
+      },
+      "derivedFrom": [
+        {
+          "artifactId": "kb-software-hardware-001",
+          "path": "fixtures/intelligence/service-desk/knowledge/sources/software-hardware-first-check.md",
+          "sha256": "7829c4def0cc2c3e0a713c9b2a7c56b359156c198082469a42eec180d4af47ef"
+        }
+      ]
+    },
+    {
+      "schemaVersion": "0.2.0",
+      "artifactId": "kb-priority-impact-urgency-001",
+      "version": "0.2.0",
+      "title": "Đánh giá phạm vi và mức độ khẩn cấp",
+      "status": "DRAFT",
+      "language": "vi-en",
+      "domain": "service-desk",
+      "primaryIntent": "priority-impact-urgency",
+      "categories": [
+        "OTHER"
+      ],
+      "conceptIds": [
+        "impact",
+        "urgency",
+        "workaround",
+        "blocking"
+      ],
+      "positiveSignals": [
+        "Cần đánh giá impact và urgency sau khi có dữ kiện",
+        "Có thông tin về phạm vi và phương án thay thế"
+      ],
+      "negativeSignals": [
+        "Chưa có thông tin về người hoặc hoạt động bị ảnh hưởng",
+        "Đang cần chẩn đoán kỹ thuật ban đầu"
+      ],
+      "relatedArtifacts": [
+        "kb-intake-evidence-quality-001",
+        "kb-credential-security-handling-001"
+      ],
+      "owner": "Service Desk Process Owner",
+      "sourceClass": "TEAM_AUTHORED_SYNTHETIC",
+      "rightsStatus": "PENDING_OWNER_APPROVAL",
+      "provenance": {
+        "generationSource": "LLM_DRAFT",
+        "humanReviewed": false,
+        "reviewer": null
+      },
+      "createdAt": "2026-10-19",
+      "reviewedAt": null,
+      "legacyFamily": "kb-priority-001",
+      "raw": {
+        "path": "fixtures/intelligence/service-desk/knowledge/raw/v0.2/priority-impact-urgency.md",
+        "sha256": "4ce73b2b33688e59bdd3767ef45b500c60c6081fbeb73a8ced513d8607883410",
+        "byteSize": 1633
+      },
+      "curated": {
+        "path": "fixtures/intelligence/service-desk/knowledge/curated/priority-impact-urgency.md",
+        "sha256": "4ce73b2b33688e59bdd3767ef45b500c60c6081fbeb73a8ced513d8607883410",
+        "byteSize": 1633
+      },
+      "derivedFrom": [
+        {
+          "artifactId": "kb-priority-001",
+          "path": "fixtures/intelligence/service-desk/knowledge/sources/priority-policy.md",
+          "sha256": "6982ce09a24e4b9c42c0c485229b549cde03c05b23290f55a7016c3484eba787"
+        }
+      ]
+    },
+    {
+      "schemaVersion": "0.2.0",
+      "artifactId": "kb-intake-evidence-quality-001",
+      "version": "0.2.0",
+      "title": "Tiếp nhận triệu chứng chưa rõ nguyên nhân",
+      "status": "DRAFT",
+      "language": "vi-en",
+      "domain": "service-desk",
+      "primaryIntent": "intake-evidence-quality",
+      "categories": [
+        "OTHER"
+      ],
+      "conceptIds": [
+        "insufficient-information"
+      ],
+      "positiveSignals": [
+        "Chưa biết hỏng ở ứng dụng hay thiết bị",
+        "Báo cáo quá ngắn hoặc thiếu triệu chứng quan sát được"
+      ],
+      "negativeSignals": [
+        "Đã có thông báo lỗi rõ và quy trình chuyên biệt phù hợp",
+        "Đang xin quyền thực hiện thay đổi hệ thống"
+      ],
+      "relatedArtifacts": [
+        "kb-credential-security-handling-001"
+      ],
+      "owner": "Service Desk Process Owner",
+      "sourceClass": "TEAM_AUTHORED_SYNTHETIC",
+      "rightsStatus": "PENDING_OWNER_APPROVAL",
+      "provenance": {
+        "generationSource": "LLM_DRAFT",
+        "humanReviewed": false,
+        "reviewer": null
+      },
+      "createdAt": "2026-10-19",
+      "reviewedAt": null,
+      "legacyFamily": "kb-escalation-001",
+      "raw": {
+        "path": "fixtures/intelligence/service-desk/knowledge/raw/v0.2/intake-evidence-quality.md",
+        "sha256": "f9b5f828a24df1337a5437119c5bcd765ba76d360cc2aefb3078cd81eb12baca",
+        "byteSize": 1626
+      },
+      "curated": {
+        "path": "fixtures/intelligence/service-desk/knowledge/curated/intake-evidence-quality.md",
+        "sha256": "f9b5f828a24df1337a5437119c5bcd765ba76d360cc2aefb3078cd81eb12baca",
+        "byteSize": 1626
+      },
+      "derivedFrom": [
+        {
+          "artifactId": "kb-escalation-001",
+          "path": "fixtures/intelligence/service-desk/knowledge/sources/service-desk-escalation.md",
+          "sha256": "f5e0558d843a0a7e2fe346dd97548eacdbad18a97378b0c250e666f64b8d3d32"
+        }
+      ]
+    },
+    {
+      "schemaVersion": "0.2.0",
+      "artifactId": "kb-escalation-human-review-001",
+      "version": "0.2.0",
+      "title": "Chuyển người phụ trách khi bằng chứng xung đột",
+      "status": "DRAFT",
+      "language": "vi-en",
+      "domain": "service-desk",
+      "primaryIntent": "escalation-human-review",
+      "categories": [
+        "OTHER"
+      ],
+      "conceptIds": [
+        "escalation"
+      ],
+      "positiveSignals": [
+        "Bằng chứng mâu thuẫn hoặc sự cố tái diễn sau xử lý",
+        "Cần người có thẩm quyền xác nhận quyết định"
+      ],
+      "negativeSignals": [
+        "Đã có hướng dẫn chẩn đoán cụ thể và không có dấu hiệu xung đột",
+        "Muốn dùng gợi ý AI để tự cấp quyền"
+      ],
+      "relatedArtifacts": [
+        "kb-intake-evidence-quality-001",
+        "kb-credential-security-handling-001"
+      ],
+      "owner": "Service Desk Process Owner",
+      "sourceClass": "TEAM_AUTHORED_SYNTHETIC",
+      "rightsStatus": "PENDING_OWNER_APPROVAL",
+      "provenance": {
+        "generationSource": "LLM_DRAFT",
+        "humanReviewed": false,
+        "reviewer": null
+      },
+      "createdAt": "2026-10-19",
+      "reviewedAt": null,
+      "legacyFamily": "kb-escalation-001",
+      "raw": {
+        "path": "fixtures/intelligence/service-desk/knowledge/raw/v0.2/escalation-human-review.md",
+        "sha256": "542cb92f3a070867d3b5ad2d1af485e7b75694a7e8c6d602dab1d91da883e5ec",
+        "byteSize": 1548
+      },
+      "curated": {
+        "path": "fixtures/intelligence/service-desk/knowledge/curated/escalation-human-review.md",
+        "sha256": "542cb92f3a070867d3b5ad2d1af485e7b75694a7e8c6d602dab1d91da883e5ec",
+        "byteSize": 1548
+      },
+      "derivedFrom": [
+        {
+          "artifactId": "kb-escalation-001",
+          "path": "fixtures/intelligence/service-desk/knowledge/sources/service-desk-escalation.md",
+          "sha256": "f5e0558d843a0a7e2fe346dd97548eacdbad18a97378b0c250e666f64b8d3d32"
+        }
+      ]
+    },
+    {
+      "schemaVersion": "0.2.0",
+      "artifactId": "kb-non-it-facilities-routing-001",
+      "version": "0.2.0",
+      "title": "Tiện ích phòng và yêu cầu ngoài hệ thống IT",
+      "status": "DRAFT",
+      "language": "vi-en",
+      "domain": "service-desk",
+      "primaryIntent": "non-it-facilities-routing",
+      "categories": [
+        "OTHER"
+      ],
+      "conceptIds": [
+        "facilities"
+      ],
+      "positiveSignals": [
+        "Điều hòa, chiếu sáng hoặc tiện ích phòng gặp sự cố",
+        "Yêu cầu không thuộc máy tính, ứng dụng hay kết nối"
+      ],
+      "negativeSignals": [
+        "Thiết bị máy tính có triệu chứng kỹ thuật cụ thể",
+        "Chưa xác định được vấn đề ngoài IT hay thiếu dữ kiện"
+      ],
+      "relatedArtifacts": [
+        "kb-intake-evidence-quality-001",
+        "kb-credential-security-handling-001"
+      ],
+      "owner": "Service Desk Process Owner",
+      "sourceClass": "TEAM_AUTHORED_SYNTHETIC",
+      "rightsStatus": "PENDING_OWNER_APPROVAL",
+      "provenance": {
+        "generationSource": "LLM_DRAFT",
+        "humanReviewed": false,
+        "reviewer": null
+      },
+      "createdAt": "2026-10-19",
+      "reviewedAt": null,
+      "legacyFamily": "kb-escalation-001",
+      "raw": {
+        "path": "fixtures/intelligence/service-desk/knowledge/raw/v0.2/non-it-facilities-routing.md",
+        "sha256": "4e3ad52440047e829e24e4bbd9a4fa9899bce26017770a422fa2586f37fadf3f",
+        "byteSize": 1482
+      },
+      "curated": {
+        "path": "fixtures/intelligence/service-desk/knowledge/curated/non-it-facilities-routing.md",
+        "sha256": "4e3ad52440047e829e24e4bbd9a4fa9899bce26017770a422fa2586f37fadf3f",
+        "byteSize": 1482
+      },
+      "derivedFrom": [
+        {
+          "artifactId": "kb-escalation-001",
+          "path": "fixtures/intelligence/service-desk/knowledge/sources/service-desk-escalation.md",
+          "sha256": "f5e0558d843a0a7e2fe346dd97548eacdbad18a97378b0c250e666f64b8d3d32"
+        }
+      ]
+    },
+    {
+      "schemaVersion": "0.2.0",
+      "artifactId": "kb-credential-security-handling-001",
+      "version": "0.2.0",
+      "title": "Bảo vệ thông tin bí mật trong yêu cầu hỗ trợ",
+      "status": "DRAFT",
+      "language": "vi-en",
+      "domain": "service-desk",
+      "primaryIntent": "credential-security-handling",
+      "categories": [
+        "ACCOUNT"
+      ],
+      "conceptIds": [
+        "credential-security"
+      ],
+      "positiveSignals": [
+        "Mô tả chứa yêu cầu gửi password, OTP hoặc recovery code",
+        "Cần thu thập ảnh chụp nhưng có nguy cơ lộ thông tin bí mật"
+      ],
+      "negativeSignals": [
+        "Muốn nhận quyền truy cập từ gợi ý tự động",
+        "Đang yêu cầu chia sẻ secret để bỏ qua quy trình chính thức"
+      ],
+      "relatedArtifacts": [
+        "kb-intake-evidence-quality-001"
+      ],
+      "owner": "Service Desk Process Owner",
+      "sourceClass": "TEAM_AUTHORED_SYNTHETIC",
+      "rightsStatus": "PENDING_OWNER_APPROVAL",
+      "provenance": {
+        "generationSource": "LLM_DRAFT",
+        "humanReviewed": false,
+        "reviewer": null
+      },
+      "createdAt": "2026-10-19",
+      "reviewedAt": null,
+      "legacyFamily": "kb-escalation-001",
+      "raw": {
+        "path": "fixtures/intelligence/service-desk/knowledge/raw/v0.2/credential-security-handling.md",
+        "sha256": "e3e3755b62f42d262974b3331626b902fdf3bad8c0b39dab4f417566561553a6",
+        "byteSize": 1497
+      },
+      "curated": {
+        "path": "fixtures/intelligence/service-desk/knowledge/curated/credential-security-handling.md",
+        "sha256": "e3e3755b62f42d262974b3331626b902fdf3bad8c0b39dab4f417566561553a6",
+        "byteSize": 1497
+      },
+      "derivedFrom": [
+        {
+          "artifactId": "kb-escalation-001",
+          "path": "fixtures/intelligence/service-desk/knowledge/sources/service-desk-escalation.md",
+          "sha256": "f5e0558d843a0a7e2fe346dd97548eacdbad18a97378b0c250e666f64b8d3d32"
+        }
+      ]
+    }
+  ]
+}

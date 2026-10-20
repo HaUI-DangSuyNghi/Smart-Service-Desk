@@ -31,3 +31,15 @@ def test_wheel_metadata_matches_project_version(tmp_path, values):
     wheel(tmp_path / 'one.whl', **values)
     with pytest.raises(ValueError):
         installer.discover_wheel(tmp_path, '0.3.0')
+
+
+@pytest.mark.parametrize('path', ['fixtures/intelligence/service-desk/dataset.yaml',
+    'hdpi/_resources/profiles/fake/profile.yaml', 'hdpi/evaluation/fixtures/gold.json',
+    'hdpi/evaluation/baseline.json', 'apps/example/policy.py'])
+def test_wheel_rejects_bundled_application_evidence(tmp_path, path):
+    artifact = tmp_path / 'one.whl'
+    wheel(artifact)
+    with zipfile.ZipFile(artifact, 'a') as archive:
+        archive.writestr(path, 'synthetic mutation')
+    with pytest.raises(ValueError, match='bundled'):
+        installer.discover_wheel(tmp_path, '0.3.0')

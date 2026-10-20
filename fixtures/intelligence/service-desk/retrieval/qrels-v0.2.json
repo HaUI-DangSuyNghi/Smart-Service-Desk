@@ -1,0 +1,6132 @@
+{
+  "schemaVersion": "0.2.0",
+  "datasetVersion": "0.2.0",
+  "collectionDigest": "d00a2ac8ed1027bfe3953dd3a8abe9e002d158cba4a219393a64353d1f5552ab",
+  "queriesDigest": "9a4d0b026b17357e53072c91bdadf291c2e48d003ec95410bbca79cc434ad060",
+  "status": "AWAITING_HUMAN_JUDGMENTS",
+  "annotationKind": "HUMAN_REQUIRED",
+  "benchmarkClaim": false,
+  "cases": [
+    {
+      "queryId": "TICKET-V2-001",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    },
+    {
+      "queryId": "TICKET-V2-002",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    },
+    {
+      "queryId": "TICKET-V2-003",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    },
+    {
+      "queryId": "TICKET-V2-004",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    },
+    {
+      "queryId": "TICKET-V2-005",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    },
+    {
+      "queryId": "TICKET-V2-006",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    },
+    {
+      "queryId": "TICKET-V2-007",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    },
+    {
+      "queryId": "TICKET-V2-008",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    },
+    {
+      "queryId": "TICKET-V2-009",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    },
+    {
+      "queryId": "TICKET-V2-010",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    },
+    {
+      "queryId": "TICKET-V2-011",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    },
+    {
+      "queryId": "TICKET-V2-012",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    },
+    {
+      "queryId": "TICKET-V2-013",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    },
+    {
+      "queryId": "TICKET-V2-014",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    },
+    {
+      "queryId": "TICKET-V2-015",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    },
+    {
+      "queryId": "TICKET-V2-016",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    },
+    {
+      "queryId": "TICKET-V2-017",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    },
+    {
+      "queryId": "TICKET-V2-018",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    },
+    {
+      "queryId": "TICKET-V2-019",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    },
+    {
+      "queryId": "TICKET-V2-020",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    },
+    {
+      "queryId": "TICKET-V2-021",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    },
+    {
+      "queryId": "TICKET-V2-022",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    },
+    {
+      "queryId": "TICKET-V2-023",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    },
+    {
+      "queryId": "TICKET-V2-024",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    },
+    {
+      "queryId": "TICKET-V2-025",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    },
+    {
+      "queryId": "TICKET-V2-026",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    },
+    {
+      "queryId": "TICKET-V2-027",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    },
+    {
+      "queryId": "TICKET-V2-028",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    },
+    {
+      "queryId": "TICKET-V2-029",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    },
+    {
+      "queryId": "TICKET-V2-030",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    },
+    {
+      "queryId": "TICKET-V2-031",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    },
+    {
+      "queryId": "TICKET-V2-032",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    },
+    {
+      "queryId": "TICKET-V2-033",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    },
+    {
+      "queryId": "TICKET-V2-034",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    },
+    {
+      "queryId": "TICKET-V2-035",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    },
+    {
+      "queryId": "TICKET-V2-036",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    },
+    {
+      "queryId": "TICKET-V2-037",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    },
+    {
+      "queryId": "TICKET-V2-038",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    },
+    {
+      "queryId": "TICKET-V2-039",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    },
+    {
+      "queryId": "TICKET-V2-040",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    },
+    {
+      "queryId": "TICKET-V2-041",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    },
+    {
+      "queryId": "TICKET-V2-042",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    },
+    {
+      "queryId": "TICKET-V2-043",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    },
+    {
+      "queryId": "TICKET-V2-044",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    },
+    {
+      "queryId": "TICKET-V2-045",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    },
+    {
+      "queryId": "TICKET-V2-046",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    },
+    {
+      "queryId": "TICKET-V2-047",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    },
+    {
+      "queryId": "TICKET-V2-048",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    },
+    {
+      "queryId": "TICKET-V2-049",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    },
+    {
+      "queryId": "TICKET-V2-050",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    },
+    {
+      "queryId": "TICKET-V2-051",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    },
+    {
+      "queryId": "TICKET-V2-052",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    },
+    {
+      "queryId": "TICKET-V2-053",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    },
+    {
+      "queryId": "TICKET-V2-054",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    },
+    {
+      "queryId": "TICKET-V2-055",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    },
+    {
+      "queryId": "TICKET-V2-056",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    },
+    {
+      "queryId": "TICKET-V2-057",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    },
+    {
+      "queryId": "TICKET-V2-058",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    },
+    {
+      "queryId": "TICKET-V2-059",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    },
+    {
+      "queryId": "TICKET-V2-060",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    },
+    {
+      "queryId": "TICKET-V2-061",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    },
+    {
+      "queryId": "TICKET-V2-062",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    },
+    {
+      "queryId": "TICKET-V2-063",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    },
+    {
+      "queryId": "TICKET-V2-064",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    },
+    {
+      "queryId": "TICKET-V2-065",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    },
+    {
+      "queryId": "TICKET-V2-066",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    },
+    {
+      "queryId": "TICKET-V2-067",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    },
+    {
+      "queryId": "TICKET-V2-068",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    },
+    {
+      "queryId": "TICKET-V2-069",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    },
+    {
+      "queryId": "TICKET-V2-070",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    },
+    {
+      "queryId": "TICKET-V2-071",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    },
+    {
+      "queryId": "TICKET-V2-072",
+      "judgments": [
+        {
+          "artifactId": "kb-network-connectivity-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-account-authentication-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-software-application-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-power-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-hardware-display-peripheral-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-priority-impact-urgency-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-intake-evidence-quality-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-escalation-human-review-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-non-it-facilities-routing-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        },
+        {
+          "artifactId": "kb-credential-security-handling-001",
+          "grade": null,
+          "reason": null,
+          "reviews": [],
+          "adjudication": null,
+          "rationaleCode": null
+        }
+      ]
+    }
+  ],
+  "annotationPolicyVersion": "0.2.0"
+}

@@ -25,6 +25,20 @@ capability constructs this envelope after authorization; the public ticket endpo
 continues to reject request bodies. Compose mounts the selected app profile root
 read-only at `/profiles`.
 
+## Evaluation AI-04
+
+AI-04.5 bổ sung [corpus enrichment và hướng dẫn bàn giao](docs/task/AI04_5/KNOWLEDGE_DATA_HANDOVER.md):
+10 tài liệu tập trung, lexicon 19 concept, 72 query nháp và 720 ô qrels trống
+chờ người duyệt. Thí nghiệm legacy theo lineage đạt Hit@1 11/12 và Hit@3 12/12;
+đây chưa phải kết quả qrels v0.2 hoặc HOLDOUT. Section chunking bị từ chối do
+regression; runtime giữ paragraph policy.
+
+[Hướng dẫn chạy và bàn giao AI-04](docs/task/AI04/EVALUATION.md)
+trình bày dataset versioned, baseline/comparison, executable quality gates và
+báo cáo retrieval/conformance/security thống nhất. Baseline khởi tạo giữ nguyên
+kết quả AI-03 thực đo (Hit@1 = 7/12, Hit@3 = 11/12); chính sách gate mới còn chờ
+review. CI đối chiếu source với installed wheel và evidence Ubuntu/Windows.
+
 ## Truy xuất AI-03
 
 [Báo cáo thực thi](docs/task/AI03/RUNTIME_REPORT.md) ghi kết quả kiểm thử và giới
@@ -42,7 +56,7 @@ Sau khi cài wheel bằng bộ pin `requirements.lock`, chạy từ repository r
 
 ```powershell
 python -I -m hdpi.search --profile service-desk@0.2.0 --fixture-repo-root . --query "không đăng nhập được tài khoản" --top-k 3
-python -I -m hdpi.evaluation.retrieval --repo-root . --fixtures-root fixtures/intelligence/service-desk --gates '{"hitAt1":0.8333333333333334,"hitAt3":1}' --output .local/ai03-evaluation.json
+python -I -m hdpi.evaluation.retrieval --dataset fixtures/intelligence/service-desk --baseline fixtures/intelligence/service-desk/evaluation/baseline-v0.1.json --output .local/ai04/retrieval-report.json
 python -I scripts/intelligence/verify-installed-package.py
 python -I -m pytest -c scripts/intelligence/installed-pytest.ini intelligence/tests -q
 ```
@@ -165,7 +179,7 @@ Developer CLI chạy sau khi cài wheel, chỉ dành cho engineering local:
 
 ```powershell
 .local/ai02-venv/Scripts/python -m hdpi.triage --profile service-desk@0.2.0 --workspace lab-a --title "Wi-Fi chập chờn" --description "Một máy bị ảnh hưởng; có thể chờ." --trace
-.local/ai02-venv/Scripts/python -m hdpi.evaluation.conformance --fixtures fixtures/intelligence/service-desk/tickets/tickets-v0.1.jsonl --profile-version 0.2.0 --expected-runtime '{"engine":"rules","profileVersion":"service-desk@0.2.0","rulesVersion":"0.2.0"}' --normalization-version text-normalization@0.1.0 --output .local/ai02-conformance.json
+.local/ai02-venv/Scripts/python -m hdpi.evaluation.conformance --dataset fixtures/intelligence/service-desk --config fixtures/intelligence/service-desk/evaluation/conformance-config.json --output .local/ai04/conformance-report.json
 ```
 
 CLI không xác thực hay cấp quyền. Adapter Core HTTP phải authorize và truyền

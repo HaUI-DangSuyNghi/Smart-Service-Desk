@@ -1,0 +1,127 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Service Desk query v0.2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "id",
+    "split",
+    "scenario",
+    "scenarioFamily",
+    "title",
+    "description",
+    "informationNeed",
+    "coverage",
+    "dataKind",
+    "reviewStatus",
+    "provenance"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "split": {
+      "enum": [
+        "DEV",
+        "HOLDOUT"
+      ]
+    },
+    "scenario": {
+      "enum": [
+        "NETWORK",
+        "ACCOUNT",
+        "SOFTWARE",
+        "HARDWARE",
+        "OTHER",
+        "AMBIGUOUS"
+      ]
+    },
+    "scenarioFamily": {
+      "type": "string",
+      "minLength": 1
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1
+    },
+    "informationNeed": {
+      "type": "string",
+      "minLength": 1
+    },
+    "coverage": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "dataKind": {
+      "const": "SYNTHETIC"
+    },
+    "reviewStatus": {
+      "enum": [
+        "DRAFT",
+        "REVIEWED"
+      ]
+    },
+    "provenance": {
+      "type": "object",
+      "required": [
+        "generationSource",
+        "humanReviewed",
+        "reviewer"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "generationSource": {
+          "enum": [
+            "LLM_DRAFT",
+            "HUMAN_AUTHORED"
+          ]
+        },
+        "humanReviewed": {
+          "type": "boolean"
+        },
+        "reviewer": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "reviewDecision": {
+      "type": "string",
+      "enum": [
+        "QUERY_ACCEPT",
+        "QUERY_REVISE",
+        "QUERY_REJECT"
+      ]
+    },
+    "reviewIssueCodes": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "LEXICAL_LEAKAGE",
+          "UNNATURAL_SYNTHETIC_TONE",
+          "UNINTENDED_CONTRADICTION",
+          "NEAR_DUPLICATE_QUERY"
+        ]
+      }
+    }
+  }
+}

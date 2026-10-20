@@ -129,7 +129,7 @@ jobs:
       - name: G8 real Core authorized retrieval provenance and citation regression
         run: |
           python -I scripts/acceptance/intelligence-retrieval.py --output .local/int01/authorized-retrieval.json
-          python -I -m hdpi.evaluation.retrieval --repo-root . --fixtures-root fixtures/intelligence/service-desk --gates '{"hitAt1":0.8333333333333334,"hitAt3":1}' --output .local/int01/retrieval-evaluation.json
+          python -I -m hdpi.evaluation.retrieval --repo-root . --fixtures-root fixtures/intelligence/service-desk --baseline fixtures/intelligence/service-desk/evaluation/baseline-v0.1.json --output .local/int01/retrieval-evaluation.json
           python - <<'PY'
           from pathlib import Path
           import json, os, subprocess

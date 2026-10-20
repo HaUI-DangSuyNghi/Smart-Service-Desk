@@ -1,0 +1,70 @@
+{
+  "schemaVersion": "1.0",
+  "checks": [
+    {
+      "id": "crossWorkspaceRetrieval", "dimension": "SECURITY",
+      "tests": [
+        {"module": "retrieval.test_models", "name": "test_partition_exact_versions_and_scope"},
+        {"module": "retrieval.test_security", "name": "test_partition_mismatch_rejected_before_scoring[workspace]"},
+        {"module": "retrieval.test_search_service", "name": "test_authorization_before_source_registry_engine[foreign-workspace]"}
+      ]
+    },
+    {
+      "id": "unauthorizedKnowledgeReturned", "dimension": "SECURITY",
+      "tests": [
+        {"module": "retrieval.test_search_service", "name": "test_scope_denial_before_scoring_even_with_degraded_enabled"},
+        {"module": "retrieval.test_citations", "name": "test_core_denial_and_outage_propagate[AuthorizationRejected]"}
+      ]
+    },
+    {
+      "id": "unknownArtifactCitation", "dimension": "PROVENANCE",
+      "tests": [
+        {"module": "retrieval.test_security", "name": "test_malicious_engine_never_reaches_verifier[foreign]"},
+        {"module": "retrieval.test_citations", "name": "test_authoritative_source_verifies_exact_chunk"}
+      ]
+    },
+    {
+      "id": "invalidChecksumAccepted", "dimension": "PROVENANCE",
+      "tests": [
+        {"module": "retrieval.test_security", "name": "test_snapshot_rejects_invalid_state[bytes]"},
+        {"module": "retrieval.test_citations", "name": "test_stale_source_is_removed[checksum]"}
+      ]
+    },
+    {
+      "id": "mutatedArtifactAccepted", "dimension": "PROVENANCE",
+      "tests": [
+        {"module": "retrieval.test_security", "name": "test_malicious_engine_never_reaches_verifier[excerpt]"},
+        {"module": "retrieval.test_search_service", "name": "test_stale_citation_and_fabricated_excerpt"}
+      ]
+    },
+    {
+      "id": "malformedResponseAccepted", "dimension": "CONTRACT",
+      "tests": [
+        {"module": "retrieval.test_security", "name": "test_response_schema_and_semantic_guards"},
+        {"module": "integrations.test_triage_http", "name": "test_output_correlation_and_profile_pin[requestId]"}
+      ]
+    },
+    {
+      "id": "clientTrustedContextAccepted", "dimension": "SECURITY",
+      "tests": [
+        {"module": "contract.test_triage_contract", "name": "test_auth_context_is_separate_and_checked_before_engine"},
+        {"module": "integrations.test_triage_http", "name": "test_public_flat_payload_cannot_supply_trusted_context"},
+        {"module": "integrations.test_triage_http", "name": "test_trusted_workspace_is_independent_of_request_context"}
+      ]
+    },
+    {
+      "id": "profileVersionMismatchAccepted", "dimension": "CONTRACT",
+      "tests": [
+        {"module": "retrieval.test_security", "name": "test_partition_mismatch_rejected_before_scoring[profile]"},
+        {"module": "integrations.test_triage_http", "name": "test_output_correlation_and_profile_pin[runtime]"}
+      ]
+    },
+    {
+      "id": "wrongPrivateTokenAccepted", "dimension": "SECURITY",
+      "tests": [
+        {"module": "integrations.test_triage_http", "name": "test_authentication_before_body_or_engine[None]"},
+        {"module": "integrations.test_triage_http", "name": "test_authentication_before_body_or_engine[wrong-service-credential]"}
+      ]
+    }
+  ]
+}

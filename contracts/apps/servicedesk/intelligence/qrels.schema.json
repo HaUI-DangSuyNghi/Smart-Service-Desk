@@ -1,0 +1,116 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Service Desk qrels v0.2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "datasetVersion",
+    "collectionDigest",
+    "queriesDigest",
+    "status",
+    "annotationKind",
+    "benchmarkClaim",
+    "cases"
+  ],
+  "properties": {
+    "schemaVersion": {"const": "0.2.0"},
+    "datasetVersion": {"const": "0.2.0"},
+    "annotationPolicyVersion": {"const": "0.2.0"},
+    "collectionDigest": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "queriesDigest": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+    "status": {"enum": ["AWAITING_HUMAN_JUDGMENTS", "REVIEWED"]},
+    "annotationKind": {"const": "HUMAN_REQUIRED"},
+    "benchmarkClaim": {"const": false},
+    "cases": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["queryId", "judgments"],
+        "properties": {
+          "queryId": {"type": "string", "minLength": 1},
+          "judgments": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["artifactId", "grade", "reason", "reviews", "adjudication"],
+              "properties": {
+                "artifactId": {"type": "string", "minLength": 1},
+                "grade": {"type": ["integer", "null"], "enum": [0, 1, 2, null]},
+                "rationaleCode": {
+                  "type": ["string", "null"],
+                  "enum": [
+                    "PRIMARY_DIRECT_ANSWER",
+                    "PRIMARY_ROOT_CAUSE",
+                    "PRIMARY_INSUFFICIENT_INFO",
+                    "PRIMARY_SECURITY_BREACH",
+                    "PRIMARY_ROUTING_NON_IT",
+                    "PRIMARY_ESCALATION_TRIGGER",
+                    "SUPPORT_POLICY_PRIORITY",
+                    "SUPPORT_SECURITY_HYGIENE",
+                    "SUPPORT_ESCALATION_PATH",
+                    "SUPPORT_TRIAGE_HANDOFF",
+                    "SUPPORT_SECONDARY_CHECK",
+                    "SUPPORT_RELATED_POLICY",
+                    "HARD_NEGATIVE_LEXICAL_TRAP",
+                    "HARD_NEGATIVE_NEGATIVE_EVIDENCE",
+                    "HARD_NEGATIVE_SPECULATIVE",
+                    "IRRELEVANT_DOMAIN",
+                    null
+                  ]
+                },
+                "reason": {"type": ["string", "null"]},
+                "reviews": {
+                  "type": "array",
+                  "minItems": 0,
+                  "maxItems": 2,
+                  "items": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": [
+                      "reviewer",
+                      "grade",
+                      "rationaleCode",
+                      "reason",
+                      "independent",
+                      "queryReviewed"
+                    ],
+                    "properties": {
+                      "reviewer": {"type": "string", "minLength": 1},
+                      "grade": {"type": "integer", "enum": [0, 1, 2]},
+                      "rationaleCode": {"type": "string", "minLength": 1},
+                      "reason": {"type": "string", "minLength": 1},
+                      "independent": {"const": true},
+                      "queryReviewed": {"const": true}
+                    }
+                  }
+                },
+                "adjudication": {
+                  "anyOf": [
+                    {
+                      "type": "object",
+                      "additionalProperties": false,
+                      "required": ["reviewer", "grade", "rationaleCode", "reason", "role"],
+                      "properties": {
+                        "reviewer": {"type": "string", "minLength": 1},
+                        "grade": {"type": "integer", "enum": [0, 1, 2]},
+                        "rationaleCode": {"type": "string", "minLength": 1},
+                        "reason": {"type": "string", "minLength": 1},
+                        "role": {"const": "DOMAIN_OWNER"}
+                      }
+                    },
+                    {"type": "null"}
+                  ]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
