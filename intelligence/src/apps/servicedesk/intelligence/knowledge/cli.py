@@ -11,6 +11,7 @@ from hdpi.evaluation.dataset import require
 from hdpi.evaluation.errors import EvaluationError
 from hdpi.evaluation.evidence import write_report
 
+from .annotations import annotation_agreement, conflict_severity
 from .dataset import load_dataset
 from .experiments import acceptance, compare_corpora, evaluate_reviewed_split
 from .projection import project, write_projection
@@ -126,6 +127,70 @@ def worksheet(args):
     return 0
 
 
+def review_report(args):
+    def read_sheet(path):
+        with path.open(encoding='utf-8-sig', newline='') as stream:
+            rows = list(csv.DictReader(stream))
+        require(bool(rows), 'Reviewer worksheet is empty')
+        required = {'queryId', 'artifactId', 'grade', 'rationaleCode', 'reviewer'}
+        require(required <= set(rows[0]), 'Reviewer worksheet columns are incomplete')
+        parsed, reviewers = {}, set()
+        for row in rows:
+            key = (row['queryId'].strip(), row['artifactId'].strip())
+            require(all(key) and key not in parsed, 'Duplicate or empty reviewer worksheet row')
+            require(row['grade'].strip() in ('0', '1', '2'), 'Reviewer grade is incomplete')
+            reviewer = row['reviewer'].strip().casefold()
+            require(bool(reviewer), 'Reviewer alias is missing')
+            reviewers.add(reviewer)
+            parsed[key] = {
+                'grade': int(row['grade']),
+                'rationaleCode': row['rationaleCode'].strip(),
+            }
+        require(len(reviewers) == 1, 'Each worksheet must belong to exactly one reviewer alias')
+        return parsed, next(iter(reviewers))
+
+    first, reviewer_a = read_sheet(args.reviewer_a)
+    second, reviewer_b = read_sheet(args.reviewer_b)
+    require(reviewer_a != reviewer_b, 'Independent worksheets require distinct reviewers')
+    require(set(first) == set(second), 'Reviewer worksheets cover different query/artifact cells')
+
+    pairs, conflicts = [], []
+    for key in sorted(first):
+        left, right = first[key], second[key]
+        pairs.append((left['grade'], right['grade']))
+        if left['grade'] != right['grade']:
+            conflicts.append(
+                {
+                    'queryId': key[0],
+                    'artifactId': key[1],
+                    'reviewerAGrade': left['grade'],
+                    'reviewerBGrade': right['grade'],
+                    'reviewerARationaleCode': left['rationaleCode'],
+                    'reviewerBRationaleCode': right['rationaleCode'],
+                    'severity': conflict_severity(left['grade'], right['grade']),
+                }
+            )
+
+    agreement = annotation_agreement(pairs)
+    result = {
+        'schemaVersion': '0.2.0',
+        'kind': 'BLINDED_REVIEW_AGREEMENT',
+        'reviewers': [reviewer_a, reviewer_b],
+        'agreement': agreement,
+        'conflicts': conflicts,
+        'acceptanceTargets': {
+            'rawAgreement': 0.88,
+            'linearWeightedCohenKappa': 0.70,
+            'krippendorffAlphaOrdinal': 0.70,
+            'positiveSpecificAgreement': 0.75,
+        },
+        'authoritativeQrelsModified': False,
+    }
+    write_json(args.output, result)
+    print(json.dumps({'agreement': agreement, 'conflictCount': len(conflicts)}, sort_keys=True))
+    return 0
+
+
 def comparison(args):
     reports = compare_corpora(args.repo_root, args.dataset)
     args.output.mkdir(parents=True, exist_ok=True)
@@ -210,6 +275,7 @@ def parser():
         ('analyze', analysis),
         ('worksheet', worksheet),
         ('compare', comparison),
+        ('review-report', review_report),
         ('evaluate', evaluate),
         ('acceptance', accept),
         ('chunk-experiment', chunk_experiment),
@@ -220,7 +286,7 @@ def parser():
             '--output',
             type=Path,
             required=name
-            in ('project', 'worksheet', 'compare', 'evaluate', 'acceptance', 'chunk-experiment'),
+            in ('project', 'worksheet', 'compare', 'review-report', 'evaluate', 'acceptance', 'chunk-experiment'),
         )
         if name == 'validate':
             command.add_argument('--require-reviewed', action='store_true')
@@ -229,6 +295,9 @@ def parser():
             command.add_argument('--structural', action='store_true')
         if name in ('worksheet', 'evaluate'):
             command.add_argument('--split', choices=['DEV', 'HOLDOUT'], default='DEV')
+        if name == 'review-report':
+            command.add_argument('--reviewer-a', type=Path, required=True)
+            command.add_argument('--reviewer-b', type=Path, required=True)
     return root
 
 
