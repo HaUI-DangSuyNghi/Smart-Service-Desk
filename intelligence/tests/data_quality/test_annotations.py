@@ -46,7 +46,10 @@ def test_two_independent_reviewers_and_complete_matrix():
     queries, qrels = synthetic_reviews()
     result = validate_judgments(qrels, queries, ['a', 'b', 'c'], require_reviewed=True)
     assert result['pendingJudgmentCount'] == 0
-    assert result['agreement']['rawAgreement'] == result['agreement']['weightedCohenKappa'] == 1
+    assert result['agreement']['rawAgreement'] == 1
+    assert result['agreement']['linearWeightedCohenKappa'] == 1
+    assert result['agreement']['krippendorffAlphaOrdinal'] == 1
+    assert result['agreement']['positiveSpecificAgreement'] == 1
 
 
 @pytest.mark.parametrize(
@@ -78,6 +81,7 @@ def test_disagreement_needs_separate_domain_owner():
     queries, qrels = synthetic_reviews()
     cell = qrels['cases'][0]['judgments'][0]
     cell['reviews'][1]['grade'] = 0
+    cell['reviews'][1]['rationaleCode'] = 'IRRELEVANT_DOMAIN'
     cell['adjudication'] = dict(
         reviewer='synthetic-domain-owner', grade=2, rationaleCode='PRIMARY_DIRECT_ANSWER',
         role='DOMAIN_OWNER', reason='Synthetic test'
