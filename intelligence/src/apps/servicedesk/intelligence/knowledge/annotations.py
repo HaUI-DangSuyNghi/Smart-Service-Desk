@@ -172,6 +172,7 @@ def validate_judgments(qrels, queries, artifacts, *, require_reviewed=False):
     pairs = []
     holdout_reviewers = None
     dual_reviewed_dev_judgments = 0
+    total_dev_judgments = 0
     hard_negative_count = 0
     rationale_count = 0
 
@@ -185,6 +186,8 @@ def validate_judgments(qrels, queries, artifacts, *, require_reviewed=False):
         )
 
         primary = 0
+        if query['split'] == 'DEV':
+            total_dev_judgments += len(cells)
         completed = not any(cell['grade'] is None for cell in cells)
         review_counts = set()
 
@@ -279,7 +282,7 @@ def validate_judgments(qrels, queries, artifacts, *, require_reviewed=False):
     if require_reviewed or qrels['status'] == 'REVIEWED':
         require(pending == 0 and qrels['status'] == 'REVIEWED', 'Human qrels are incomplete')
         require(
-            dual_reviewed_dev_judgments >= 240,
+            dual_reviewed_dev_judgments >= (total_dev_judgments + 1) // 2,
             'At least 50% of DEV judgments require a second independent review',
         )
 
