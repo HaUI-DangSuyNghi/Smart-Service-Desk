@@ -89,6 +89,49 @@ def test_cli_prepares_blank_readable_csv_and_preserves_human_work(tmp_path):
     assert output.read_bytes() == before
 
 
+
+def test_review_report_compares_blinded_sheets_without_touching_qrels(tmp_path):
+    first = tmp_path / 'review-a.csv'
+    second = tmp_path / 'review-b.csv'
+    assert run_cli('worksheet', '--split', 'HOLDOUT', '--output', first).returncode == 0
+    assert run_cli('worksheet', '--split', 'HOLDOUT', '--output', second).returncode == 0
+
+    for path, reviewer in ((first, 'rev_a'), (second, 'rev_b')):
+        with path.open(encoding='utf-8-sig', newline='') as stream:
+            rows = list(csv.DictReader(stream))
+            fieldnames = stream.readline if False else list(rows[0])
+        for index, row in enumerate(rows):
+            row['grade'] = '2' if index == 0 else ('1' if index == 1 else '0')
+            row['rationaleCode'] = (
+                'PRIMARY_DIRECT_ANSWER'
+                if index == 0
+                else ('SUPPORT_SECONDARY_CHECK' if index == 1 else 'IRRELEVANT_DOMAIN')
+            )
+            row['reviewer'] = reviewer
+            row['reviewStatus'] = 'DONE'
+        with path.open('w', encoding='utf-8-sig', newline='') as stream:
+            writer = csv.DictWriter(stream, fieldnames=fieldnames)
+            writer.writeheader()
+            writer.writerows(rows)
+
+    output = tmp_path / 'agreement.json'
+    before = (DATA / 'retrieval/qrels-v0.2.json').read_bytes()
+    result = run_cli(
+        'review-report',
+        '--reviewer-a',
+        first,
+        '--reviewer-b',
+        second,
+        '--output',
+        output,
+    )
+    assert result.returncode == 0, result.stderr
+    report = json.loads(output.read_text('utf-8'))
+    assert report['agreement']['rawAgreement'] == 1
+    assert report['agreement']['linearWeightedCohenKappa'] == 1
+    assert report['conflicts'] == [] and report['authoritativeQrelsModified'] is False
+    assert (DATA / 'retrieval/qrels-v0.2.json').read_bytes() == before
+
 def test_cli_review_gate_is_nonzero_and_does_not_fake_holdout(tmp_path):
     output = tmp_path / 'readiness.json'
     result = run_cli('acceptance', '--output', output)
