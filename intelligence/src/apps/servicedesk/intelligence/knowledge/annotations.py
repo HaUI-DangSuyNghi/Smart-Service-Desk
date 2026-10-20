@@ -153,10 +153,16 @@ def annotation_agreement(pairs):
 def validate_judgments(qrels, queries, artifacts, *, require_reviewed=False):
     known = set(artifacts)
     by_id = {q['id']: q for q in queries}
+    policy_version = qrels.get('annotationPolicyVersion')
     require(
-        qrels.get('annotationPolicyVersion') == ANNOTATION_POLICY_VERSION,
+        policy_version in (None, ANNOTATION_POLICY_VERSION),
         'Qrels annotation policy version mismatch',
     )
+    if require_reviewed or qrels['status'] == 'REVIEWED':
+        require(
+            policy_version == ANNOTATION_POLICY_VERSION,
+            'Reviewed qrels must pin annotationPolicyVersion',
+        )
     ids = [case['queryId'] for case in qrels['cases']]
     require(
         len(ids) == len(set(ids)) and set(ids) == set(by_id), 'Orphan or duplicate query judgments'
