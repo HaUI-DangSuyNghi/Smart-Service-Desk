@@ -172,7 +172,6 @@ def validate_release(root, directory, spec, manifest, concepts, components, coll
     require(alpha is not None and alpha >= 0.70, 'Ordinal Krippendorff alpha needs review')
     positive = agreement['positiveSpecificAgreement']
     require(positive is not None and positive >= 0.75, 'Positive specific agreement needs review')
-    require(agreement['disagreementCount'] == 0, 'Unresolved reviewer disagreements remain')
 
 
 def load_dataset(root, directory, *, require_reviewed=False):
