@@ -11,7 +11,7 @@ from hdpi.evaluation.dataset import require
 from hdpi.evaluation.errors import EvaluationError
 from hdpi.evaluation.evidence import write_report
 
-from .annotations import annotation_agreement, conflict_severity
+from .annotations import annotation_agreement, conflict_severity, validate_rationale
 from .dataset import load_dataset
 from .experiments import acceptance, compare_corpora, evaluate_reviewed_split
 from .projection import project, write_projection
@@ -142,10 +142,10 @@ def review_report(args):
             reviewer = row['reviewer'].strip().casefold()
             require(bool(reviewer), 'Reviewer alias is missing')
             reviewers.add(reviewer)
-            parsed[key] = {
-                'grade': int(row['grade']),
-                'rationaleCode': row['rationaleCode'].strip(),
-            }
+            grade = int(row['grade'])
+            rationale = row['rationaleCode'].strip()
+            validate_rationale(grade, rationale)
+            parsed[key] = {'grade': grade, 'rationaleCode': rationale}
         require(len(reviewers) == 1, 'Each worksheet must belong to exactly one reviewer alias')
         return parsed, next(iter(reviewers))
 
