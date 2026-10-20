@@ -4,7 +4,12 @@ import pytest
 from hdpi.evaluation.errors import EvaluationError
 from servicedesk.intelligence.knowledge.annotations import annotation_agreement
 from servicedesk.intelligence.knowledge.dataset import load_dataset
-from servicedesk.intelligence.knowledge.quality import longest_phrase, safety_findings
+from servicedesk.intelligence.knowledge.quality import (
+    longest_phrase,
+    safety_findings,
+    token_containment,
+    trigram_containment,
+)
 
 ROOT = Path(__file__).resolve().parents[3]
 DATA = ROOT / 'fixtures/intelligence/service-desk'
@@ -45,7 +50,18 @@ def test_safe_markers_and_security_topics_do_not_trigger_findings():
 def test_longest_phrase_and_mathematical_agreement():
     assert longest_phrase('a b c d e f g h i j', 'z a b c d e f g h i x') == 9
     result = annotation_agreement([(0, 0), (1, 1), (2, 2)])
-    assert result['rawAgreement'] == result['weightedCohenKappa'] == 1
+    assert result['rawAgreement'] == result['linearWeightedCohenKappa'] == 1
+    assert result['quadraticWeightedCohenKappa'] == 1
+    assert result['krippendorffAlphaOrdinal'] == 1
+    assert result['positiveSpecificAgreement'] == 1
     assert annotation_agreement([(1, 1)])['weightedCohenKappa'] is None
     with pytest.raises(EvaluationError):
         annotation_agreement([])
+
+
+
+def test_lexical_leakage_signals_are_query_normalized():
+    query = 'one two three four five six seven eight nine'
+    document = 'zero one two three four five six seven eight nine ten'
+    assert trigram_containment(query, document) == 1
+    assert token_containment(query, document) == 1
