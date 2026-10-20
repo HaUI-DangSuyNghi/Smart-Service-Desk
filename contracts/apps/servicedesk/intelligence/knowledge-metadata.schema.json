@@ -247,6 +247,14 @@
           }
         }
       }
+    },
+    "reviewDecision": {
+      "type": "string",
+      "enum": [
+        "DOCUMENT_ACCEPT",
+        "DOCUMENT_REVISE",
+        "DOCUMENT_REJECT"
+      ]
     }
   }
 }
