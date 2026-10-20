@@ -94,14 +94,16 @@ def worksheet(args):
         'artifactId',
         'artifactTitle',
         'grade',
+        'rationaleCode',
         'reason',
         'reviewer',
+        'reviewStatus',
     ]
     with args.output.open('w', encoding='utf-8-sig', newline='') as stream:
         writer = csv.DictWriter(stream, fieldnames=columns)
         writer.writeheader()
         for query in selected:
-            for artifact in dataset.manifest['artifacts']:
+            for artifact in sorted(dataset.manifest['artifacts'], key=lambda value: value['artifactId']):
                 writer.writerow(
                     dict(
                         queryId=query['id'],
@@ -111,8 +113,10 @@ def worksheet(args):
                         artifactId=artifact['artifactId'],
                         artifactTitle=artifact['title'],
                         grade='',
+                        rationaleCode='',
                         reason='',
                         reviewer='',
+                        reviewStatus='PENDING',
                     )
                 )
 
