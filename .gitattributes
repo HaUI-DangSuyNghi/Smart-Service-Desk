@@ -3,6 +3,7 @@
 **/.gitattributes text eol=lf
 contracts/intelligence/**/*.md text eol=lf
 contracts/intelligence/**/*.json text eol=lf
+contracts/apps/servicedesk/intelligence/*.json text eol=lf
 fixtures/intelligence/**/*.md text eol=lf
 fixtures/intelligence/**/*.json text eol=lf
 fixtures/intelligence/**/*.jsonl text eol=lf

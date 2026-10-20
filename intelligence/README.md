@@ -27,6 +27,12 @@ read-only at `/profiles`.
 
 ## Evaluation AI-04
 
+AI-04.5 bổ sung [corpus enrichment và hướng dẫn bàn giao](docs/task/AI04_5/KNOWLEDGE_DATA_HANDOVER.md):
+10 tài liệu tập trung, lexicon 19 concept, 72 query nháp và 720 ô qrels trống
+chờ người duyệt. Thí nghiệm legacy theo lineage đạt Hit@1 11/12 và Hit@3 12/12;
+đây chưa phải kết quả qrels v0.2 hoặc HOLDOUT. Section chunking bị từ chối do
+regression; runtime giữ paragraph policy.
+
 [Hướng dẫn chạy và bàn giao AI-04](docs/task/AI04/EVALUATION.md)
 trình bày dataset versioned, baseline/comparison, executable quality gates và
 báo cáo retrieval/conformance/security thống nhất. Baseline khởi tạo giữ nguyên

@@ -1,0 +1,52 @@
+schemaVersion: 0.2.0
+id: service-desk-knowledge-enrichment
+version: 0.2.0
+status: DRAFT_AWAITING_HUMAN_REVIEW
+benchmarkClaim: false
+rightsStatus: PENDING_OWNER_APPROVAL
+projectionVersion: service-desk-knowledge-projection@0.2.0
+holdout:
+  state: DRAFT_NOT_LOCKED
+  lock: null
+components:
+  knowledge:
+    path: fixtures/intelligence/service-desk/knowledge/manifest-v0.2.json
+    sha256: abead38e858653a027050a329345acbc11b99a83c7371fcbe286cfdc2ae86194
+    byteSize: 20735
+  lexicon:
+    path: fixtures/intelligence/service-desk/knowledge/lexicon-v0.2.yaml
+    sha256: 565638a7cdca14b50aafac1853940b24f8e3bdf586f4728c5eea70b299aa5e35
+    byteSize: 6764
+  queries:
+    path: fixtures/intelligence/service-desk/tickets/tickets-v0.2.jsonl
+    sha256: 9a4d0b026b17357e53072c91bdadf291c2e48d003ec95410bbca79cc434ad060
+    byteSize: 40290
+  qrels:
+    path: fixtures/intelligence/service-desk/retrieval/qrels-v0.2.json
+    sha256: a6ccd558ddfe5190514ca2992c0207baf7801befcacade6a1004c18e1e00dcbc
+    byteSize: 139319
+  legacyEvidence:
+    path: fixtures/intelligence/service-desk/evaluation/error-analysis/legacy-v0.1.json
+    sha256: 0c0f5ef4ec0d91578ef1ce4189938fa42f68177eea3d2bc3f809448c46216c71
+    byteSize: 10829
+schemas:
+  knowledge-metadata:
+    path: contracts/apps/servicedesk/intelligence/knowledge-metadata.schema.json
+    sha256: a925be3cb02ce2cee4754bb70d521e25451abf49304e6bf973402139313132e0
+    byteSize: 5006
+  lexicon:
+    path: contracts/apps/servicedesk/intelligence/lexicon.schema.json
+    sha256: 070a87fb9d0ce2c04c743b49459235ffb67e524a7c54ffe48cef282b19e04d65
+    byteSize: 2504
+  query:
+    path: contracts/apps/servicedesk/intelligence/query.schema.json
+    sha256: 0d8d5da719f0a9c5e6a0e43102e76bde9802b7a08e8ac628b6f76f9a6c4ce046
+    byteSize: 2368
+  qrels:
+    path: contracts/apps/servicedesk/intelligence/qrels.schema.json
+    sha256: 5ed0c2775828f7e92480bee8cf9ddb7d0f3d611f98da8eef664f8839854ac270
+    byteSize: 4341
+  dataset-v0.2:
+    path: contracts/apps/servicedesk/intelligence/dataset-v0.2.schema.json
+    sha256: a8d322ab1a96c6855a6bb50413c1028d3dea70839550570b127b3838326455e7
+    byteSize: 8650
