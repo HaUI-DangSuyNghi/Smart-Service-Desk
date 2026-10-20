@@ -97,7 +97,7 @@ def validate_query_splits(queries):
 
         left = first['title'] + ' ' + first['description']
         right = second['title'] + ' ' + second['description']
-        require(jaccard(left, right) < 0.65, 'Near-duplicate query crosses DEV/HOLDOUT')
+        require(jaccard(left, right) < 0.60, 'Near-duplicate query crosses DEV/HOLDOUT')
 
 
 def validate_safety(root, manifest, queries, values):
@@ -165,9 +165,14 @@ def validate_release(root, directory, spec, manifest, concepts, components, coll
 
     agreement = findings['agreement']
     require(agreement is not None, 'Missing independent annotation agreement')
-    require(agreement['rawAgreement'] >= 0.85, 'Raw annotation agreement needs review')
-    kappa = agreement['weightedCohenKappa']
-    require(kappa is not None and kappa >= 0.70, 'Weighted annotation agreement needs review')
+    require(agreement['rawAgreement'] >= 0.88, 'Raw annotation agreement needs review')
+    linear = agreement['linearWeightedCohenKappa']
+    require(linear is not None and linear >= 0.70, 'Linear weighted annotation agreement needs review')
+    alpha = agreement['krippendorffAlphaOrdinal']
+    require(alpha is not None and alpha >= 0.70, 'Ordinal Krippendorff alpha needs review')
+    positive = agreement['positiveSpecificAgreement']
+    require(positive is not None and positive >= 0.75, 'Positive specific agreement needs review')
+    require(agreement['disagreementCount'] == 0, 'Unresolved reviewer disagreements remain')
 
 
 def load_dataset(root, directory, *, require_reviewed=False):
