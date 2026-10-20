@@ -23,8 +23,8 @@ components:
     byteSize: 40290
   qrels:
     path: fixtures/intelligence/service-desk/retrieval/qrels-v0.2.json
-    sha256: a6ccd558ddfe5190514ca2992c0207baf7801befcacade6a1004c18e1e00dcbc
-    byteSize: 139319
+    sha256: 52595bd71203e53903e48a3285c15945112804a143ecd73bf6e65b82582b62f0
+    byteSize: 163117
   legacyEvidence:
     path: fixtures/intelligence/service-desk/evaluation/error-analysis/legacy-v0.1.json
     sha256: 0c0f5ef4ec0d91578ef1ce4189938fa42f68177eea3d2bc3f809448c46216c71
