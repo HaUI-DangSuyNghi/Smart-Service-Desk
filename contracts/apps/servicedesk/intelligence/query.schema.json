@@ -101,6 +101,27 @@
           ]
         }
       }
+    },
+    "reviewDecision": {
+      "type": "string",
+      "enum": [
+        "QUERY_ACCEPT",
+        "QUERY_REVISE",
+        "QUERY_REJECT"
+      ]
+    },
+    "reviewIssueCodes": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string",
+        "enum": [
+          "LEXICAL_LEAKAGE",
+          "UNNATURAL_SYNTHETIC_TONE",
+          "UNINTENDED_CONTRADICTION",
+          "NEAR_DUPLICATE_QUERY"
+        ]
+      }
     }
   }
 }
