@@ -99,7 +99,7 @@ def test_review_report_compares_blinded_sheets_without_touching_qrels(tmp_path):
     for path, reviewer in ((first, 'rev_a'), (second, 'rev_b')):
         with path.open(encoding='utf-8-sig', newline='') as stream:
             rows = list(csv.DictReader(stream))
-            fieldnames = stream.readline if False else list(rows[0])
+            fieldnames = list(rows[0].keys())
         for index, row in enumerate(rows):
             row['grade'] = '2' if index == 0 else ('1' if index == 1 else '0')
             row['rationaleCode'] = (
