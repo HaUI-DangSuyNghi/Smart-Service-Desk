@@ -1,3 +1,4 @@
+import hashlib
 import json
 from pathlib import Path
 
@@ -48,3 +49,28 @@ def test_authoritative_qrels_still_require_actual_human_judgments():
         for case in qrels['cases']
         for judgment in case['judgments']
     )
+
+
+
+def test_ai_assisted_manifest_pins_candidate_bytes_without_entering_benchmark():
+    manifest_path = DATA / 'retrieval/ai-assisted/manifest-v0.2.json'
+    manifest = json.loads(manifest_path.read_text('utf-8'))
+    raw = CANDIDATE.read_bytes()
+
+    assert manifest['kind'] == 'AI_ASSISTED_REVIEW_EVIDENCE'
+    assert manifest['authoritative'] is False
+    assert manifest['benchmarkClaim'] is False
+    assert manifest['candidate']['sha256'] == hashlib.sha256(raw).hexdigest()
+    assert manifest['candidate']['byteSize'] == len(raw)
+    assert manifest['candidate']['totalJudgments'] == 720
+    assert manifest['governance']['excludedFromDatasetIdentity'] is True
+    assert manifest['governance']['excludedFromBenchmarkMetrics'] is True
+
+
+def test_authoritative_qrel_fixture_pins_policy_but_no_invented_rationale():
+    qrels = json.loads((DATA / 'retrieval/qrels-v0.2.json').read_text('utf-8'))
+    assert qrels['annotationPolicyVersion'] == '0.2.0'
+    judgments = [judgment for case in qrels['cases'] for judgment in case['judgments']]
+    assert len(judgments) == 720
+    assert all(judgment['grade'] is None for judgment in judgments)
+    assert all(judgment['rationaleCode'] is None for judgment in judgments)
