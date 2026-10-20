@@ -16,11 +16,13 @@ def synthetic_reviews():
         }
     ]
     cells = []
+    rationale = {2: 'PRIMARY_DIRECT_ANSWER', 1: 'SUPPORT_SECONDARY_CHECK', 0: 'IRRELEVANT_DOMAIN'}
     for identifier, grade in [('a', 2), ('b', 1), ('c', 0)]:
         reviews = [
             dict(
                 reviewer='synthetic-reviewer-' + person,
                 grade=grade,
+                rationaleCode=rationale[grade],
                 reason='Synthetic test',
                 independent=True,
                 queryReviewed=True,
@@ -31,12 +33,13 @@ def synthetic_reviews():
             dict(
                 artifactId=identifier,
                 grade=grade,
+                rationaleCode=rationale[grade],
                 reason='Synthetic test',
                 reviews=reviews,
                 adjudication=None,
             )
         )
-    return queries, {'status': 'REVIEWED', 'cases': [{'queryId': 'q', 'judgments': cells}]}
+    return queries, {'status': 'REVIEWED', 'annotationPolicyVersion': '0.2.0', 'cases': [{'queryId': 'q', 'judgments': cells}]}
 
 
 def test_two_independent_reviewers_and_complete_matrix():
@@ -76,7 +79,8 @@ def test_disagreement_needs_separate_domain_owner():
     cell = qrels['cases'][0]['judgments'][0]
     cell['reviews'][1]['grade'] = 0
     cell['adjudication'] = dict(
-        reviewer='synthetic-domain-owner', grade=2, role='DOMAIN_OWNER', reason='Synthetic test'
+        reviewer='synthetic-domain-owner', grade=2, rationaleCode='PRIMARY_DIRECT_ANSWER',
+        role='DOMAIN_OWNER', reason='Synthetic test'
     )
     validate_judgments(qrels, queries, ['a', 'b', 'c'])
     invalid = deepcopy(qrels)
