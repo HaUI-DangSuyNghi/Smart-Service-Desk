@@ -44,8 +44,8 @@ schemas:
     byteSize: 1918
   qrels:
     path: contracts/apps/servicedesk/intelligence/qrels.schema.json
-    sha256: d03fcb785204566eef41b0079c18532f77ae282f00060b565967608c94e83774
-    byteSize: 4745
+    sha256: 5ed0c2775828f7e92480bee8cf9ddb7d0f3d611f98da8eef664f8839854ac270
+    byteSize: 4341
   dataset-v0.2:
     path: contracts/apps/servicedesk/intelligence/dataset-v0.2.schema.json
     sha256: a8d322ab1a96c6855a6bb50413c1028d3dea70839550570b127b3838326455e7
