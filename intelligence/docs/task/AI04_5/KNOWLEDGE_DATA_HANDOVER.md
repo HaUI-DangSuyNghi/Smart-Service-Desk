@@ -116,8 +116,7 @@ See [annotation guidelines](../../../../fixtures/intelligence/service-desk/retri
 Review each query's information need before looking at a ranking. At least one
 primary document is required for each accepted query. HOLDOUT uses two consistent
 independent reviewer identities; any disagreement needs a separate domain-owner
-adjudication. Keep the original votes. Raw agreement targets 0.85 and quadratic
-weighted Cohen's kappa targets 0.70; undefined kappa cannot establish acceptance.
+adjudication. Keep the original votes. Release agreement targets are Raw Agreement >= 0.88, Linear Weighted Cohen's Kappa >= 0.70, ordinal Krippendorff's Alpha >= 0.70 and Positive Specific Agreement >= 0.75. Quadratic kappa is retained only as sensitivity evidence; undefined agreement statistics cannot establish acceptance.
 
 Release commands remain fail-closed until review and locking are complete:
 
@@ -182,3 +181,33 @@ corpus/lexicon and rights, validate or replace queries, fill/adjudicate judgment
 review agreement, lock the holdout and execute acceptance. Remote cross-platform
 and inherited real integration checks must also pass. No BM25, dense retrieval,
 RAG or production ingestion is introduced here.
+
+
+## Research-backed annotation tooling
+
+The human annotation SOP is versioned at
+[`annotation-guidelines-v0.2.md`](../../../../fixtures/intelligence/service-desk/retrieval/annotation-guidelines-v0.2.md)
+with calibration precedents in
+[`reviewer-training-v0.2.md`](../../../../fixtures/intelligence/service-desk/retrieval/reviewer-training-v0.2.md).
+
+Reviewer worksheets are model-blind and list documents in stable artifact-id order. They
+include `grade`, `rationaleCode`, reviewer alias and review status fields but no ranking,
+score or expected model category.
+
+After two independent sheets are complete, compute agreement and conflict severity without
+modifying authoritative qrels:
+
+```powershell
+& $py scripts/intelligence/knowledge-data.py review-report `
+  --reviewer-a .local/ai045/review/holdout-reviewer-a.csv `
+  --reviewer-b .local/ai045/review/holdout-reviewer-b.csv `
+  --output .local/ai045/review/holdout-agreement.json
+```
+
+The report includes Raw Agreement, Linear and Quadratic Weighted Cohen's Kappa,
+Krippendorff's Alpha (ordinal), Positive Specific Agreement and disagreements classified as
+`CRITICAL_2_0`, `MODERATE_1_0` or `MINOR_2_1`.
+
+The research/example matrix supplied outside the repository must not be imported into
+`qrels-v0.2.json`: it uses different query identifiers/wording from the current
+`TICKET-V2-*` collection. It is reference material only.
