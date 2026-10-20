@@ -143,7 +143,7 @@ accuracy or permission to ingest customer-facing knowledge.
 
 ## Tests and wheel verification
 
-Local Windows / CPython 3.12.7 verification on 2026-10-19:
+Historical local Windows / CPython 3.12.7 verification on 2026-10-19 (before the final qrel-policy/candidate-fixture follow-up commits):
 
 | Check | Result |
 | --- | --- |
@@ -157,7 +157,7 @@ Local Windows / CPython 3.12.7 verification on 2026-10-19:
 | Foundation, strict boundaries and boundary mutations | PASS; 34 boundary tests, zero debt |
 | Built wheel and dependency consistency | PASS |
 
-Remote Ubuntu/Windows evidence is pending; it is not implied by local PASS.
+Remote Ubuntu/Windows evidence is pending; it is not implied by local PASS. The latest HEAD adds/changes annotation-policy, candidate-fixture and data-quality tests after this historical run, so these figures must not be treated as current-HEAD proof. Re-run the full source/wheel/CI suite on the final integration base before merge/AI-05 benchmark claims.
 
 ```powershell
 & $py -m pytest intelligence/tests -q --junitxml=.local/ai045/source-tests.xml
