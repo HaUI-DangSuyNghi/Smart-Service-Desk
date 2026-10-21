@@ -25,6 +25,15 @@ capability constructs this envelope after authorization; the public ticket endpo
 continues to reject request bodies. Compose mounts the selected app profile root
 read-only at `/profiles`.
 
+## Hybrid and working v0.2 qrels AI05-03/04
+
+[Hybrid foundation](docs/task/AI05/HYBRID_FOUNDATION.md) adds deterministic rank
+fusion. The [engineering handover](docs/task/AI05/AI05_ENGINEERING_HANDOVER.md)
+documents the working v0.2 profile using the new 720-cell qrels, B0-B3 DEV metrics,
+slice/paired analysis and the reviewed DEV/frozen-HOLDOUT workflow. Start with
+`knowledge-data.py provisional-compare --model-directory .local/ai0502-model
+--output .local/ai0503/v02-source`. Runtime promotion remains a separate decision.
+
 ## Dense candidate AI05-02
 
 [Dense foundation and evidence](docs/task/AI05/DENSE_FOUNDATION.md) documents the

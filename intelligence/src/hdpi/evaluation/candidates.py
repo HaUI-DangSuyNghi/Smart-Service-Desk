@@ -112,7 +112,38 @@ class DenseCandidate:
         return tuple(hit.chunk.source_id for hit in self.engine.rank(query, index))
 
 
+class HybridCandidate:
+    """Authoring-only BM25 + Dense fusion on one shared normalized corpus."""
+
+    def __init__(self, provider=None, *, model_directory=None, config=None):
+        from ..retrieval.hybrid.engine import HybridSearchEngine
+
+        self.dense = DenseCandidate(provider, model_directory=model_directory)
+        self.engine = HybridSearchEngine(self.dense.engine, config=config)
+        self.config = self.engine.config
+        self.system = self.config.system()
+
+    def _validate(self):
+        self.dense._validate()
+        self.engine._validate()
+        if (self.system != self.config.system() or self.engine.config != self.config
+                or (self.engine.name, self.engine.version, self.engine.config_version) !=
+                (self.system['engine'], self.system['engineVersion'], self.system['engineConfigVersion'])):
+            raise EngineConfigurationError('Hybrid candidate identity mismatch')
+
+    def build(self, sources):
+        self._validate()
+        dense = self.dense.build(sources)
+        return self.engine.build(dense.chunks, dense_index=dense)
+
+    def rank(self, query, index):
+        self._validate()
+        return tuple(hit.chunk.source_id for hit in self.engine.rank(query, index))
+
+
 def create_candidate(name, *, model_directory=None):
+    if name == 'hybrid':
+        return HybridCandidate(model_directory=model_directory)
     if name == 'dense':
         return DenseCandidate(model_directory=model_directory)
     if model_directory is not None:

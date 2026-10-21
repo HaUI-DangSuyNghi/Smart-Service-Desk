@@ -1,0 +1,24 @@
+schemaVersion: 0.2.0
+id: service-desk-ai05-provisional-v02
+version: 0.2.0
+status: AI_ASSISTED_WORKING_DATASET
+annotationPolicyVersion: 0.2.0
+baseDataset:
+  path: fixtures/intelligence/service-desk/dataset-v0.2.yaml
+  sha256: cf83c55b794e5d9947d60e95cb77aba5f6eae8a113754a02191292b327a50c38
+  byteSize: 2131
+qrelsManifest:
+  path: fixtures/intelligence/service-desk/retrieval/ai-assisted/manifest-v0.2.json
+  sha256: d70074875c367f95170cfb7460219eee987714af7096ecae96c5d9654d8fd2cf
+  byteSize: 949
+qrels:
+  path: fixtures/intelligence/service-desk/retrieval/ai-assisted/qrels-candidate-v0.2.json
+  sha256: ad180a83f65bc0b9b2276c13ffb0a9fe07ba1198dfa4b86ab0bda50b3de1c50c
+  byteSize: 273959
+evaluation:
+  usage: PROVISIONAL_ENGINEERING_COMPARISON
+  split: DEV
+  authoritative: false
+  humanReviewed: false
+  benchmarkClaim: false
+  runtimePromotion: NOT_AUTHORIZED

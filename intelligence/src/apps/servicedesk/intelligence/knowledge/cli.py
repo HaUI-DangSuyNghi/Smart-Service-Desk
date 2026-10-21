@@ -222,18 +222,22 @@ def comparison(args):
 
 def engine_comparison(args):
     provider = None
-    if args.include_dense:
+    semantic = args.include_dense or args.include_hybrid
+    if semantic:
         from hdpi.retrieval.dense.provider import OnnxEmbeddingProvider
 
         provider = OnnxEmbeddingProvider(args.model_directory)
     else:
         require(args.model_directory is None, 'Model directory requires --include-dense')
-    reports = compare_a2_engines(args.repo_root, args.dataset, dense_provider=provider)
+    reports = compare_a2_engines(args.repo_root, args.dataset, dense_provider=provider,
+                                include_hybrid=args.include_hybrid)
     args.output.mkdir(parents=True, exist_ok=True)
     write_report(reports['B0'], args.output / 'b0-tfidf-report.json')
     write_report(reports['B1'], args.output / 'b1-bm25-report.json')
-    if args.include_dense:
+    if semantic:
         write_report(reports['B2'], args.output / 'b2-dense-report.json')
+    if args.include_hybrid:
+        write_report(reports['B3'], args.output / 'b3-hybrid-report.json')
 
     metrics = reports['B0']['metrics']
     require(set(metrics) == set(reports['B1']['metrics']), 'Engine metric sets differ')
@@ -275,7 +279,7 @@ def engine_comparison(args):
             for key in metrics
         },
     }
-    if args.include_dense:
+    if semantic:
         quality = 'PASS' if all(report['result'] == 'PASS' for report in reports.values()) else 'FAIL'
         summary.update(result=quality, qualityResult=quality, engineeringResult='PASS',
                        comparisonKind='SAME_A2_PROJECTION_DENSE_CHALLENGE')
@@ -283,11 +287,17 @@ def engine_comparison(args):
             key: reports['B2'][key] for key in ('metrics', 'fingerprint', 'result')}
         summary['deltasB2MinusB0'] = {
             key: reports['B2']['metrics'][key] - metrics[key] for key in metrics}
+    if args.include_hybrid:
+        summary['comparisonKind'] = 'SAME_A2_PROJECTION_HYBRID_CHALLENGE'
+        summary['reports']['B3_HYBRID'] = {
+            key: reports['B3'][key] for key in ('metrics', 'fingerprint', 'result')}
+        summary['deltasB3MinusB0'] = {
+            key: reports['B3']['metrics'][key] - metrics[key] for key in metrics}
     write_json(args.output / 'engine-comparison-summary.json', summary)
     print(json.dumps(summary, sort_keys=True))
     # A recorded quality rejection is a completed experiment, never promotion.
     # Validation/configuration/provenance failures still raise and exit nonzero.
-    return 0 if args.include_dense or result == 'PASS' else 1
+    return 0 if semantic or result == 'PASS' else 1
 
 
 def evaluate(args):
@@ -333,6 +343,82 @@ def accept(args):
     return 0 if result == 'PASS' else 1
 
 
+def provisional_validation(args):
+    from .working_dataset import load_working_dataset
+
+    dataset = load_working_dataset(args.repo_root, args.dataset)
+    result = {'schemaVersion': '0.2.0', 'result': 'PASS', 'dataset': dataset.identity,
+              'judgmentBasis': dataset.judgment_basis, 'authoritative': False, 'humanReviewed': False,
+              'benchmarkClaim': False, 'runtimePromotion': 'NOT_AUTHORIZED',
+              'queryCount': len(dataset.queries),
+              'judgmentCount': sum(len(case['judgments']) for case in dataset.qrels['cases']),
+              'evaluationSplit': 'DEV', 'holdout': 'NOT_EVALUATED'}
+    write_json(args.output, result)
+    print(json.dumps(result, sort_keys=True))
+    return 0
+
+
+def provisional_comparison(args):
+    from hdpi.retrieval.dense.provider import OnnxEmbeddingProvider
+    from .candidate_benchmark import candidates, evaluate_matrix
+    from .working_dataset import load_working_dataset
+
+    require(not args.output.resolve().is_relative_to(args.dataset.resolve()),
+            'Working comparison output must stay outside source data')
+    dataset = load_working_dataset(args.repo_root, args.dataset)
+    reports, summary = evaluate_matrix(dataset, candidates(OnnxEmbeddingProvider(args.model_directory)))
+    write_matrix(args.output, reports, summary)
+    print(json.dumps({key: summary[key] for key in ('engineeringResult', 'judgmentBasis', 'split',
+        'caseCount', 'humanReviewed', 'runtimePromotion', 'reports')}, sort_keys=True))
+    return 0
+
+
+def write_matrix(output, reports, summary):
+    for name, report in reports.items():
+        write_report(report, output / (name.lower().replace('_', '-') + '-report.json'))
+    write_json(output / 'v02-comparison-summary.json', summary)
+
+
+def selection_readiness(args):
+    from .selection import readiness
+
+    report = readiness(args.repo_root, args.dataset)
+    write_json(args.output, report)
+    print(json.dumps(report, sort_keys=True))
+    return 0
+
+
+def reviewed_comparison(args):
+    from hdpi.evaluation.dataset import parse_json
+    from hdpi.retrieval.dense.provider import OnnxEmbeddingProvider
+    from .candidate_benchmark import candidates, evaluate_matrix
+    from .selection import claim_holdout, finish_holdout, validate_holdout_freeze
+    from .working_dataset import load_reviewed_dataset
+
+    require(not args.output.resolve().is_relative_to(args.dataset.resolve()),
+            'Reviewed matrix output must stay outside source data')
+    require(not args.output.exists() or (args.output.is_dir() and not any(args.output.iterdir())),
+            'Reviewed comparison requires a fresh output directory to preserve earlier evidence')
+    dataset = load_reviewed_dataset(args.repo_root, args.dataset)
+    engines = candidates(OnnxEmbeddingProvider(args.model_directory))
+    journal = None
+    if args.split == 'HOLDOUT':
+        require(args.freeze is not None, 'HOLDOUT requires the frozen reviewed DEV summary')
+        freeze = parse_json(args.freeze.read_bytes())
+        freeze_digest = validate_holdout_freeze(dataset, engines, freeze)
+        journal = claim_holdout(args.repo_root.resolve() / '.local/ai05-selection/holdout-ledger',
+                                dataset.identity, freeze_digest)
+    else:
+        require(args.freeze is None, 'DEV cannot consume a HOLDOUT freeze')
+    reports, summary = evaluate_matrix(dataset, engines, split=args.split)
+    write_matrix(args.output, reports, summary)
+    if journal is not None:
+        finish_holdout(journal, summary)
+    print(json.dumps({key: summary[key] for key in ('engineeringResult', 'split', 'judgmentBasis',
+                                                   'freezeDigest', 'runtimePromotion')}, sort_keys=True))
+    return 0
+
+
 def parser():
     root = argparse.ArgumentParser(description=__doc__)
     root.add_argument('--installed', action='store_true')
@@ -351,6 +437,10 @@ def parser():
         ('evaluate', evaluate),
         ('acceptance', accept),
         ('chunk-experiment', chunk_experiment),
+        ('provisional-validate', provisional_validation),
+        ('provisional-compare', provisional_comparison),
+        ('selection-readiness', selection_readiness),
+        ('reviewed-compare', reviewed_comparison),
     ]:
         command = commands.add_parser(name)
         command.set_defaults(handler=handler)
@@ -358,13 +448,21 @@ def parser():
             '--output',
             type=Path,
             required=name
-            in ('project', 'worksheet', 'compare', 'engine-compare', 'review-report', 'evaluate', 'acceptance', 'chunk-experiment'),
+            in ('project', 'worksheet', 'compare', 'engine-compare', 'review-report', 'evaluate',
+                'acceptance', 'chunk-experiment', 'provisional-compare', 'reviewed-compare'),
         )
         if name == 'validate':
             command.add_argument('--require-reviewed', action='store_true')
         if name == 'engine-compare':
             command.add_argument('--include-dense', action='store_true')
+            command.add_argument('--include-hybrid', action='store_true')
             command.add_argument('--model-directory', type=Path)
+        if name == 'provisional-compare':
+            command.add_argument('--model-directory', type=Path, required=True)
+        if name == 'reviewed-compare':
+            command.add_argument('--model-directory', type=Path, required=True)
+            command.add_argument('--split', choices=('DEV', 'HOLDOUT'), default='DEV')
+            command.add_argument('--freeze', type=Path)
         if name == 'project':
             command.add_argument('--draft', action='store_true')
             command.add_argument('--structural', action='store_true')

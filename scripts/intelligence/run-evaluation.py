@@ -16,7 +16,7 @@ def main():
     parser.add_argument('--conformance-config', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--installed', action='store_true')
-    parser.add_argument('--candidate', choices=('tfidf', 'bm25', 'dense'), default='tfidf')
+    parser.add_argument('--candidate', choices=('tfidf', 'bm25', 'dense', 'hybrid'), default='tfidf')
     parser.add_argument('--model-directory', type=Path)
     args = parser.parse_args()
     if not args.installed:
