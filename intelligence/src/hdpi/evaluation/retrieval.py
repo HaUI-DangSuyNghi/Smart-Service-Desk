@@ -5,9 +5,9 @@ from pathlib import Path
 import sys
 
 from ..normalization.v1 import NormalizerV1
-from ..domain.errors import EngineConfigurationError
+from ..domain.errors import EngineConfigurationError, EngineUnavailable
 from .baseline import load_baseline
-from .candidates import Bm25Candidate, TfidfCandidate
+from .candidates import TfidfCandidate, create_candidate
 from .comparison import compare_candidate
 from .dataset import load_dataset, require
 from .errors import EvaluationError
@@ -66,19 +66,20 @@ def main():
     parser.add_argument('--repo-root', type=Path, default=Path('.'))
     parser.add_argument('--dataset', '--fixtures-root', dest='dataset', required=True, type=Path)
     parser.add_argument('--baseline', type=Path)
-    parser.add_argument('--candidate', choices=('tfidf', 'bm25'), default='tfidf',
+    parser.add_argument('--candidate', choices=('tfidf', 'bm25', 'dense'), default='tfidf',
                         help='Authoring evaluation only; does not select the runtime engine')
+    parser.add_argument('--model-directory', type=Path)
     parser.add_argument('--gates', type=json.loads, default={})
     parser.add_argument('--output', type=Path)
     args = parser.parse_args()
     try:
-        candidate = Bm25Candidate() if args.candidate == 'bm25' else TfidfCandidate()
+        candidate = create_candidate(args.candidate, model_directory=args.model_directory)
         report = stable_report(evaluate(args.repo_root, args.dataset, gates=args.gates,
                                        baseline=args.baseline, candidate=candidate))
         write_report(report, args.output)
         print(json.dumps({key: report[key] for key in ('evidenceClass', 'dataset', 'caseCount', 'metrics', 'gates', 'result')}, sort_keys=True))
         return exit_code(report)
-    except (EvaluationError, EngineConfigurationError, OSError, ValueError, TypeError, KeyError) as error:
+    except (EvaluationError, EngineConfigurationError, EngineUnavailable, OSError, ValueError, TypeError, KeyError) as error:
         print('Evaluation rejected: ' + str(error), file=sys.stderr)
         return 2
 

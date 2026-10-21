@@ -137,7 +137,7 @@ def compare_corpora(root, directory):
     return {'A0': baseline, 'A1': structural, 'A2': enriched}
 
 
-def compare_a2_engines(root, directory):
+def compare_a2_engines(root, directory, *, dense_provider=None):
     """Compare engines on one frozen A2 projection and one legacy-family judgment basis.
 
     This is an engineering control while v0.2 document qrels remain pending. It
@@ -164,16 +164,19 @@ def compare_a2_engines(root, directory):
             experiment_id='A2-B1-BM25',
         ),
     }
-    require(reports['B0']['dataset'] == reports['B1']['dataset'],
-            'A2 engine candidates used different evidence datasets')
-    require(reports['B0']['components'] == reports['B1']['components'],
-            'A2 engine candidates used different evidence components')
-    require(reports['B0']['metricVersion'] == reports['B1']['metricVersion'],
-            'A2 engine candidates used different metric definitions')
-    for key in ('normalizationVersion', 'chunkPolicyVersion', 'queryStrategyVersion',
-                'projectionVersion', 'rankingUnit'):
-        require(reports['B0']['system'][key] == reports['B1']['system'][key],
-                'A2 engine comparison changed a frozen representation variable')
+    if dense_provider is not None:
+        from hdpi.evaluation.candidates import DenseCandidate
+
+        reports['B2'] = evaluate_family_control(
+            root, directory, enriched=True, reference=baseline,
+            candidate=DenseCandidate(dense_provider), experiment_id='A2-B2-DENSE')
+    for report in reports.values():
+        for key in ('dataset', 'components', 'metricVersion'):
+            require(reports['B0'][key] == report[key], 'A2 engine candidates used different evidence ' + key)
+        for key in ('normalizationVersion', 'chunkPolicyVersion', 'queryStrategyVersion',
+                    'projectionVersion', 'rankingUnit'):
+            require(reports['B0']['system'][key] == report['system'][key],
+                    'A2 engine comparison changed a frozen representation variable')
     return reports
 
 

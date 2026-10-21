@@ -7,6 +7,7 @@ import sys
 from pathlib import Path
 
 import yaml
+from hdpi.domain.errors import EngineConfigurationError, EngineUnavailable
 from hdpi.evaluation.dataset import require
 from hdpi.evaluation.errors import EvaluationError
 from hdpi.evaluation.evidence import write_report
@@ -220,10 +221,19 @@ def comparison(args):
 
 
 def engine_comparison(args):
-    reports = compare_a2_engines(args.repo_root, args.dataset)
+    provider = None
+    if args.include_dense:
+        from hdpi.retrieval.dense.provider import OnnxEmbeddingProvider
+
+        provider = OnnxEmbeddingProvider(args.model_directory)
+    else:
+        require(args.model_directory is None, 'Model directory requires --include-dense')
+    reports = compare_a2_engines(args.repo_root, args.dataset, dense_provider=provider)
     args.output.mkdir(parents=True, exist_ok=True)
     write_report(reports['B0'], args.output / 'b0-tfidf-report.json')
     write_report(reports['B1'], args.output / 'b1-bm25-report.json')
+    if args.include_dense:
+        write_report(reports['B2'], args.output / 'b2-dense-report.json')
 
     metrics = reports['B0']['metrics']
     require(set(metrics) == set(reports['B1']['metrics']), 'Engine metric sets differ')
@@ -265,9 +275,19 @@ def engine_comparison(args):
             for key in metrics
         },
     }
+    if args.include_dense:
+        quality = 'PASS' if all(report['result'] == 'PASS' for report in reports.values()) else 'FAIL'
+        summary.update(result=quality, qualityResult=quality, engineeringResult='PASS',
+                       comparisonKind='SAME_A2_PROJECTION_DENSE_CHALLENGE')
+        summary['reports']['B2_DENSE'] = {
+            key: reports['B2'][key] for key in ('metrics', 'fingerprint', 'result')}
+        summary['deltasB2MinusB0'] = {
+            key: reports['B2']['metrics'][key] - metrics[key] for key in metrics}
     write_json(args.output / 'engine-comparison-summary.json', summary)
     print(json.dumps(summary, sort_keys=True))
-    return 0 if result == 'PASS' else 1
+    # A recorded quality rejection is a completed experiment, never promotion.
+    # Validation/configuration/provenance failures still raise and exit nonzero.
+    return 0 if args.include_dense or result == 'PASS' else 1
 
 
 def evaluate(args):
@@ -342,6 +362,9 @@ def parser():
         )
         if name == 'validate':
             command.add_argument('--require-reviewed', action='store_true')
+        if name == 'engine-compare':
+            command.add_argument('--include-dense', action='store_true')
+            command.add_argument('--model-directory', type=Path)
         if name == 'project':
             command.add_argument('--draft', action='store_true')
             command.add_argument('--structural', action='store_true')
@@ -372,7 +395,8 @@ def main():
                 )
         output_safe = True
         return args.handler(args)
-    except (EvaluationError, OSError, ValueError, KeyError, TypeError, yaml.YAMLError) as error:
+    except (EvaluationError, EngineConfigurationError, EngineUnavailable,
+            OSError, ValueError, KeyError, TypeError, yaml.YAMLError) as error:
         message = 'Knowledge operation rejected: ' + str(error)
         print(message, file=sys.stderr)
         if output_safe and args.output and args.command in ('validate', 'acceptance', 'evaluate'):

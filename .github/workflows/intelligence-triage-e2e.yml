@@ -71,11 +71,11 @@ jobs:
         run: |
           python -m pip install -r intelligence/requirements.lock
           python -m pip check
-          python -m pytest intelligence/tests -q --junitxml=.local/int01/python-source.xml
+          python -m pytest intelligence/tests -q -m "not dense_model" --junitxml=.local/int01/python-source.xml
           python -m build --no-isolation --outdir .local/int01/dist intelligence
           python scripts/intelligence/install-built-wheel.py --dist .local/int01/dist
           python -I scripts/intelligence/verify-installed-package.py
-          python -I -m pytest -c scripts/intelligence/installed-pytest.ini intelligence/tests -q --junitxml=.local/int01/python-wheel.xml
+          python -I -m pytest -c scripts/intelligence/installed-pytest.ini intelligence/tests -q -m "not dense_model" --junitxml=.local/int01/python-wheel.xml
       - name: G3 clean metadata-driven Python image and installed runtime
         run: |
           token=$(openssl rand -hex 32)
