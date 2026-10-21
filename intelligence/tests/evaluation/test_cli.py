@@ -36,6 +36,13 @@ def test_invalid_dataset_returns_nonzero(tmp_path):
     assert result.returncode == 2
 
 
+def test_dense_cli_requires_explicit_available_artifacts(tmp_path):
+    result = cli('hdpi.evaluation.retrieval', ['--dataset', DATASET, '--candidate', 'dense',
+                 '--model-directory', tmp_path / 'unavailable'])
+    assert result.returncode == 2
+    assert 'Evaluation rejected' in result.stderr
+
+
 @pytest.mark.parametrize('threshold,expected', [(0, 0), (1, 1)])
 def test_bm25_cli_preserves_quality_exit_codes_and_identity(tmp_path, threshold, expected):
     output = tmp_path / 'bm25.json'

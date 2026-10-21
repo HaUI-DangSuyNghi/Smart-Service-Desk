@@ -25,6 +25,14 @@ capability constructs this envelope after authorization; the public ticket endpo
 continues to reject request bodies. Compose mounts the selected app profile root
 read-only at `/profiles`.
 
+## Dense candidate AI05-02
+
+[Dense foundation and evidence](docs/task/AI05/DENSE_FOUNDATION.md) documents the
+optional pinned local CPU model, in-process vector index and B0/B1/B2 comparison
+on frozen A2. Provision artifacts explicitly and run `engine-compare --include-dense
+--model-directory ...`. Production retrieval remains TF-IDF; no vector database or
+external embedding API is introduced.
+
 ## BM25 candidate AI05-01
 
 [BM25 foundation and evidence](docs/task/AI05/BM25_FOUNDATION.md) documents the
