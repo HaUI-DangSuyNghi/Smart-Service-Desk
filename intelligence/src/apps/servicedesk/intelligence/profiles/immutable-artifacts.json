@@ -1,9 +1,9 @@
 {
-  "service-desk/normalization.md": "25237b112bb211ae559d056306d352b33296048d0a8507f5b59c600fcaa6e4f0",
+  "service-desk/normalization.md": "ee9d871410c089f92194d2a75e4c1561165695fc19dd11e7561007ae7d0dc109",
   "service-desk/priority-policy.yaml": "d7cf23af881c221b03069d65f0206ce1c010be9b0bd07d0afb7ae882375f0601",
   "service-desk/profile.yaml": "e320507c8ddf12117c0228fea6e6bf5b5de3133e57b774f71e215999b8206c43",
   "service-desk/rules.yaml": "c8cf4e5f91fb4202329c7ea59187e3f7722fb9e982c601b130875ab6ddad3787",
   "service-desk/taxonomy.yaml": "dce86b7bfb09bb0828c5ad7e84013ea895796d82295788629ec998850bbef2b3",
   "service-desk/versions/0.2.0/profile.yaml": "ba9f321b2b779c4a0a0fa30bd627d796922d63c8f667160e041c9c1d42373088",
-  "service-desk/versions/0.2.0/rules.yaml": "0cdb1fec0757b9215920516dbb9355dde21c72a2e5e5bc59e7f1a9f632eadbba"
+  "service-desk/versions/0.2.0/rules.yaml": "001053ae47f68c10615d961749f80157fbd478430a4d8a714894d70c5605abec"
 }

@@ -1,11 +1,8 @@
-import re
 import sys
 import unicodedata
 
 from ..domain.errors import EngineConfigurationError
 from .base import NormalizedText
-
-WIFI = re.compile(r'(?<!\w)(?:wi-fi|wi fi|wifi)(?!\w)')
 
 
 class NormalizerV1:
@@ -46,15 +43,7 @@ class NormalizerV1:
         if chars and chars[-1] == ' ':
             chars.pop()
             spans.pop()
-        derived = ''.join(chars)
-        normalized_chars, normalized_spans, offset = [], [], 0
-        for match in WIFI.finditer(derived):
-            normalized_chars.append(derived[offset:match.start()])
-            normalized_spans.extend(spans[offset:match.start()])
-            normalized_chars.append('wifi')
-            source_span = (spans[match.start()][0], spans[match.end() - 1][1])
-            normalized_spans.extend([source_span] * 4)
-            offset = match.end()
-        normalized_chars.append(derived[offset:])
-        normalized_spans.extend(spans[offset:])
-        return NormalizedText(text, ''.join(normalized_chars), tuple(normalized_spans))
+
+        # Tier 2 owns text mechanics only. Application aliases, vocabulary and
+        # semantic rewrites belong to Tier 3 rules, lexicons or projections.
+        return NormalizedText(text, ''.join(chars), tuple(spans))

@@ -80,3 +80,20 @@ mechanics, not real Core acceptance. The deterministic provider quotes evidence;
 it does not infer relevance, detect malicious content or resolve conflicting
 sources. Human review defaults to enabled. There is no public endpoint, action,
 workflow mutation, retrieval promotion or production generation activation.
+
+## Strict semantic boundary hardening
+
+AI06-01 closes a pre-existing Tier-2 semantic leak before later model work.
+Generic `hdpi.normalization` no longer hard-codes Service Desk Wi-Fi aliases;
+the `wi fi` variant is explicitly owned by the Service Desk rule profile and
+the broader vocabulary remains in the Service Desk lexicon/projection.
+
+Each Intelligence app now declares machine-readable semantic ownership through
+`boundary-semantics.json`. The source gate discovers those contracts and rejects
+app-owned literals in generic Python, regex strings and packaged generic prompt/
+config resources. Generic generation also rejects default business-prompt
+constants; prompt/policy text must enter through Tier-3-owned configuration such
+as `GenerationPolicy`.
+
+The strict debt baseline remains empty. See
+`docs/architecture/intelligence-semantic-boundary.md`.

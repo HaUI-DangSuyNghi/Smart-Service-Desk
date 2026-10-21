@@ -7,8 +7,8 @@ from hdpi.normalization.v1 import NormalizerV1
 
 
 @pytest.mark.parametrize('original,expected', [
-    ('  Wi-Fi\t wifi\nWI FI ', 'wifi wifi wifi'),
-    ('(Wi-Fi), mạng!', '(wifi), mạng!'),
+    ('  Wi-Fi\t wifi\nWI FI ', 'wi-fi wifi wi fi'),
+    ('(Wi-Fi), mạng!', '(wi-fi), mạng!'),
     ('xwifi wifixer wi-fix', 'xwifi wifixer wi-fix'),
     ('WI–FI', 'wi–fi'),
     ('TÀI KHOẢN', 'tài khoản'),
@@ -39,5 +39,4 @@ def test_evidence_recovers_original(original):
 def test_sequence_matches_whole_string_normalization():
     for original in ('\u1100\u1161\u11a8\u1100\u1161', 'a\u0315\u0300\u05ae', 'İ Wi-Fi', '\u0301a'):
         expected = re.sub(r'\s+', ' ', unicodedata.normalize('NFC', original).casefold()).strip()
-        expected = re.sub(r'(?<!\w)(?:wi-fi|wi fi|wifi)(?!\w)', 'wifi', expected)
         assert NormalizerV1().normalize(original).value == expected
