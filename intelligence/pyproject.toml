@@ -22,6 +22,9 @@ include = ["hdpi*"]
 testpaths = ["tests"]
 pythonpath = ["src"]
 addopts = "--strict-markers"
+markers = [
+  "dense_model: requires the explicitly provisioned pinned Dense reference model and optional runtime dependencies"
+]
 
 [tool.setuptools]
 include-package-data = true

@@ -146,7 +146,13 @@ Local verification on 2026-10-21 used the pinned dependencies and model artifact
 
 The optional CPU CI matrix requires the real model; missing configuration cannot
 silently skip its tests. Its reports upload only safe JSON evidence for seven days.
-The ordinary base-dependency suite may skip the four optional real-model checks.
+The four tests that consume the pinned model carry the explicit `dense_model` marker.
+The integrated G2 base-runtime acceptance excludes that marker, so its JUnit contract
+remains zero-failure / zero-error / zero-skip rather than weakening the global gate.
+Those same marked tests are mandatory in the dedicated Dense matrix where
+`HDPI_REQUIRE_DENSE_MODEL=1`; a missing model there fails instead of skipping.
+The ordinary base-dependency verification suite may still report those four optional
+checks as skipped because it intentionally exercises the package without Dense extras.
 New GitHub jobs have been configured but have not been executed remotely on this
 branch as part of the local commit task.
 

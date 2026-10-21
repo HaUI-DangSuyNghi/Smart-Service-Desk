@@ -24,6 +24,7 @@ def test_exact_artifact_bytes_and_corrupt_or_missing_files(tmp_path):
         read_artifact(tmp_path, '../model.onnx', len(raw), checksum)
 
 
+@pytest.mark.dense_model
 def test_real_provider_runs_offline_with_pinned_dimension(real_provider, monkeypatch):
     import socket
     import urllib.request

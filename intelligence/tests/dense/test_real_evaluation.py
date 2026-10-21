@@ -2,6 +2,8 @@
 from pathlib import Path
 import sys
 
+import pytest
+
 from hdpi.evaluation.candidates import DenseCandidate
 from hdpi.evaluation.evidence import serialize_report
 from hdpi.normalization.v1 import NormalizerV1
@@ -13,6 +15,9 @@ sys.path.insert(0, str(ROOT / 'intelligence/src/apps'))
 from servicedesk.intelligence.knowledge.dataset import load_dataset
 from servicedesk.intelligence.knowledge.experiments import compare_a2_engines
 from servicedesk.intelligence.knowledge.projection import project
+
+
+pytestmark = pytest.mark.dense_model
 
 
 def test_real_semantic_paraphrase_ranks_related_document(real_provider):
