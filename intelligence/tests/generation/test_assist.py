@@ -9,7 +9,6 @@ from hdpi.generation.errors import (
     GenerationContractError,
     GenerationTimeout,
     GenerationUnavailable,
-    GroundingViolation,
 )
 from hdpi.generation.models import CitationRef, GenerationDraft, GroundedClaim
 from hdpi.generation.policy import GenerationPolicy
@@ -214,7 +213,7 @@ def test_policy_and_provider_identity_mismatch_fail_before_generation(bundle, pr
     ('question', 'x' * 8193),
     ('bundle', {}),
     ('policy', {}),
-])
+], ids=['blank-question', 'oversized-question', 'invalid-bundle', 'invalid-policy'])
 def test_invalid_inputs_fail_before_provider(bundle, provider, policy, field, value):
     arguments = {'question': 'Question', 'bundle': bundle, 'policy': policy}
     arguments[field] = value

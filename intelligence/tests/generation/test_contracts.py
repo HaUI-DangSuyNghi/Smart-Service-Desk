@@ -15,7 +15,6 @@ from hdpi.generation.models import (
     GenerationRequest,
     GenerationRuntimeIdentity,
     GroundedClaim,
-    RetrievalRuntimeIdentity,
 )
 
 

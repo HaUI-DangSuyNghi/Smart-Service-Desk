@@ -29,3 +29,10 @@ AI05 human qrels, official HOLDOUT and retrieval promotion remain independent.
 
 Foundation completion does not mean the entire AI06 phase or production release
 is complete. This provider is an engineering reference requiring human review.
+
+## Foundation acceptance
+
+AI06-00 and AI06-01 engineering checks have passed locally. The generic wheel
+contains the contracts and runtime; deterministic generation evidence agrees
+between source/wheel and Windows/Linux. See [handover](AI06_HANDOVER.md) for exact
+test counts, evidence locations, CI status and the remaining promotion gates.
