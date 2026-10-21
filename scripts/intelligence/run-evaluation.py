@@ -16,6 +16,7 @@ def main():
     parser.add_argument('--conformance-config', type=Path, required=True)
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--installed', action='store_true')
+    parser.add_argument('--candidate', choices=('tfidf', 'bm25'), default='tfidf')
     args = parser.parse_args()
     if not args.installed:
         sys.path.insert(0, str(args.repo_root.resolve() / 'intelligence/src'))
@@ -27,16 +28,19 @@ def main():
     from hdpi.evaluation.retrieval import evaluate as retrieval, stable_report
     from hdpi.evaluation.security import evaluate as security
     from hdpi.evaluation.dataset import parse_json
+    from hdpi.evaluation.candidates import Bm25Candidate, TfidfCandidate
+
+    candidate = Bm25Candidate() if args.candidate == 'bm25' else TfidfCandidate()
 
     config = parse_json(args.conformance_config.read_bytes())
 
     reports = {
-        'retrieval': stable_report(retrieval(args.repo_root, args.dataset, baseline=args.baseline)),
+        'retrieval': stable_report(retrieval(args.repo_root, args.dataset, baseline=args.baseline, candidate=candidate)),
         'conformance': conformance(args.repo_root, args.dataset, profile_version=config['profileVersion'],
                                   expected_runtime=config['expectedRuntime'], normalization_version=config['normalizationVersion']),
         'security': security(args.repo_root, args.dataset, junit=args.junit, checks=args.checks),
     }
-    repeated = stable_report(retrieval(args.repo_root, args.dataset, baseline=args.baseline))
+    repeated = stable_report(retrieval(args.repo_root, args.dataset, baseline=args.baseline, candidate=candidate))
     if serialize_report(reports['retrieval']) != serialize_report(repeated):
         raise RuntimeError('Deterministic retrieval run changed')
     for name, report in reports.items():

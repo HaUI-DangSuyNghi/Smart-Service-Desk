@@ -36,6 +36,17 @@ def test_invalid_dataset_returns_nonzero(tmp_path):
     assert result.returncode == 2
 
 
+@pytest.mark.parametrize('threshold,expected', [(0, 0), (1, 1)])
+def test_bm25_cli_preserves_quality_exit_codes_and_identity(tmp_path, threshold, expected):
+    output = tmp_path / 'bm25.json'
+    result = cli('hdpi.evaluation.retrieval', ['--dataset', DATASET, '--candidate', 'bm25',
+                 '--gates', json.dumps({'hitAt1': threshold}), '--output', output])
+    assert result.returncode == expected, result.stderr
+    report = json.loads(output.read_text('utf-8'))
+    assert report['system']['engine'] == 'bm25'
+    assert report['benchmarkClaim'] is False
+
+
 def test_incompatible_baseline_returns_nonzero(tmp_path):
     baseline = json.loads((DATASET / 'evaluation/baseline-v0.1.json').read_text('utf-8'))
     baseline['dataset']['id'] = 'different-authored-dataset'
