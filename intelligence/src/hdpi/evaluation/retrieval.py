@@ -66,7 +66,7 @@ def main():
     parser.add_argument('--repo-root', type=Path, default=Path('.'))
     parser.add_argument('--dataset', '--fixtures-root', dest='dataset', required=True, type=Path)
     parser.add_argument('--baseline', type=Path)
-    parser.add_argument('--candidate', choices=('tfidf', 'bm25', 'dense'), default='tfidf',
+    parser.add_argument('--candidate', choices=('tfidf', 'bm25', 'dense', 'hybrid'), default='tfidf',
                         help='Authoring evaluation only; does not select the runtime engine')
     parser.add_argument('--model-directory', type=Path)
     parser.add_argument('--gates', type=json.loads, default={})

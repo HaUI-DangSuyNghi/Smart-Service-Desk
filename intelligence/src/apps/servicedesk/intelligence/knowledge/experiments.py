@@ -137,7 +137,7 @@ def compare_corpora(root, directory):
     return {'A0': baseline, 'A1': structural, 'A2': enriched}
 
 
-def compare_a2_engines(root, directory, *, dense_provider=None):
+def compare_a2_engines(root, directory, *, dense_provider=None, include_hybrid=False):
     """Compare engines on one frozen A2 projection and one legacy-family judgment basis.
 
     This is an engineering control while v0.2 document qrels remain pending. It
@@ -170,6 +170,13 @@ def compare_a2_engines(root, directory, *, dense_provider=None):
         reports['B2'] = evaluate_family_control(
             root, directory, enriched=True, reference=baseline,
             candidate=DenseCandidate(dense_provider), experiment_id='A2-B2-DENSE')
+    if include_hybrid:
+        from hdpi.evaluation.candidates import HybridCandidate
+
+        require(dense_provider is not None, 'Hybrid comparison requires the pinned dense provider')
+        reports['B3'] = evaluate_family_control(
+            root, directory, enriched=True, reference=baseline,
+            candidate=HybridCandidate(dense_provider), experiment_id='A2-B3-HYBRID')
     for report in reports.values():
         for key in ('dataset', 'components', 'metricVersion'):
             require(reports['B0'][key] == report[key], 'A2 engine candidates used different evidence ' + key)

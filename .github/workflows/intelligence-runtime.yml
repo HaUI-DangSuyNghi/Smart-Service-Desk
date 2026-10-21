@@ -187,6 +187,14 @@ jobs:
         run: >-
           python scripts/intelligence/knowledge-data.py engine-compare --include-dense
           --model-directory .local/ai0502-model --output .local/ai0502/source
+      - name: Source Hybrid on frozen A2
+        run: >-
+          python scripts/intelligence/knowledge-data.py engine-compare --include-hybrid
+          --model-directory .local/ai0502-model --output .local/ai0503/source
+      - name: Source working v0.2 qrels comparison on DEV
+        run: >-
+          python scripts/intelligence/knowledge-data.py provisional-compare
+          --model-directory .local/ai0502-model --output .local/ai0503/v02-source
       - name: Build and install the generic wheel
         run: |
           python -m build --no-isolation --outdir .local/ai0502-dist intelligence
@@ -201,6 +209,31 @@ jobs:
           --model-directory .local/ai0502-model --output .local/ai0502/wheel
       - name: Require source and wheel dense evidence to agree
         run: python -I scripts/intelligence/verify-knowledge-evidence.py --dense .local/ai0502/source .local/ai0502/wheel
+      - name: Installed Hybrid on frozen A2
+        run: >-
+          python -I scripts/intelligence/knowledge-data.py --installed engine-compare --include-hybrid
+          --model-directory .local/ai0502-model --output .local/ai0503/wheel
+      - name: Require source and wheel Hybrid evidence to agree
+        run: python -I scripts/intelligence/verify-knowledge-evidence.py --hybrid .local/ai0503/source .local/ai0503/wheel
+      - name: Installed working v0.2 qrels comparison on DEV
+        run: >-
+          python -I scripts/intelligence/knowledge-data.py --installed provisional-compare
+          --model-directory .local/ai0502-model --output .local/ai0503/v02-wheel
+      - name: Require source and wheel graded working-data evidence to agree
+        run: python -I scripts/intelligence/verify-candidate-matrix.py .local/ai0503/v02-source .local/ai0503/v02-wheel
+      - name: Retain safe Hybrid and working-dataset comparison evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ai0503-hybrid-${{ matrix.os }}
+          path: |
+            .local/ai0503/source/*.json
+            .local/ai0503/wheel/*.json
+            .local/ai0503/v02-source/*.json
+            .local/ai0503/v02-wheel/*.json
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7
       - name: Retain safe dense comparison evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
@@ -231,8 +264,14 @@ jobs:
         run: |
           gh run download "$RUN_ID" --name ai0502-dense-ubuntu-24.04 --dir .local/ai0502-linux
           gh run download "$RUN_ID" --name ai0502-dense-windows-2022 --dir .local/ai0502-windows
+          gh run download "$RUN_ID" --name ai0503-hybrid-ubuntu-24.04 --dir .local/ai0503-linux
+          gh run download "$RUN_ID" --name ai0503-hybrid-windows-2022 --dir .local/ai0503-windows
       - name: Require identical dense rankings metrics gates and fingerprints
         run: python3 -I scripts/intelligence/verify-knowledge-evidence.py --dense .local/ai0502-linux/wheel .local/ai0502-windows/wheel
+      - name: Require identical Hybrid rankings and child identities
+        run: python3 -I scripts/intelligence/verify-knowledge-evidence.py --hybrid .local/ai0503-linux/wheel .local/ai0503-windows/wheel
+      - name: Require identical working v0.2 graded evidence and provenance
+        run: python3 -I scripts/intelligence/verify-candidate-matrix.py .local/ai0503-linux/v02-wheel .local/ai0503-windows/v02-wheel
   knowledge-data-quality:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
@@ -249,6 +288,10 @@ jobs:
         run: python scripts/intelligence/knowledge-data.py validate --output .local/ai045/data-quality.json
       - name: Build deterministic draft projection
         run: python scripts/intelligence/knowledge-data.py project --draft --output .local/ai045/projection
+      - name: Validate the explicit working v0.2 qrel profile
+        run: python scripts/intelligence/knowledge-data.py provisional-validate --output .local/ai0503/working-data-validation.json
+      - name: Record actual data and selection readiness
+        run: python scripts/intelligence/knowledge-data.py selection-readiness --output .local/ai0503/selection-readiness.json
       - name: Analyze responsibilities vocabulary and DEV phrase overlap
         run: python scripts/intelligence/knowledge-data.py analyze --output .local/ai045/corpus-quality.json
       - name: Reproduce corpus-only evidence
@@ -268,6 +311,8 @@ jobs:
             .local/ai045/data-quality.json
             .local/ai045/corpus-quality.json
             .local/ai045/section/chunk-comparison.json
+            .local/ai0503/working-data-validation.json
+            .local/ai0503/selection-readiness.json
           include-hidden-files: true
           retention-days: 7
   evaluation-equivalence:

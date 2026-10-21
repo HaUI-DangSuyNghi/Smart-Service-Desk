@@ -185,3 +185,28 @@ def test_cli_rejects_output_over_authoritative_qrels():
     before = path.read_bytes()
     assert run_cli('validate', '--output', path).returncode != 0
     assert path.read_bytes() == before
+
+
+def test_working_dataset_cli_exposes_new_labels_without_faking_review(tmp_path):
+    output = tmp_path / 'working-validation.json'
+    result = run_cli('provisional-validate', '--output', output)
+    assert result.returncode == 0, result.stderr
+    report = json.loads(output.read_text('utf-8'))
+    assert report['judgmentCount'] == 720 and report['queryCount'] == 72
+    assert report['humanReviewed'] is False and report['benchmarkClaim'] is False
+    assert report['holdout'] == 'NOT_EVALUATED'
+
+
+def test_reviewed_matrix_rejects_pending_data_before_loading_model(tmp_path):
+    result = run_cli('reviewed-compare', '--split', 'HOLDOUT', '--freeze', tmp_path / 'missing.json',
+                     '--model-directory', tmp_path / 'missing-model', '--output', tmp_path / 'result')
+    assert result.returncode != 0
+    assert 'Human qrels are incomplete' in result.stderr
+
+
+def test_provisional_operation_preserves_authoritative_fixture_on_output_error():
+    path = DATA / 'retrieval/qrels-v0.2.json'
+    before = path.read_bytes()
+    result = run_cli('provisional-validate', '--output', path)
+    assert result.returncode != 0
+    assert path.read_bytes() == before
