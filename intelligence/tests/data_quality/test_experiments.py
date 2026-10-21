@@ -6,9 +6,10 @@ from pathlib import Path
 
 import hdpi
 import pytest
-from hdpi.evaluation.candidates import TfidfCandidate
+from hdpi.evaluation.candidates import Bm25Candidate, TfidfCandidate
 from hdpi.evaluation.errors import EvaluationError
 from servicedesk.intelligence.knowledge.experiments import (
+    compare_a2_engines,
     compare_corpora,
     evaluate_family_control,
     evaluate_reviewed_split,
@@ -59,6 +60,46 @@ def test_same_engine_corpus_control_discloses_family_projection(reports):
     ):
         assert len({report['system'][key] for report in reports.values()}) == 1
     assert len({report['dataset']['digest'] for report in reports.values()}) == 3
+
+
+def test_ai05_engine_comparison_holds_a2_representation_constant():
+    engines = compare_a2_engines(ROOT, DATA)
+    tfidf, bm25 = engines['B0'], engines['B1']
+
+    assert tfidf['metrics']['hitAt1'] == 11 / 12
+    assert tfidf['metrics']['hitAt3'] == 1
+    assert tfidf['metrics']['mrr'] == pytest.approx(0.9444444444444444)
+    assert tfidf['metrics']['recallAt3'] == pytest.approx(0.9583333333333334)
+
+    assert tfidf['dataset'] == bm25['dataset']
+    assert tfidf['components'] == bm25['components']
+    assert tfidf['metricVersion'] == bm25['metricVersion']
+    assert tfidf['caseCount'] == bm25['caseCount'] == 12
+    assert tfidf['system']['engine'] == 'tfidf'
+    assert bm25['system']['engine'] == 'bm25'
+    for key in ('normalizationVersion', 'chunkPolicyVersion', 'queryStrategyVersion',
+                'projectionVersion', 'rankingUnit'):
+        assert tfidf['system'][key] == bm25['system'][key]
+
+    # These reports still use coarse legacy-family judgments; neither is a
+    # human-reviewed v0.2 document benchmark.
+    assert tfidf['comparison']['v02DocumentQrels'] is False
+    assert bm25['comparison']['v02DocumentQrels'] is False
+
+
+def test_engine_compare_cli_separates_a0_compatibility_from_a2_challenge(tmp_path):
+    output = tmp_path / 'engine'
+    qrels_before = (DATA / 'retrieval/qrels-v0.2.json').read_bytes()
+    result = run_cli('engine-compare', '--output', output)
+    assert result.returncode == 0, result.stderr
+    summary = json.loads((output / 'engine-comparison-summary.json').read_text('utf-8'))
+    assert summary['comparisonKind'] == 'SAME_A2_PROJECTION_ENGINE_CHALLENGE'
+    assert summary['sameA2ProjectionAndJudgmentBasis'] is True
+    assert summary['reports']['B0_TFIDF']['metrics']['hitAt1'] == 11 / 12
+    assert summary['humanV02Qrels'] == 'PENDING'
+    assert summary['holdout'] == 'NOT_EVALUATED'
+    assert summary['runtimePromotion'] == 'NOT_AUTHORIZED'
+    assert (DATA / 'retrieval/qrels-v0.2.json').read_bytes() == qrels_before
 
 
 def test_degraded_data_candidate_cannot_pass_regression_gate(reports):

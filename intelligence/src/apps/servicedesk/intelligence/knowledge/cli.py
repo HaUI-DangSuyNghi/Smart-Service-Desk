@@ -13,7 +13,7 @@ from hdpi.evaluation.evidence import write_report
 
 from .annotations import annotation_agreement, conflict_severity, validate_rationale
 from .dataset import load_dataset
-from .experiments import acceptance, compare_corpora, evaluate_reviewed_split
+from .experiments import acceptance, compare_a2_engines, compare_corpora, evaluate_reviewed_split
 from .projection import project, write_projection
 from .quality import analyze_corpus
 
@@ -219,6 +219,57 @@ def comparison(args):
     return 0 if result == 'PASS' else 1
 
 
+def engine_comparison(args):
+    reports = compare_a2_engines(args.repo_root, args.dataset)
+    args.output.mkdir(parents=True, exist_ok=True)
+    write_report(reports['B0'], args.output / 'b0-tfidf-report.json')
+    write_report(reports['B1'], args.output / 'b1-bm25-report.json')
+
+    metrics = reports['B0']['metrics']
+    require(set(metrics) == set(reports['B1']['metrics']), 'Engine metric sets differ')
+    same_evidence = (
+        reports['B0']['dataset'] == reports['B1']['dataset']
+        and reports['B0']['components'] == reports['B1']['components']
+        and reports['B0']['metricVersion'] == reports['B1']['metricVersion']
+    )
+    result = (
+        'PASS'
+        if same_evidence and reports['B0']['result'] == reports['B1']['result'] == 'PASS'
+        else 'FAIL'
+    )
+    summary = {
+        'schemaVersion': '0.2.0',
+        'result': result,
+        'comparisonKind': 'SAME_A2_PROJECTION_ENGINE_CHALLENGE',
+        'benchmarkClaim': False,
+        'sameA2ProjectionAndJudgmentBasis': same_evidence,
+        'judgmentBasis': 'FROZEN_V01_LEGACY_FAMILY_CONTROL',
+        'v02DocumentQrels': False,
+        'humanV02Qrels': 'PENDING',
+        'holdout': 'NOT_EVALUATED',
+        'runtimePromotion': 'NOT_AUTHORIZED',
+        'reports': {
+            'B0_TFIDF': {
+                'metrics': reports['B0']['metrics'],
+                'fingerprint': reports['B0']['fingerprint'],
+                'result': reports['B0']['result'],
+            },
+            'B1_BM25': {
+                'metrics': reports['B1']['metrics'],
+                'fingerprint': reports['B1']['fingerprint'],
+                'result': reports['B1']['result'],
+            },
+        },
+        'deltasB1MinusB0': {
+            key: reports['B1']['metrics'][key] - reports['B0']['metrics'][key]
+            for key in metrics
+        },
+    }
+    write_json(args.output / 'engine-comparison-summary.json', summary)
+    print(json.dumps(summary, sort_keys=True))
+    return 0 if result == 'PASS' else 1
+
+
 def evaluate(args):
     report = evaluate_reviewed_split(args.repo_root, args.dataset, split=args.split)
     write_report(report, args.output)
@@ -275,6 +326,7 @@ def parser():
         ('analyze', analysis),
         ('worksheet', worksheet),
         ('compare', comparison),
+        ('engine-compare', engine_comparison),
         ('review-report', review_report),
         ('evaluate', evaluate),
         ('acceptance', accept),
@@ -286,7 +338,7 @@ def parser():
             '--output',
             type=Path,
             required=name
-            in ('project', 'worksheet', 'compare', 'review-report', 'evaluate', 'acceptance', 'chunk-experiment'),
+            in ('project', 'worksheet', 'compare', 'engine-compare', 'review-report', 'evaluate', 'acceptance', 'chunk-experiment'),
         )
         if name == 'validate':
             command.add_argument('--require-reviewed', action='store_true')

@@ -2,7 +2,7 @@
 
 from types import SimpleNamespace
 
-from hdpi.evaluation.candidates import TfidfCandidate
+from hdpi.evaluation.candidates import Bm25Candidate, TfidfCandidate
 from hdpi.evaluation.dataset import load_dataset as load_legacy
 from hdpi.evaluation.dataset import require
 from hdpi.evaluation.evidence import build_report
@@ -135,6 +135,46 @@ def compare_corpora(root, directory):
     structural = evaluate_family_control(root, directory, enriched=False, reference=baseline)
     enriched = evaluate_family_control(root, directory, enriched=True, reference=baseline)
     return {'A0': baseline, 'A1': structural, 'A2': enriched}
+
+
+def compare_a2_engines(root, directory):
+    """Compare engines on one frozen A2 projection and one legacy-family judgment basis.
+
+    This is an engineering control while v0.2 document qrels remain pending. It
+    intentionally does not convert legacy-family relevance into v0.2 gold.
+    """
+    baseline = stable_report(
+        evaluate_legacy(root, directory, baseline=directory / 'evaluation/baseline-v0.1.json')
+    )
+    reports = {
+        'B0': evaluate_family_control(
+            root,
+            directory,
+            enriched=True,
+            reference=baseline,
+            candidate=TfidfCandidate(),
+            experiment_id='A2-B0-TFIDF',
+        ),
+        'B1': evaluate_family_control(
+            root,
+            directory,
+            enriched=True,
+            reference=baseline,
+            candidate=Bm25Candidate(),
+            experiment_id='A2-B1-BM25',
+        ),
+    }
+    require(reports['B0']['dataset'] == reports['B1']['dataset'],
+            'A2 engine candidates used different evidence datasets')
+    require(reports['B0']['components'] == reports['B1']['components'],
+            'A2 engine candidates used different evidence components')
+    require(reports['B0']['metricVersion'] == reports['B1']['metricVersion'],
+            'A2 engine candidates used different metric definitions')
+    for key in ('normalizationVersion', 'chunkPolicyVersion', 'queryStrategyVersion',
+                'projectionVersion', 'rankingUnit'):
+        require(reports['B0']['system'][key] == reports['B1']['system'][key],
+                'A2 engine comparison changed a frozen representation variable')
+    return reports
 
 
 def evaluate_reviewed_split(root, directory, *, split='DEV', enriched=True):

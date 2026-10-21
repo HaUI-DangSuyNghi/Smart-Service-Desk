@@ -45,31 +45,72 @@ drift, foreign index types, duplicate chunk/source IDs, oversized sources/corpor
 invalid topK and oversized queries are rejected. These derived authoring indexes
 do not grant runtime authorization or produce Core citations.
 
-## Legacy engineering comparison
+## Historical A0 compatibility regression
 
-Both candidates use the same 12 legacy queries, corpus bytes, manual relevance
-controls, evaluator and metric definition. Dataset digest:
+The inherited AI-04 evaluator still runs against the immutable v0.1/A0 dataset.
+This track is intentionally retained as a **backward-compatibility regression
+gate**, not as the primary AI-05 model comparison.
+
+Both candidates use the same 12 legacy queries, original v0.1 corpus bytes,
+manual relevance controls, evaluator and metric definition. Dataset digest:
 `sha256:f4a08ef239f08e9f93f40258f6b8dfc193437a9180e8ad873694159fbe01029f`.
 
-This is authored regression evidence, **not a v0.2 benchmark or a runtime promotion
-decision**. The frozen Hit@1 and Hit@3 floors remain enforced; the CLI cannot accept
-or rewrite a baseline.
-
-| Metric | TF-IDF B0 | BM25 B1 |
+| Metric | A0 + TF-IDF | A0 + BM25 |
 | --- | ---: | ---: |
 | Hit@1 | 7/12 | 7/12 |
 | Hit@3 | 11/12 | 11/12 |
 | MRR | 0.738889 | 0.725000 |
 | Recall@3 | 0.875000 | 0.833333 |
 
-BM25 passes the frozen Hit@1/Hit@3 gates but regresses MRR by 0.013889 and Recall@3
-by 0.041667. Those secondary regressions remain visible in the comparison report;
-no parameter tuning or baseline change was used to hide them. This evidence does
-not justify replacing TF-IDF in the runtime.
+These numbers answer only: "does the new candidate preserve the historical
+AI-04 compatibility floor?" They must not be presented as the current AI-05
+engine-selection baseline.
 
-Human-reviewed v0.2 qrels and HOLDOUT locking remain prerequisites for final model
-selection. The 72-query smoke test checks only deterministic rankings and known
-artifact IDs. It computes no relevance metrics and reads no AI-assisted labels.
+## Primary AI-05 engineering comparison: frozen A2
+
+AI-04.5 established A2 as the current retrieval-data foundation:
+
+```text
+focused v0.2 corpus
++ controlled lexical projection
++ markdown-paragraph@0.1.0
++ text-normalization@0.1.0
++ title+newline+description@0.1.0
+```
+
+AI05-01 therefore adds a second comparison track that holds that A2 projection,
+the 12 legacy queries and the coarse legacy-family judgment mapping constant and
+changes only the retrieval engine:
+
+```text
+A2 + TF-IDF (B0)
+       versus
+A2 + BM25   (B1)
+```
+
+The frozen B0 control is:
+
+| Metric | A2 + TF-IDF B0 |
+| --- | ---: |
+| Hit@1 | 11/12 |
+| Hit@3 | 12/12 |
+| MRR | 0.944444 |
+| Recall@3 | 0.958333 |
+
+The exact B1 BM25 metrics are emitted by
+`knowledge-data.py engine-compare` in
+`engine-comparison-summary.json`. CI requires source/wheel and Linux/Windows
+evidence to agree before the PR can use those numbers as reproducible engineering
+evidence.
+
+This A2 comparison is still **not a v0.2 document benchmark**. The relevance
+basis remains the frozen v0.1 family mapping, so every report keeps
+`v02DocumentQrels=false`. The 72 v0.2 queries remain smoke/error-analysis only
+until human qrels are accepted and HOLDOUT is locked.
+
+Human-reviewed v0.2 qrels and HOLDOUT locking remain prerequisites for final
+model selection and any runtime-promotion decision. Production SearchService
+continues to use the authorized TF-IDF runtime.
 
 ## Reproduce
 
@@ -84,8 +125,17 @@ python scripts/check-tier-boundaries.py
 python scripts/test-tier-boundaries.py
 ```
 
-The stable runner defaults to TF-IDF. Explicit candidate selection affects only
-authoring evaluation; it does not select an engine in SearchService:
+First reproduce the primary A2 engine comparison. It changes only the candidate
+engine while preserving the A2 representation and legacy-family judgment basis:
+
+```powershell
+python scripts/intelligence/knowledge-data.py engine-compare `
+  --output .local/ai05/a2-source
+```
+
+The stable AI-04 runner still defaults to TF-IDF. Explicit candidate selection
+below is the separate historical A0 compatibility track and does not select an
+engine in SearchService:
 
 ```powershell
 $evalArgs = @(
@@ -110,11 +160,17 @@ python -m hdpi.evaluation.retrieval --candidate bm25 `
 Build the wheel, install it in the pinned environment, run the installed suite with
 `python -I -m pytest -c scripts/intelligence/installed-pytest.ini`, then run the same
 evaluation with `python -I scripts/intelligence/run-evaluation.py --installed`.
-Require identical source/wheel reports with:
+Require identical historical source/wheel reports and identical A2 engine
+comparison evidence with:
 
 ```powershell
 python -I scripts/intelligence/verify-evaluation-equivalence.py `
   .local/ai05/source .local/ai05/wheel
+
+python -I scripts/intelligence/knowledge-data.py --installed engine-compare `
+  --output .local/ai05/a2-wheel
+python -I scripts/intelligence/verify-knowledge-evidence.py --engine `
+  .local/ai05/a2-source .local/ai05/a2-wheel
 ```
 
 The report carries engine/config/runtime identities, chunk/normalization/query
