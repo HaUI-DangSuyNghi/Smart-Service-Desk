@@ -66,6 +66,16 @@ jobs:
           --junit .local/ai04/source-tests.xml --output .local/ai04/source
       - name: Source knowledge enrichment controls
         run: python scripts/intelligence/knowledge-data.py compare --output .local/ai045/source
+      - name: Source A2 TF-IDF versus BM25 engine comparison
+        run: python scripts/intelligence/knowledge-data.py engine-compare --output .local/ai05/a2-source
+      - name: Source BM25 candidate against historical A0 compatibility controls
+        run: >-
+          python scripts/intelligence/run-evaluation.py --candidate bm25
+          --dataset fixtures/intelligence/service-desk
+          --baseline fixtures/intelligence/service-desk/evaluation/baseline-v0.1.json
+          --checks fixtures/intelligence/service-desk/evaluation/security-checks.json
+          --conformance-config fixtures/intelligence/service-desk/evaluation/conformance-config.json
+          --junit .local/ai04/source-tests.xml --output .local/ai05/source
       - name: Build source distribution and wheel without new resolution
         run: python -m build --no-isolation --outdir .local/ai04-dist intelligence
       - name: Install built wheel
@@ -86,6 +96,33 @@ jobs:
           --junit .local/ai04/wheel-tests.xml --output .local/ai04/wheel
       - name: Require source and installed wheel evidence to agree
         run: python -I scripts/intelligence/verify-evaluation-equivalence.py .local/ai04/source .local/ai04/wheel
+      - name: Installed BM25 candidate against historical A0 compatibility controls
+        run: >-
+          python -I scripts/intelligence/run-evaluation.py --installed --candidate bm25
+          --dataset fixtures/intelligence/service-desk
+          --baseline fixtures/intelligence/service-desk/evaluation/baseline-v0.1.json
+          --checks fixtures/intelligence/service-desk/evaluation/security-checks.json
+          --conformance-config fixtures/intelligence/service-desk/evaluation/conformance-config.json
+          --junit .local/ai04/wheel-tests.xml --output .local/ai05/wheel
+      - name: Require BM25 historical compatibility evidence to agree
+        run: python -I scripts/intelligence/verify-evaluation-equivalence.py .local/ai05/source .local/ai05/wheel
+      - name: Installed A2 TF-IDF versus BM25 engine comparison
+        run: python -I scripts/intelligence/knowledge-data.py --installed engine-compare --output .local/ai05/a2-wheel
+      - name: Require A2 engine source and wheel evidence to agree
+        run: python -I scripts/intelligence/verify-knowledge-evidence.py --engine .local/ai05/a2-source .local/ai05/a2-wheel
+      - name: Retain safe BM25 candidate evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ai05-bm25-${{ matrix.os }}
+          path: |
+            .local/ai05/source/*.json
+            .local/ai05/wheel/*.json
+            .local/ai05/a2-source/*.json
+            .local/ai05/a2-wheel/*.json
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7
       - name: Installed wheel knowledge enrichment controls
         run: python -I scripts/intelligence/knowledge-data.py --installed compare --output .local/ai045/wheel
       - name: Require knowledge source and wheel evidence to agree
@@ -174,10 +211,16 @@ jobs:
           gh run download "$RUN_ID" --name ai04-evaluation-windows-2022 --dir .local/ai04-windows
           gh run download "$RUN_ID" --name ai045-corpus-ubuntu-24.04 --dir .local/ai045-linux
           gh run download "$RUN_ID" --name ai045-corpus-windows-2022 --dir .local/ai045-windows
+          gh run download "$RUN_ID" --name ai05-bm25-ubuntu-24.04 --dir .local/ai05-linux
+          gh run download "$RUN_ID" --name ai05-bm25-windows-2022 --dir .local/ai05-windows
       - name: Require equivalent rankings metrics gates and fingerprints
         run: python3 -I scripts/intelligence/verify-evaluation-equivalence.py .local/ai04-linux/wheel .local/ai04-windows/wheel
       - name: Require equivalent knowledge enrichment evidence
         run: python3 -I scripts/intelligence/verify-knowledge-evidence.py .local/ai045-linux/wheel .local/ai045-windows/wheel
+      - name: Require equivalent BM25 historical rankings metrics gates and fingerprints
+        run: python3 -I scripts/intelligence/verify-evaluation-equivalence.py .local/ai05-linux/wheel .local/ai05-windows/wheel
+      - name: Require equivalent A2 TF-IDF versus BM25 engine evidence
+        run: python3 -I scripts/intelligence/verify-knowledge-evidence.py --engine .local/ai05-linux/a2-wheel .local/ai05-windows/a2-wheel
   core-integration:
     env:
       HDPI_PROFILE_ROOT: ${{ github.workspace }}/intelligence/src/apps/servicedesk/intelligence/profiles

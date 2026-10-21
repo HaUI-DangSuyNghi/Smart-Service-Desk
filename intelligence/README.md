@@ -25,6 +25,13 @@ capability constructs this envelope after authorization; the public ticket endpo
 continues to reject request bodies. Compose mounts the selected app profile root
 read-only at `/profiles`.
 
+## BM25 candidate AI05-01
+
+[BM25 foundation and evidence](docs/task/AI05/BM25_FOUNDATION.md) documents the
+versioned lexical challenger, frozen legacy comparison and source/wheel/OS checks.
+Select it only in authoring evaluation with `--candidate bm25`; production retrieval
+continues to use TF-IDF. Human-reviewed v0.2 qrels remain required for selection.
+
 ## Evaluation AI-04
 
 AI-04.5 bổ sung [corpus enrichment và hướng dẫn bàn giao](docs/task/AI04_5/KNOWLEDGE_DATA_HANDOVER.md):
