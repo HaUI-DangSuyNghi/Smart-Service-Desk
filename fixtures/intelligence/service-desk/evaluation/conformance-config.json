@@ -1,9 +1,9 @@
 {
-  "profileVersion": "0.3.0",
+  "profileVersion": "0.2.0",
   "expectedRuntime": {
     "engine": "rules",
-    "profileVersion": "service-desk@0.3.0",
-    "rulesVersion": "0.3.0"
+    "profileVersion": "service-desk@0.2.0",
+    "rulesVersion": "0.2.0"
   },
-  "normalizationVersion": "text-normalization@0.2.0"
+  "normalizationVersion": "text-normalization@0.1.0"
 }

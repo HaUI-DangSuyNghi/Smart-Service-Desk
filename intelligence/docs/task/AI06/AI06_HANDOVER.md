@@ -51,8 +51,9 @@ Linux validation used the existing `python:3.12.7-slim` image with networking
 disabled. It covered the five-case generation evidence runner against source and
 the installed wheel. The full Linux regression suite was not rerun locally.
 The updated GitHub Actions matrix performs full source/wheel tests on both OSes
-and compares safe generation evidence. Remote CI has not run for these local
-commits.
+and compares safe generation evidence. Remote CI subsequently ran on `5af8a6a`
+and failed; see the PR35 remediation record below. The earlier local results in
+this section predate the strict semantic migration and do not qualify that HEAD.
 
 Safe local artifacts are under `.local/ai06/` and `.local/ai06-linux/`:
 
@@ -80,6 +81,72 @@ mechanics, not real Core acceptance. The deterministic provider quotes evidence;
 it does not infer relevance, detect malicious content or resolve conflicting
 sources. Human review defaults to enabled. There is no public endpoint, action,
 workflow mutation, retrieval promotion or production generation activation.
+
+## PR35 CI remediation, 2026-10-22
+
+The reviewed `5af8a6a` failed
+[Intelligence runtime](https://github.com/HaUI-DangSuyNghi/Smart-Service-Desk/actions/runs/39797716342),
+[Tier boundaries](https://github.com/HaUI-DangSuyNghi/Smart-Service-Desk/actions/runs/39797716356)
+and [integrated HEAD](https://github.com/HaUI-DangSuyNghi/Smart-Service-Desk/actions/runs/39797716281).
+This remediation is committed locally; GitHub Actions must run again after push.
+No green remote result on the new HEAD is claimed.
+
+Confirmed fixes:
+
+- Move the stale conformance test import to the Service Desk adapter and finish
+  active v0.3 profile pins in contract, integration and mutation tests, including
+  the inherited AI04 Java/Python E2E harness assertion.
+- Keep the historical v0.1 authoring validator on normalization v0.1. Preserve
+  v0.1/v0.2 profile bytes; repair only the draft PR's new active v0.3 resources.
+- Supply Wi-Fi variants in Service Desk conflict rules. TICKET-010 retains its
+  authored ACCOUNT root-cause result without restoring domain aliases in HDPI.
+- Update the actual Service Desk Java caller to v0.3. The real Java/Python
+  harness exposed a 502 because `TicketTriageService` still requested the now
+  non-executable v0.2 profile; mocked transport tests had not exposed this.
+- Correct Room Request v0.3's policy reference by supplying v0.3 rules beside its
+  manifest. Previously it reused root v0.2 rules whose relative policy reference
+  failed with `ProfileInvalid: Review policy reference mismatch`. Keep the root
+  v0.2 profile non-executable; align both Compose startup and wire assertions.
+- Add installed-wheel profile preflight, fixed startup error codes and bounded
+  allowlisted CI diagnostics. Raw exception text and credentials stay private;
+  runtime teardown tolerates an already exited process.
+- Restore `evaluation/conformance-config.json` byte-for-byte from `828fbcf`.
+  Its historical SHA-256 is
+  `1c2617862f30cc7e2f3a7a6c2d2178444973da011c88f95522242816407aa2ad`.
+  This was the specific nested `legacyEvidence` pin causing the AI05 checksum
+  failure. Use a separate `conformance-config-v0.3.json` for active evaluation;
+  no data pin, gold label, rights status or review status was rebased.
+- Keep frozen corpus/section reports unchanged. Record separate normalization
+  v0.2 reference candidates with exact ranking/fingerprint comparisons and an
+  [explicit metric and provenance review note](../../../../fixtures/intelligence/service-desk/evaluation/corpus-experiments/NORMALIZATION_V02_CANDIDATE.md).
+  The candidates remain proposed engineering evidence, with human review pending.
+
+Local verification uses CPython 3.12.7, the existing base/Dense locks and an
+isolated installed generic wheel. Linux runs in `python:3.12.7-slim`; the Dense
+model is explicitly provisioned against its immutable revision, byte sizes and
+SHA-256, then exercised offline. Safe outputs are under `.local/pr35/`.
+
+| Check | Result |
+| --- | --- |
+| Windows source / installed wheel base suite | 699 passed each; 5 Dense tests run separately |
+| Windows source / installed wheel real Dense suite | 5 passed each; no skipped model checks |
+| Linux source base / real Dense suite | 699 + 5 passed |
+| Linux installed wheel real Dense suite | 5 passed |
+| Linux installed wheel base suite | 699 passed; 5 Dense tests run separately |
+| Both OSes source/wheel retrieval, knowledge, section and generation evidence | Exact match |
+| Both OSes source/wheel Dense/Hybrid and provisional matrix evidence | Exact match |
+| Windows/Linux source and wheel retrieval, knowledge, section and generation evidence | Exact match |
+| Windows/Linux wheel Dense/Hybrid and provisional matrix evidence | Exact match |
+| Real three-tier Compose reuse | All 5 services healthy; Java/private Python triage, workflow, authorization and exact knowledge provenance passed |
+| Room Request / HPDI HTTP wire contracts | 6 / 4 real JSON responses passed |
+| Service Desk real Java/private Python success harnesses and bridge regression | 8 passed, no failures/errors/skips, fresh PostgreSQL database |
+| Foundation, immutable history and tier boundary gates | 145 foundation negative cases; 39 boundary mutation tests; exact historical evidence bytes preserved |
+| Dependency consistency, workflow syntax and generic wheel ownership | PASS |
+
+Independent architecture/AIE/QA review and CI on the pushed remediation HEAD
+remain required before merge. No Draft/Ready transition, merge or deployment is
+performed. Trace-sink exception handling remains a separate AI06 hardening
+recommendation; the assistance service is unchanged by these CI repairs.
 
 ## Strict semantic boundary hardening
 

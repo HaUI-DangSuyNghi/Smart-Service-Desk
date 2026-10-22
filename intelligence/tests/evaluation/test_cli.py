@@ -76,7 +76,7 @@ def test_incompatible_baseline_returns_nonzero(tmp_path):
 
 @pytest.mark.parametrize('changed,expected', [(False, 0), (True, 1)])
 def test_conformance_cli_accepts_file_pins_without_shell_json_quoting(tmp_path, changed, expected):
-    config = json.loads((DATASET / 'evaluation/conformance-config.json').read_text('utf-8'))
+    config = json.loads((DATASET / 'evaluation/conformance-config-v0.3.json').read_text('utf-8'))
     if changed:
         config['expectedRuntime']['rulesVersion'] = 'incorrect-version'
     path, output = tmp_path / 'config.json', tmp_path / 'report.json'

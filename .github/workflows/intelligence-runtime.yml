@@ -62,7 +62,7 @@ jobs:
           --dataset fixtures/intelligence/service-desk
           --baseline fixtures/intelligence/service-desk/evaluation/baseline-v0.1.json
           --checks fixtures/intelligence/service-desk/evaluation/security-checks.json
-          --conformance-config fixtures/intelligence/service-desk/evaluation/conformance-config.json
+          --conformance-config fixtures/intelligence/service-desk/evaluation/conformance-config-v0.3.json
           --junit .local/ai04/source-tests.xml --output .local/ai04/source
       - name: Source knowledge enrichment controls
         run: python scripts/intelligence/knowledge-data.py compare --output .local/ai045/source
@@ -76,7 +76,7 @@ jobs:
           --dataset fixtures/intelligence/service-desk
           --baseline fixtures/intelligence/service-desk/evaluation/baseline-v0.1.json
           --checks fixtures/intelligence/service-desk/evaluation/security-checks.json
-          --conformance-config fixtures/intelligence/service-desk/evaluation/conformance-config.json
+          --conformance-config fixtures/intelligence/service-desk/evaluation/conformance-config-v0.3.json
           --junit .local/ai04/source-tests.xml --output .local/ai05/source
       - name: Build source distribution and wheel without new resolution
         run: python -m build --no-isolation --outdir .local/ai04-dist intelligence
@@ -94,7 +94,7 @@ jobs:
           --dataset fixtures/intelligence/service-desk
           --baseline fixtures/intelligence/service-desk/evaluation/baseline-v0.1.json
           --checks fixtures/intelligence/service-desk/evaluation/security-checks.json
-          --conformance-config fixtures/intelligence/service-desk/evaluation/conformance-config.json
+          --conformance-config fixtures/intelligence/service-desk/evaluation/conformance-config-v0.3.json
           --junit .local/ai04/wheel-tests.xml --output .local/ai04/wheel
       - name: Require source and installed wheel evidence to agree
         run: python -I scripts/intelligence/verify-evaluation-equivalence.py .local/ai04/source .local/ai04/wheel
@@ -116,7 +116,7 @@ jobs:
           --dataset fixtures/intelligence/service-desk
           --baseline fixtures/intelligence/service-desk/evaluation/baseline-v0.1.json
           --checks fixtures/intelligence/service-desk/evaluation/security-checks.json
-          --conformance-config fixtures/intelligence/service-desk/evaluation/conformance-config.json
+          --conformance-config fixtures/intelligence/service-desk/evaluation/conformance-config-v0.3.json
           --junit .local/ai04/wheel-tests.xml --output .local/ai05/wheel
       - name: Require BM25 historical compatibility evidence to agree
         run: python -I scripts/intelligence/verify-evaluation-equivalence.py .local/ai05/source .local/ai05/wheel
@@ -310,12 +310,12 @@ jobs:
         run: python scripts/intelligence/knowledge-data.py analyze --output .local/ai045/corpus-quality.json
       - name: Reproduce corpus-only evidence
         run: python scripts/intelligence/knowledge-data.py compare --output .local/ai045/paragraph
-      - name: Verify frozen corpus controls
-        run: python scripts/intelligence/verify-knowledge-evidence.py .local/ai045/paragraph fixtures/intelligence/service-desk/evaluation/corpus-experiments/paragraph-v0.2
+      - name: Verify normalization v0.2 corpus reference candidate
+        run: python scripts/intelligence/verify-knowledge-evidence.py .local/ai045/paragraph fixtures/intelligence/service-desk/evaluation/corpus-experiments/paragraph-normalization-v0.2
       - name: Reproduce separate section experiment
         run: python scripts/intelligence/knowledge-data.py chunk-experiment --output .local/ai045/section
-      - name: Verify section rejection remains explicit
-        run: python scripts/intelligence/verify-knowledge-evidence.py --section .local/ai045/section fixtures/intelligence/service-desk/evaluation/corpus-experiments/section-v0.2
+      - name: Verify normalization v0.2 section reference candidate
+        run: python scripts/intelligence/verify-knowledge-evidence.py --section .local/ai045/section fixtures/intelligence/service-desk/evaluation/corpus-experiments/section-normalization-v0.2
       - name: Retain safe data-quality summaries
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
