@@ -42,6 +42,6 @@ class TicketTriagePythonE2E {
             .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString());
         mvc.perform(post(base + "/" + ticket.path("id").asText() + "/triage").with(identity))
             .andExpect(status().isOk()).andExpect(jsonPath("$.status").value("SUCCESS"))
-            .andExpect(jsonPath("$.runtime.profileVersion").value("service-desk@0.2.0"));
+            .andExpect(jsonPath("$.runtime.profileVersion").value("service-desk@0.3.0"));
     }
 }
