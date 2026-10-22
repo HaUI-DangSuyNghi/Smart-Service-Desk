@@ -36,7 +36,7 @@ def search_service(index, partition):
 
 
 def run(service, payload, context):
-    return service.search(payload, trusted_context=context, profile_version='0.2.0')
+    return service.search(payload, trusted_context=context, profile_version='0.3.0')
 
 
 def test_service_success_and_content_safe_trace(search_service, payload, search_context, documents):
@@ -133,4 +133,4 @@ def test_triage_independent_when_search_unavailable(search_service, payload, sea
         run(search_service, payload, search_context)
     triage = {k: payload[k] for k in ('contractVersion', 'requestId', 'profile', 'context')}
     triage['input'] = {'title': 'Wi-Fi chập chờn', 'description': 'Một máy bị ảnh hưởng; có thể chờ.'}
-    assert TriageService().triage(triage, trusted_context=search_context, profile_version='0.2.0').response['status'] == 'SUCCESS'
+    assert TriageService().triage(triage, trusted_context=search_context, profile_version='0.3.0').response['status'] == 'SUCCESS'

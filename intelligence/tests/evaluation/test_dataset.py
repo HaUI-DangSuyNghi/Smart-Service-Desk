@@ -6,7 +6,7 @@ import shutil
 import pytest
 import yaml
 
-from hdpi.evaluation.dataset import load_dataset
+from servicedesk.intelligence.evaluation.dataset import load_dataset
 from hdpi.evaluation.errors import EvaluationError
 
 ROOT = Path(__file__).resolve().parents[3]

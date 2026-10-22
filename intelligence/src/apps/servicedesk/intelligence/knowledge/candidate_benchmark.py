@@ -10,7 +10,8 @@ from hdpi.evaluation.metrics import first_relevant_rank
 from hdpi.normalization.v1 import NormalizerV1
 from hdpi.retrieval.models import digest
 
-MATRIX_VERSION = 'ai05-candidate-matrix@0.1.0'
+MATRIX_VERSION = 'ai05-candidate-matrix@0.2.0'
+APP_QUERY_STRATEGY = 'service-desk-title-newline-description@0.1.0'
 KEYS = ('B0_TFIDF', 'B1_BM25', 'B2_DENSE', 'B3_HYBRID')
 PRIMARY_METRICS = ('primaryHitAt1', 'hitAt3', 'mrr', 'recallRelevantAt3', 'ndcgAt3')
 
@@ -20,7 +21,8 @@ def candidates(provider):
 
 
 def freeze_descriptor(dataset, engines):
-    systems = {key: candidate.system | {'evaluationMatrixVersion': MATRIX_VERSION,
+    systems = {key: candidate.system | {'queryStrategyVersion': APP_QUERY_STRATEGY,
+               'evaluationMatrixVersion': MATRIX_VERSION,
                'projectionVersion': dataset.projection['projectionVersion'],
                'judgmentBasis': dataset.judgment_basis} for key, candidate in engines.items()}
     return {'matrixVersion': MATRIX_VERSION, 'dataset': dataset.identity,
@@ -62,7 +64,8 @@ def evaluate_matrix(dataset, engines, *, split='DEV'):
                 slices['hard-negative'].append(pair)
         metrics = graded_retrieval_metrics(pairs)
         metrics.pop('caseCount')
-        system = candidate.system | {'evaluationMatrixVersion': MATRIX_VERSION,
+        system = candidate.system | {'queryStrategyVersion': APP_QUERY_STRATEGY,
+                    'evaluationMatrixVersion': MATRIX_VERSION,
                     'projectionVersion': dataset.projection['projectionVersion'],
                     'judgmentBasis': dataset.judgment_basis, 'split': split}
         reports[name] = build_report(

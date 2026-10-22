@@ -127,7 +127,7 @@ def validate_profile(profile, taxonomy, rules, policy):
         "taxonomy": {"version": taxonomy["taxonomyVersion"], "file": "taxonomy.yaml"},
         "rules": {"version": rules["rulesVersion"], "file": "rules.yaml"},
         "priorityPolicy": {"version": policy["policyVersion"], "file": "priority-policy.yaml", "owner": policy["owner"]},
-        "normalization": {"version": "text-normalization@0.1.0", "file": "normalization.md"},
+        "normalization": {"version": "text-normalization@0.2.0", "file": "normalization.md"},
     }
     for section, pin in pins.items():
         ensure(profile[section] == pin, f"Profile file/version pin drift: {section}")

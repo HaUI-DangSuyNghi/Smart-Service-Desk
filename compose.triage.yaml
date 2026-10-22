@@ -7,7 +7,7 @@ services:
     environment:
       INTELLIGENCE_TRIAGE_TOKEN: ${INTELLIGENCE_TRIAGE_TOKEN:-}
       HDPI_PROFILE_ROOT: /profiles
-      HDPI_REQUIRED_PROFILES: ${INTELLIGENCE_REQUIRED_PROFILES:-service-desk@0.2.0}
+      HDPI_REQUIRED_PROFILES: ${INTELLIGENCE_REQUIRED_PROFILES:-service-desk@0.3.0}
     volumes:
       - ${INTELLIGENCE_PROFILE_ROOT:-./intelligence/src/apps/servicedesk/intelligence/profiles}:/profiles:ro
     read_only: true

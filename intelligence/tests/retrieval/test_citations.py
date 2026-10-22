@@ -95,8 +95,8 @@ def test_end_to_end_real_verifier_with_fake_core(index, documents, partition, se
     service = SearchService(corpus_source=source, indexes=indexes, citation_verifier=CoreCitationVerifier(resolver))
     payload = {'contractVersion': '0.1.0', 'requestId': 'test-e2e', 'profile': 'service-desk',
                'context': {'workspaceId': search_context.workspace_id}, 'query': 'đăng nhập', 'topK': 1}
-    first = service.search(payload, trusted_context=search_context, profile_version='0.2.0')
+    first = service.search(payload, trusted_context=search_context, profile_version='0.3.0')
     assert first.response['results'][0]['sourceChecksum'] == documents[0].source_checksum
     resolver.documents.clear()
-    stale = service.search(payload, trusted_context=search_context, profile_version='0.2.0')
+    stale = service.search(payload, trusted_context=search_context, profile_version='0.3.0')
     assert stale.response['results'] == [] and stale.trace.stale_hit_count == 1

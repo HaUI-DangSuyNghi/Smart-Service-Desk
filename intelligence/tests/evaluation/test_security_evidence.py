@@ -9,7 +9,7 @@ import hdpi
 import pytest
 
 from hdpi.evaluation.errors import EvaluationError
-from hdpi.evaluation.security import evaluate
+from servicedesk.intelligence.evaluation.security import evaluate
 
 ROOT = Path(__file__).resolve().parents[3]
 DATASET = ROOT / 'fixtures/intelligence/service-desk'

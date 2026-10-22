@@ -35,11 +35,11 @@ def flow():
         source_checksum=sha256(content).hexdigest(),
         content=content,
     )
-    profile = ProfileRegistry().get('service-desk', '0.2.0')
+    profile = ProfileRegistry().get('service-desk', '0.3.0')
     partition = PartitionKey(
         workspace_id=context.workspace_id,
         profile_id=profile.profile_id,
-        profile_version='0.2.0',
+        profile_version='0.3.0',
         access_scope_hash=scope_hash(context),
         corpus_version='synthetic-corpus@1',
     )
@@ -78,7 +78,7 @@ def compose(flow, *, question='device connection', context_override=None):
             'topK': 3,
         },
         trusted_context=context,
-        profile_version='0.2.0',
+        profile_version='0.3.0',
     )
     response = run.response
 
@@ -98,7 +98,7 @@ def compose(flow, *, question='device connection', context_override=None):
     bundle = AuthorizedKnowledgeBundle.from_verified_citations(
         request_id=response['requestId'],
         profile_id=response['profile'],
-        profile_version='0.2.0',
+        profile_version='0.3.0',
         retrieval=RetrievalRuntimeIdentity(
             engine=run.trace.engine,
             engine_version=run.trace.engine_version,

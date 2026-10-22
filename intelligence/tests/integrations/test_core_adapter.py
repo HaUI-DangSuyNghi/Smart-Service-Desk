@@ -87,7 +87,7 @@ def test_http_adapter_end_to_end_and_equivalent_scope(core_http):
     service = SearchService(corpus_source=adapter, indexes=indexes, citation_verifier=CoreCitationVerifier(adapter))
     payload = {'contractVersion': '0.1.0', 'requestId': 'http-test', 'profile': 'service-desk',
                'context': {'workspaceId': 'lab-a'}, 'query': 'đăng nhập', 'topK': 1}
-    assert service.search(payload, trusted_context=context, profile_version='0.2.0').response['results'][0]['metadataId'] == MID
+    assert service.search(payload, trusted_context=context, profile_version='0.3.0').response['results'][0]['metadataId'] == MID
 
 
 @pytest.mark.parametrize('change', ['revoked', 'hidden-file', 'source-version', 'catalog-revision'])
@@ -109,7 +109,7 @@ def test_scope_change_never_scores_old_partition(core_http, change):
     payload = {'contractVersion': '0.1.0', 'requestId': 'denied', 'profile': 'service-desk',
                'context': {'workspaceId': 'lab-a'}, 'query': 'đăng nhập', 'topK': 1}
     with pytest.raises(AuthorizationRejected):
-        service.search(payload, trusted_context=context, profile_version='0.2.0')
+        service.search(payload, trusted_context=context, profile_version='0.3.0')
     indexes.get.assert_not_called()
     engine.search.assert_not_called()
 

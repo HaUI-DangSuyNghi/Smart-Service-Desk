@@ -3,13 +3,13 @@
 from types import SimpleNamespace
 
 from hdpi.evaluation.candidates import Bm25Candidate, TfidfCandidate
-from hdpi.evaluation.dataset import load_dataset as load_legacy
+from servicedesk.intelligence.evaluation.dataset import load_dataset as load_legacy
 from hdpi.evaluation.dataset import require
 from hdpi.evaluation.evidence import build_report
 from hdpi.evaluation.gates import evaluate_gates
 from hdpi.evaluation.graded import GRADED_METRIC_VERSION, graded_retrieval_metrics
 from hdpi.evaluation.metrics import evaluate_retrieval_metrics, first_relevant_rank
-from hdpi.evaluation.retrieval import evaluate as evaluate_legacy
+from servicedesk.intelligence.evaluation.retrieval import evaluate as evaluate_legacy
 from hdpi.evaluation.retrieval import stable_report
 from hdpi.normalization.v1 import NormalizerV1
 from hdpi.retrieval.models import digest
@@ -101,6 +101,7 @@ def evaluate_family_control(
         },
     )
     system = candidate.system | {
+        'queryStrategyVersion': 'service-desk-title-newline-description@0.1.0',
         'projectionVersion': projection['projectionVersion'],
         'experiment': experiment_id or ('A2' if enriched else 'A1'),
         'rankingUnit': 'legacy-source-family; max child score; first-occurrence deduplication',
@@ -225,7 +226,8 @@ def evaluate_reviewed_split(root, directory, *, split='DEV', enriched=True):
         evidence_class='AUTHORED_RETRIEVAL_REGRESSION',
         dataset=evidence_dataset,
         system=candidate.system
-        | {'projectionVersion': projection['projectionVersion'], 'split': split},
+        | {'queryStrategyVersion': 'service-desk-title-newline-description@0.1.0',
+           'projectionVersion': projection['projectionVersion'], 'split': split},
         metric_version=GRADED_METRIC_VERSION,
         metrics=metrics,
         cases=cases,

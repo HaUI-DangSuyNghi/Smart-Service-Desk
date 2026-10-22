@@ -180,3 +180,33 @@ Safe observations are retained in `.local/ai0503/performance.json`, outside the
 deterministic quality evidence. Hybrid reuses the existing pinned model and
 dependencies; it adds no new model, dependency or license requirement. No model,
 vector or serialized index is included in the wheel or evidence artifacts.
+
+## Post-AI05 strict-boundary migration
+
+AI05 B0-B3 engineering work remains historical evidence for the configurations that
+were merged in PRs #32-#34. During AI06 foundation hardening, two Tier-boundary
+issues were identified in the inherited evaluation/preprocessing layer:
+
+1. generic normalization contained a Service Desk-owned Wi-Fi alias rewrite;
+2. generic candidate identities encoded the Service Desk query construction
+   `title + newline + description`.
+
+The current branch corrects those ownership violations without rewriting AI05
+history:
+
+- generic normalization is now `text-normalization@0.2.0` and contains only text
+  mechanics;
+- BM25/Dense/Hybrid configs are versioned to v0.2 identities;
+- generic candidates declare `caller-provided-query@0.1.0`;
+- Service Desk records its concrete query strategy only in Tier-3 evaluation
+  evidence;
+- legacy Service Desk dataset/conformance/security adapters moved out of
+  `hdpi.evaluation` into `apps/servicedesk`;
+- immutable `service-desk@0.2.0` artifacts remain untouched and the current
+  executable profile is `service-desk@0.3.0`.
+
+Therefore, the old AI05 numeric reports remain useful historical controls but do
+**not** authorize runtime promotion for the new identities. B0-B3 evidence must be
+regenerated under the v0.2 normalization/config identities before any future
+selection or promotion decision. Human-reviewed qrels/HOLDOUT remain separately
+gated exactly as before.

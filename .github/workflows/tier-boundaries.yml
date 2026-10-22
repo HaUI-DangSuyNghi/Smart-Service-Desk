@@ -117,7 +117,7 @@ jobs:
       FILE_TEST_JDBC_URL: jdbc:postgresql://localhost:5432/file_storage
       FILE_TEST_DB_PASSWORD: isolated-boundary-ci
       HDPI_PROFILE_ROOT: ${{ github.workspace }}/intelligence/src/apps/roomrequest/intelligence/profiles
-      HDPI_REQUIRED_PROFILES: room-request@0.2.0
+      HDPI_REQUIRED_PROFILES: room-request@0.3.0
       INTELLIGENCE_TRIAGE_BASE_URL: http://127.0.0.1:19091
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262

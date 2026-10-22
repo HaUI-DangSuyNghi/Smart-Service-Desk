@@ -23,7 +23,7 @@ def request(title, description):
     ('Wifi tài khoản phần mềm', 'Bị khóa; wifi vẫn hoạt động với người khác. Một máy có thể chờ.'),
 ])
 def test_ambiguous_cases_use_complete_fallback(service, trusted, title, description):
-    result = service.triage(request(title, description), trusted_context=trusted, profile_version='0.2.0').response
+    result = service.triage(request(title, description), trusted_context=trusted, profile_version='0.3.0').response
     assert result['result'] == {'category': 'OTHER', 'priority': 'MEDIUM', 'suggestedGroup': 'GENERAL-SUPPORT'}
     assert result['needsReview'] is True
     assert result['explanation']['impact'] is None and result['explanation']['urgency'] is None
@@ -39,7 +39,7 @@ def reverse(value):
 
 
 def test_configuration_order_does_not_choose_winner(fixtures, service):
-    profile = service.registry.get('service-desk', '0.2.0')
+    profile = service.registry.get('service-desk', '0.3.0')
     reordered = replace(profile, taxonomy=freeze(reverse(profile.taxonomy)),
                         rules=freeze(reverse(profile.rules)), policy=freeze(reverse(profile.policy)))
     for fixture in fixtures:
@@ -52,8 +52,8 @@ def test_identical_versions_identical_response_and_no_request_mutation(fixtures,
     for fixture in fixtures:
         payload = copy.deepcopy(fixture['request'])
         before = copy.deepcopy(payload)
-        first = service.triage(payload, trusted_context=trusted, profile_version='0.2.0')
-        second = service.triage(payload, trusted_context=trusted, profile_version='0.2.0')
+        first = service.triage(payload, trusted_context=trusted, profile_version='0.3.0')
+        second = service.triage(payload, trusted_context=trusted, profile_version='0.3.0')
         assert first.response == second.response
         assert payload == before
         assert first.trace.duration_ms >= 0
@@ -66,7 +66,7 @@ def test_cross_workspace_correlation(fixtures, service):
         payload = copy.deepcopy(fixtures[0]['request'])
         payload['context']['workspaceId'] = workspace
         payload['requestId'] = workspace + '-request'
-        run = service.triage(payload, trusted_context=TrustedContext(workspace_id=workspace), profile_version='0.2.0')
+        run = service.triage(payload, trusted_context=TrustedContext(workspace_id=workspace), profile_version='0.3.0')
         assert run.response['workspaceId'] == run.trace.workspace_id == workspace
         assert run.response['requestId'] == run.trace.request_id == workspace + '-request'
         responses.append(run.response)
@@ -75,7 +75,7 @@ def test_cross_workspace_correlation(fixtures, service):
 
 def test_whitespace_and_nfd_evidence(service, trusted):
     payload = request('WI\t FI', 'MO\u0323\u0302T   MA\u0301Y có thể\n\tchờ hỗ trợ.')
-    run = service.triage(payload, trusted_context=trusted, profile_version='0.2.0')
+    run = service.triage(payload, trusted_context=trusted, profile_version='0.3.0')
     assert run.response['result']['category'] == 'NETWORK'
     assert run.response['explanation']['impact'] == 'I1'
     assert run.response['explanation']['urgency'] == 'U2'
@@ -87,7 +87,7 @@ def test_whitespace_and_nfd_evidence(service, trusted):
 def test_count_rules_generalize_beyond_fixture_counts(service, trusted):
     for count in (2, 3, 17, 68, 100, 9999):
         payload = request('Wifi lỗi', f'{count} máy không thể tiếp tục công việc.')
-        run = service.triage(payload, trusted_context=trusted, profile_version='0.2.0')
+        run = service.triage(payload, trusted_context=trusted, profile_version='0.3.0')
         assert run.response['explanation']['impact'] == 'I2'
         assert run.response['result']['priority'] == 'HIGH'
 
@@ -97,15 +97,15 @@ def test_count_rules_generalize_beyond_fixture_counts(service, trusted):
                                                 ('U3', 'không thể tiếp tục'), ('U4', 'kỳ thi đang bị chặn')])
 def test_all_priority_matrix_cells_execute(service, trusted, impact, text, urgency, text_urgency):
     payload = request('Wifi lỗi', text + ' bị ảnh hưởng; ' + text_urgency + '.')
-    run = service.triage(payload, trusted_context=trusted, profile_version='0.2.0')
-    matrix = service.registry.get('service-desk', '0.2.0').policy['matrix']
+    run = service.triage(payload, trusted_context=trusted, profile_version='0.3.0')
+    matrix = service.registry.get('service-desk', '0.3.0').policy['matrix']
     assert run.response['explanation']['impact'] == impact
     assert run.response['explanation']['urgency'] == urgency
     assert run.response['result']['priority'] == matrix[impact][urgency]
 
 
 def test_multiple_supported_root_causes_do_not_depend_on_order(service, trusted):
-    profile = service.registry.get('service-desk', '0.2.0')
+    profile = service.registry.get('service-desk', '0.3.0')
     rules = reverse(reverse(profile.rules))
     overrides = rules['conflictRules']['CONFLICT-ROOT-001']['overrides']
     for override in overrides:
@@ -117,7 +117,7 @@ def test_multiple_supported_root_causes_do_not_depend_on_order(service, trusted)
 
 
 def test_routing_and_signals_are_profile_owned(service):
-    profile = service.registry.get('service-desk', '0.2.0')
+    profile = service.registry.get('service-desk', '0.3.0')
     taxonomy, rules = reverse(reverse(profile.taxonomy)), reverse(reverse(profile.rules))
     taxonomy['categories']['NETWORK']['suggestedGroup'] = 'CUSTOM-ROUTE'
     rules['categoryRules']['CAT-NET-001']['positiveSignals'] = ['tín hiệu thử nghiệm']

@@ -14,7 +14,7 @@ def search_context():
 
 @pytest.fixture
 def partition(search_context):
-    return PartitionKey(workspace_id=search_context.workspace_id, profile_id='service-desk', profile_version='0.2.0',
+    return PartitionKey(workspace_id=search_context.workspace_id, profile_id='service-desk', profile_version='0.3.0',
                         access_scope_hash=scope_hash(search_context), corpus_version='test-corpus@1')
 
 

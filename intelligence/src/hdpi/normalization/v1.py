@@ -6,11 +6,11 @@ from .base import NormalizedText
 
 
 class NormalizerV1:
-    version = 'text-normalization@0.1.0'
+    version = 'text-normalization@0.2.0'
 
     def __init__(self):
         if sys.version_info[:2] != (3, 12) or unicodedata.unidata_version != '15.0.0':
-            raise EngineConfigurationError('Normalization v0.1 requires Python 3.12 / Unicode 15.0.0')
+            raise EngineConfigurationError('Normalization v0.2 requires Python 3.12 / Unicode 15.0.0')
 
     def normalize(self, text: str) -> NormalizedText:
         # Canonical combining sequences map to their complete original cluster.

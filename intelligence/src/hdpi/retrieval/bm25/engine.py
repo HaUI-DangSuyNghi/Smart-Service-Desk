@@ -52,7 +52,7 @@ def term_score(tf: int, df: int, count: int, length: int, average: float, config
 class Bm25SearchEngine:
     name = 'bm25'
     version = '0.1.0'
-    config_version = 'bm25-config@0.1.0'
+    config_version = 'bm25-config@0.2.0'
 
     def __init__(self, config: Bm25Config | None = None):
         self.config = config or Bm25Config()

@@ -2,11 +2,13 @@ import json
 from pathlib import Path
 
 import pytest
+import sys
 
 from hdpi.domain.models import TrustedContext
 from hdpi.services.triage import TriageService
 
 ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / 'intelligence/src/apps'))
 
 
 @pytest.fixture(scope='session')

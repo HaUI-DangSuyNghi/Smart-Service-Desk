@@ -23,7 +23,7 @@ class TfidfCandidate:
         self.engine = TfidfSearchEngine()
         self.system = {'engine': self.engine.name, 'engineVersion': self.engine.version,
                        'engineConfigVersion': ENGINE_CONFIG, 'normalizationVersion': NORMALIZATION,
-                       'chunkPolicyVersion': CHUNK_POLICY, 'queryStrategyVersion': 'title+newline+description@0.1.0',
+                       'chunkPolicyVersion': CHUNK_POLICY, 'queryStrategyVersion': 'caller-provided-query@0.1.0',
                        'numericalRuntime': NUMERICAL_RUNTIME}
 
     def build(self, sources):

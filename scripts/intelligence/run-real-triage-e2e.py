@@ -37,7 +37,7 @@ def injected_fault(upstream, mode):
             with urlopen(request, timeout=3) as response:
                 result = json.load(response)
             assert result['status'] == 'SUCCESS'
-            assert result['runtime']['profileVersion'] == 'service-desk@0.2.0'
+            assert result['runtime']['profileVersion'] == 'service-desk@0.3.0'
             successes.append(True)
             if mode == 'timeout':
                 sleep(5)

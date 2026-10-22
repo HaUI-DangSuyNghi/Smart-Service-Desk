@@ -3,7 +3,7 @@ from pathlib import Path
 import pytest
 
 from hdpi.evaluation.metrics import first_relevant_rank, retrieval_metrics
-from hdpi.evaluation.retrieval import evaluate
+from servicedesk.intelligence.evaluation.retrieval import evaluate
 
 ROOT = Path(__file__).resolve().parents[3]
 

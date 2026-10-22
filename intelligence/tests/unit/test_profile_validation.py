@@ -10,16 +10,16 @@ from hdpi.domain.errors import ProfileInvalid
 from hdpi.profiles.validation import load_documents, read_yaml, validate_documents, verify_lock
 
 ROOT = Path(__file__).resolve().parents[3] / 'intelligence/src/apps/servicedesk/intelligence/profiles'
-MANIFEST = 'service-desk/versions/0.2.0/profile.yaml'
+MANIFEST = 'service-desk/versions/0.3.0/profile.yaml'
 
 
 class ExecutableProfileTests(unittest.TestCase):
     def setUp(self):
-        self.profile, docs = load_documents(ROOT, MANIFEST, 'service-desk@0.2.0')
+        self.profile, docs = load_documents(ROOT, MANIFEST, 'service-desk@0.3.0')
         self.taxonomy, self.rules, self.policy = [docs[k] for k in ('taxonomy', 'rules', 'priorityPolicy')]
 
     def test_versioned_composition(self):
-        self.assertEqual(self.profile['rules']['version'], '0.2.0')
+        self.assertEqual(self.profile['rules']['version'], '0.3.0')
         self.assertEqual(self.profile['taxonomy']['version'], '0.1.0')
         self.assertEqual(read_yaml(ROOT / 'service-desk/profile.yaml')['profile']['version'], 'service-desk@0.1.0')
 
@@ -48,7 +48,7 @@ class ExecutableProfileTests(unittest.TestCase):
                     validate_documents(*docs)
 
     def test_immutable_labels_cannot_hide_content_changes(self):
-        for relative in ('service-desk/rules.yaml', 'service-desk/versions/0.2.0/rules.yaml', 'service-desk/priority-policy.yaml'):
+        for relative in ('service-desk/rules.yaml', 'service-desk/versions/0.2.0/rules.yaml', 'service-desk/versions/0.3.0/rules.yaml', 'service-desk/priority-policy.yaml'):
             with self.subTest(relative=relative), tempfile.TemporaryDirectory() as tmp:
                 copied = Path(tmp) / 'profiles'
                 shutil.copytree(ROOT, copied)
@@ -68,7 +68,7 @@ class ExecutableProfileTests(unittest.TestCase):
         script = Path(__file__).resolve().parents[3] / 'scripts/intelligence/validate-executable-profiles.py'
         history = runpy.run_path(str(script))['check_history']
         lock = verify_lock(ROOT)
-        lock['service-desk/versions/0.2.0/rules.yaml'] = 'a' * 64
+        lock['service-desk/versions/0.3.0/rules.yaml'] = 'a' * 64
         with self.assertRaises(ProfileInvalid):
             history(ROOT, lock, 'HEAD')
 

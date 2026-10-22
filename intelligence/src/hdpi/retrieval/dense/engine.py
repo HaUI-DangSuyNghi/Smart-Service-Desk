@@ -9,7 +9,7 @@ from .index import DenseIndex, normalize_vector
 class DenseSearchEngine:
     name = 'dense'
     version = '0.1.0'
-    config_version = 'dense-e5-cpu-config@0.1.0'
+    config_version = 'dense-e5-cpu-config@0.2.0'
 
     def __init__(self, provider, config=None):
         self.config = config or DenseConfig()

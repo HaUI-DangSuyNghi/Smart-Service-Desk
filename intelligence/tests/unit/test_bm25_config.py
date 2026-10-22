@@ -13,10 +13,10 @@ def test_config_is_frozen_and_metadata_explicit():
     config = Bm25Config()
     config.validate()
     assert config.system() == {
-        'engine': 'bm25', 'engineVersion': '0.1.0', 'engineConfigVersion': 'bm25-config@0.1.0',
-        'normalizationVersion': 'text-normalization@0.1.0',
+        'engine': 'bm25', 'engineVersion': '0.1.0', 'engineConfigVersion': 'bm25-config@0.2.0',
+        'normalizationVersion': 'text-normalization@0.2.0',
         'chunkPolicyVersion': 'markdown-paragraph@0.1.0',
-        'queryStrategyVersion': 'title+newline+description@0.1.0',
+        'queryStrategyVersion': 'caller-provided-query@0.1.0',
         'numericalRuntime': 'cpython@3.12;unicode@15.0.0;stdlib-math@3.12',
     }
     with pytest.raises(FrozenInstanceError):
