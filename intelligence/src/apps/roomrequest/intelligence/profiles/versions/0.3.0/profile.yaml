@@ -6,8 +6,8 @@ taxonomy:
   version: '1'
   file: ../../taxonomy.yaml
 rules:
-  version: 0.2.0
-  file: ../../rules.yaml
+  version: 0.3.0
+  file: rules.yaml
 priorityPolicy:
   version: room-policy@1
   file: ../../priority-policy.yaml

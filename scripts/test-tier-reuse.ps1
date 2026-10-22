@@ -28,7 +28,7 @@ try {
     $env:INTELLIGENCE_TRIAGE_TOKEN = [Convert]::ToBase64String($bytes)
     $env:INTELLIGENCE_TRIAGE_BASE_URL = 'http://intelligence:8000'
     $env:INTELLIGENCE_PROFILE_ROOT = './intelligence/src/apps/roomrequest/intelligence/profiles'
-    $env:INTELLIGENCE_REQUIRED_PROFILES = 'room-request@0.2.0'
+    $env:INTELLIGENCE_REQUIRED_PROFILES = 'room-request@0.3.0'
     $override = Join-Path $PWD ".local/$Project-images.yaml"
     [IO.File]::WriteAllText($override, "services:`n  platform:`n    image: ${Project}-platform:local`n  intelligence:`n    image: ${Project}-intelligence:local`n")
     $composeArguments = @('-p', $Project, '-f', 'compose.yaml', '-f', 'compose.triage.yaml', '-f', 'scripts/acceptance/intelligence-compose.yaml', '-f', $override, '--profile', 'intelligence')

@@ -199,8 +199,17 @@ def main():
             raise ValueError('Invalid required profile configuration')
         server = make_server((args.host, args.port), service_token=os.environ.get('INTELLIGENCE_TRIAGE_TOKEN'),
                              required_profiles=required_profiles)
-    except Exception:
-        parser.exit(1, 'Intelligence service configuration failed\n')
+    except Exception as error:
+        # Fixed codes only: exception messages may include configuration/secrets.
+        code = 'INTERNAL_ERROR'
+        for error_type, diagnostic in ((ProfileInvalid, 'PROFILE_INVALID'),
+                                       (EngineConfigurationError, 'ENGINE_CONFIGURATION'),
+                                       (ValueError, 'INVALID_CONFIGURATION'),
+                                       (OSError, 'OS_ERROR')):
+            if isinstance(error, error_type):
+                code = diagnostic
+                break
+        parser.exit(1, f'Intelligence service configuration failed [{code}]\n')
     try:
         server.serve_forever()
     except KeyboardInterrupt:
