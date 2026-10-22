@@ -70,7 +70,7 @@ def core_http():
 def test_http_adapter_end_to_end_and_equivalent_scope(core_http):
     state, _, adapter = core_http
     context = adapter.trusted_context()
-    profile = ProfileRegistry().get('service-desk', '0.2.0')
+    profile = ProfileRegistry().get('service-desk', '0.3.0')
     key = adapter.resolve_partition(context, profile)
     assert context.auth_scope_fingerprint not in repr(key)
     assert context == adapter.trusted_context()
@@ -155,7 +155,7 @@ def test_context_workspace_and_catalog_boundary(core_http):
     context = adapter.trusted_context()
     state['calls'].clear()
     with pytest.raises(AuthorizationRejected):
-        adapter.resolve_partition(replace(context, workspace_id='lab-b'), ProfileRegistry().get('service-desk', '0.2.0'))
+        adapter.resolve_partition(replace(context, workspace_id='lab-b'), ProfileRegistry().get('service-desk', '0.3.0'))
     assert state['calls'] == []
     with pytest.raises(AuthorizationRejected):
         adapter.resolve(context, FID)
@@ -170,7 +170,7 @@ def test_public_adapter_methods_require_context_before_any_http(core_http, metho
     context = adapter.trusted_context()
     context = None if kind == 'none' else replace(context, auth_scope_fingerprint=None)
     state['calls'].clear()
-    argument = MID if method == 'resolve' else ProfileRegistry().get('service-desk', '0.2.0')
+    argument = MID if method == 'resolve' else ProfileRegistry().get('service-desk', '0.3.0')
     with pytest.raises(AuthorizationRejected):
         getattr(adapter, method)(context, argument)
     assert state['calls'] == []

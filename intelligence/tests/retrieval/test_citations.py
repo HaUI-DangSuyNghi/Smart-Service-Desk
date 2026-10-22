@@ -74,7 +74,7 @@ def test_foreign_source_and_candidate_fail_closed(index, documents, search_conte
 
 def test_authorized_build_orders_access_before_load(partition, search_context, documents):
     source = Mock()
-    profile = ProfileRegistry().get('service-desk', '0.2.0')
+    profile = ProfileRegistry().get('service-desk', '0.3.0')
     source.resolve_partition.side_effect = AuthorizationRejected('denied')
     with pytest.raises(AuthorizationRejected):
         build_authorized_index(source=source, context=search_context, profile=profile)

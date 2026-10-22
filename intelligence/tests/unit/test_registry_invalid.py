@@ -20,7 +20,7 @@ ROOT = Path(__file__).resolve().parents[3] / 'intelligence/src/apps/servicedesk/
 def test_invalid_profile_fails_during_registry_startup(tmp_path, mutation):
     root = tmp_path / 'profiles'
     shutil.copytree(ROOT, root)
-    relative = 'service-desk/versions/0.2.0/rules.yaml'
+    relative = 'service-desk/versions/0.3.0/rules.yaml'
     path = root / relative
     rules = yaml.safe_load(path.read_text(encoding='utf-8'))
     mutation(rules)

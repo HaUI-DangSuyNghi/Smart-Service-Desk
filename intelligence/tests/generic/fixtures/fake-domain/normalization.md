@@ -1,1 +1,1 @@
-Use text-normalization@0.1.0. No app-specific normalization.
+Use text-normalization@0.2.0. No app-specific normalization.

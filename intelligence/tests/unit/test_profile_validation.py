@@ -23,6 +23,16 @@ class ExecutableProfileTests(unittest.TestCase):
         self.assertEqual(self.profile['taxonomy']['version'], '0.1.0')
         self.assertEqual(read_yaml(ROOT / 'service-desk/profile.yaml')['profile']['version'], 'service-desk@0.1.0')
 
+    def test_historical_authoring_and_active_normalization_pins(self):
+        legacy = read_yaml(ROOT / 'service-desk/profile.yaml')
+        self.assertEqual(legacy['normalization']['version'], 'text-normalization@0.1.0')
+        self.assertEqual(self.profile['normalization']['version'], 'text-normalization@0.2.0')
+        script = Path(__file__).resolve().parents[3] / 'scripts/intelligence/validate-foundation.py'
+        authoring = runpy.run_path(str(script))
+        base = ROOT / 'service-desk'
+        authoring['validate_profile'](legacy, *(read_yaml(base / name) for name in
+                                             ('taxonomy.yaml', 'rules.yaml', 'priority-policy.yaml')))
+
     def test_invalid_executable_semantics(self):
         cases = [
             ('empty impact', lambda p, t, r, b: r['impactRules']['I1'].update(positiveSignals=[])),

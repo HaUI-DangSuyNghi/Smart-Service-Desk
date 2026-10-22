@@ -76,7 +76,11 @@ conflictRules:
         - lỗi xác thực
         - authentication error
       - - wifi vẫn hoạt động với người khác
+        - wi-fi vẫn hoạt động với người khác
+        - wi fi vẫn hoạt động với người khác
         - người khác vẫn dùng được wifi
+        - người khác vẫn dùng được wi-fi
+        - người khác vẫn dùng được wi fi
     - winnerRule: CAT-SW-001
       overruledRules:
       - CAT-NET-001
