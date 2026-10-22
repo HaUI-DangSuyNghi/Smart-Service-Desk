@@ -10,7 +10,7 @@ export default function AppLayout({ menu }: Props) {
   return (
     <div className="app">
       <header>
-        <NavLink to="/">Smart Service Desk</NavLink>
+        <NavLink to="/home">Smart Service Desk</NavLink>
       </header>
       <nav>
         <ul>

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { createAppRoutes } from "../../../src/platform/router/createAppRoutes";
-import { createAppRegistry } from "../../../src/platform/router/registry";
+import { createAppRoutes } from "../../../../src/platform/shell/router/createAppRoutes";
+import { createAppRegistry } from "../../../../src/platform/shell/router/registry";
 
 const Page = () => null;
 
@@ -39,15 +39,13 @@ describe("createAppRegistry", () => {
 });
 
 describe("createAppRoutes", () => {
-  it("đặt route của app dưới layout, có trang chủ và 404", () => {
+  it("landing công khai ở /, route của app nằm dưới layout cùng /home và 404", () => {
     const registry = createAppRegistry();
     registry.register({ id: "demo", routes: [{ path: "demo", component: Page }] });
 
-    const children = createAppRoutes(registry)[0]?.children ?? [];
-    expect(children.map((route) => (route.index ? "(index)" : route.path))).toEqual([
-      "(index)",
-      "demo",
-      "*",
-    ]);
+    const [landing, app] = createAppRoutes(registry);
+    expect(landing?.path).toBe("/");
+    expect(landing?.children?.[0]?.index).toBe(true);
+    expect(app?.children?.map((route) => route.path)).toEqual(["home", "demo", "*"]);
   });
 });

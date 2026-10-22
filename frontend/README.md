@@ -6,9 +6,12 @@ Giao diện Smart Service Desk: React + TypeScript + Vite.
 src/
 ├─ App.tsx          ghép platform với các app (nơi duy nhất import cả hai)
 ├─ platform/        Tầng 2, dùng chung, không import apps/
-│  ├─ router/       registry để app đăng ký route, menu, link process
-│  ├─ layout/       khung trang, trang chủ, 404
-│  └─ auth/ workspace/ process/ knowledge/ data/
+│  ├─ human/        H: auth/, workspace/
+│  ├─ process/      P: inbox, timeline
+│  ├─ data/         D: dashboard, audit, knowledge/
+│  ├─ intelligence/ I: hiển thị gợi ý AI
+│  ├─ shell/        vỏ ứng dụng: router/, layout/, landing/
+│  └─ shared/       dùng chung: ui/ (shadcn), lib/
 └─ apps/
    └─ servicedesk/  Tầng 3, nghiệp vụ Service Desk
 test/               test, cấu trúc giống src/

@@ -1,5 +1,5 @@
 import { lazy } from "react";
-import type { AppRegistry } from "../../platform/router/registry";
+import type { AppRegistry } from "../../platform/shell/router/registry";
 
 const TicketListPage = lazy(() => import("./pages/TicketListPage"));
 
