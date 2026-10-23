@@ -1,31 +1,25 @@
 import { Suspense } from "react";
-import { NavLink, Outlet } from "react-router";
+import { Outlet } from "react-router";
+import { Loading } from "@/platform/shared/ui/Loading";
 import type { MenuItem } from "../router/registry";
+import { AppSidebar } from "./sidebar/AppSidebar";
 
 interface Props {
   menu: readonly MenuItem[];
 }
 
-export default function AppLayout({ menu }: Props) {
+/** Khung app sau đăng nhập kiểu Twenty: sidebar xám bên trái, vùng trang trắng bên phải. */
+const AppLayout = ({ menu }: Props) => {
   return (
-    <div className="app">
-      <header>
-        <NavLink to="/home">Smart Service Desk</NavLink>
-      </header>
-      <nav>
-        <ul>
-          {menu.map((item) => (
-            <li key={item.path}>
-              <NavLink to={item.path}>{item.label}</NavLink>
-            </li>
-          ))}
-        </ul>
-      </nav>
-      <main>
-        <Suspense fallback={<p>Đang tải...</p>}>
+    <div className="crm-app flex h-svh overflow-hidden">
+      <AppSidebar appMenu={menu} />
+      <div className="relative flex min-w-0 flex-1 flex-col">
+        <Suspense fallback={<Loading />}>
           <Outlet />
         </Suspense>
-      </main>
+      </div>
     </div>
   );
-}
+};
+
+export default AppLayout;

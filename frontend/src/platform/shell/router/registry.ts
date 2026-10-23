@@ -6,9 +6,17 @@ export interface AppRoute {
   readonly component: ComponentType;
 }
 
+/** Icon cho menu; khớp component của @tabler/icons-react. */
+export type MenuIcon = ComponentType<{ size?: number; stroke?: number; className?: string }>;
+
+/** Màu icon menu (giống Twenty: mỗi mục một màu). */
+export type MenuTone = "gray" | "blue" | "red" | "green" | "orange" | "purple" | "turquoise";
+
 export interface MenuItem {
   readonly label: string;
   readonly path: string;
+  readonly icon?: MenuIcon;
+  readonly tone?: MenuTone;
 }
 
 /** Những gì một app (Tầng 3) đăng ký vào platform (Tầng 2). */
@@ -21,19 +29,19 @@ export interface AppModule {
 }
 
 export interface AppRegistry {
-  register(app: AppModule): void;
-  apps(): readonly AppModule[];
-  menu(): readonly MenuItem[];
-  processLink(processKey: string, businessKey: string): string | null;
+  register: (app: AppModule) => void;
+  apps: () => readonly AppModule[];
+  menu: () => readonly MenuItem[];
+  processLink: (processKey: string, businessKey: string) => string | null;
 }
 
-export function createAppRegistry(): AppRegistry {
+export const createAppRegistry = (): AppRegistry => {
   const modules: AppModule[] = [];
   const paths = new Set<string>();
   const links = new Map<string, (businessKey: string) => string>();
 
   return {
-    register(app) {
+    register: (app) => {
       if (!app.id || modules.some((m) => m.id === app.id)) {
         throw new Error(`App id trống hoặc bị trùng: "${app.id}"`);
       }
@@ -51,4 +59,4 @@ export function createAppRegistry(): AppRegistry {
     menu: () => modules.flatMap((m) => m.menu ?? []),
     processLink: (processKey, businessKey) => links.get(processKey)?.(businessKey) ?? null,
   };
-}
+};
