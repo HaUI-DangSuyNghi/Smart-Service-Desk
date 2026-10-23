@@ -40,7 +40,7 @@ export default defineConfig([
   },
   {
     // Component sinh từ shadcn xuất kèm biến thể (buttonVariants...), giữ nguyên để dễ cập nhật
-    files: ["src/platform/ui/**/*.tsx"],
+    files: ["src/platform/shared/ui/**/*.tsx"],
     rules: { "react-refresh/only-export-components": "off" },
   },
   prettier,
