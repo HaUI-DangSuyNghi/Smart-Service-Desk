@@ -47,6 +47,8 @@ services:
       INTELLIGENCE_TRIAGE_BASE_URL: ${INTELLIGENCE_TRIAGE_BASE_URL:-}
       INTELLIGENCE_TRIAGE_TOKEN: ${INTELLIGENCE_TRIAGE_TOKEN:-}
       JWT_JWKS: http://keycloak:8080/realms/dx-lab/protocol/openid-connect/certs
+      DX_DIRECTORY_URL: http://keycloak:8080
+      DX_DIRECTORY_CLIENT_SECRET: ${DIRECTORY_CLIENT_SECRET:?Run scripts/setup.ps1}
     volumes: ["files:/var/lib/dx/files"]
     depends_on:
       postgres: {condition: service_healthy}

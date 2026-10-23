@@ -1,4 +1,4 @@
-import { isAxiosError } from "axios";
+import { AxiosHeaders, isAxiosError, type RawAxiosHeaders } from "axios";
 
 /** Body lỗi chuẩn RFC 9457 mà backend trả về (xem Problem trong contracts/openapi/core.yaml). */
 interface ProblemBody {
@@ -34,7 +34,8 @@ export class ApiError extends Error {
     const { status, data, headers } = error.response;
     // Gateway hoặc proxy có thể trả lỗi không phải JSON
     const problem = typeof data === "object" && data !== null ? (data as ProblemBody) : {};
-    const requestId = headers["x-request-id"];
+    // Tên header không phân biệt hoa thường (gateway gửi X-Request-ID)
+    const requestId = AxiosHeaders.from(headers as RawAxiosHeaders).get("x-request-id");
     return new ApiError(status, problem, typeof requestId === "string" ? requestId : null);
   }
 }

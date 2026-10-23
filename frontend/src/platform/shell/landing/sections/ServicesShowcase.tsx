@@ -86,7 +86,8 @@ const SERVICES = [
 ];
 
 const NAVBAR_H = 64; // = h-16 của LandingHeader
-const MOBILE_BREAKPOINT = 768; // khớp breakpoint md: của Tailwind
+// Khớp lg: của Tailwind. Dưới mốc này panel 1 cột cao hơn màn hình, xếp chồng sẽ bị cắt mất phần dưới
+const STACK_BREAKPOINT = 1024;
 
 const easeInOutCubic = (t: number) => {
   return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
@@ -107,7 +108,8 @@ export const ServicesShowcase = () => {
     const panels = panelRefs.current.filter((p): p is HTMLDivElement => p !== null);
     if (!scrollArea || !stickyWrap) return;
     const N = panels.length;
-    const isMobile = () => window.innerWidth <= MOBILE_BREAKPOINT;
+    // "<" chứ không "<=": lg: của Tailwind bắt đầu từ đúng 1024px
+    const isMobile = () => window.innerWidth < STACK_BREAKPOINT;
 
     let raf: number | null = null;
     let resizeTimer: ReturnType<typeof setTimeout> | undefined;
@@ -194,10 +196,10 @@ export const ServicesShowcase = () => {
 
       {/* Vùng cuộn: chiều cao do JS đặt = N × chiều cao 1 panel */}
       <div ref={scrollAreaRef} className="relative">
-        {/* Khung dính viewport (từ md trở lên), cắt phần panel đang trượt vào */}
+        {/* Khung dính viewport (từ lg trở lên), cắt phần panel đang trượt vào */}
         <div
           ref={stickyWrapRef}
-          className="relative overflow-visible bg-white md:sticky md:overflow-hidden"
+          className="relative overflow-visible bg-white lg:sticky lg:overflow-hidden"
           style={{ top: NAVBAR_H }}
         >
           {SERVICES.map((service, i) => (
@@ -206,9 +208,9 @@ export const ServicesShowcase = () => {
               ref={(el) => {
                 panelRefs.current[i] = el;
               }}
-              className={`relative w-full bg-white px-6 py-12 md:absolute md:inset-x-0 md:top-0 lg:px-14 ${
+              className={`relative w-full bg-white px-6 py-12 lg:absolute lg:inset-x-0 lg:top-0 lg:px-14 ${
                 i > 0
-                  ? "border-t border-(--landing-border) md:rounded-t-[20px] md:shadow-[0_-8px_40px_rgba(0,0,0,0.06)]"
+                  ? "border-t border-(--landing-border) lg:rounded-t-[20px] lg:shadow-[0_-8px_40px_rgba(0,0,0,0.06)]"
                   : ""
               }`}
             >
@@ -222,7 +224,7 @@ export const ServicesShowcase = () => {
                   </span>
                 </div>
 
-                <div className="grid items-start gap-14 lg:grid-cols-2">
+                <div className="grid items-start gap-10 lg:grid-cols-2 lg:gap-14">
                   <div>
                     <h3 className="mb-4 text-[clamp(28px,3.5vw,46px)] leading-[1.1] font-extrabold tracking-tight text-(--landing-text)">
                       {service.title}

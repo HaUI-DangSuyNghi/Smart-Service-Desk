@@ -39,7 +39,7 @@ describe("createAppRegistry", () => {
 });
 
 describe("createAppRoutes", () => {
-  it("landing và callback công khai; /home, route của app và 404 nằm sau RequireAuth", () => {
+  it("landing và callback công khai; trang platform, route của app và 404 nằm sau RequireAuth", () => {
     const registry = createAppRegistry();
     registry.register({ id: "demo", routes: [{ path: "demo", component: Page }] });
 
@@ -48,6 +48,14 @@ describe("createAppRoutes", () => {
     expect(callback?.path).toBe("/auth/callback");
 
     const layout = protectedArea?.children?.[0];
-    expect(layout?.children?.map((route) => route.path)).toEqual(["home", "demo", "*"]);
+    expect(layout?.children?.map((route) => route.path)).toEqual([
+      "home",
+      "profile",
+      "members",
+      "knowledge",
+      "knowledge/:id",
+      "demo",
+      "*",
+    ]);
   });
 });

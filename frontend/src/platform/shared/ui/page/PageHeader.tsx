@@ -1,9 +1,8 @@
-import type { ReactNode } from "react";
-import type { MenuIcon } from "../../router/registry";
+import type { ComponentType, ReactNode } from "react";
 
 interface Props {
   title: string;
-  icon?: MenuIcon;
+  icon?: ComponentType<{ size?: number; stroke?: number; className?: string }>;
   /** Nút hành động bên phải, ví dụ nút xanh "Tạo ticket". */
   actions?: ReactNode;
 }

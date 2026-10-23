@@ -33,10 +33,10 @@ export const HowItWorks = () => {
           </p>
         </Reveal>
 
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
           {PILLARS.map((p, i) => (
             <Reveal key={p.title} delay={i * 80}>
-              <div className="h-full rounded-[20px] border border-(--landing-border) bg-[#f9f9fa] p-10 pb-8 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_4px_24px_rgba(0,0,0,0.14)]">
+              <div className="h-full rounded-[20px] border border-(--landing-border) bg-[#f9f9fa] p-6 transition-all lg:p-10 lg:pb-8 duration-300 hover:-translate-y-1 hover:shadow-[0_4px_24px_rgba(0,0,0,0.14)]">
                 <div className="mb-5 grid size-12 place-items-center rounded-xl border border-(--landing-border) bg-white text-(--landing-text)">
                   <p.icon className="size-6" />
                 </div>

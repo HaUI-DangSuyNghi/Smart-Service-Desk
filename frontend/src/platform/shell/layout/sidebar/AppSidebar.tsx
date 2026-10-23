@@ -1,5 +1,13 @@
-import { IconHome, IconLayoutSidebarLeftCollapse, IconLayoutSidebarLeftExpand } from "@tabler/icons-react";
+import {
+  IconBook,
+  IconUsers,
+  IconHome,
+  IconLayoutSidebarLeftCollapse,
+  IconLayoutSidebarLeftExpand,
+} from "@tabler/icons-react";
 import { cn } from "cn";
+import { hasAnyRole, useActor } from "@/platform/human/workspace";
+import { useIsMobile } from "@/platform/shared/lib/useMediaQuery";
 import type { MenuItem } from "../../router/registry";
 import { NavItem } from "./NavItem";
 import { NavSection } from "./NavSection";
@@ -7,38 +15,53 @@ import { useSidebarStore } from "./sidebarStore";
 import { WorkspaceSwitcher } from "./WorkspaceSwitcher";
 
 /** Trang của Tầng 2; chỉ liệt kê trang đã có thật. */
-const PLATFORM_MENU: readonly MenuItem[] = [{ label: "Trang chủ", path: "/home", icon: IconHome }];
+const PLATFORM_MENU: readonly MenuItem[] = [
+  { label: "Trang chủ", path: "/home", icon: IconHome },
+  { label: "Thành viên", path: "/members", icon: IconUsers, tone: "purple" },
+  { label: "Tri thức", path: "/knowledge", icon: IconBook, tone: "blue" },
+];
 
 interface Props {
   /** Menu do các app (Tầng 3) đăng ký qua registry. */
   appMenu: readonly MenuItem[];
 }
 
-/** Sidebar kiểu Twenty: nền xám nhạt, rộng 220px (thu gọn 48px), kẻ dọc ngăn với vùng trang. */
+/**
+ * Sidebar kiểu Twenty: nền xám nhạt, rộng 220px (thu gọn 48px), kẻ dọc ngăn với vùng trang.
+ * Dưới md luôn thu gọn và không có nút mở rộng: màn điện thoại không đủ chỗ cho sidebar 220px.
+ */
 export const AppSidebar = ({ appMenu }: Props) => {
-  const collapsed = useSidebarStore((state) => state.collapsed);
+  const isMobile = useIsMobile();
+  const collapsedByUser = useSidebarStore((state) => state.collapsed);
+  // Không ghi đè lựa chọn của người dùng: quay lại màn rộng thì sidebar về đúng trạng thái cũ
+  const collapsed = collapsedByUser || isMobile;
   const toggle = useSidebarStore((state) => state.toggle);
   const ToggleIcon = collapsed ? IconLayoutSidebarLeftExpand : IconLayoutSidebarLeftCollapse;
+  // Ẩn mục người dùng không đủ vai trò ở workspace đang chọn (backend vẫn tự kiểm quyền)
+  const { roles } = useActor();
+  const visibleAppMenu = appMenu.filter((item) => hasAnyRole(roles, item.requiredRoles));
 
   return (
     <aside
       className={cn(
         "flex h-full shrink-0 flex-col gap-4 border-r border-crm-line bg-crm-sidebar px-2 pt-3 pb-4",
         "transition-[width] duration-300",
-        collapsed ? "w-12 items-center" : "w-[220px]",
+        collapsed ? "w-12 items-center" : "w-55",
       )}
     >
       {/* Hàng đầu: workspace bên trái, nút thu gọn bên phải */}
       <div className={cn("flex items-center gap-1", collapsed ? "flex-col" : "justify-between")}>
         <WorkspaceSwitcher collapsed={collapsed} />
-        <button
-          type="button"
-          onClick={toggle}
-          title={collapsed ? "Mở rộng thanh bên" : "Thu gọn thanh bên"}
-          className="grid size-7 shrink-0 place-items-center rounded-crm-sm text-crm-text-3 transition-colors duration-100 hover:bg-crm-hover hover:text-crm-text"
-        >
-          <ToggleIcon size={16} stroke={2} />
-        </button>
+        {!isMobile && (
+          <button
+            type="button"
+            onClick={toggle}
+            title={collapsed ? "Mở rộng thanh bên" : "Thu gọn thanh bên"}
+            className="grid size-7 shrink-0 place-items-center rounded-crm-sm text-crm-text-3 transition-colors duration-100 hover:bg-crm-hover hover:text-crm-text"
+          >
+            <ToggleIcon size={16} stroke={2} />
+          </button>
+        )}
       </div>
 
       <nav className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto">
@@ -48,9 +71,9 @@ export const AppSidebar = ({ appMenu }: Props) => {
           ))}
         </NavSection>
 
-        {appMenu.length > 0 && (
+        {visibleAppMenu.length > 0 && (
           <NavSection title="Ứng dụng" collapsed={collapsed}>
-            {appMenu.map((item) => (
+            {visibleAppMenu.map((item) => (
               <NavItem key={item.path} item={item} collapsed={collapsed} />
             ))}
           </NavSection>

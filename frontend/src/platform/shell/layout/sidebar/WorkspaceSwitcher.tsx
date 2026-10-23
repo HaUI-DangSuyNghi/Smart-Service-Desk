@@ -1,4 +1,5 @@
-import { IconCheck, IconChevronDown, IconLogout } from "@tabler/icons-react";
+import { IconCheck, IconChevronDown, IconLogout, IconUserCircle } from "@tabler/icons-react";
+import { useNavigate } from "react-router";
 import { cn } from "cn";
 import { useAuth } from "@/platform/human/auth";
 import { useCurrentWorkspace, useMe } from "@/platform/human/workspace";
@@ -17,17 +18,18 @@ interface Props {
 
 /** Đầu sidebar kiểu Twenty: logo chữ cái + tên workspace; dropdown đổi workspace và đăng xuất. */
 export const WorkspaceSwitcher = ({ collapsed }: Props) => {
-  const { workspaces, current, select } = useCurrentWorkspace();
+  const { workspaces, current, currentName, select } = useCurrentWorkspace();
   const { data: me } = useMe();
   const { logout } = useAuth();
-  const name = current ?? "Chưa có workspace";
+  const navigate = useNavigate();
+  const name = currentName ?? "Chưa có workspace";
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
         title={collapsed ? name : undefined}
         className={cn(
-          "flex h-7 min-w-0 items-center gap-2 rounded-crm-sm px-1 text-crm-text outline-none",
+          "flex h-9 min-w-0 items-center gap-2 rounded-crm-sm px-1 text-crm-text outline-none md:h-7",
           "transition-colors duration-100 hover:bg-crm-hover data-[state=open]:bg-crm-hover",
           collapsed && "w-8 justify-center px-0",
         )}
@@ -49,10 +51,15 @@ export const WorkspaceSwitcher = ({ collapsed }: Props) => {
             <DropdownMenuLabel className="text-crm-xs font-normal text-crm-text-3">
               Workspace
             </DropdownMenuLabel>
-            {workspaces.map((workspace) => (
-              <DropdownMenuItem key={workspace} onSelect={() => select(workspace)}>
-                <span className="flex-1">{workspace}</span>
-                {workspace === current && <IconCheck size={14} stroke={2} />}
+            {workspaces.map((item) => (
+              <DropdownMenuItem key={item.workspace} onSelect={() => select(item.workspace)}>
+                <span className="flex flex-1 flex-col">
+                  <span>{item.name}</span>
+                  {item.name !== item.workspace && (
+                    <span className="text-crm-xs text-crm-text-3">{item.workspace}</span>
+                  )}
+                </span>
+                {item.workspace === current && <IconCheck size={14} stroke={2} />}
               </DropdownMenuItem>
             ))}
             <DropdownMenuSeparator />
@@ -61,6 +68,10 @@ export const WorkspaceSwitcher = ({ collapsed }: Props) => {
         <DropdownMenuLabel className="truncate text-crm-xs font-normal text-crm-text-3">
           {me?.username}
         </DropdownMenuLabel>
+        <DropdownMenuItem onSelect={() => navigate("/profile")}>
+          <IconUserCircle size={16} stroke={2} />
+          Tài khoản
+        </DropdownMenuItem>
         <DropdownMenuItem onSelect={() => void logout()}>
           <IconLogout size={16} stroke={2} />
           Đăng xuất

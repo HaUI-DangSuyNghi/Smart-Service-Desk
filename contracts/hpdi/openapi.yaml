@@ -137,6 +137,69 @@ paths:
           $ref: '#/components/responses/NotFound'
         '409':
           $ref: '#/components/responses/Conflict'
+  /api/hpdi/v1/workspaces:
+    get:
+      description: Workspace của người gọi (theo token) kèm tên hiển thị và vai trò, cho ô chọn workspace.
+      responses:
+        '200':
+          description: Workspace của người gọi
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WorkspaceContext'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /api/hpdi/v1/workspaces/{workspace}/members:
+    parameters:
+    - *id001
+    get:
+      description: Thành viên workspace (danh bạ từ Keycloak); chỉ thành viên workspace được xem. Chỉ để hiển thị, không cấp quyền.
+      responses:
+        '200':
+          description: Thành viên, sắp theo username
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WorkspaceMember'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /api/hpdi/v1/workspaces/{workspace}/knowledge:
+    parameters:
+    - *id001
+    get:
+      description: Knowledge Hub – tài liệu văn bản (text/plain, text/markdown) của workspace, mới nhất trước.
+      parameters:
+      - name: q
+        in: query
+        description: Tìm theo tiêu đề, không phân biệt hoa thường
+        schema:
+          type: string
+          maxLength: 200
+      - $ref: '#/components/parameters/Page'
+      - $ref: '#/components/parameters/Size'
+      responses:
+        '200':
+          description: Một trang tài liệu
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KnowledgePage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
   /api/hpdi/v1/workspaces/{workspace}/knowledge/{id}:
     parameters:
     - *id001
@@ -196,6 +259,7 @@ components:
           - CONFLICT
           - PAYLOAD_TOO_LARGE
           - UNSUPPORTED_MEDIA_TYPE
+          - SERVICE_UNAVAILABLE
         requestId:
           type: string
           description: Trùng header X-Request-ID
@@ -399,6 +463,7 @@ components:
       - usageRights
       - mediaType
       - content
+      - text
       properties:
         workspace:
           type: string
@@ -418,6 +483,93 @@ components:
         content:
           type: string
           format: byte
+        text:
+          type: string
+          description: Cùng nội dung với content, đã giải UTF-8 để hiển thị
+    WorkspaceContext:
+      type: object
+      required:
+      - workspace
+      - name
+      - roles
+      properties:
+        workspace:
+          type: string
+        name:
+          type: string
+          description: Tên hiển thị (thuộc tính displayName của group Keycloak); không có thì bằng workspace
+        roles:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+    WorkspaceMember:
+      type: object
+      required:
+      - subject
+      - username
+      - fullName
+      - roles
+      properties:
+        subject:
+          type: string
+          description: sub của Keycloak, trùng owner/actor ở các API khác
+        username:
+          type: string
+        fullName:
+          type: string
+          nullable: true
+        roles:
+          type: array
+          uniqueItems: true
+          items:
+            type: string
+    KnowledgeSummary:
+      type: object
+      required:
+      - id
+      - workspace
+      - title
+      - source
+      - version
+      - usageRights
+      - owner
+      - ownerName
+      - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        workspace:
+          type: string
+        title:
+          type: string
+        source:
+          type: string
+        version:
+          type: string
+        usageRights:
+          type: string
+        owner:
+          type: string
+        ownerName:
+          type: string
+          nullable: true
+          description: Tên người tạo theo danh bạ; null khi danh bạ không phản hồi hoặc người tạo đã rời workspace
+        createdAt:
+          type: string
+          format: date-time
+    KnowledgePage:
+      allOf:
+      - $ref: '#/components/schemas/PageMeta'
+      - type: object
+        required:
+        - items
+        properties:
+          items:
+            type: array
+            items:
+              $ref: '#/components/schemas/KnowledgeSummary'
           description: Authorized exact bytes, Base64 encoded
     TriageSuggestion:
       type: object
@@ -491,6 +643,12 @@ components:
         type: string
         example: lab-a
   responses:
+    ServiceUnavailable:
+      description: SERVICE_UNAVAILABLE – dịch vụ phụ thuộc (danh bạ Keycloak) không phản hồi, thử lại sau
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
     Conflict:
       description: Duplicate business key or task transition is no longer valid
       content:

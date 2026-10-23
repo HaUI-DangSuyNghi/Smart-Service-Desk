@@ -1,5 +1,5 @@
 import { IconTicket } from "@tabler/icons-react";
-import { Page, PageBody, PageHeader } from "../../../platform/shell/layout/page";
+import { Page, PageBody, PageHeader } from "../../../platform/shared/ui/page";
 
 const TicketListPage = () => {
   return (

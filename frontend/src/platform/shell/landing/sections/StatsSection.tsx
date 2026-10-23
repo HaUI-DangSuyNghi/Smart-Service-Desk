@@ -58,7 +58,8 @@ export const StatsSection = () => {
           </div>
         </div>
 
-        <div className="mt-10 grid grid-cols-2 divide-x divide-(--landing-border) border-t border-(--landing-border) pt-8 sm:grid-cols-4">
+        {/* Kẻ dọc chỉ khi 4 số nằm 1 hàng; lưới 2×2 trên điện thoại mà kẻ thì ô đầu hàng 2 bị dính vạch */}
+        <div className="mt-10 grid grid-cols-2 gap-y-8 border-t border-(--landing-border) pt-8 sm:grid-cols-4 sm:divide-x sm:divide-(--landing-border)">
           {STATS.map(([value, label]) => (
             <div key={label} className="px-4 text-center">
               <div className="mb-1.5 text-[clamp(28px,3vw,42px)] leading-none font-black tracking-tight text-(--landing-text)">

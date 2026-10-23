@@ -72,7 +72,7 @@ export const Hero = () => {
       <Particles />
 
       <div className="relative mx-auto max-w-295">
-        <Reveal className="mb-8 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/5 px-5 py-2.5 text-sm font-bold text-white/70 backdrop-blur-sm">
+        <Reveal className="mb-8 inline-flex max-w-full flex-wrap items-center justify-center gap-2 rounded-full border border-white/20 bg-white/5 px-4 py-2.5 text-xs font-bold text-white/70 backdrop-blur-sm sm:px-5 sm:text-sm">
           <span className="animate-pulse-dot size-2 rounded-full bg-(--landing-lime)" />
           <span className="text-(--landing-lime)">DX-OS</span>
           Open-Core · H-P-D-I · Ứng dụng nghiệp vụ
