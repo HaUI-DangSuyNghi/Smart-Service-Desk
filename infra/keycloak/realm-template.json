@@ -83,6 +83,15 @@
     {
       "username": "user7", "enabled": true, "email": "user7@example.com", "emailVerified": true,
       "firstName": "Demo", "lastName": "Administrator", "groups": [], "realmRoles": ["platform-admin"]
+    },
+    {
+      "username": "superadmin", "enabled": true, "email": "superadmin@example.com", "emailVerified": true,
+      "firstName": "Demo", "lastName": "Super Admin",
+      "groups": [
+        "/workspaces/lab-a/requester", "/workspaces/lab-a/agent", "/workspaces/lab-a/coordinator",
+        "/workspaces/lab-b/requester", "/workspaces/lab-b/agent", "/workspaces/lab-b/coordinator"
+      ],
+      "realmRoles": ["platform-admin"]
     }
   ]
 }
