@@ -76,3 +76,58 @@ and reference provider; it has no model dependency or external network access.
 AI06-02 owns governed model selection and prompt security. AI06-03 owns reviewed
 grounding evaluation. AI06-04 owns ticket-scoped integration, final freshness and
 public contract validation. None of these promotion decisions is implied here.
+
+## AI06-02 provider appendix
+
+`generation/local_selection.py` implements a dormant, pinned selection provider.
+The existing provider protocol, deterministic reference, assistance contracts and
+exact-quotation gate retain their behavior. No application route enables it.
+
+Trusted construction requires `enabled=True`, a validated `ModelManifest`, an
+offline model directory, a trusted `TokenCounter`, a `SelectionTransport` and
+an application policy identity. Production defaults remain off.
+
+The concrete transport supports literal loopback HTTP/HTTPS origins with an
+explicit port. Container private-network and authenticated mTLS transport are
+deferred until deployment review. Proxy environment variables are ignored.
+
+### Sidecar wire protocol
+
+`GET /v1/identity` must return HTTP 200, exact `application/json`, bounded
+`Content-Length`, no compression or transfer encoding, and exactly:
+
+```json
+{
+  "manifest_digest": "sha256:<approved canonical manifest digest>",
+  "capabilities": [],
+  "logging": "disabled",
+  "egress": "denied"
+}
+```
+
+`POST /v1/select` receives the manifest digest, three fixed roles, temperature 0,
+bounded `max_tokens`, `stream: false` and a citation-only `response_schema`.
+The user message is a JSON string containing only question and alias/excerpt
+pairs. The developer message contains the caller's policy instructions.
+No provenance, authorization headers, tools or source resolvers are serialized.
+
+The response uses the same HTTP bounds and exactly three fields:
+
+```json
+{
+  "manifest_digest": "sha256:<same approved canonical manifest digest>",
+  "finish_reason": "stop",
+  "selection": {"decision": "SELECT", "citation_ids": ["C1"]}
+}
+```
+
+`REFUSE` requires an empty alias array. Unknown/duplicate aliases, extra fields,
+duplicate JSON keys, floats/nonfinite numbers, deep structures, invalid UTF-8,
+partial output, content-filter/length finish reasons and identity drift fail
+closed. Selected aliases are mapped in original evidence order to exact quotes.
+
+This protocol requires a reviewed serving-engine wrapper and offline tokenizer
+adapter; neither is presented as an already approved Qwen deployment. A serving
+assertion cannot prove egress denial, disabled logs or actual image execution.
+See [ADR-005](../decisions/ADR-005-governed-generation-provider.md) and the
+[model approval record](../governance/ai06-model-selection.md).
