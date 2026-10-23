@@ -1,5 +1,8 @@
+import { QueryClientProvider } from "@tanstack/react-query";
 import { createBrowserRouter, RouterProvider } from "react-router";
 import { registerServiceDesk } from "./apps/servicedesk";
+import { AuthProvider, httpAuth } from "./platform/human/auth";
+import { configureHttpAuth, queryClient } from "./platform/shared/api";
 import { createAppRoutes } from "./platform/shell/router/createAppRoutes";
 import { createAppRegistry } from "./platform/shell/router/registry";
 
@@ -9,6 +12,16 @@ registerServiceDesk(registry);
 
 const router = createBrowserRouter(createAppRoutes(registry));
 
-export default function App() {
-  return <RouterProvider router={router} />;
-}
+configureHttpAuth(httpAuth);
+
+const App = () => {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <RouterProvider router={router} />
+      </AuthProvider>
+    </QueryClientProvider>
+  );
+};
+
+export default App;

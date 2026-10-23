@@ -34,7 +34,7 @@ interface DropdownProps {
   scrolled: boolean;
 }
 
-function DesktopDropdown({ label, children, wide, scrolled }: DropdownProps) {
+const DesktopDropdown = ({ label, children, wide, scrolled }: DropdownProps) => {
   return (
     <div className="group relative">
       <button
@@ -56,16 +56,16 @@ function DesktopDropdown({ label, children, wide, scrolled }: DropdownProps) {
       </div>
     </div>
   );
-}
+};
 
-export function LandingHeader() {
+export const LandingHeader = () => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
-    function onScroll() {
+    const onScroll = () => {
       setScrolled(window.scrollY > 10);
-    }
+    };
     window.addEventListener("scroll", onScroll);
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
@@ -212,4 +212,4 @@ export function LandingHeader() {
       </div>
     </>
   );
-}
+};

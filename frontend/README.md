@@ -10,8 +10,9 @@ src/
 │  ├─ process/      P: inbox, timeline
 │  ├─ data/         D: dashboard, audit, knowledge/
 │  ├─ intelligence/ I: hiển thị gợi ý AI
+│  ├─ services/     mọi lời gọi API của Tầng 2 (axios)
 │  ├─ shell/        vỏ ứng dụng: router/, layout/, landing/
-│  └─ shared/       dùng chung: ui/ (shadcn), lib/
+│  └─ shared/       dùng chung: api/ (axios client), ui/ (shadcn), lib/
 └─ apps/
    └─ servicedesk/  Tầng 3, nghiệp vụ Service Desk
 test/               test, cấu trúc giống src/
@@ -19,6 +20,7 @@ test/               test, cấu trúc giống src/
 
 ```bash
 npm install
+cp .env.example .env  # cấu hình đăng nhập Keycloak
 npm run dev        # http://localhost:5173, /api chuyển tới gateway :9080
 npm run format     # format toàn bộ src
 ```

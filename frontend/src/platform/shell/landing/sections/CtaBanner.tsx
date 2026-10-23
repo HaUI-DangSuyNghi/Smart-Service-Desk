@@ -3,7 +3,7 @@ import { ArrowRight } from "lucide-react";
 import { APP_HOME, REPO_URL } from "../links";
 import { Reveal } from "../Reveal";
 
-export function CtaBanner() {
+export const CtaBanner = () => {
   return (
     <section className="relative overflow-hidden bg-linear-to-br from-(--landing-accent) via-[#3f5a16] to-[#1a260d] px-6 py-20 text-center">
       <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_50%,rgba(135,202,37,0.2)_0%,transparent_60%),radial-gradient(circle_at_70%_50%,rgba(255,255,255,0.05)_0%,transparent_60%)]" />
@@ -37,4 +37,4 @@ export function CtaBanner() {
       </Reveal>
     </section>
   );
-}
+};

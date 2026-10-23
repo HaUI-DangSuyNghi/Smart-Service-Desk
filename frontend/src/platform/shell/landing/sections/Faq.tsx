@@ -33,7 +33,7 @@ interface FaqItemProps {
   onToggle: () => void;
 }
 
-function FaqItem({ item, isOpen, onToggle }: FaqItemProps) {
+const FaqItem = ({ item, isOpen, onToggle }: FaqItemProps) => {
   return (
     <div className="border-b border-(--landing-border)">
       <button
@@ -65,9 +65,9 @@ function FaqItem({ item, isOpen, onToggle }: FaqItemProps) {
       </div>
     </div>
   );
-}
+};
 
-export function Faq() {
+export const Faq = () => {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
 
   return (
@@ -107,4 +107,4 @@ export function Faq() {
       </div>
     </section>
   );
-}
+};

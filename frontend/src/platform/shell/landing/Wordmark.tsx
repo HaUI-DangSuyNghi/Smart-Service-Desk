@@ -2,7 +2,7 @@ import { LifeBuoy } from "lucide-react";
 import { cn } from "cn";
 
 /** Logo chữ thay cho logo ảnh. */
-export function Wordmark({ light }: { light: boolean }) {
+export const Wordmark = ({ light }: { light: boolean }) => {
   return (
     <span
       className={cn(
@@ -16,4 +16,4 @@ export function Wordmark({ light }: { light: boolean }) {
       Smart Service Desk
     </span>
   );
-}
+};

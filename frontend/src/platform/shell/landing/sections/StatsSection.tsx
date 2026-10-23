@@ -26,7 +26,7 @@ const STATS = [
   ["3", "vai trò nghiệp vụ"],
 ];
 
-export function StatsSection() {
+export const StatsSection = () => {
   return (
     <section className="bg-(--landing-bg-soft) px-6 py-16 lg:px-8">
       <Reveal className="mx-auto max-w-360 overflow-hidden rounded-[28px] border border-(--landing-border) bg-white p-8 sm:p-12">
@@ -71,4 +71,4 @@ export function StatsSection() {
       </Reveal>
     </section>
   );
-}
+};

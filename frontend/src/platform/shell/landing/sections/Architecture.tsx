@@ -21,7 +21,7 @@ const FLOW_ROWS = [
   ],
 ];
 
-function Connector({ direction = "right" }: { direction?: "right" | "down" }) {
+const Connector = ({ direction = "right" }: { direction?: "right" | "down" }) => {
   const Icon = direction === "right" ? ArrowRight : ArrowDown;
   return (
     <div className="flex shrink-0 items-center justify-center">
@@ -30,9 +30,9 @@ function Connector({ direction = "right" }: { direction?: "right" | "down" }) {
       </span>
     </div>
   );
-}
+};
 
-export function Architecture() {
+export const Architecture = () => {
   return (
     <section
       id="architecture"
@@ -75,4 +75,4 @@ export function Architecture() {
       </div>
     </section>
   );
-}
+};

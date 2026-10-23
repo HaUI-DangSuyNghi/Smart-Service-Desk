@@ -1,14 +1,16 @@
-import { Outlet } from "react-router";
 import { LandingFooter } from "./LandingFooter";
 import { LandingHeader } from "./LandingHeader";
+import LandingPage from "./LandingPage";
 import "./landing.css";
 
-export default function LandingLayout() {
+const LandingLayout = () => {
   return (
     <div className="landing min-h-svh">
       <LandingHeader />
-      <Outlet />
+      <LandingPage />
       <LandingFooter />
     </div>
   );
-}
+};
+
+export default LandingLayout;

@@ -9,7 +9,7 @@ interface Props {
 }
 
 /** Hiện dần phần tử khi cuộn tới. */
-export function Reveal({ as: Tag = "div", delay = 0, className, children }: Props) {
+export const Reveal = ({ as: Tag = "div", delay = 0, className, children }: Props) => {
   const ref = useRef<HTMLElement>(null);
   const [visible, setVisible] = useState(false);
 
@@ -42,4 +42,4 @@ export function Reveal({ as: Tag = "div", delay = 0, className, children }: Prop
       {children}
     </Tag>
   );
-}
+};

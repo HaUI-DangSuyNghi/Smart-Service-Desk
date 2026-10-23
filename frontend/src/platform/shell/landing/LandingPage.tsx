@@ -8,7 +8,7 @@ import { SecuritySection } from "./sections/SecuritySection";
 import { ServicesShowcase } from "./sections/ServicesShowcase";
 import { StatsSection } from "./sections/StatsSection";
 
-export default function LandingPage() {
+const LandingPage = () => {
   return (
     <>
       <Hero />
@@ -22,4 +22,6 @@ export default function LandingPage() {
       <CtaBanner />
     </>
   );
-}
+};
+
+export default LandingPage;

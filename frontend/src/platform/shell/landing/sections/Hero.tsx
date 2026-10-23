@@ -27,7 +27,7 @@ const PARTICLES = Array.from({ length: 18 }, (_, i) => ({
   color: ["rgba(82,123,20,0.35)", "rgba(135,202,37,0.35)"][i % 2],
 }));
 
-function Particles() {
+const Particles = () => {
   return (
     <div className="pointer-events-none absolute inset-0 overflow-hidden">
       {PARTICLES.map((p) => (
@@ -47,9 +47,9 @@ function Particles() {
       ))}
     </div>
   );
-}
+};
 
-function ScreenshotPlaceholder({ className, label }: { className?: string; label: string }) {
+const ScreenshotPlaceholder = ({ className, label }: { className?: string; label: string }) => {
   return (
     <div className={className}>
       <div className="relative flex aspect-16/10 items-center justify-center overflow-hidden rounded-2xl border border-(--landing-border) bg-linear-to-br from-(--landing-accent-soft) to-(--landing-lime-soft) shadow-[0_8px_40px_rgba(82,123,20,0.12)]">
@@ -59,9 +59,9 @@ function ScreenshotPlaceholder({ className, label }: { className?: string; label
       </div>
     </div>
   );
-}
+};
 
-export function Hero() {
+export const Hero = () => {
   return (
     <section
       id="top"
@@ -152,4 +152,4 @@ export function Hero() {
       </div>
     </section>
   );
-}
+};

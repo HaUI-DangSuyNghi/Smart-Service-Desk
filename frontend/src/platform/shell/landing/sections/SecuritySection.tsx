@@ -19,7 +19,7 @@ const ITEMS = [
   },
 ];
 
-export function SecuritySection() {
+export const SecuritySection = () => {
   return (
     <section className="bg-(--landing-bg-soft) px-6 py-16 lg:px-8">
       <Reveal className="relative mx-auto max-w-360 overflow-hidden rounded-[28px] border border-(--landing-border) bg-white p-8 sm:p-12">
@@ -52,4 +52,4 @@ export function SecuritySection() {
       </Reveal>
     </section>
   );
-}
+};

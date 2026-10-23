@@ -39,7 +39,7 @@ const COLUMNS = [
   },
 ];
 
-export function LandingFooter() {
+export const LandingFooter = () => {
   return (
     <footer className="bg-[#0c0f0e] px-6 py-16 lg:px-8">
       <div className="mx-auto max-w-360">
@@ -109,4 +109,4 @@ export function LandingFooter() {
       </div>
     </footer>
   );
-}
+};

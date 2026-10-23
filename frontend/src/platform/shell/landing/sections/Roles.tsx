@@ -30,7 +30,7 @@ const ROLES = [
   },
 ];
 
-export function Roles() {
+export const Roles = () => {
   return (
     <section
       id="roles"
@@ -74,4 +74,4 @@ export function Roles() {
       </div>
     </section>
   );
-}
+};

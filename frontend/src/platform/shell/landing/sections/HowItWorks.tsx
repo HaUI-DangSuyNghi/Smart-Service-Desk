@@ -19,7 +19,7 @@ const PILLARS = [
   },
 ];
 
-export function HowItWorks() {
+export const HowItWorks = () => {
   return (
     <section id="how" className="bg-(--landing-bg-soft) px-6 py-20 lg:px-8">
       <div className="mx-auto max-w-360">
@@ -49,4 +49,4 @@ export function HowItWorks() {
       </div>
     </section>
   );
-}
+};

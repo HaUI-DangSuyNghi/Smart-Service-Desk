@@ -39,13 +39,15 @@ describe("createAppRegistry", () => {
 });
 
 describe("createAppRoutes", () => {
-  it("landing công khai ở /, route của app nằm dưới layout cùng /home và 404", () => {
+  it("landing và callback công khai; /home, route của app và 404 nằm sau RequireAuth", () => {
     const registry = createAppRegistry();
     registry.register({ id: "demo", routes: [{ path: "demo", component: Page }] });
 
-    const [landing, app] = createAppRoutes(registry);
+    const [landing, callback, protectedArea] = createAppRoutes(registry);
     expect(landing?.path).toBe("/");
-    expect(landing?.children?.[0]?.index).toBe(true);
-    expect(app?.children?.map((route) => route.path)).toEqual(["home", "demo", "*"]);
+    expect(callback?.path).toBe("/auth/callback");
+
+    const layout = protectedArea?.children?.[0];
+    expect(layout?.children?.map((route) => route.path)).toEqual(["home", "demo", "*"]);
   });
 });

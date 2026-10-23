@@ -88,15 +88,15 @@ const SERVICES = [
 const NAVBAR_H = 64; // = h-16 của LandingHeader
 const MOBILE_BREAKPOINT = 768; // khớp breakpoint md: của Tailwind
 
-function easeInOutCubic(t: number) {
+const easeInOutCubic = (t: number) => {
   return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
-}
+};
 
-function clamp(v: number, min: number, max: number) {
+const clamp = (v: number, min: number, max: number) => {
   return Math.min(Math.max(v, min), max);
-}
+};
 
-export function ServicesShowcase() {
+export const ServicesShowcase = () => {
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   const stickyWrapRef = useRef<HTMLDivElement>(null);
   const panelRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -114,7 +114,7 @@ export function ServicesShowcase() {
     let cancelled = false;
 
     // Đo panel cao nhất, đẩy panel 2..N xuống dưới, đặt chiều cao vùng cuộn = N panel
-    function setup() {
+    const setup = () => {
       if (!scrollArea || !stickyWrap) return;
       if (isMobile()) {
         scrollArea.style.height = "auto";
@@ -129,10 +129,10 @@ export function ServicesShowcase() {
       for (let i = 1; i < N; i++) panels[i]!.style.transform = "translateY(100%)";
       stickyWrap.style.height = `${panelH}px`;
       scrollArea.style.height = `${panelH * N}px`;
-    }
+    };
 
     // Mỗi lần cuộn: tính tiến độ [0,1] trong vùng cuộn, chia đều cho từng panel trượt lên
-    function onScroll() {
+    const onScroll = () => {
       if (!scrollArea || !stickyWrap || isMobile()) return;
       const areaTop = scrollArea.getBoundingClientRect().top + window.scrollY;
       const scrollStart = areaTop - NAVBAR_H;
@@ -147,18 +147,18 @@ export function ServicesShowcase() {
         const localT = clamp((progress - panelStart) / (panelEnd - panelStart), 0, 1);
         panels[i]!.style.transform = `translateY(${(1 - easeInOutCubic(localT)) * 100}%)`;
       }
-    }
+    };
 
-    function tick() {
+    const tick = () => {
       onScroll();
       raf = requestAnimationFrame(tick);
-    }
+    };
 
-    function start() {
+    const start = () => {
       if (cancelled) return;
       setup();
       raf = requestAnimationFrame(tick);
-    }
+    };
 
     if (document.fonts?.ready) {
       document.fonts.ready.then(start);
@@ -166,10 +166,10 @@ export function ServicesShowcase() {
       setTimeout(start, 300);
     }
 
-    function onResize() {
+    const onResize = () => {
       clearTimeout(resizeTimer);
       resizeTimer = setTimeout(setup, 150);
-    }
+    };
     window.addEventListener("resize", onResize, { passive: true });
 
     return () => {
@@ -274,4 +274,4 @@ export function ServicesShowcase() {
       </div>
     </section>
   );
-}
+};
