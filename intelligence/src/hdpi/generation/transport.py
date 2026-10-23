@@ -191,6 +191,9 @@ class LoopbackSelectionTransport:
                 chunk = response.read1(min(1024, length - received))
 
                 if not chunk:
+                    if expired.is_set() or monotonic() >= deadline:
+                        raise GenerationTimeout('Inference deadline exceeded')
+
                     raise GenerationContractError('Incomplete inference response')
 
                 chunks.append(chunk)
@@ -202,11 +205,16 @@ class LoopbackSelectionTransport:
             return InferenceResponse(200, 'application/json', b''.join(chunks))
         except (TimeoutError, socket.timeout):
             raise GenerationTimeout('Inference deadline exceeded') from None
-        except (OSError, http.client.HTTPException):
+        except OSError:
             if expired.is_set() or monotonic() >= deadline:
                 raise GenerationTimeout('Inference deadline exceeded') from None
 
             raise GenerationUnavailable('Inference connection failed') from None
+        except http.client.HTTPException:
+            if expired.is_set() or monotonic() >= deadline:
+                raise GenerationTimeout('Inference deadline exceeded') from None
+
+            raise GenerationContractError('Invalid inference HTTP response') from None
         except (GenerationContractError, GenerationTimeout):
             raise
         except Exception:

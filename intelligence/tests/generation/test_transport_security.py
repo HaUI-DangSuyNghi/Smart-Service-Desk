@@ -1,9 +1,11 @@
 from contextlib import contextmanager
 from dataclasses import replace
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
+import http.client
 import json
 from threading import Event, Thread
 from time import monotonic
+from unittest.mock import Mock
 
 import pytest
 
@@ -165,3 +167,32 @@ def test_untrusted_transport_response_types_are_not_coerced(response):
 
     assert 'DUMMY_CANARY' not in str(caught.value)
     assert 'DUMMY_CANARY' not in repr(response)
+
+
+@pytest.mark.parametrize(
+    'failure,expected',
+    [
+        (http.client.BadStatusLine('DUMMY_CANARY'), GenerationContractError),
+        (http.client.LineTooLong('DUMMY_CANARY'), GenerationContractError),
+        (http.client.UnknownProtocol('DUMMY_CANARY'), GenerationContractError),
+        (http.client.RemoteDisconnected('DUMMY_CANARY'), GenerationUnavailable),
+    ],
+)
+def test_http_protocol_violations_are_hard_failures_and_disconnect_is_outage(
+    monkeypatch,
+    failure,
+    expected,
+):
+    connection = Mock()
+    connection.getresponse.side_effect = failure
+    monkeypatch.setattr(
+        'hdpi.generation.transport.http.client.HTTPConnection',
+        Mock(return_value=connection),
+    )
+    transport = LoopbackSelectionTransport(endpoint='http://127.0.0.1:8000')
+
+    with pytest.raises(expected) as caught:
+        transport.select(b'{}', limits=InferenceLimits())
+
+    assert 'DUMMY_CANARY' not in str(caught.value)
+    assert caught.value.__suppress_context__
