@@ -99,3 +99,42 @@ def test_matrix_equivalence_detects_drift(provider, working, tmp_path, mutation)
             equivalence.verify(left, right)
     else:
         equivalence.verify(left, right)
+
+
+@pytest.mark.parametrize('mutation', [None, 'normalization', 'bm25', 'dense', 'hybrid-child',
+                                    'query', 'model', 'projection', 'freeze-association'])
+def test_current_gate_rejects_matching_stale_evidence(provider, working, tmp_path, mutation):
+    reports, summary = evaluate_matrix(working, candidates(provider))
+    systems = summary['freeze']['systems']
+    changes = {
+        'normalization': ('B0_TFIDF', 'normalizationVersion', 'text-normalization@0.1.0'),
+        'bm25': ('B1_BM25', 'engineConfigVersion', 'bm25-config@0.1.0'),
+        'dense': ('B2_DENSE', 'engineConfigVersion', 'dense-e5-cpu-config@0.1.0'),
+        'hybrid-child': ('B3_HYBRID', 'denseEngineConfigVersion', 'dense-e5-cpu-config@0.1.0'),
+        'query': ('B0_TFIDF', 'queryStrategyVersion', 'title-newline-description@0.1.0'),
+        'model': ('B2_DENSE', 'modelArtifactDigest', 'sha256:' + '0' * 64),
+        'projection': ('B3_HYBRID', 'projectionVersion', 'old-projection'),
+    }
+    if mutation in changes:
+        key, field, value = changes[mutation]
+        systems[key][field] = value
+        reports[key]['system'][field] = value
+        fields = ('dataset', 'components', 'system', 'evaluatorVersion', 'metricVersion')
+        reports[key]['fingerprint'] = equivalence.digest({f: reports[key][f] for f in fields})
+        summary['reports'][key]['fingerprint'] = reports[key]['fingerprint']
+    elif mutation == 'freeze-association':
+        summary['freeze']['dataset'] = {'id': 'foreign'}
+    summary['freezeDigest'] = equivalence.digest(summary['freeze'])
+    left, right = tmp_path / 'left', tmp_path / 'right'
+    for directory in (left, right):
+        directory.mkdir()
+        for name, report in reports.items():
+            write_report(report, directory / (name.lower().replace('_', '-') + '-report.json'))
+        (directory / 'v02-comparison-summary.json').write_text(json.dumps(summary), encoding='utf-8')
+    # Both sides and their digests agree: equality alone cannot catch this drift.
+    equivalence.verify(left, right)
+    if mutation:
+        with pytest.raises(ValueError, match='identity|association'):
+            equivalence.verify(left, right, require_current_identities=True)
+    else:
+        equivalence.verify(left, right, require_current_identities=True)

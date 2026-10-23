@@ -234,7 +234,7 @@ jobs:
           python -I scripts/intelligence/knowledge-data.py --installed provisional-compare
           --model-directory .local/ai0502-model --output .local/ai0503/v02-wheel
       - name: Require source and wheel graded working-data evidence to agree
-        run: python -I scripts/intelligence/verify-candidate-matrix.py .local/ai0503/v02-source .local/ai0503/v02-wheel
+        run: python -I scripts/intelligence/verify-candidate-matrix.py --require-current-identities .local/ai0503/v02-source .local/ai0503/v02-wheel
       - name: Retain safe Hybrid and working-dataset comparison evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
@@ -285,7 +285,7 @@ jobs:
       - name: Require identical Hybrid rankings and child identities
         run: python3 -I scripts/intelligence/verify-knowledge-evidence.py --hybrid .local/ai0503-linux/wheel .local/ai0503-windows/wheel
       - name: Require identical working v0.2 graded evidence and provenance
-        run: python3 -I scripts/intelligence/verify-candidate-matrix.py .local/ai0503-linux/v02-wheel .local/ai0503-windows/v02-wheel
+        run: python3 -I scripts/intelligence/verify-candidate-matrix.py --require-current-identities .local/ai0503-linux/v02-wheel .local/ai0503-windows/v02-wheel
   knowledge-data-quality:
     runs-on: ubuntu-24.04
     timeout-minutes: 10
