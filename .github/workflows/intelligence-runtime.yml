@@ -68,6 +68,8 @@ jobs:
         run: python scripts/intelligence/knowledge-data.py compare --output .local/ai045/source
       - name: Source grounded assistance foundation evidence
         run: python scripts/intelligence/generation-evidence.py --output .local/ai06/source.json
+      - name: Source governed selector security contract evidence
+        run: python scripts/intelligence/ai06-provider-evidence.py --mode fake --output .local/ai06-provider/source.json
       - name: Source A2 TF-IDF versus BM25 engine comparison
         run: python scripts/intelligence/knowledge-data.py engine-compare --output .local/ai05/a2-source
       - name: Source BM25 candidate against historical A0 compatibility controls
@@ -102,6 +104,18 @@ jobs:
         run: python -I scripts/intelligence/generation-evidence.py --installed --output .local/ai06/wheel.json
       - name: Require identical generation source and wheel evidence
         run: python -I scripts/intelligence/generation-evidence.py --compare .local/ai06/source.json .local/ai06/wheel.json
+      - name: Installed wheel governed selector security contract evidence
+        run: python -I scripts/intelligence/ai06-provider-evidence.py --installed --mode fake --output .local/ai06-provider/wheel.json
+      - name: Require current selector identities and source wheel equivalence
+        run: python -I scripts/intelligence/verify-ai06-provider-evidence.py --installed .local/ai06-provider/source.json .local/ai06-provider/wheel.json
+      - name: Retain content-free synthetic selector evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ai06-provider-${{ matrix.os }}
+          path: .local/ai06-provider/*.json
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7
       - name: Retain safe generation foundation evidence
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
@@ -354,6 +368,13 @@ jobs:
           gh run download "$RUN_ID" --name ai05-bm25-windows-2022 --dir .local/ai05-windows
           gh run download "$RUN_ID" --name ai06-foundation-ubuntu-24.04 --dir .local/ai06-linux
           gh run download "$RUN_ID" --name ai06-foundation-windows-2022 --dir .local/ai06-windows
+          gh run download "$RUN_ID" --name ai06-provider-ubuntu-24.04 --dir .local/ai06-provider-linux
+          gh run download "$RUN_ID" --name ai06-provider-windows-2022 --dir .local/ai06-provider-windows
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version-file: intelligence/.python-version
+      - name: Require equivalent current selector contracts across operating systems
+        run: python -I scripts/intelligence/verify-ai06-provider-evidence.py .local/ai06-provider-linux/wheel.json .local/ai06-provider-windows/wheel.json
       - name: Require equivalent generation foundation evidence across operating systems
         run: python3 -I scripts/intelligence/generation-evidence.py --compare .local/ai06-linux/wheel.json .local/ai06-windows/wheel.json
       - name: Require equivalent rankings metrics gates and fingerprints
