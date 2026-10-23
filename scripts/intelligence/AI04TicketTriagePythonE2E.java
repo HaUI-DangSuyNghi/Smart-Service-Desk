@@ -76,7 +76,7 @@ class AI04TicketTriagePythonE2E {
         var result = mvc.perform(post(route + "/triage").with(owner)).andExpect(status().is(expected));
         if (expected == 200) {
             result.andExpect(jsonPath("$.status").value("SUCCESS"))
-                .andExpect(jsonPath("$.runtime.profileVersion").value("service-desk@0.2.0"))
+                .andExpect(jsonPath("$.runtime.profileVersion").value("service-desk@0.3.0"))
                 .andExpect(jsonPath("$.workspaceId").value(workspace))
                 .andExpect(jsonPath("$.contractVersion").value("0.1.0"));
         } else {

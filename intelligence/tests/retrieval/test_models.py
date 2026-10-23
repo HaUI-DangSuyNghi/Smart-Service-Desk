@@ -21,7 +21,7 @@ def test_runtime_source_integrity_and_immutability():
 
 def test_partition_exact_versions_and_scope():
     ctx = TrustedContext(workspace_id='w', auth_scope_fingerprint='opaque-v1')
-    key = PartitionKey(workspace_id='w', profile_id='service-desk', profile_version='0.2.0',
+    key = PartitionKey(workspace_id='w', profile_id='service-desk', profile_version='0.3.0',
                        access_scope_hash=scope_hash(ctx), corpus_version='v1')
     key.authorize(ctx)
     for changed in (replace(ctx, workspace_id='foreign'), replace(ctx, auth_scope_fingerprint='new')):

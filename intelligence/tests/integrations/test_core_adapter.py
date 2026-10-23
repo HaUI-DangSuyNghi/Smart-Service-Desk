@@ -70,7 +70,7 @@ def core_http():
 def test_http_adapter_end_to_end_and_equivalent_scope(core_http):
     state, _, adapter = core_http
     context = adapter.trusted_context()
-    profile = ProfileRegistry().get('service-desk', '0.2.0')
+    profile = ProfileRegistry().get('service-desk', '0.3.0')
     key = adapter.resolve_partition(context, profile)
     assert context.auth_scope_fingerprint not in repr(key)
     assert context == adapter.trusted_context()
@@ -87,7 +87,7 @@ def test_http_adapter_end_to_end_and_equivalent_scope(core_http):
     service = SearchService(corpus_source=adapter, indexes=indexes, citation_verifier=CoreCitationVerifier(adapter))
     payload = {'contractVersion': '0.1.0', 'requestId': 'http-test', 'profile': 'service-desk',
                'context': {'workspaceId': 'lab-a'}, 'query': 'đăng nhập', 'topK': 1}
-    assert service.search(payload, trusted_context=context, profile_version='0.2.0').response['results'][0]['metadataId'] == MID
+    assert service.search(payload, trusted_context=context, profile_version='0.3.0').response['results'][0]['metadataId'] == MID
 
 
 @pytest.mark.parametrize('change', ['revoked', 'hidden-file', 'source-version', 'catalog-revision'])
@@ -109,7 +109,7 @@ def test_scope_change_never_scores_old_partition(core_http, change):
     payload = {'contractVersion': '0.1.0', 'requestId': 'denied', 'profile': 'service-desk',
                'context': {'workspaceId': 'lab-a'}, 'query': 'đăng nhập', 'topK': 1}
     with pytest.raises(AuthorizationRejected):
-        service.search(payload, trusted_context=context, profile_version='0.2.0')
+        service.search(payload, trusted_context=context, profile_version='0.3.0')
     indexes.get.assert_not_called()
     engine.search.assert_not_called()
 
@@ -155,7 +155,7 @@ def test_context_workspace_and_catalog_boundary(core_http):
     context = adapter.trusted_context()
     state['calls'].clear()
     with pytest.raises(AuthorizationRejected):
-        adapter.resolve_partition(replace(context, workspace_id='lab-b'), ProfileRegistry().get('service-desk', '0.2.0'))
+        adapter.resolve_partition(replace(context, workspace_id='lab-b'), ProfileRegistry().get('service-desk', '0.3.0'))
     assert state['calls'] == []
     with pytest.raises(AuthorizationRejected):
         adapter.resolve(context, FID)
@@ -170,7 +170,7 @@ def test_public_adapter_methods_require_context_before_any_http(core_http, metho
     context = adapter.trusted_context()
     context = None if kind == 'none' else replace(context, auth_scope_fingerprint=None)
     state['calls'].clear()
-    argument = MID if method == 'resolve' else ProfileRegistry().get('service-desk', '0.2.0')
+    argument = MID if method == 'resolve' else ProfileRegistry().get('service-desk', '0.3.0')
     with pytest.raises(AuthorizationRejected):
         getattr(adapter, method)(context, argument)
     assert state['calls'] == []

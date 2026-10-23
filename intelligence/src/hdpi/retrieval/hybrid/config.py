@@ -7,7 +7,7 @@ from ..dense.config import DenseConfig
 
 @dataclass(frozen=True)
 class HybridConfig:
-    version: str = 'hybrid-rrf-config@0.1.0'
+    version: str = 'hybrid-rrf-config@0.2.0'
     algorithm: str = 'equal-weight-reciprocal-rank-fusion'
     constant: int = 60
     retrieval_depth: int = 20
@@ -15,17 +15,17 @@ class HybridConfig:
     deduplication: str = 'source-first-hit-before-depth'
     representative: str = 'lowest-ordinal-then-chunk-id-of-contributors'
     tie_break: str = 'exact-fraction-desc-source-ordinal-chunk-asc'
-    lexical_config: str = 'bm25-config@0.1.0'
-    dense_config: str = 'dense-e5-cpu-config@0.1.0'
+    lexical_config: str = 'bm25-config@0.2.0'
+    dense_config: str = 'dense-e5-cpu-config@0.2.0'
 
     def validate(self):
         expected = {
-            'version': 'hybrid-rrf-config@0.1.0', 'algorithm': 'equal-weight-reciprocal-rank-fusion',
+            'version': 'hybrid-rrf-config@0.2.0', 'algorithm': 'equal-weight-reciprocal-rank-fusion',
             'constant': 60, 'retrieval_depth': 20, 'default_top_k': 3,
             'deduplication': 'source-first-hit-before-depth',
             'representative': 'lowest-ordinal-then-chunk-id-of-contributors',
             'tie_break': 'exact-fraction-desc-source-ordinal-chunk-asc',
-            'lexical_config': 'bm25-config@0.1.0', 'dense_config': 'dense-e5-cpu-config@0.1.0',
+            'lexical_config': 'bm25-config@0.2.0', 'dense_config': 'dense-e5-cpu-config@0.2.0',
         }
         if asdict(self) != expected or any(type(getattr(self, key)) is not int for key in
                                          ('constant', 'retrieval_depth', 'default_top_k')):

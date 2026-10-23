@@ -5,7 +5,8 @@ import pytest
 from hdpi.domain.errors import EngineConfigurationError
 from hdpi.evaluation.candidates import Bm25Candidate, TfidfCandidate
 from hdpi.evaluation.errors import EvaluationError
-from hdpi.evaluation.retrieval import evaluate, stable_report
+from servicedesk.intelligence.evaluation.retrieval import evaluate
+from hdpi.evaluation.retrieval import stable_report
 from hdpi.retrieval.models import MAX_SOURCE_BYTES
 
 ROOT = Path(__file__).resolve().parents[3]

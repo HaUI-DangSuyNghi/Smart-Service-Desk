@@ -62,10 +62,12 @@ jobs:
           --dataset fixtures/intelligence/service-desk
           --baseline fixtures/intelligence/service-desk/evaluation/baseline-v0.1.json
           --checks fixtures/intelligence/service-desk/evaluation/security-checks.json
-          --conformance-config fixtures/intelligence/service-desk/evaluation/conformance-config.json
+          --conformance-config fixtures/intelligence/service-desk/evaluation/conformance-config-v0.3.json
           --junit .local/ai04/source-tests.xml --output .local/ai04/source
       - name: Source knowledge enrichment controls
         run: python scripts/intelligence/knowledge-data.py compare --output .local/ai045/source
+      - name: Source grounded assistance foundation evidence
+        run: python scripts/intelligence/generation-evidence.py --output .local/ai06/source.json
       - name: Source A2 TF-IDF versus BM25 engine comparison
         run: python scripts/intelligence/knowledge-data.py engine-compare --output .local/ai05/a2-source
       - name: Source BM25 candidate against historical A0 compatibility controls
@@ -74,7 +76,7 @@ jobs:
           --dataset fixtures/intelligence/service-desk
           --baseline fixtures/intelligence/service-desk/evaluation/baseline-v0.1.json
           --checks fixtures/intelligence/service-desk/evaluation/security-checks.json
-          --conformance-config fixtures/intelligence/service-desk/evaluation/conformance-config.json
+          --conformance-config fixtures/intelligence/service-desk/evaluation/conformance-config-v0.3.json
           --junit .local/ai04/source-tests.xml --output .local/ai05/source
       - name: Build source distribution and wheel without new resolution
         run: python -m build --no-isolation --outdir .local/ai04-dist intelligence
@@ -92,17 +94,29 @@ jobs:
           --dataset fixtures/intelligence/service-desk
           --baseline fixtures/intelligence/service-desk/evaluation/baseline-v0.1.json
           --checks fixtures/intelligence/service-desk/evaluation/security-checks.json
-          --conformance-config fixtures/intelligence/service-desk/evaluation/conformance-config.json
+          --conformance-config fixtures/intelligence/service-desk/evaluation/conformance-config-v0.3.json
           --junit .local/ai04/wheel-tests.xml --output .local/ai04/wheel
       - name: Require source and installed wheel evidence to agree
         run: python -I scripts/intelligence/verify-evaluation-equivalence.py .local/ai04/source .local/ai04/wheel
+      - name: Installed wheel grounded assistance foundation evidence
+        run: python -I scripts/intelligence/generation-evidence.py --installed --output .local/ai06/wheel.json
+      - name: Require identical generation source and wheel evidence
+        run: python -I scripts/intelligence/generation-evidence.py --compare .local/ai06/source.json .local/ai06/wheel.json
+      - name: Retain safe generation foundation evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ai06-foundation-${{ matrix.os }}
+          path: .local/ai06/*.json
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7
       - name: Installed BM25 candidate against historical A0 compatibility controls
         run: >-
           python -I scripts/intelligence/run-evaluation.py --installed --candidate bm25
           --dataset fixtures/intelligence/service-desk
           --baseline fixtures/intelligence/service-desk/evaluation/baseline-v0.1.json
           --checks fixtures/intelligence/service-desk/evaluation/security-checks.json
-          --conformance-config fixtures/intelligence/service-desk/evaluation/conformance-config.json
+          --conformance-config fixtures/intelligence/service-desk/evaluation/conformance-config-v0.3.json
           --junit .local/ai04/wheel-tests.xml --output .local/ai05/wheel
       - name: Require BM25 historical compatibility evidence to agree
         run: python -I scripts/intelligence/verify-evaluation-equivalence.py .local/ai05/source .local/ai05/wheel
@@ -296,12 +310,12 @@ jobs:
         run: python scripts/intelligence/knowledge-data.py analyze --output .local/ai045/corpus-quality.json
       - name: Reproduce corpus-only evidence
         run: python scripts/intelligence/knowledge-data.py compare --output .local/ai045/paragraph
-      - name: Verify frozen corpus controls
-        run: python scripts/intelligence/verify-knowledge-evidence.py .local/ai045/paragraph fixtures/intelligence/service-desk/evaluation/corpus-experiments/paragraph-v0.2
+      - name: Verify normalization v0.2 corpus reference candidate
+        run: python scripts/intelligence/verify-knowledge-evidence.py .local/ai045/paragraph fixtures/intelligence/service-desk/evaluation/corpus-experiments/paragraph-normalization-v0.2
       - name: Reproduce separate section experiment
         run: python scripts/intelligence/knowledge-data.py chunk-experiment --output .local/ai045/section
-      - name: Verify section rejection remains explicit
-        run: python scripts/intelligence/verify-knowledge-evidence.py --section .local/ai045/section fixtures/intelligence/service-desk/evaluation/corpus-experiments/section-v0.2
+      - name: Verify normalization v0.2 section reference candidate
+        run: python scripts/intelligence/verify-knowledge-evidence.py --section .local/ai045/section fixtures/intelligence/service-desk/evaluation/corpus-experiments/section-normalization-v0.2
       - name: Retain safe data-quality summaries
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
@@ -338,6 +352,10 @@ jobs:
           gh run download "$RUN_ID" --name ai045-corpus-windows-2022 --dir .local/ai045-windows
           gh run download "$RUN_ID" --name ai05-bm25-ubuntu-24.04 --dir .local/ai05-linux
           gh run download "$RUN_ID" --name ai05-bm25-windows-2022 --dir .local/ai05-windows
+          gh run download "$RUN_ID" --name ai06-foundation-ubuntu-24.04 --dir .local/ai06-linux
+          gh run download "$RUN_ID" --name ai06-foundation-windows-2022 --dir .local/ai06-windows
+      - name: Require equivalent generation foundation evidence across operating systems
+        run: python3 -I scripts/intelligence/generation-evidence.py --compare .local/ai06-linux/wheel.json .local/ai06-windows/wheel.json
       - name: Require equivalent rankings metrics gates and fingerprints
         run: python3 -I scripts/intelligence/verify-evaluation-equivalence.py .local/ai04-linux/wheel .local/ai04-windows/wheel
       - name: Require equivalent knowledge enrichment evidence

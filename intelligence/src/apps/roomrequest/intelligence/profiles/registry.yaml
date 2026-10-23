@@ -2,4 +2,7 @@ registryVersion: '1'
 profiles:
   room-request@0.2.0:
     file: profile.yaml
+    executable: false
+  room-request@0.3.0:
+    file: versions/0.3.0/profile.yaml
     executable: true

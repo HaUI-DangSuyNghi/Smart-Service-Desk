@@ -1,0 +1,14 @@
+{
+  "schemaVersion": 1,
+  "owner": "roomrequest",
+  "ownedLiterals": [
+    "room-request",
+    "ROOM-BOOK",
+    "ROOM-OTHER",
+    "ROOM-CONFLICT",
+    "ROOM-REVIEW",
+    "ROOM-IMPACT",
+    "ROOM-URGENCY",
+    "ROOM-PRIORITY"
+  ]
+}

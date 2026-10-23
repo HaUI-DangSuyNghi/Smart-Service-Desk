@@ -16,7 +16,9 @@ def main():
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[2]
     sys.path.insert(0, str(root / 'intelligence/src'))
-    from hdpi.evaluation.retrieval import evaluate, stable_report
+    sys.path.insert(0, str(root / 'intelligence/src/apps'))
+    from servicedesk.intelligence.evaluation.retrieval import evaluate
+    from hdpi.evaluation.retrieval import stable_report
 
     revision = subprocess.check_output(
         ['git', 'rev-parse', args.base_revision + '^{commit}'], text=True, cwd=root

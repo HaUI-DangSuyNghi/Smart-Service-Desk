@@ -24,7 +24,11 @@ def validate_schema(value, name, root):
 
 
 def read_pin(root, pin):
-    raw = verified_bytes(safe_path(root, pin['path']), pin)
+    path = safe_path(root, pin['path'])
+    try:
+        raw = verified_bytes(path, pin)
+    except EvaluationError as error:
+        raise EvaluationError(f'{path.relative_to(root).as_posix()}: {error}') from error
     text = raw.decode('utf-8')
     require(
         unicodedata.normalize('NFC', text) == text and '\r' not in text,

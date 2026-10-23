@@ -28,6 +28,12 @@ class BoundaryGuardTest(unittest.TestCase):
         errors = guard.violations(self.root)
         self.assertTrue(any(key[1] == rule for key in errors), errors)
 
+    def semantic_contract(self, app='example', literals=('desk-term',)):
+        self.write(
+            f'intelligence/src/apps/{app}/intelligence/boundary-semantics.json',
+            json.dumps({'schemaVersion': 1, 'owner': app, 'ownedLiterals': list(literals)}),
+        )
+
     def test_core_cannot_import_apps_or_hpdi(self):
         for package in ('apps.example.Ticket', 'hpdi.process.api.ProcessCapability'):
             with self.subTest(package=package):
@@ -115,6 +121,42 @@ class BoundaryGuardTest(unittest.TestCase):
     def test_runtime_cannot_import_apps(self):
         self.mutation('intelligence/src/hdpi/bad.py', 'from apps.example import policy', 'python-app-import')
 
+    def test_runtime_cannot_embed_app_owned_semantics_in_regex_or_strings(self):
+        self.semantic_contract(literals=('wifi', 'wi-fi', 'wi fi'))
+        self.mutation(
+            'intelligence/src/hdpi/normalization/bad.py',
+            "import re\nALIAS = re.compile(r'(?<!\\w)(?:wi-fi|wi fi|wifi)(?!\\w)')",
+            'python-app-semantic-literal',
+        )
+
+    def test_generic_packaged_resource_cannot_hide_app_semantics(self):
+        self.semantic_contract(literals=('service-desk-secret-term',))
+        self.mutation(
+            'intelligence/src/hdpi/generation/default-prompt.txt',
+            'Handle service-desk-secret-term automatically.',
+            'hpdi-app-semantic-resource',
+        )
+
+    def test_generation_cannot_ship_a_default_business_prompt(self):
+        self.mutation(
+            'intelligence/src/hdpi/generation/bad.py',
+            'DEFAULT_SYSTEM_PROMPT = "Always classify and route the business request automatically."',
+            'python-generic-policy-default',
+        )
+
+    def test_app_with_intelligence_runtime_requires_semantic_ownership_contract(self):
+        self.write('intelligence/src/apps/example/intelligence/registry.yaml', 'profiles: {}\n')
+        errors = guard.violations(self.root)
+        self.assertTrue(any(key[1] == 'missing-semantic-ownership-contract' for key in errors), errors)
+
+    def test_invalid_semantic_ownership_contract_is_rejected(self):
+        self.write(
+            'intelligence/src/apps/example/intelligence/boundary-semantics.json',
+            json.dumps({'schemaVersion': 1, 'owner': 'wrong-owner', 'ownedLiterals': ['desk-term']}),
+        )
+        errors = guard.violations(self.root)
+        self.assertTrue(any(key[1] == 'invalid-semantic-ownership-contract' for key in errors), errors)
+
     def test_external_profile_identity_is_discovered(self):
         self.write('intelligence/src/apps/example/intelligence/registry.yaml', 'profiles:\n  fake-domain@1.0:\n    file: fake.yaml\n')
         self.mutation('intelligence/src/hdpi/bad.py', 'PROFILE = "fake-domain"', 'python-app-literal')
@@ -127,6 +169,7 @@ class BoundaryGuardTest(unittest.TestCase):
 
     def test_app_policy_under_src_apps_is_not_generic_runtime(self):
         self.write('intelligence/src/apps/example/intelligence/registry.yaml', 'profiles:\n  fake-domain@1.0:\n    file: fake.yaml\n')
+        self.semantic_contract()
         self.write('intelligence/src/apps/example/policy.py', 'PROFILE = "fake-domain"')
         self.assertFalse(guard.violations(self.root))
 

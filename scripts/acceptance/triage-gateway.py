@@ -104,7 +104,7 @@ def main():
             for role, username in zip(('requester', 'agent', 'coordinator'), roles):
                 response = http('POST', route + '/triage', token=identities[username])
                 assert response['status'] == 'SUCCESS'
-                assert response['runtime']['profileVersion'] == 'service-desk@0.2.0'
+                assert response['runtime']['profileVersion'] == 'service-desk@0.3.0'
                 validator.response(response, {'contractVersion': '0.1.0', 'requestId': response['requestId'],
                     'profile': 'service-desk', 'context': {'workspaceId': workspace},
                     'input': {'title': title, 'description': description}})

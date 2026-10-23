@@ -24,7 +24,7 @@ class TicketTriageServiceTest {
             assertEquals("Stored title", input.title());
             assertEquals("Stored description", input.description());
             assertEquals("service-desk", input.profile());
-            assertEquals("0.2.0", input.version());
+            assertEquals("0.3.0", input.version());
             return new TriageSuggestion(Map.of("status", "SUCCESS"));
         };
         var service = new TicketTriageService(tickets, intelligence);

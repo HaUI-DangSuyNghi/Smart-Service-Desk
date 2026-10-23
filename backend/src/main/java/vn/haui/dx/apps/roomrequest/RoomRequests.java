@@ -47,6 +47,6 @@ public class RoomRequests {
     public RoomProgress timeline(String workspace,UUID id) { return RoomProgress.from(processes.timeline(workspace,get(workspace,id).process().processInstanceId())); }
     public RoomSuggestion suggest(String workspace,UUID id) {
         var request=get(workspace,id);
-        return new RoomSuggestion(intelligence.suggest(workspace,new TriageInput("room-request","0.2.0","Room "+request.room(),"Single request; can wait")).attributes());
+        return new RoomSuggestion(intelligence.suggest(workspace,new TriageInput("room-request","0.3.0","Room "+request.room(),"Single request; can wait")).attributes());
     }
 }

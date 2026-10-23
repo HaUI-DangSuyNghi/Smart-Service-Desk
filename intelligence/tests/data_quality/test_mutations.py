@@ -33,6 +33,17 @@ def repin(root, directory):
     path.write_text(yaml.safe_dump(spec), encoding='utf-8', newline='\n')
 
 
+def test_historical_conformance_pin_identifies_same_size_corruption(copied):
+    root, directory = copied
+    path = directory / 'evaluation/conformance-config.json'
+    original = path.read_bytes()
+    altered = original.replace(b'0.2.0', b'0.3.0')
+    assert altered != original and len(altered) == len(original)
+    path.write_bytes(altered)
+    with pytest.raises(EvaluationError, match='evaluation/conformance-config.json: Dataset checksum mismatch'):
+        load_dataset(root, directory)
+
+
 @pytest.mark.parametrize(
     'kind',
     [

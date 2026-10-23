@@ -60,7 +60,7 @@ def fuse(lexical_hits, dense_hits, chunks, config):
 class HybridSearchEngine:
     name = 'hybrid'
     version = '0.1.0'
-    config_version = 'hybrid-rrf-config@0.1.0'
+    config_version = 'hybrid-rrf-config@0.2.0'
 
     def __init__(self, dense_engine, *, lexical_engine=None, config=None):
         self.config = config or HybridConfig()

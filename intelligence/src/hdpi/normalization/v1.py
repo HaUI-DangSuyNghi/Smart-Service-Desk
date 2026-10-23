@@ -1,19 +1,16 @@
-import re
 import sys
 import unicodedata
 
 from ..domain.errors import EngineConfigurationError
 from .base import NormalizedText
 
-WIFI = re.compile(r'(?<!\w)(?:wi-fi|wi fi|wifi)(?!\w)')
-
 
 class NormalizerV1:
-    version = 'text-normalization@0.1.0'
+    version = 'text-normalization@0.2.0'
 
     def __init__(self):
         if sys.version_info[:2] != (3, 12) or unicodedata.unidata_version != '15.0.0':
-            raise EngineConfigurationError('Normalization v0.1 requires Python 3.12 / Unicode 15.0.0')
+            raise EngineConfigurationError('Normalization v0.2 requires Python 3.12 / Unicode 15.0.0')
 
     def normalize(self, text: str) -> NormalizedText:
         # Canonical combining sequences map to their complete original cluster.
@@ -46,15 +43,7 @@ class NormalizerV1:
         if chars and chars[-1] == ' ':
             chars.pop()
             spans.pop()
-        derived = ''.join(chars)
-        normalized_chars, normalized_spans, offset = [], [], 0
-        for match in WIFI.finditer(derived):
-            normalized_chars.append(derived[offset:match.start()])
-            normalized_spans.extend(spans[offset:match.start()])
-            normalized_chars.append('wifi')
-            source_span = (spans[match.start()][0], spans[match.end() - 1][1])
-            normalized_spans.extend([source_span] * 4)
-            offset = match.end()
-        normalized_chars.append(derived[offset:])
-        normalized_spans.extend(spans[offset:])
-        return NormalizedText(text, ''.join(normalized_chars), tuple(normalized_spans))
+
+        # Tier 2 owns text mechanics only. Application aliases, vocabulary and
+        # semantic rewrites belong to Tier 3 rules, lexicons or projections.
+        return NormalizedText(text, ''.join(chars), tuple(spans))

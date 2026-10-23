@@ -8,15 +8,16 @@ import hdpi
 import pytest
 
 from hdpi.evaluation.candidates import TfidfCandidate
-from hdpi.evaluation.conformance import evaluate as conformance
+from servicedesk.intelligence.evaluation.conformance import evaluate as conformance
 from hdpi.evaluation.evidence import serialize_report
 from hdpi.evaluation.errors import EvaluationError
-from hdpi.evaluation.retrieval import evaluate, stable_report
+from servicedesk.intelligence.evaluation.retrieval import evaluate
+from hdpi.evaluation.retrieval import stable_report
 
 ROOT = Path(__file__).resolve().parents[3]
 DATASET = ROOT / 'fixtures/intelligence/service-desk'
 BASELINE = DATASET / 'evaluation/baseline-v0.1.json'
-RUNTIME = {'engine': 'rules', 'profileVersion': 'service-desk@0.2.0', 'rulesVersion': '0.2.0'}
+RUNTIME = {'engine': 'rules', 'profileVersion': 'service-desk@0.3.0', 'rulesVersion': '0.3.0'}
 
 
 class DegradedCandidate(TfidfCandidate):
@@ -39,17 +40,20 @@ def test_candidate_unknown_artifact_rejected():
         evaluate(ROOT, DATASET, candidate=candidate)
 
 
-def test_degraded_candidate_exits_process_nonzero():
-    environment = os.environ.copy()
+def test_app_owned_cli_propagates_quality_failure():
     installed = 'site-packages' in Path(hdpi.__file__).parts
-    if not installed:
-        environment['PYTHONPATH'] = str(Path(hdpi.__file__).resolve().parent.parent)
-    code = ('from hdpi.evaluation.candidates import TfidfCandidate; '
-            'TfidfCandidate.rank = lambda self, query, index: (); '
-            'from hdpi.evaluation.retrieval import main; raise SystemExit(main())')
-    result = subprocess.run([sys.executable, *(['-I'] if installed else []), '-c', code,
-        '--repo-root', str(ROOT), '--dataset', str(DATASET), '--baseline', str(BASELINE)],
-        env=environment, cwd=ROOT, capture_output=True, text=True, timeout=60)
+    script = ROOT / 'scripts/intelligence/service-desk-evaluation.py'
+    result = subprocess.run([
+        sys.executable,
+        *(['-I'] if installed else []),
+        str(script),
+        '--repo-root', str(ROOT),
+        *(['--installed'] if installed else []),
+        'retrieval',
+        '--dataset', str(DATASET),
+        '--baseline', str(BASELINE),
+        '--gates', '{"hitAt1": 1}',
+    ], cwd=ROOT, capture_output=True, text=True, timeout=60)
     assert result.returncode == 1, result.stderr
     assert '"result": "FAIL"' in result.stdout
 
@@ -63,8 +67,8 @@ def test_repeat_runs_include_identical_rankings_metrics_and_fingerprints():
 
 
 def run_conformance(service):
-    return conformance(ROOT, DATASET, profile_version='0.2.0', expected_runtime=RUNTIME,
-                       normalization_version='text-normalization@0.1.0', service=service)
+    return conformance(ROOT, DATASET, profile_version='0.3.0', expected_runtime=RUNTIME,
+                       normalization_version='text-normalization@0.2.0', service=service)
 
 
 def test_conformance_is_repeatable_without_wall_clock_trace(service):

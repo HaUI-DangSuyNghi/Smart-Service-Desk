@@ -98,7 +98,7 @@ jobs:
           PY
       - name: G4 G5 G6 real current Java Python transport and failure boundaries
         run: |
-          docker run -d --name "$INT01_PROJECT-python" --read-only --cap-drop ALL --security-opt no-new-privileges --pids-limit 64 --memory 256m -e INTELLIGENCE_TRIAGE_TOKEN -e HDPI_PROFILE_ROOT=/profiles -e HDPI_REQUIRED_PROFILES=service-desk@0.2.0 -v "$HDPI_PROFILE_ROOT:/profiles:ro" -p 127.0.0.1:18000:8000 "$INT01_PROJECT-intelligence:ci"
+          docker run -d --name "$INT01_PROJECT-python" --read-only --cap-drop ALL --security-opt no-new-privileges --pids-limit 64 --memory 256m -e INTELLIGENCE_TRIAGE_TOKEN -e HDPI_PROFILE_ROOT=/profiles -e HDPI_REQUIRED_PROFILES=service-desk@0.3.0 -v "$HDPI_PROFILE_ROOT:/profiles:ro" -p 127.0.0.1:18000:8000 "$INT01_PROJECT-intelligence:ci"
           python - <<'PY'
           import time
           from urllib.error import HTTPError, URLError
@@ -129,7 +129,7 @@ jobs:
       - name: G8 real Core authorized retrieval provenance and citation regression
         run: |
           python -I scripts/acceptance/intelligence-retrieval.py --output .local/int01/authorized-retrieval.json
-          python -I -m hdpi.evaluation.retrieval --repo-root . --fixtures-root fixtures/intelligence/service-desk --baseline fixtures/intelligence/service-desk/evaluation/baseline-v0.1.json --output .local/int01/retrieval-evaluation.json
+          python -I scripts/intelligence/service-desk-evaluation.py --repo-root . --installed retrieval --fixtures-root fixtures/intelligence/service-desk --baseline fixtures/intelligence/service-desk/evaluation/baseline-v0.1.json --output .local/int01/retrieval-evaluation.json
           python - <<'PY'
           from pathlib import Path
           import json, os, subprocess

@@ -136,7 +136,7 @@ def main():
         metadata, raw = seed('# Tài khoản\n\nHướng dẫn đăng nhập và mật khẩu.', 'acceptance-v1')
         adapter = CoreAuthorizedCorpusAdapter(client, CoreCorpusCatalog('lab-a', marker+'-v1', (metadata['id'],)))
         context = adapter.trusted_context()
-        profile = ProfileRegistry().get('service-desk', '0.2.0')
+        profile = ProfileRegistry().get('service-desk', '0.3.0')
         index = build_authorized_index(source=adapter, context=context, profile=profile)
         indexes = IndexRegistry()
         indexes.register(index)
@@ -145,7 +145,7 @@ def main():
         request = {'contractVersion': '0.1.0', 'requestId': marker, 'profile': 'service-desk',
                    'context': {'workspaceId': 'lab-a'}, 'query': 'đăng nhập mật khẩu', 'topK': 1}
         started = perf_counter()
-        run = service.search(request, trusted_context=context, profile_version='0.2.0')
+        run = service.search(request, trusted_context=context, profile_version='0.3.0')
         elapsed = round((perf_counter()-started)*1000, 3)
         hit, = run.response['results']
         assert (hit['workspaceId'], hit['metadataId'], hit['sourceVersion'], hit['sourceChecksum']) == (
@@ -160,7 +160,7 @@ def main():
         foreign_adapter = CoreAuthorizedCorpusAdapter(foreign_client, adapter.catalog)
         service.source = foreign_adapter
         engine.calls = 0
-        expect_error(AuthorizationRejected, lambda: service.search(request, trusted_context=context, profile_version='0.2.0'))
+        expect_error(AuthorizationRejected, lambda: service.search(request, trusted_context=context, profile_version='0.3.0'))
         assert engine.calls == 0
         service.source = adapter
         record('CORE-AI03-02', 'Core denies cross-workspace metadata and no ranking occurs')
@@ -168,7 +168,7 @@ def main():
         newer, _ = seed('# Tài khoản v2\n\nHướng dẫn đăng nhập mới.', 'acceptance-v2')
         newer_adapter = CoreAuthorizedCorpusAdapter(client, CoreCorpusCatalog('lab-a', marker+'-v2', (newer['id'],)))
         service.source = newer_adapter
-        expect_error(AuthorizationRejected, lambda: service.search(request, trusted_context=context, profile_version='0.2.0'))
+        expect_error(AuthorizationRejected, lambda: service.search(request, trusted_context=context, profile_version='0.3.0'))
         assert engine.calls == 0
         record('CORE-AI03-04', 'New immutable Core version/catalog cannot select or score old context',
                replacementMetadataId=newer['id'], mechanism='IMMUTABLE_RECORD_AND_CATALOG_ROTATION')
@@ -191,7 +191,7 @@ def main():
             http('DELETE', admin_api+'/users/'+user_id+'/groups/'+group['id'], token=admin, expected=204)
         active_token[0] = token(marker, password)
         engine.calls = 0
-        expect_error(AuthorizationRejected, lambda: service.search(request, trusted_context=context, profile_version='0.2.0'))
+        expect_error(AuthorizationRejected, lambda: service.search(request, trusted_context=context, profile_version='0.3.0'))
         assert engine.calls == 0
         record('CORE-AI03-03', 'Keycloak membership revoked; refreshed JWT rejected before scoring', tokenSemantics='REFRESHED_JWT')
 
@@ -206,7 +206,7 @@ def main():
 
         triage_request = {k: request[k] for k in ('contractVersion', 'requestId', 'profile', 'context')}
         triage_request['input'] = {'title': 'Wi-Fi chập chờn', 'description': 'Một máy bị ảnh hưởng; có thể chờ.'}
-        assert TriageService().triage(triage_request, trusted_context=context, profile_version='0.2.0').response['status'] == 'SUCCESS'
+        assert TriageService().triage(triage_request, trusted_context=context, profile_version='0.3.0').response['status'] == 'SUCCESS'
         record('CORE-AI03-08', 'AI-02 triage remains functional independently of retrieval/Core availability')
         report['status'] = 'PASS_WITH_DOCUMENTED_CORE_LIMITS'
     finally:

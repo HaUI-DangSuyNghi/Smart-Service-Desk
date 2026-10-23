@@ -41,7 +41,7 @@ class RoomRequestPythonE2E {
         String route = base + "/" + room.path("id").asText() + "/suggestion";
         mvc.perform(post(route).with(owner)).andExpect(status().isOk())
             .andExpect(jsonPath("$.status").value("SUCCESS"))
-            .andExpect(jsonPath("$.runtime.profileVersion").value("room-request@0.2.0"))
+            .andExpect(jsonPath("$.runtime.profileVersion").value("room-request@0.3.0"))
             .andExpect(jsonPath("$.result.category").value("BOOKING"))
             .andExpect(jsonPath("$.result.priority").value("NORMAL"));
         mvc.perform(post(route).with(jwt().jwt(token -> token.subject("other").claim("groups", List.of("/workspaces/lab-a/requester")))))

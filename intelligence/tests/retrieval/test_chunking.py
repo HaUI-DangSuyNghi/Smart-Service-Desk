@@ -22,4 +22,4 @@ def test_chunks_preserve_original_offsets_and_determinism(text):
 def test_normalization_is_derived_and_keeps_accents():
     chunk, = chunk_text('ĐĂNG NHẬP Wi-Fi e\u0302', source_id='a', source_state=('v1',))
     assert chunk.original_text == 'ĐĂNG NHẬP Wi-Fi e\u0302'
-    assert chunk.normalized_text == 'đăng nhập wifi ê'
+    assert chunk.normalized_text == 'đăng nhập wi-fi ê'

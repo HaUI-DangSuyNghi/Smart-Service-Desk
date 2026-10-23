@@ -12,6 +12,7 @@ import re
 import yaml
 
 from ..domain.errors import ProfileInvalid
+from ..normalization.v1 import NormalizerV1
 
 
 def require(condition, message):
@@ -87,13 +88,13 @@ def validate_documents(profile, taxonomy, rules, policy):
         keys(pin, 'version file owner' if name == 'priorityPolicy' else 'version file')
         for value in pin.values():
             text(value)
-    require(profile['normalization']['version'] == 'text-normalization@0.1.0', 'Unsupported normalization version')
+    require(profile['normalization']['version'] == NormalizerV1.version, 'Unsupported normalization version')
     keys(taxonomy, 'status taxonomyVersion categories')
     keys(rules, 'status rulesVersion categoryRules conflictRules reviewRules impactRules urgencyRules priorityRuleIds')
     keys(policy, 'status policyVersion owner technicalImplementer requiredReviewers impact urgency matrix reviewFallback')
     require(all(doc['status'] == 'PROPOSED' for doc in (profile, taxonomy, rules, policy)), 'Unreviewed artifacts must remain PROPOSED')
     require(profile['taxonomy']['version'] == taxonomy['taxonomyVersion'], 'Taxonomy pin mismatch')
-    require(profile['rules']['version'] == rules['rulesVersion'] == '0.2.0', 'Unsupported executable rules pin')
+    require(profile['rules']['version'] == rules['rulesVersion'], 'Rules pin mismatch')
     require(profile['priorityPolicy']['version'] == policy['policyVersion'], 'Policy pin mismatch')
     require(profile['priorityPolicy']['owner'] == policy['owner'], 'Policy owner mismatch')
     strings(policy['requiredReviewers'])

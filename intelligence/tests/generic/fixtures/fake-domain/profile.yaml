@@ -13,5 +13,5 @@ priorityPolicy:
   file: priority-policy.yaml
   owner: Room Request / Process Owner
 normalization:
-  version: text-normalization@0.1.0
+  version: text-normalization@0.2.0
   file: normalization.md

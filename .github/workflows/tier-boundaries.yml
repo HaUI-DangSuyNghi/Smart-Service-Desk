@@ -117,7 +117,7 @@ jobs:
       FILE_TEST_JDBC_URL: jdbc:postgresql://localhost:5432/file_storage
       FILE_TEST_DB_PASSWORD: isolated-boundary-ci
       HDPI_PROFILE_ROOT: ${{ github.workspace }}/intelligence/src/apps/roomrequest/intelligence/profiles
-      HDPI_REQUIRED_PROFILES: room-request@0.2.0
+      HDPI_REQUIRED_PROFILES: room-request@0.3.0
       INTELLIGENCE_TRIAGE_BASE_URL: http://127.0.0.1:19091
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
@@ -135,6 +135,18 @@ jobs:
           python -m pip install -r intelligence/requirements.lock
           python -m build --no-isolation --outdir .local/reuse-dist intelligence
           python scripts/intelligence/install-built-wheel.py --dist .local/reuse-dist
+      - name: Preflight isolated Room Request profile from the installed wheel
+        run: |
+          python -I - <<'PY'
+          from hdpi.profiles.registry import ProfileRegistry
+          try:
+              profile = ProfileRegistry().get('room-request', '0.3.0')
+              assert profile.identity == 'room-request@0.3.0'
+          except Exception as error:
+              print('PROFILE_PREFLIGHT_FAILED exception=' + type(error).__name__[:64])
+              raise SystemExit(1) from None
+          print('PASS isolated active profile load')
+          PY
       - name: Start private runtime with only the second application's profile
         run: |
           token=$(openssl rand -hex 32)
@@ -143,7 +155,9 @@ jobs:
           INTELLIGENCE_TRIAGE_TOKEN="$token" python -I -m hdpi.http_service --port 19091 > .local/reuse-python.log 2>&1 &
           echo $! > .local/reuse-python.pid
           python - <<'PY'
+          import re
           import time
+          from pathlib import Path
           from urllib.request import Request, urlopen
           from urllib.error import HTTPError, URLError
           for attempt in range(30):
@@ -155,13 +169,21 @@ jobs:
               except (URLError, OSError):
                   time.sleep(1)
           else:
+              # Only emit the runtime's fixed diagnostic codes, never raw stderr.
+              log = Path('.local/reuse-python.log').read_bytes()[-4096:].decode('utf-8', errors='replace')
+              for code in re.findall(r'^Intelligence service configuration failed \[(PROFILE_INVALID|ENGINE_CONFIGURATION|INVALID_CONFIGURATION|OS_ERROR|INTERNAL_ERROR)\]$', log, re.MULTILINE)[-1:]:
+                  print('PRIVATE_RUNTIME_STARTUP_FAILED code=' + code)
               raise SystemExit('Private runtime failed to start')
           PY
       - name: Prove real second-domain Java to Python reuse
         run: mvn -B -f backend/pom.xml -Psecond-domain -Dtest=RoomRequestPythonE2E clean test
       - name: Stop test runtime
         if: always()
-        run: if test -f .local/reuse-python.pid; then kill "$(cat .local/reuse-python.pid)"; fi
+        run: |
+          if test -f .local/reuse-python.pid; then
+            pid="$(cat .local/reuse-python.pid)"
+            if kill -0 "$pid" 2>/dev/null; then kill "$pid" 2>/dev/null || true; fi
+          fi
   real-three-tier-integration:
     runs-on: ubuntu-24.04
     timeout-minutes: 25

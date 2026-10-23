@@ -364,7 +364,7 @@ components:
             profileVersion:
               type: string
               enum:
-              - room-request@0.2.0
+              - room-request@0.3.0
             rulesVersion:
               type: string
               minLength: 1

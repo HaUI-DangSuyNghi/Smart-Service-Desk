@@ -9,7 +9,8 @@ import hdpi
 
 from hdpi.evaluation.candidates import Bm25Candidate
 from hdpi.evaluation.evidence import serialize_report
-from hdpi.evaluation.retrieval import evaluate, stable_report
+from servicedesk.intelligence.evaluation.retrieval import evaluate
+from hdpi.evaluation.retrieval import stable_report
 
 ROOT = Path(__file__).resolve().parents[3]
 DATA = ROOT / 'fixtures/intelligence/service-desk'
@@ -37,8 +38,10 @@ def test_repeated_evidence_and_hash_seed_independence():
     # pythonpath; verify the imported module is still the wheel in that case.
     code = ("import hdpi; from pathlib import Path; "
             + ("assert 'site-packages' in Path(hdpi.__file__).parts; " if installed else '')
+            + "import sys; sys.path.insert(0, str(Path('intelligence/src/apps').resolve())); "
             + "from hdpi.evaluation.candidates import Bm25Candidate; "
-            "from hdpi.evaluation.retrieval import evaluate, stable_report; "
+            "from servicedesk.intelligence.evaluation.retrieval import evaluate; "
+            "from hdpi.evaluation.retrieval import stable_report; "
             "from hdpi.evaluation.evidence import serialize_report; "
             "print(serialize_report(stable_report(evaluate(Path('.'), "
             "Path('fixtures/intelligence/service-desk'), candidate=Bm25Candidate()))), end='')")

@@ -13,6 +13,22 @@ BASELINE = Path('docs/architecture/boundary-debt.json')
 JAVA = Path('backend/src/main/java/vn/haui/dx')
 RESOURCES = Path('backend/src/main/resources')
 PHASES = {f'BND-{number:02}' for number in range(1, 8)}
+SEMANTIC_CONTRACT = 'boundary-semantics.json'
+
+
+def semantic_literal_match(value, literal):
+    """Detect an app-owned literal even when embedded in regex/string templates."""
+    if not isinstance(value, str) or not isinstance(literal, str):
+        return False
+    haystack, needle = value.casefold(), literal.casefold()
+    return needle in haystack or re.escape(needle) in haystack
+
+
+def assignment_names(node):
+    if not isinstance(node, (ast.Assign, ast.AnnAssign)):
+        return ()
+    targets = node.targets if isinstance(node, ast.Assign) else [node.target]
+    return tuple(target.id for target in targets if isinstance(target, ast.Name))
 
 
 def java_strings(source):
@@ -37,6 +53,36 @@ def violations(root=ROOT):
     profiles = {'service-desk'}
     for registry in list((root / 'intelligence/src/apps').rglob('registry.yaml')) + list((root / 'intelligence/profiles').glob('registry.yaml')):
         profiles.update(re.findall(r'''^\s+["']?([a-z][a-z0-9-]+)@[^:]+:''', registry.read_text('utf-8'), re.M))
+    semantic_ownership = {}
+    apps_root = root / 'intelligence/src/apps'
+    if apps_root.is_dir():
+        for app in sorted(path for path in apps_root.iterdir() if path.is_dir()):
+            intelligence = app / 'intelligence'
+            if not intelligence.is_dir():
+                continue
+            contract = intelligence / SEMANTIC_CONTRACT
+            if not contract.is_file():
+                report(intelligence, 'missing-semantic-ownership-contract', app.name)
+                continue
+            try:
+                document = json.loads(contract.read_text('utf-8'))
+                valid = (
+                    isinstance(document, dict)
+                    and set(document) == {'schemaVersion', 'owner', 'ownedLiterals'}
+                    and document['schemaVersion'] == 1
+                    and document['owner'] == app.name
+                    and isinstance(document['ownedLiterals'], list)
+                    and bool(document['ownedLiterals'])
+                    and len(document['ownedLiterals']) == len(set(document['ownedLiterals']))
+                    and all(isinstance(value, str) and value.strip() == value and len(value) >= 3
+                            for value in document['ownedLiterals'])
+                )
+            except (OSError, UnicodeError, ValueError, TypeError):
+                valid, document = False, None
+            if not valid:
+                report(contract, 'invalid-semantic-ownership-contract', app.name)
+                continue
+            semantic_ownership[app.name] = tuple(document['ownedLiterals'])
     process_keys = set()
     for path in (root / RESOURCES).rglob('*.bpmn20.xml'):
         document = ET.parse(path)
@@ -142,15 +188,42 @@ def violations(root=ROOT):
     for path in (root / 'intelligence/src').rglob('*.py'):
         if path.is_relative_to(root / 'intelligence/src/apps'):
             continue  # Tier-3 policy lives beside, never inside, the generic runtime.
-        for node in ast.walk(ast.parse(path.read_text('utf-8'), filename=str(path))):
+        tree = ast.parse(path.read_text('utf-8'), filename=str(path))
+        for node in ast.walk(tree):
             if isinstance(node, ast.Constant) and isinstance(node.value, str):
                 if any(profile in node.value.lower().replace('_', '-') for profile in profiles):
                     report(path, 'python-app-literal', node.value)
+                for owner, literals in semantic_ownership.items():
+                    for literal in literals:
+                        if semantic_literal_match(node.value, literal):
+                            report(path, 'python-app-semantic-literal', owner + ':' + literal)
+            if path.is_relative_to(root / 'intelligence/src/hdpi/generation'):
+                names = assignment_names(node)
+                value = getattr(node, 'value', None)
+                if (names and isinstance(value, ast.Constant) and isinstance(value.value, str)
+                        and any(re.search(r'(?:prompt|instruction|business_policy)', name, re.I)
+                                for name in names)
+                        and len(value.value.strip()) > 16):
+                    report(path, 'python-generic-policy-default', ','.join(names))
             if isinstance(node, (ast.Import, ast.ImportFrom)):
                 names = [alias.name for alias in node.names] if isinstance(node, ast.Import) else [node.module or '']
                 for name in names:
                     if name == 'apps' or name.startswith('apps.'):
                         report(path, 'python-app-import', name)
+
+    hdpi_root = root / 'intelligence/src/hdpi'
+    if hdpi_root.is_dir():
+        for path in hdpi_root.rglob('*'):
+            if not path.is_file() or path.suffix.lower() not in ('.json', '.yaml', '.yml', '.txt', '.md'):
+                continue
+            try:
+                content = path.read_text('utf-8')
+            except (OSError, UnicodeError):
+                continue
+            for owner, literals in semantic_ownership.items():
+                for literal in literals:
+                    if semantic_literal_match(content, literal):
+                        report(path, 'hpdi-app-semantic-resource', owner + ':' + literal)
     for path in (root / 'intelligence/profiles').rglob('*'):
         if path.is_file() and path.suffix in ('.yaml', '.json', '.md'):
             report(path, 'bundled-app-profile', path.relative_to(root / 'intelligence/profiles').as_posix())

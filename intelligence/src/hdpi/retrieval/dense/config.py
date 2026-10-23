@@ -8,7 +8,7 @@ from .artifacts import ARTIFACT_DIGEST, MODEL, REVISION
 
 @dataclass(frozen=True)
 class DenseConfig:
-    version: str = 'dense-e5-cpu-config@0.1.0'
+    version: str = 'dense-e5-cpu-config@0.2.0'
     dimensions: int = 384
     similarity: str = 'cosine-f64-fsum-positive-only'
     pooling: str = 'attention-mask-mean-f64'
@@ -20,21 +20,21 @@ class DenseConfig:
     model_dtype: str = 'float32'
     vector_dtype: str = 'float64'
     execution: str = 'cpu-sequential-1-thread-no-graph-optimization'
-    normalization: str = 'text-normalization@0.1.0'
+    normalization: str = 'text-normalization@0.2.0'
     chunk_policy: str = 'markdown-paragraph@0.1.0'
-    query_strategy: str = 'title+newline+description@0.1.0'
+    query_strategy: str = 'caller-provided-query@0.1.0'
 
     def validate(self):
         expected = {
-            'version': 'dense-e5-cpu-config@0.1.0', 'dimensions': 384,
+            'version': 'dense-e5-cpu-config@0.2.0', 'dimensions': 384,
             'similarity': 'cosine-f64-fsum-positive-only', 'pooling': 'attention-mask-mean-f64',
             'zero_vector': 'reject', 'max_tokens': 512, 'batch_size': 1,
             'query_prefix': 'query: ', 'document_prefix': 'passage: ',
             'model_dtype': 'float32', 'vector_dtype': 'float64',
             'execution': 'cpu-sequential-1-thread-no-graph-optimization',
-            'normalization': 'text-normalization@0.1.0',
+            'normalization': 'text-normalization@0.2.0',
             'chunk_policy': 'markdown-paragraph@0.1.0',
-            'query_strategy': 'title+newline+description@0.1.0',
+            'query_strategy': 'caller-provided-query@0.1.0',
         }
         if asdict(self) != expected:
             raise EngineConfigurationError('Unsupported dense configuration or unversioned behavior change')

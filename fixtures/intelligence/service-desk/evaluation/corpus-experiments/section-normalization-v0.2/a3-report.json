@@ -1,0 +1,431 @@
+{
+  "benchmarkClaim": false,
+  "caseCount": 12,
+  "cases": [
+    {
+      "expectedRelevantLegacyFamilies": [
+        "kb-network-001",
+        "kb-priority-001"
+      ],
+      "firstRelevantRank": 2,
+      "needsErrorAnalysis": true,
+      "rankedCuratedArtifacts": [
+        "kb-non-it-facilities-routing-001",
+        "kb-network-connectivity-001",
+        "kb-priority-impact-urgency-001",
+        "kb-account-authentication-001",
+        "kb-hardware-power-001",
+        "kb-intake-evidence-quality-001",
+        "kb-software-application-001",
+        "kb-credential-security-handling-001",
+        "kb-escalation-human-review-001",
+        "kb-hardware-display-peripheral-001"
+      ],
+      "rankedLegacyFamilies": [
+        "kb-escalation-001",
+        "kb-network-001",
+        "kb-priority-001",
+        "kb-account-001",
+        "kb-software-hardware-001"
+      ],
+      "ticketId": "TICKET-001"
+    },
+    {
+      "expectedRelevantLegacyFamilies": [
+        "kb-network-001"
+      ],
+      "firstRelevantRank": 2,
+      "needsErrorAnalysis": true,
+      "rankedCuratedArtifacts": [
+        "kb-priority-impact-urgency-001",
+        "kb-network-connectivity-001",
+        "kb-account-authentication-001",
+        "kb-non-it-facilities-routing-001",
+        "kb-software-application-001",
+        "kb-intake-evidence-quality-001",
+        "kb-hardware-display-peripheral-001",
+        "kb-hardware-power-001",
+        "kb-escalation-human-review-001",
+        "kb-credential-security-handling-001"
+      ],
+      "rankedLegacyFamilies": [
+        "kb-priority-001",
+        "kb-network-001",
+        "kb-account-001",
+        "kb-escalation-001",
+        "kb-software-hardware-001"
+      ],
+      "ticketId": "TICKET-002"
+    },
+    {
+      "expectedRelevantLegacyFamilies": [
+        "kb-account-001"
+      ],
+      "firstRelevantRank": 1,
+      "needsErrorAnalysis": false,
+      "rankedCuratedArtifacts": [
+        "kb-account-authentication-001",
+        "kb-priority-impact-urgency-001",
+        "kb-software-application-001",
+        "kb-network-connectivity-001",
+        "kb-non-it-facilities-routing-001",
+        "kb-escalation-human-review-001",
+        "kb-credential-security-handling-001",
+        "kb-hardware-power-001",
+        "kb-intake-evidence-quality-001",
+        "kb-hardware-display-peripheral-001"
+      ],
+      "rankedLegacyFamilies": [
+        "kb-account-001",
+        "kb-priority-001",
+        "kb-software-hardware-001",
+        "kb-network-001",
+        "kb-escalation-001"
+      ],
+      "ticketId": "TICKET-003"
+    },
+    {
+      "expectedRelevantLegacyFamilies": [
+        "kb-account-001",
+        "kb-priority-001"
+      ],
+      "firstRelevantRank": 1,
+      "needsErrorAnalysis": false,
+      "rankedCuratedArtifacts": [
+        "kb-account-authentication-001",
+        "kb-non-it-facilities-routing-001",
+        "kb-priority-impact-urgency-001",
+        "kb-network-connectivity-001",
+        "kb-credential-security-handling-001",
+        "kb-software-application-001",
+        "kb-escalation-human-review-001",
+        "kb-intake-evidence-quality-001",
+        "kb-hardware-display-peripheral-001",
+        "kb-hardware-power-001"
+      ],
+      "rankedLegacyFamilies": [
+        "kb-account-001",
+        "kb-escalation-001",
+        "kb-priority-001",
+        "kb-network-001",
+        "kb-software-hardware-001"
+      ],
+      "ticketId": "TICKET-004"
+    },
+    {
+      "expectedRelevantLegacyFamilies": [
+        "kb-software-hardware-001"
+      ],
+      "firstRelevantRank": 1,
+      "needsErrorAnalysis": false,
+      "rankedCuratedArtifacts": [
+        "kb-software-application-001",
+        "kb-priority-impact-urgency-001",
+        "kb-hardware-display-peripheral-001",
+        "kb-hardware-power-001",
+        "kb-non-it-facilities-routing-001",
+        "kb-account-authentication-001",
+        "kb-network-connectivity-001",
+        "kb-escalation-human-review-001",
+        "kb-credential-security-handling-001",
+        "kb-intake-evidence-quality-001"
+      ],
+      "rankedLegacyFamilies": [
+        "kb-software-hardware-001",
+        "kb-priority-001",
+        "kb-escalation-001",
+        "kb-account-001",
+        "kb-network-001"
+      ],
+      "ticketId": "TICKET-005"
+    },
+    {
+      "expectedRelevantLegacyFamilies": [
+        "kb-software-hardware-001",
+        "kb-priority-001"
+      ],
+      "firstRelevantRank": 1,
+      "needsErrorAnalysis": false,
+      "rankedCuratedArtifacts": [
+        "kb-software-application-001",
+        "kb-non-it-facilities-routing-001",
+        "kb-account-authentication-001",
+        "kb-network-connectivity-001",
+        "kb-intake-evidence-quality-001",
+        "kb-hardware-display-peripheral-001",
+        "kb-hardware-power-001",
+        "kb-priority-impact-urgency-001",
+        "kb-credential-security-handling-001",
+        "kb-escalation-human-review-001"
+      ],
+      "rankedLegacyFamilies": [
+        "kb-software-hardware-001",
+        "kb-escalation-001",
+        "kb-account-001",
+        "kb-network-001",
+        "kb-priority-001"
+      ],
+      "ticketId": "TICKET-006"
+    },
+    {
+      "expectedRelevantLegacyFamilies": [
+        "kb-software-hardware-001"
+      ],
+      "firstRelevantRank": 1,
+      "needsErrorAnalysis": false,
+      "rankedCuratedArtifacts": [
+        "kb-hardware-power-001",
+        "kb-priority-impact-urgency-001",
+        "kb-software-application-001",
+        "kb-hardware-display-peripheral-001",
+        "kb-non-it-facilities-routing-001",
+        "kb-account-authentication-001",
+        "kb-escalation-human-review-001",
+        "kb-network-connectivity-001",
+        "kb-intake-evidence-quality-001",
+        "kb-credential-security-handling-001"
+      ],
+      "rankedLegacyFamilies": [
+        "kb-software-hardware-001",
+        "kb-priority-001",
+        "kb-escalation-001",
+        "kb-account-001",
+        "kb-network-001"
+      ],
+      "ticketId": "TICKET-007"
+    },
+    {
+      "expectedRelevantLegacyFamilies": [
+        "kb-software-hardware-001"
+      ],
+      "firstRelevantRank": 1,
+      "needsErrorAnalysis": false,
+      "rankedCuratedArtifacts": [
+        "kb-hardware-power-001",
+        "kb-hardware-display-peripheral-001",
+        "kb-priority-impact-urgency-001",
+        "kb-software-application-001",
+        "kb-non-it-facilities-routing-001",
+        "kb-account-authentication-001",
+        "kb-network-connectivity-001",
+        "kb-intake-evidence-quality-001",
+        "kb-escalation-human-review-001",
+        "kb-credential-security-handling-001"
+      ],
+      "rankedLegacyFamilies": [
+        "kb-software-hardware-001",
+        "kb-priority-001",
+        "kb-escalation-001",
+        "kb-account-001",
+        "kb-network-001"
+      ],
+      "ticketId": "TICKET-008"
+    },
+    {
+      "expectedRelevantLegacyFamilies": [
+        "kb-escalation-001",
+        "kb-priority-001"
+      ],
+      "firstRelevantRank": 1,
+      "needsErrorAnalysis": false,
+      "rankedCuratedArtifacts": [
+        "kb-non-it-facilities-routing-001",
+        "kb-priority-impact-urgency-001",
+        "kb-hardware-display-peripheral-001",
+        "kb-software-application-001",
+        "kb-hardware-power-001",
+        "kb-account-authentication-001",
+        "kb-network-connectivity-001",
+        "kb-intake-evidence-quality-001",
+        "kb-escalation-human-review-001",
+        "kb-credential-security-handling-001"
+      ],
+      "rankedLegacyFamilies": [
+        "kb-escalation-001",
+        "kb-priority-001",
+        "kb-software-hardware-001",
+        "kb-account-001",
+        "kb-network-001"
+      ],
+      "ticketId": "TICKET-009"
+    },
+    {
+      "expectedRelevantLegacyFamilies": [
+        "kb-account-001",
+        "kb-network-001"
+      ],
+      "firstRelevantRank": 1,
+      "needsErrorAnalysis": false,
+      "rankedCuratedArtifacts": [
+        "kb-network-connectivity-001",
+        "kb-account-authentication-001",
+        "kb-priority-impact-urgency-001",
+        "kb-credential-security-handling-001",
+        "kb-software-application-001",
+        "kb-non-it-facilities-routing-001",
+        "kb-escalation-human-review-001",
+        "kb-hardware-power-001",
+        "kb-hardware-display-peripheral-001",
+        "kb-intake-evidence-quality-001"
+      ],
+      "rankedLegacyFamilies": [
+        "kb-network-001",
+        "kb-account-001",
+        "kb-priority-001",
+        "kb-escalation-001",
+        "kb-software-hardware-001"
+      ],
+      "ticketId": "TICKET-010"
+    },
+    {
+      "expectedRelevantLegacyFamilies": [
+        "kb-escalation-001"
+      ],
+      "firstRelevantRank": 1,
+      "needsErrorAnalysis": false,
+      "rankedCuratedArtifacts": [
+        "kb-intake-evidence-quality-001",
+        "kb-non-it-facilities-routing-001",
+        "kb-software-application-001",
+        "kb-hardware-display-peripheral-001",
+        "kb-priority-impact-urgency-001",
+        "kb-hardware-power-001",
+        "kb-network-connectivity-001",
+        "kb-escalation-human-review-001",
+        "kb-account-authentication-001",
+        "kb-credential-security-handling-001"
+      ],
+      "rankedLegacyFamilies": [
+        "kb-escalation-001",
+        "kb-software-hardware-001",
+        "kb-priority-001",
+        "kb-network-001",
+        "kb-account-001"
+      ],
+      "ticketId": "TICKET-011"
+    },
+    {
+      "expectedRelevantLegacyFamilies": [
+        "kb-software-hardware-001"
+      ],
+      "firstRelevantRank": 3,
+      "needsErrorAnalysis": true,
+      "rankedCuratedArtifacts": [
+        "kb-non-it-facilities-routing-001",
+        "kb-priority-impact-urgency-001",
+        "kb-software-application-001",
+        "kb-account-authentication-001",
+        "kb-network-connectivity-001",
+        "kb-intake-evidence-quality-001",
+        "kb-escalation-human-review-001",
+        "kb-credential-security-handling-001",
+        "kb-hardware-display-peripheral-001",
+        "kb-hardware-power-001"
+      ],
+      "rankedLegacyFamilies": [
+        "kb-escalation-001",
+        "kb-priority-001",
+        "kb-software-hardware-001",
+        "kb-account-001",
+        "kb-network-001"
+      ],
+      "ticketId": "TICKET-012"
+    }
+  ],
+  "comparison": {
+    "baselineFingerprint": "sha256:17ff2076f07de41db1429796e7bb4307ddb5c8c64b55e36db339ab3f2bd59174",
+    "deltas": {
+      "hitAt1": -0.16666666666666663,
+      "hitAt3": 0.0,
+      "mrr": -0.09722222222222221,
+      "recallAt3": 0.0
+    },
+    "failureTaxonomy": [
+      "LEXICAL_GAP",
+      "LEXICAL_SIGNAL_DILUTION",
+      "DOCUMENT_TOO_BROAD",
+      "DOCUMENT_TOO_NARROW",
+      "CROSS_CUTTING_POLICY_COLLISION",
+      "GENERIC_OPERATIONAL_LANGUAGE_COLLISION",
+      "MULTI_INTENT_QUERY",
+      "AMBIGUOUS_QUERY",
+      "ROOT_CAUSE_CONFLICT",
+      "CHUNKING_ERROR",
+      "MISSING_KNOWLEDGE",
+      "QREL_INCOMPLETENESS",
+      "QREL_ERROR",
+      "NOISY_QUERY",
+      "TYPO_OR_LANGUAGE_VARIANT"
+    ],
+    "familyMap": {
+      "kb-account-authentication-001": "kb-account-001",
+      "kb-credential-security-handling-001": "kb-escalation-001",
+      "kb-escalation-human-review-001": "kb-escalation-001",
+      "kb-hardware-display-peripheral-001": "kb-software-hardware-001",
+      "kb-hardware-power-001": "kb-software-hardware-001",
+      "kb-intake-evidence-quality-001": "kb-escalation-001",
+      "kb-network-connectivity-001": "kb-network-001",
+      "kb-non-it-facilities-routing-001": "kb-escalation-001",
+      "kb-priority-impact-urgency-001": "kb-priority-001",
+      "kb-software-application-001": "kb-software-hardware-001"
+    },
+    "interpretation": "Coarse lineage projection of frozen v0.1 judgments; human v0.2 qrels still required.",
+    "kind": "CROSS_CORPUS_LEGACY_FAMILY_CONTROL",
+    "sameDatasetComparison": false,
+    "v02DocumentQrels": false
+  },
+  "components": {
+    "collection": "d00a2ac8ed1027bfe3953dd3a8abe9e002d158cba4a219393a64353d1f5552ab",
+    "legacyGold": "2a6879067b04e7b3e9fffd869916a6c71fb5105c097f8e523d1688a51080767a",
+    "legacyTickets": "317a844338ae12e6c0cde109f8d7cc15879f8bf4c5d2f1a02e71a4e0cbf692f5",
+    "projection": "276abb40b41eb0653431599916e863966290047b02f61f3aa1382ac81624f54b"
+  },
+  "dataset": {
+    "digest": "sha256:6ec3574b03e603b6bacfa5c538b31c3051493cdda75c8c6609b40be08c01f183",
+    "id": "legacy-queries-enriched-source-families",
+    "version": "0.2.0"
+  },
+  "evaluatorVersion": "evaluation@1.0",
+  "evidenceClass": "AUTHORED_RETRIEVAL_REGRESSION",
+  "fingerprint": "sha256:0a94ec718bb7882fbe1a827dc606aeb37e3bbde5ea865555d65e8c728042cf3f",
+  "gates": {
+    "result": "FAIL",
+    "violations": [
+      {
+        "actual": 0.75,
+        "constraint": ">= threshold",
+        "expected": 0.9166666666666666,
+        "metric": "hitAt1"
+      },
+      {
+        "actual": 0.8611111111111112,
+        "constraint": ">= threshold",
+        "expected": 0.9583333333333334,
+        "metric": "mrr"
+      }
+    ]
+  },
+  "metricVersion": "legacy-family-retrieval@0.2.0",
+  "metrics": {
+    "hitAt1": 0.75,
+    "hitAt3": 1.0,
+    "mrr": 0.8611111111111112,
+    "recallAt3": 0.9583333333333334
+  },
+  "result": "FAIL",
+  "rightsStatus": "PENDING_OWNER_APPROVAL",
+  "runtimeCitations": false,
+  "schemaVersion": "1.0",
+  "system": {
+    "chunkPolicyVersion": "markdown-section@0.2.0",
+    "engine": "tfidf",
+    "engineConfigVersion": "tfidf-config@0.1.0",
+    "engineVersion": "0.1.0",
+    "experiment": "A3",
+    "normalizationVersion": "text-normalization@0.2.0",
+    "numericalRuntime": "scikit-learn@1.6.1;numpy@2.2.6;scipy@1.15.3",
+    "projectionVersion": "service-desk-knowledge-projection@0.2.0",
+    "queryStrategyVersion": "service-desk-title-newline-description@0.1.0",
+    "rankingUnit": "legacy-source-family; max child score; first-occurrence deduplication"
+  }
+}

@@ -27,7 +27,7 @@ def verify_retrieval():
     document = AuthorizedDocument(workspace_id=context.workspace_id,
                                   metadata_id='33333333-3333-4333-8333-333333333333',
                                   source_version='fake-core-v1', source_checksum=sha256(content).hexdigest(), content=content)
-    key = PartitionKey(workspace_id=context.workspace_id, profile_id='service-desk', profile_version='0.2.0',
+    key = PartitionKey(workspace_id=context.workspace_id, profile_id='service-desk', profile_version='0.3.0',
                         access_scope_hash=scope_hash(context), corpus_version='fake-core-corpus@1')
 
     class FakeCoreAdapter:
@@ -44,7 +44,7 @@ def verify_retrieval():
             return document if metadata_id == document.metadata_id else None
 
     adapter = FakeCoreAdapter()
-    index = build_authorized_index(source=adapter, context=context, profile=ProfileRegistry().get('service-desk', '0.2.0'))
+    index = build_authorized_index(source=adapter, context=context, profile=ProfileRegistry().get('service-desk', '0.3.0'))
     with tempfile.TemporaryDirectory() as directory:
         snapshot = Path(directory) / 'index.json'
         publish_index(index, snapshot)
@@ -54,7 +54,7 @@ def verify_retrieval():
     service = SearchService(corpus_source=adapter, indexes=indexes, citation_verifier=CoreCitationVerifier(adapter))
     payload = {'contractVersion': '0.1.0', 'requestId': 'wheel-search', 'profile': 'service-desk',
                'context': {'workspaceId': context.workspace_id}, 'query': 'ĐĂNG NHẬP', 'topK': 1}
-    run = service.search(payload, trusted_context=context, profile_version='0.2.0')
+    run = service.search(payload, trusted_context=context, profile_version='0.3.0')
     if len(run.response['results']) != 1 or run.response['results'][0]['excerpt'] != document.text:
         raise RuntimeError('Installed wheel retrieval/citation mismatch')
     print('PASS installed wheel: authorized partition, snapshot rebuild, TF-IDF, search schema and FakeCore citation')
@@ -78,7 +78,7 @@ def main():
                'context': {'workspaceId': 'local-wheel-check'},
                'input': {'title': 'Wi-Fi chập chờn', 'description': 'Một máy bị ảnh hưởng; có thể chờ.'}}
     run = TriageService().triage(payload, trusted_context=TrustedContext(workspace_id='local-wheel-check'),
-                                profile_version='0.2.0')
+                                profile_version='0.3.0')
     if run.response['result'] != {'category': 'NETWORK', 'priority': 'LOW', 'suggestedGroup': 'IT-NETWORK'}:
         raise RuntimeError('Installed package triage mismatch')
     print('PASS installed wheel: immutable resources, schema, triage and literal evidence')

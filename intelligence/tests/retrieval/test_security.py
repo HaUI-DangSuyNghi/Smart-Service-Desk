@@ -50,7 +50,7 @@ def test_malicious_engine_never_reaches_verifier(index, partition, search_contex
         hits = [SimpleNamespace(chunk=chunk, score=score)]
     service = service_for(index, partition, hits)
     with pytest.raises(CitationVerificationError):
-        service.search(payload, trusted_context=search_context, profile_version='0.2.0')
+        service.search(payload, trusted_context=search_context, profile_version='0.3.0')
     service.verifier.verify.assert_not_called()
 
 
@@ -64,7 +64,7 @@ def test_partition_mismatch_rejected_before_scoring(index, partition, search_con
                    'profile': {'profile_version': '0.1.0'}}[kind]
         service.source.resolve_partition.return_value = replace(partition, **changes)
     with pytest.raises((AuthorizationRejected, EngineConfigurationError)):
-        service.search(request_for(search_context), trusted_context=search_context, profile_version='0.2.0')
+        service.search(request_for(search_context), trusted_context=search_context, profile_version='0.3.0')
     service.engine.search.assert_not_called()
 
 
@@ -111,7 +111,7 @@ def test_response_schema_and_semantic_guards(search_context):
     payload = request_for(search_context)
     response = {k: payload[k] for k in ('contractVersion', 'requestId', 'profile')}
     response.update(workspaceId=search_context.workspace_id, status='SUCCESS', results=[],
-                    runtime={'engine': 'tfidf', 'engineVersion': '0.1.0', 'profileVersion': 'service-desk@0.2.0',
+                    runtime={'engine': 'tfidf', 'engineVersion': '0.1.0', 'profileVersion': 'service-desk@0.3.0',
                              'corpusVersion': 'test', 'indexVersion': 'test'}, needsReview=True, error=None)
     validator.response(response, payload)
     for change in ({'requestId': 'foreign'}, {'needsReview': False}, {'runtime': None}, {'confidence': .9}):

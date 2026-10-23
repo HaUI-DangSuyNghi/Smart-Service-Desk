@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "owner": "servicedesk",
+  "ownedLiterals": [
+    "service-desk",
+    "wifi",
+    "wi-fi",
+    "wi fi",
+    "wireless",
+    "CAT-NET-001",
+    "CAT-ACC-001",
+    "CAT-SW-001",
+    "CAT-HW-001",
+    "CAT-OTHER-001",
+    "IT-NETWORK",
+    "IT-ACCOUNT",
+    "IT-SOFTWARE",
+    "IT-HARDWARE",
+    "GENERAL-SUPPORT"
+  ]
+}

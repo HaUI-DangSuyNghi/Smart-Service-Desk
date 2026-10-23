@@ -21,13 +21,15 @@ def main():
     args = parser.parse_args()
     if not args.installed:
         sys.path.insert(0, str(args.repo_root.resolve() / 'intelligence/src'))
+    sys.path.insert(0, str(args.repo_root.resolve() / 'intelligence/src/apps'))
     import hdpi
     if args.installed and 'site-packages' not in Path(hdpi.__file__).resolve().parts:
         raise RuntimeError('Installed evaluation must load the wheel in site-packages')
-    from hdpi.evaluation.conformance import evaluate as conformance
+    from servicedesk.intelligence.evaluation.conformance import evaluate as conformance
     from hdpi.evaluation.evidence import serialize_report, write_report
-    from hdpi.evaluation.retrieval import evaluate as retrieval, stable_report
-    from hdpi.evaluation.security import evaluate as security
+    from servicedesk.intelligence.evaluation.retrieval import evaluate as retrieval
+    from hdpi.evaluation.retrieval import stable_report
+    from servicedesk.intelligence.evaluation.security import evaluate as security
     from hdpi.evaluation.dataset import parse_json
     from hdpi.evaluation.candidates import create_candidate
 

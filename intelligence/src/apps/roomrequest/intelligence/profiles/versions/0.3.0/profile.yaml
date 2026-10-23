@@ -1,0 +1,17 @@
+status: PROPOSED
+profile:
+  id: room-request
+  version: room-request@0.3.0
+taxonomy:
+  version: '1'
+  file: ../../taxonomy.yaml
+rules:
+  version: 0.3.0
+  file: rules.yaml
+priorityPolicy:
+  version: room-policy@1
+  file: ../../priority-policy.yaml
+  owner: Room Request / Process Owner
+normalization:
+  version: text-normalization@0.2.0
+  file: normalization.md

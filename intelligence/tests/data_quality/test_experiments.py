@@ -44,7 +44,7 @@ def run_cli(*arguments):
 
 def test_same_engine_corpus_control_discloses_family_projection(reports):
     assert reports['A0']['metrics']['hitAt1'] == 7 / 12
-    assert reports['A1']['metrics']['hitAt1'] == 10 / 12
+    assert reports['A1']['metrics']['hitAt1'] == 11 / 12
     assert reports['A2']['metrics']['hitAt1'] == 11 / 12
     assert reports['A2']['metrics']['hitAt3'] == 1
     assert reports['A2']['metrics']['mrr'] > reports['A0']['metrics']['mrr']
@@ -68,7 +68,7 @@ def test_ai05_engine_comparison_holds_a2_representation_constant():
 
     assert tfidf['metrics']['hitAt1'] == 11 / 12
     assert tfidf['metrics']['hitAt3'] == 1
-    assert tfidf['metrics']['mrr'] == pytest.approx(0.9444444444444444)
+    assert tfidf['metrics']['mrr'] == pytest.approx(23 / 24)
     assert tfidf['metrics']['recallAt3'] == pytest.approx(0.9583333333333334)
 
     assert tfidf['dataset'] == bm25['dataset']

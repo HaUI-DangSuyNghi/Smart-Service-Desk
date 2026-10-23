@@ -41,7 +41,7 @@ def running(service=None, timeout=3):
 
 def envelope(payload):
     return {'request': payload, 'trustedContext': {'workspaceId': (payload or {}).get('context', {}).get('workspaceId', 'lab-a'),
-            'subject': 'verified-actor'}, 'profileVersion': '0.2.0'}
+            'subject': 'verified-actor'}, 'profileVersion': '0.3.0'}
 
 
 def call(address, payload=None, *, raw=None, token=TOKEN, method='POST', path=ENDPOINT, headers=None):
@@ -83,8 +83,8 @@ def test_real_rules_success_and_authenticated_workspace_assertion(payload, monke
             service.contract.response(response, payload)
             assert response['status'] == 'SUCCESS'
             assert response['workspaceId'] == workspace
-            assert response['runtime']['profileVersion'] == 'service-desk@0.2.0'
-    assert calls == [('lab-a', 'service-desk@0.2.0'), ('lab-b', 'service-desk@0.2.0')]
+            assert response['runtime']['profileVersion'] == 'service-desk@0.3.0'
+    assert calls == [('lab-a', 'service-desk@0.3.0'), ('lab-b', 'service-desk@0.3.0')]
 
 
 @pytest.mark.parametrize('token', [None, 'wrong-service-credential', TOKEN + 'x'])
@@ -117,7 +117,7 @@ def test_invalid_json(raw):
 
 @pytest.mark.parametrize(('key', 'value'), [
     ('contractVersion', '9.0.0'), ('profile', 'unknown'), ('profile', 'service-desk@0.1.0'),
-    ('profile', 'service-desk@0.2.0'), ('context', {'workspaceId': ''}),
+    ('profile', 'service-desk@0.3.0'), ('context', {'workspaceId': ''}),
     ('context', {'workspaceId': 'lab-a', 'subject': 'browser'}), ('profileVersion', '0.1.0'),
     ('trustedContext', {'workspaceId': 'lab-b'}),
 ])
@@ -263,7 +263,28 @@ def test_startup_rejects_non_executable_profile(monkeypatch):
 
     monkeypatch.setattr(service.registry, 'get', unavailable)
     with pytest.raises(UnsupportedProfileVersion):
-        make_server(('127.0.0.1', 0), service_token=TOKEN, service=service, required_profiles=(('service-desk', '0.2.0'),))
+        make_server(('127.0.0.1', 0), service_token=TOKEN, service=service, required_profiles=(('service-desk', '0.3.0'),))
+
+
+@pytest.mark.parametrize('error,code', [
+    (ProfileInvalid, 'PROFILE_INVALID'), (EngineConfigurationError, 'ENGINE_CONFIGURATION'),
+    (ValueError, 'INVALID_CONFIGURATION'), (OSError, 'OS_ERROR'),
+    (RuntimeError, 'INTERNAL_ERROR'),
+])
+def test_startup_diagnostics_expose_only_fixed_codes(monkeypatch, capsys, error, code):
+    from hdpi import http_service
+
+    def fail(*args, **kwargs):
+        raise error(TOKEN + '/private/profile.yaml\nprivate document text')
+
+    monkeypatch.setattr(http_service, 'make_server', fail)
+    monkeypatch.setattr('sys.argv', ['hdpi.http_service'])
+    with pytest.raises(SystemExit) as stopped:
+        http_service.main()
+    assert stopped.value.code == 1
+    captured = capsys.readouterr()
+    assert captured.out == ''
+    assert captured.err == f'Intelligence service configuration failed [{code}]\n'
 
 
 def test_operational_service_failure_is_not_fabricated_degraded(payload, monkeypatch):
@@ -295,3 +316,39 @@ def test_context_cannot_self_grant_roles_or_omit_verified_identity(payload, fiel
     body['trustedContext'][field] = value
     with running() as address:
         assert call(address, raw=json.dumps(body).encode())[0] == 400
+
+
+def test_isolated_active_room_request_profile_and_authenticated_transport(monkeypatch):
+    from pathlib import Path
+    from hdpi.profiles.registry import ProfileRegistry
+
+    root = Path(__file__).resolve().parents[3]
+    profiles = root / 'intelligence/src/apps/roomrequest/intelligence/profiles'
+    monkeypatch.setenv('HDPI_PROFILE_ROOT', str(profiles))
+    registry = ProfileRegistry()
+    assert registry.get('room-request', '0.3.0').identity == 'room-request@0.3.0'
+    with pytest.raises(ProfileNotFound):
+        registry.get('service-desk', '0.3.0')
+    with pytest.raises(UnsupportedProfileVersion):
+        registry.get('room-request', '0.2.0')
+    with pytest.raises(UnsupportedProfileVersion):
+        make_server(('127.0.0.1', 0), service_token=TOKEN,
+                    service=TriageService(registry=registry), required_profiles=(('room-request', '0.2.0'),))
+    payload = {
+        'contractVersion': '0.1.0', 'requestId': 'room-ci', 'profile': 'room-request',
+        'context': {'workspaceId': 'lab-a'},
+        'input': {'title': 'Room A-101', 'description': 'Single request; can wait'},
+    }
+    from hdpi.domain.models import TrustedContext
+
+    service = TriageService(registry=registry)
+    result = service.triage(payload, trusted_context=TrustedContext(workspace_id='lab-a'),
+                            profile_version='0.3.0')
+    assert result.response['result'] == {
+        'category': 'BOOKING', 'priority': 'NORMAL', 'suggestedGroup': 'FACILITIES',
+    }
+    with running(service) as address:
+        assert call(address, payload, token=None)[0] == 401
+        status, response = call(address, payload, token=TOKEN)
+    assert status == 200
+    assert response['runtime']['profileVersion'] == 'room-request@0.3.0'

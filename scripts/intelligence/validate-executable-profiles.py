@@ -51,7 +51,7 @@ def main():
         if entry['executable']:
             load_documents(root, entry['file'], identity)
             count += 1
-    print(f'PASS {count} executable profile; immutable v0.1/v0.2 pins, signals, routing, precedence and matrix')
+    print(f'PASS {count} executable profile; immutable historical pins plus executable v0.3 signals, routing, precedence and matrix')
 
 
 if __name__ == '__main__':

@@ -18,7 +18,7 @@ public class TicketTriageService {
 
     public TicketTriageView triage(String workspace, UUID id) {
         var ticket = tickets.get(workspace, id);
-        var suggestion = intelligence.suggest(ticket.workspace(), new TriageInput("service-desk", "0.2.0", ticket.title(), ticket.description()));
+        var suggestion = intelligence.suggest(ticket.workspace(), new TriageInput("service-desk", "0.3.0", ticket.title(), ticket.description()));
         return new TicketTriageView(suggestion.attributes());
     }
 }

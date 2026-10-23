@@ -76,7 +76,7 @@ def main():
     passed.append('trusted-human-and-app-persistence')
 
     suggestion = call('POST', base + '/' + room['id'] + '/suggestion', 'user1', 200, contract='room')
-    assert suggestion['status'] == 'SUCCESS' and suggestion['runtime']['profileVersion'] == 'room-request@0.2.0'
+    assert suggestion['status'] == 'SUCCESS' and suggestion['runtime']['profileVersion'] == 'room-request@0.3.0'
     assert suggestion['result'] == {'category': 'BOOKING', 'priority': 'NORMAL', 'suggestedGroup': 'FACILITIES'}
     assert suggestion['evidence'] and not suggestion['needsReview']
     passed.append('real-java-private-python-triage')
