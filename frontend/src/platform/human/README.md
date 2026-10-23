@@ -1,3 +1,3 @@
 # human
 
-H: đăng nhập (`auth/`) và ngữ cảnh người dùng, workspace, vai trò (`workspace/`).
+H: đăng nhập (`auth/`), người dùng, workspace và vai trò (`workspace/`: `useMe`, `useCurrentWorkspace`, `useActor`, `RoleGate`), trang tài khoản (`profile/`).

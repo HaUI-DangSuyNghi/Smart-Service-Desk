@@ -50,10 +50,10 @@ export const Roles = () => {
           </p>
         </Reveal>
 
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
           {ROLES.map((role, i) => (
             <Reveal key={role.tag} delay={i * 80}>
-              <div className="h-full rounded-[20px] border border-(--landing-border) bg-white p-8 transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_4px_24px_rgba(0,0,0,0.1)]">
+              <div className="h-full rounded-[20px] border border-(--landing-border) bg-white p-6 transition-all lg:p-8 duration-300 hover:-translate-y-1 hover:shadow-[0_4px_24px_rgba(0,0,0,0.1)]">
                 <span className="mb-2.5 inline-block text-xs font-bold tracking-[0.04em] text-(--landing-accent) uppercase">
                   {role.tag}
                 </span>

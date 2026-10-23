@@ -1,6 +1,6 @@
 import { IconError404 } from "@tabler/icons-react";
 import { Link } from "react-router";
-import { Page, PageBody, PageHeader } from "./page";
+import { Page, PageBody, PageHeader } from "@/platform/shared/ui/page";
 
 const NotFoundPage = () => {
   return (

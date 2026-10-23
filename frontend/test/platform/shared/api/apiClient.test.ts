@@ -1,4 +1,9 @@
-import { AxiosError, AxiosHeaders, type AxiosAdapter, type InternalAxiosRequestConfig } from "axios";
+import {
+  AxiosError,
+  AxiosHeaders,
+  type AxiosAdapter,
+  type InternalAxiosRequestConfig,
+} from "axios";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   apiClient,

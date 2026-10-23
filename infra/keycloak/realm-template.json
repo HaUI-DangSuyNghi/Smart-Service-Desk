@@ -10,11 +10,21 @@
   "groups": [{
     "name": "workspaces",
     "subGroups": [
-      {"name": "lab-a", "subGroups": [{"name": "requester"}, {"name": "agent"}, {"name": "coordinator"}]},
-      {"name": "lab-b", "subGroups": [{"name": "requester"}, {"name": "agent"}, {"name": "coordinator"}]}
+      {"name": "lab-a", "attributes": {"displayName": ["Phòng máy A"]}, "subGroups": [{"name": "requester"}, {"name": "agent"}, {"name": "coordinator"}]},
+      {"name": "lab-b", "attributes": {"displayName": ["Phòng máy B"]}, "subGroups": [{"name": "requester"}, {"name": "agent"}, {"name": "coordinator"}]}
     ]
   }],
   "clients": [
+    {
+      "clientId": "dx-directory",
+      "description": "Backend reads workspace members via Admin API (service account, read-only). Secret set by scripts/setup.ps1",
+      "publicClient": false,
+      "protocol": "openid-connect",
+      "serviceAccountsEnabled": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "secret": "set-by-setup"
+    },
     {
       "clientId": "core-probe",
       "description": "Test scripts only (smoke.ps1)",
@@ -56,6 +66,10 @@
     }
   ],
   "users": [
+    {
+      "username": "service-account-dx-directory", "enabled": true, "serviceAccountClientId": "dx-directory",
+      "clientRoles": {"realm-management": ["view-users", "query-users", "query-groups"]}
+    },
     {
       "username": "user1", "enabled": true, "email": "user1@example.com", "emailVerified": true,
       "firstName": "Demo", "lastName": "Requester", "groups": ["/workspaces/lab-a/requester"]

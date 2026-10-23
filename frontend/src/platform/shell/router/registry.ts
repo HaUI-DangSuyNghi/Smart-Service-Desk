@@ -4,6 +4,8 @@ import type { ComponentType } from "react";
 export interface AppRoute {
   readonly path: string;
   readonly component: ComponentType;
+  /** Cần ít nhất một vai trò này ở workspace đang chọn; thiếu thì hiện trang 403. */
+  readonly requiredRoles?: readonly string[];
 }
 
 /** Icon cho menu; khớp component của @tabler/icons-react. */
@@ -17,6 +19,8 @@ export interface MenuItem {
   readonly path: string;
   readonly icon?: MenuIcon;
   readonly tone?: MenuTone;
+  /** Chỉ hiện mục menu khi có ít nhất một vai trò này. */
+  readonly requiredRoles?: readonly string[];
 }
 
 /** Những gì một app (Tầng 3) đăng ký vào platform (Tầng 2). */

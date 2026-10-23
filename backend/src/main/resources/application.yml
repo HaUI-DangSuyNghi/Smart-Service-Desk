@@ -24,6 +24,12 @@ flowable:
   async-executor-activate: false
   history-level: full
 dx:
+  # Danh bạ workspace (Keycloak Admin API, service account dx-directory chỉ đọc user/group)
+  directory:
+    url: ${DX_DIRECTORY_URL:}
+    realm: dx-lab
+    client-id: dx-directory
+    client-secret: ${DX_DIRECTORY_CLIENT_SECRET:}
   intelligence:
     triage:
       base-url: ${INTELLIGENCE_TRIAGE_BASE_URL:}

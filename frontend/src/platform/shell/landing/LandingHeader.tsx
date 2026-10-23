@@ -2,6 +2,7 @@ import { useEffect, useState, type ReactNode } from "react";
 import { Link } from "react-router";
 import { ChevronDown, Menu, X } from "lucide-react";
 import { cn } from "cn";
+import { useAuth } from "@/platform/human/auth";
 import { APP_HOME, repoFile } from "./links";
 import { Wordmark } from "./Wordmark";
 
@@ -61,6 +62,9 @@ const DesktopDropdown = ({ label, children, wide, scrolled }: DropdownProps) => 
 export const LandingHeader = () => {
   const [scrolled, setScrolled] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  // Đã đăng nhập (phiên khôi phục được) thì mời vào thẳng ứng dụng
+  const { status } = useAuth();
+  const ctaLabel = status === "authenticated" ? "Vào ứng dụng" : "Đăng nhập";
 
   useEffect(() => {
     const onScroll = () => {
@@ -155,7 +159,7 @@ export const LandingHeader = () => {
               to={APP_HOME}
               className="hidden rounded-lg bg-(--landing-accent) px-5 py-2.5 text-[15px] font-bold text-white transition-opacity hover:opacity-90 lg:inline-flex"
             >
-              Đăng nhập
+              {ctaLabel}
             </Link>
             <button
               onClick={() => setMobileOpen(true)}
@@ -206,7 +210,7 @@ export const LandingHeader = () => {
             onClick={() => setMobileOpen(false)}
             className="rounded-lg bg-(--landing-accent) px-5 py-2.5 text-center text-[15px] font-bold text-white"
           >
-            Đăng nhập
+            {ctaLabel}
           </Link>
         </div>
       </div>

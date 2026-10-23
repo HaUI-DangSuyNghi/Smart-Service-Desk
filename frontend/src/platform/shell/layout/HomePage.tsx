@@ -1,6 +1,6 @@
 import { IconHome } from "@tabler/icons-react";
 import { useMe } from "@/platform/human/workspace";
-import { Page, PageBody, PageHeader } from "./page";
+import { Page, PageBody, PageHeader } from "@/platform/shared/ui/page";
 
 const HomePage = () => {
   const { data: me } = useMe();

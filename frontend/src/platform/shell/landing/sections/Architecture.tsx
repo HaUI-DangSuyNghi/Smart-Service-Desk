@@ -1,4 +1,5 @@
 import { ArrowDown, ArrowRight } from "lucide-react";
+import { cn } from "cn";
 import { Reveal } from "../Reveal";
 
 // Mỗi hàng là một tầng, từ trên xuống: ứng dụng → H-P-D-I → Open-Core
@@ -24,7 +25,14 @@ const FLOW_ROWS = [
 const Connector = ({ direction = "right" }: { direction?: "right" | "down" }) => {
   const Icon = direction === "right" ? ArrowRight : ArrowDown;
   return (
-    <div className="flex shrink-0 items-center justify-center">
+    // Mũi tên ngang chỉ có nghĩa khi cả hàng nằm trên 1 dòng (4 thẻ 200px + mũi tên cần ~970px);
+    // màn hẹp hơn thẻ xuống dòng, mũi tên ngang sẽ chỉ lung tung
+    <div
+      className={cn(
+        "shrink-0 items-center justify-center",
+        direction === "right" ? "hidden xl:flex" : "flex",
+      )}
+    >
       <span className="grid size-8 shrink-0 place-items-center rounded-full bg-(--landing-accent-soft) text-(--landing-accent)">
         <Icon className="size-4" />
       </span>
