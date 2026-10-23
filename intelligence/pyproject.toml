@@ -23,7 +23,8 @@ testpaths = ["tests"]
 pythonpath = ["src"]
 addopts = "--strict-markers"
 markers = [
-  "dense_model: requires the explicitly provisioned pinned Dense reference model and optional runtime dependencies"
+  "dense_model: requires the explicitly provisioned pinned Dense reference model and optional runtime dependencies",
+  "generation_model: opt-in governed local generation validation; blocked until deployment and owners approve"
 ]
 
 [tool.setuptools]

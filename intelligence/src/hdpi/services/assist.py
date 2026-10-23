@@ -184,7 +184,12 @@ class GroundedAssistanceService:
             )
 
             if self.trace_sink is not None:
-                self.trace_sink(trace)
+                try:
+                    self.trace_sink(trace)
+                except Exception:
+                    # Diagnostic delivery is best effort. Do not log sink error
+                    # content or replace the response/original safety failure.
+                    pass
 
         return AssistanceRun(response=response, trace=trace)
 
