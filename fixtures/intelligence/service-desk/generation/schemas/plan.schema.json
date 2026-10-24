@@ -1,0 +1,219 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "axes": {
+      "additionalProperties": false,
+      "properties": {
+        "CONFLICT": {
+          "enum": [
+            60
+          ]
+        },
+        "GROUNDING": {
+          "enum": [
+            100
+          ]
+        },
+        "REFUSAL": {
+          "enum": [
+            60
+          ]
+        },
+        "ROBUSTNESS": {
+          "enum": [
+            40
+          ]
+        },
+        "SECURITY": {
+          "enum": [
+            80
+          ]
+        },
+        "VIETNAMESE": {
+          "enum": [
+            60
+          ]
+        }
+      },
+      "required": [
+        "GROUNDING",
+        "REFUSAL",
+        "SECURITY",
+        "CONFLICT",
+        "VIETNAMESE",
+        "ROBUSTNESS"
+      ],
+      "type": "object"
+    },
+    "baselineCount": {
+      "enum": [
+        52
+      ]
+    },
+    "baselineDigest": {
+      "enum": [
+        "f3ba65dd318b2e06cce0e450faf7f2978916e8a6001c94270de38cb23fcb0c2e"
+      ]
+    },
+    "baselineRevision": {
+      "enum": [
+        "1940b6eca68eca2509bef43280065412e33de42a"
+      ]
+    },
+    "categories": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "axis": {
+            "enum": [
+              "GROUNDING",
+              "REFUSAL",
+              "SECURITY",
+              "CONFLICT",
+              "VIETNAMESE",
+              "ROBUSTNESS"
+            ]
+          },
+          "baselineCount": {
+            "maximum": 1000000,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "id": {
+            "enum": [
+              "relevant",
+              "typo",
+              "multiple_sources",
+              "uncertain",
+              "paraphrase",
+              "no_evidence",
+              "no_match",
+              "false_premise",
+              "unsupported_detail",
+              "ambiguous_answerability",
+              "question_injection",
+              "source_injection",
+              "hostile_markup",
+              "role_spoofing",
+              "data_exfiltration_canary",
+              "unsafe_quote_boundary",
+              "conflicting_guidance",
+              "recency_ambiguous",
+              "multi_hop_disjoint",
+              "same_topic_distractors",
+              "source_order_variant",
+              "vietnamese",
+              "vi_en_code_switch",
+              "vietnamese_diacritics",
+              "vietnamese_no_diacritics",
+              "long_question",
+              "unicode_boundary",
+              "near_limit_payload",
+              "short_input",
+              "markdown_noise"
+            ]
+          },
+          "newCount": {
+            "maximum": 1000000,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "total": {
+            "maximum": 1000000,
+            "minimum": 0,
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "axis",
+          "baselineCount",
+          "newCount",
+          "total"
+        ],
+        "type": "object"
+      },
+      "maxItems": 30,
+      "minItems": 30,
+      "type": "array"
+    },
+    "datasetRevision": {
+      "enum": [
+        "0.2.0"
+      ]
+    },
+    "factsDigest": {
+      "pattern": "^[a-f0-9]{64}$",
+      "type": "string"
+    },
+    "maxAttemptsPerCase": {
+      "maximum": 1000000,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "minimumFactFamilies": {
+      "enum": [
+        12
+      ]
+    },
+    "minimumFactsPerFamily": {
+      "enum": [
+        3
+      ]
+    },
+    "nearDuplicateThresholdPpm": {
+      "maximum": 1000000,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "newCount": {
+      "enum": [
+        348
+      ]
+    },
+    "owner": {
+      "enum": [
+        "servicedesk"
+      ]
+    },
+    "schemaVersion": {
+      "enum": [
+        "0.2.0"
+      ]
+    },
+    "seed": {
+      "enum": [
+        20261024
+      ]
+    },
+    "targetCount": {
+      "enum": [
+        400
+      ]
+    },
+    "templatesDigest": {
+      "pattern": "^[a-f0-9]{64}$",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "datasetRevision",
+    "owner",
+    "seed",
+    "baselineRevision",
+    "baselineDigest",
+    "factsDigest",
+    "templatesDigest",
+    "baselineCount",
+    "newCount",
+    "targetCount",
+    "minimumFactFamilies",
+    "minimumFactsPerFamily",
+    "maxAttemptsPerCase",
+    "nearDuplicateThresholdPpm",
+    "axes",
+    "categories"
+  ],
+  "type": "object"
+}

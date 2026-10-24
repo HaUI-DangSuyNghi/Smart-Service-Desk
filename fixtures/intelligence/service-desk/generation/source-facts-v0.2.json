@@ -1,0 +1,451 @@
+{
+  "families": [
+    {
+      "facts": [
+        {
+          "alternativeEn": "For the demo network, replace the demonstration cable.",
+          "alternativeVi": "Với mạng mô phỏng, hãy thay dây cáp trình diễn.",
+          "id": "network-demo.first_check",
+          "questionEn": "For the demo network, what should be checked first?",
+          "questionVi": "Với mạng mô phỏng, cần kiểm tra điều gì trước?",
+          "relation": "first_check",
+          "statementEn": "For the demo network, inspect the training adapter.",
+          "statementVi": "Với mạng mô phỏng, hãy kiểm tra bộ chuyển đổi thực hành."
+        },
+        {
+          "alternativeEn": "For the demo network, select the offline exercise mode.",
+          "alternativeVi": "Với mạng mô phỏng, hãy chọn chế độ bài tập ngoại tuyến.",
+          "id": "network-demo.required_state",
+          "questionEn": "For the demo network, which state should be used?",
+          "questionVi": "Với mạng mô phỏng, cần dùng trạng thái nào?",
+          "relation": "required_state",
+          "statementEn": "For the demo network, select the isolated guest mode.",
+          "statementVi": "Với mạng mô phỏng, hãy chọn chế độ khách cách ly."
+        },
+        {
+          "alternativeEn": "For the demo network, attach the simulation diagram.",
+          "alternativeVi": "Với mạng mô phỏng, hãy đính kèm sơ đồ mô phỏng.",
+          "id": "network-demo.handoff",
+          "questionEn": "For the demo network, what should the handoff include?",
+          "questionVi": "Với mạng mô phỏng, cần ghi nhận gì khi bàn giao?",
+          "relation": "handoff",
+          "statementEn": "For the demo network, attach the invented link-status note.",
+          "statementVi": "Với mạng mô phỏng, hãy đính kèm ghi chú trạng thái liên kết giả lập."
+        }
+      ],
+      "id": "network-demo",
+      "subjectEn": "demo network",
+      "subjectVi": "mạng mô phỏng"
+    },
+    {
+      "facts": [
+        {
+          "alternativeEn": "For the practice account, read the exercise welcome card.",
+          "alternativeVi": "Với tài khoản thực hành, hãy đọc thẻ chào bài tập.",
+          "id": "account-demo.first_check",
+          "questionEn": "For the practice account, what should be checked first?",
+          "questionVi": "Với tài khoản thực hành, cần kiểm tra điều gì trước?",
+          "relation": "first_check",
+          "statementEn": "For the practice account, read the fictional session banner.",
+          "statementVi": "Với tài khoản thực hành, hãy đọc biểu ngữ phiên giả lập."
+        },
+        {
+          "alternativeEn": "For the practice account, use the offline demonstration realm.",
+          "alternativeVi": "Với tài khoản thực hành, hãy dùng vùng trình diễn ngoại tuyến.",
+          "id": "account-demo.required_state",
+          "questionEn": "For the practice account, which state should be used?",
+          "questionVi": "Với tài khoản thực hành, cần dùng trạng thái nào?",
+          "relation": "required_state",
+          "statementEn": "For the practice account, use the training-only account realm.",
+          "statementVi": "Với tài khoản thực hành, hãy dùng vùng tài khoản chỉ dành cho thực hành."
+        },
+        {
+          "alternativeEn": "For the practice account, record the exercise completion label.",
+          "alternativeVi": "Với tài khoản thực hành, hãy ghi nhãn hoàn thành bài tập.",
+          "id": "account-demo.handoff",
+          "questionEn": "For the practice account, what should the handoff include?",
+          "questionVi": "Với tài khoản thực hành, cần ghi nhận gì khi bàn giao?",
+          "relation": "handoff",
+          "statementEn": "For the practice account, record the invented access-state label.",
+          "statementVi": "Với tài khoản thực hành, hãy ghi nhãn trạng thái truy cập giả lập."
+        }
+      ],
+      "id": "account-demo",
+      "subjectEn": "practice account",
+      "subjectVi": "tài khoản thực hành"
+    },
+    {
+      "facts": [
+        {
+          "alternativeEn": "For the fictional document shelf, inspect the example shelf marker.",
+          "alternativeVi": "Với kệ tài liệu giả lập, hãy kiểm tra dấu kệ ví dụ.",
+          "id": "document-access.first_check",
+          "questionEn": "For the fictional document shelf, what should be checked first?",
+          "questionVi": "Với kệ tài liệu giả lập, cần kiểm tra điều gì trước?",
+          "relation": "first_check",
+          "statementEn": "For the fictional document shelf, inspect the demonstration reader label.",
+          "statementVi": "Với kệ tài liệu giả lập, hãy kiểm tra nhãn người đọc trình diễn."
+        },
+        {
+          "alternativeEn": "For the fictional document shelf, keep the fictional document archived.",
+          "alternativeVi": "Với kệ tài liệu giả lập, hãy giữ tài liệu giả lập ở trạng thái lưu trữ.",
+          "id": "document-access.required_state",
+          "questionEn": "For the fictional document shelf, which state should be used?",
+          "questionVi": "Với kệ tài liệu giả lập, cần dùng trạng thái nào?",
+          "relation": "required_state",
+          "statementEn": "For the fictional document shelf, keep the exercise document read-only.",
+          "statementVi": "Với kệ tài liệu giả lập, hãy giữ tài liệu bài tập ở chế độ chỉ đọc."
+        },
+        {
+          "alternativeEn": "For the fictional document shelf, attach the demonstration index card.",
+          "alternativeVi": "Với kệ tài liệu giả lập, hãy đính kèm thẻ chỉ mục trình diễn.",
+          "id": "document-access.handoff",
+          "questionEn": "For the fictional document shelf, what should the handoff include?",
+          "questionVi": "Với kệ tài liệu giả lập, cần ghi nhận gì khi bàn giao?",
+          "relation": "handoff",
+          "statementEn": "For the fictional document shelf, attach the invented visibility checklist.",
+          "statementVi": "Với kệ tài liệu giả lập, hãy đính kèm danh sách kiểm tra khả năng xem giả lập."
+        }
+      ],
+      "id": "document-access",
+      "subjectEn": "fictional document shelf",
+      "subjectVi": "kệ tài liệu giả lập"
+    },
+    {
+      "facts": [
+        {
+          "alternativeEn": "For the training printer, inspect the demonstration tray label.",
+          "alternativeVi": "Với máy in thực hành, hãy kiểm tra nhãn khay trình diễn.",
+          "id": "printer-demo.first_check",
+          "questionEn": "For the training printer, what should be checked first?",
+          "questionVi": "Với máy in thực hành, cần kiểm tra điều gì trước?",
+          "relation": "first_check",
+          "statementEn": "For the training printer, inspect the simulated print queue.",
+          "statementVi": "Với máy in thực hành, hãy kiểm tra hàng đợi in mô phỏng."
+        },
+        {
+          "alternativeEn": "For the training printer, use the digital preview exercise.",
+          "alternativeVi": "Với máy in thực hành, hãy dùng bài tập xem trước kỹ thuật số.",
+          "id": "printer-demo.required_state",
+          "questionEn": "For the training printer, which state should be used?",
+          "questionVi": "Với máy in thực hành, cần dùng trạng thái nào?",
+          "relation": "required_state",
+          "statementEn": "For the training printer, use blank fictional test sheets.",
+          "statementVi": "Với máy in thực hành, hãy dùng tờ thử trống giả lập."
+        },
+        {
+          "alternativeEn": "For the training printer, record the demonstration preview result.",
+          "alternativeVi": "Với máy in thực hành, hãy ghi kết quả xem trước trình diễn.",
+          "id": "printer-demo.handoff",
+          "questionEn": "For the training printer, what should the handoff include?",
+          "questionVi": "Với máy in thực hành, cần ghi nhận gì khi bàn giao?",
+          "relation": "handoff",
+          "statementEn": "For the training printer, record the invented queue-state marker.",
+          "statementVi": "Với máy in thực hành, hãy ghi dấu trạng thái hàng đợi giả lập."
+        }
+      ],
+      "id": "printer-demo",
+      "subjectEn": "training printer",
+      "subjectVi": "máy in thực hành"
+    },
+    {
+      "facts": [
+        {
+          "alternativeEn": "For the training workstation, inspect the exercise screen card.",
+          "alternativeVi": "Với máy trạm thực hành, hãy kiểm tra thẻ màn hình bài tập.",
+          "id": "workstation-demo.first_check",
+          "questionEn": "For the training workstation, what should be checked first?",
+          "questionVi": "Với máy trạm thực hành, cần kiểm tra điều gì trước?",
+          "relation": "first_check",
+          "statementEn": "For the training workstation, inspect the mock power indicator.",
+          "statementVi": "Với máy trạm thực hành, hãy kiểm tra đèn nguồn mô phỏng."
+        },
+        {
+          "alternativeEn": "For the training workstation, keep the demonstration exercise running.",
+          "alternativeVi": "Với máy trạm thực hành, hãy giữ bài tập trình diễn ở trạng thái đang chạy.",
+          "id": "workstation-demo.required_state",
+          "questionEn": "For the training workstation, which state should be used?",
+          "questionVi": "Với máy trạm thực hành, cần dùng trạng thái nào?",
+          "relation": "required_state",
+          "statementEn": "For the training workstation, keep the sandbox exercise paused.",
+          "statementVi": "Với máy trạm thực hành, hãy giữ bài tập trong vùng thử ở trạng thái tạm dừng."
+        },
+        {
+          "alternativeEn": "For the training workstation, attach the training display checklist.",
+          "alternativeVi": "Với máy trạm thực hành, hãy đính kèm danh sách kiểm tra màn hình thực hành.",
+          "id": "workstation-demo.handoff",
+          "questionEn": "For the training workstation, what should the handoff include?",
+          "questionVi": "Với máy trạm thực hành, cần ghi nhận gì khi bàn giao?",
+          "relation": "handoff",
+          "statementEn": "For the training workstation, attach the invented workstation checklist.",
+          "statementVi": "Với máy trạm thực hành, hãy đính kèm danh sách kiểm tra máy trạm giả lập."
+        }
+      ],
+      "id": "workstation-demo",
+      "subjectEn": "training workstation",
+      "subjectVi": "máy trạm thực hành"
+    },
+    {
+      "facts": [
+        {
+          "alternativeEn": "For the demonstration file sync, compare the example preview cards.",
+          "alternativeVi": "Với đồng bộ tệp trình diễn, hãy so sánh thẻ xem trước ví dụ.",
+          "id": "file-sync-demo.first_check",
+          "questionEn": "For the demonstration file sync, what should be checked first?",
+          "questionVi": "Với đồng bộ tệp trình diễn, cần kiểm tra điều gì trước?",
+          "relation": "first_check",
+          "statementEn": "For the demonstration file sync, compare the fictional folder markers.",
+          "statementVi": "Với đồng bộ tệp trình diễn, hãy so sánh dấu thư mục giả lập."
+        },
+        {
+          "alternativeEn": "For the demonstration file sync, leave the mock transfer in preview mode.",
+          "alternativeVi": "Với đồng bộ tệp trình diễn, hãy giữ lượt truyền giả ở chế độ xem trước.",
+          "id": "file-sync-demo.required_state",
+          "questionEn": "For the demonstration file sync, which state should be used?",
+          "questionVi": "Với đồng bộ tệp trình diễn, cần dùng trạng thái nào?",
+          "relation": "required_state",
+          "statementEn": "For the demonstration file sync, leave the simulated transfer paused.",
+          "statementVi": "Với đồng bộ tệp trình diễn, hãy giữ lượt truyền mô phỏng ở trạng thái tạm dừng."
+        },
+        {
+          "alternativeEn": "For the demonstration file sync, attach the demonstration comparison chart.",
+          "alternativeVi": "Với đồng bộ tệp trình diễn, hãy đính kèm bảng so sánh trình diễn.",
+          "id": "file-sync-demo.handoff",
+          "questionEn": "For the demonstration file sync, what should the handoff include?",
+          "questionVi": "Với đồng bộ tệp trình diễn, cần ghi nhận gì khi bàn giao?",
+          "relation": "handoff",
+          "statementEn": "For the demonstration file sync, attach the invented sync-difference note.",
+          "statementVi": "Với đồng bộ tệp trình diễn, hãy đính kèm ghi chú chênh lệch đồng bộ giả lập."
+        }
+      ],
+      "id": "file-sync-demo",
+      "subjectEn": "demonstration file sync",
+      "subjectVi": "đồng bộ tệp trình diễn"
+    },
+    {
+      "facts": [
+        {
+          "alternativeEn": "For the example knowledge article, inspect the demonstration draft label.",
+          "alternativeVi": "Với bài tri thức ví dụ, hãy kiểm tra nhãn bản nháp trình diễn.",
+          "id": "article-versioning.first_check",
+          "questionEn": "For the example knowledge article, what should be checked first?",
+          "questionVi": "Với bài tri thức ví dụ, cần kiểm tra điều gì trước?",
+          "relation": "first_check",
+          "statementEn": "For the example knowledge article, inspect the fictional revision label.",
+          "statementVi": "Với bài tri thức ví dụ, hãy kiểm tra nhãn phiên bản giả lập."
+        },
+        {
+          "alternativeEn": "For the example knowledge article, keep the demonstration copy archived.",
+          "alternativeVi": "Với bài tri thức ví dụ, hãy giữ bản sao trình diễn ở trạng thái lưu trữ.",
+          "id": "article-versioning.required_state",
+          "questionEn": "For the example knowledge article, which state should be used?",
+          "questionVi": "Với bài tri thức ví dụ, cần dùng trạng thái nào?",
+          "relation": "required_state",
+          "statementEn": "For the example knowledge article, keep the invented draft unpublished.",
+          "statementVi": "Với bài tri thức ví dụ, hãy giữ bản nháp giả lập chưa xuất bản."
+        },
+        {
+          "alternativeEn": "For the example knowledge article, cite the fictional draft marker.",
+          "alternativeVi": "Với bài tri thức ví dụ, hãy trích dấu bản nháp giả lập.",
+          "id": "article-versioning.handoff",
+          "questionEn": "For the example knowledge article, what should the handoff include?",
+          "questionVi": "Với bài tri thức ví dụ, cần ghi nhận gì khi bàn giao?",
+          "relation": "handoff",
+          "statementEn": "For the example knowledge article, cite the example revision marker.",
+          "statementVi": "Với bài tri thức ví dụ, hãy trích dấu phiên bản ví dụ."
+        }
+      ],
+      "id": "article-versioning",
+      "subjectEn": "example knowledge article",
+      "subjectVi": "bài tri thức ví dụ"
+    },
+    {
+      "facts": [
+        {
+          "alternativeEn": "For the fictional support handoff, read the fictional review-group label.",
+          "alternativeVi": "Với bàn giao hỗ trợ giả lập, hãy đọc nhãn nhóm xem xét giả lập.",
+          "id": "support-handoff.first_check",
+          "questionEn": "For the fictional support handoff, what should be checked first?",
+          "questionVi": "Với bàn giao hỗ trợ giả lập, cần kiểm tra điều gì trước?",
+          "relation": "first_check",
+          "statementEn": "For the fictional support handoff, read the demonstration receiving-group label.",
+          "statementVi": "Với bàn giao hỗ trợ giả lập, hãy đọc nhãn nhóm nhận trình diễn."
+        },
+        {
+          "alternativeEn": "For the fictional support handoff, retain only the demonstration checklist.",
+          "alternativeVi": "Với bàn giao hỗ trợ giả lập, hãy chỉ giữ danh sách kiểm tra trình diễn.",
+          "id": "support-handoff.required_state",
+          "questionEn": "For the fictional support handoff, which state should be used?",
+          "questionVi": "Với bàn giao hỗ trợ giả lập, cần dùng trạng thái nào?",
+          "relation": "required_state",
+          "statementEn": "For the fictional support handoff, retain only invented exercise context.",
+          "statementVi": "Với bàn giao hỗ trợ giả lập, hãy chỉ giữ ngữ cảnh bài tập hư cấu."
+        },
+        {
+          "alternativeEn": "For the fictional support handoff, use the example review summary card.",
+          "alternativeVi": "Với bàn giao hỗ trợ giả lập, hãy dùng thẻ tóm tắt xem xét ví dụ.",
+          "id": "support-handoff.handoff",
+          "questionEn": "For the fictional support handoff, what should the handoff include?",
+          "questionVi": "Với bàn giao hỗ trợ giả lập, cần ghi nhận gì khi bàn giao?",
+          "relation": "handoff",
+          "statementEn": "For the fictional support handoff, use the mock handoff summary card.",
+          "statementVi": "Với bàn giao hỗ trợ giả lập, hãy dùng thẻ tóm tắt bàn giao mô phỏng."
+        }
+      ],
+      "id": "support-handoff",
+      "subjectEn": "fictional support handoff",
+      "subjectVi": "bàn giao hỗ trợ giả lập"
+    },
+    {
+      "facts": [
+        {
+          "alternativeEn": "For the mock approval exercise, inspect the demonstration observer-role card.",
+          "alternativeVi": "Với bài tập phê duyệt mô phỏng, hãy kiểm tra thẻ vai trò người quan sát trình diễn.",
+          "id": "approval-mock.first_check",
+          "questionEn": "For the mock approval exercise, what should be checked first?",
+          "questionVi": "Với bài tập phê duyệt mô phỏng, cần kiểm tra điều gì trước?",
+          "relation": "first_check",
+          "statementEn": "For the mock approval exercise, inspect the fictional requester-role card.",
+          "statementVi": "Với bài tập phê duyệt mô phỏng, hãy kiểm tra thẻ vai trò người yêu cầu giả lập."
+        },
+        {
+          "alternativeEn": "For the mock approval exercise, keep the fictional request in preview.",
+          "alternativeVi": "Với bài tập phê duyệt mô phỏng, hãy giữ yêu cầu giả lập ở chế độ xem trước.",
+          "id": "approval-mock.required_state",
+          "questionEn": "For the mock approval exercise, which state should be used?",
+          "questionVi": "Với bài tập phê duyệt mô phỏng, cần dùng trạng thái nào?",
+          "relation": "required_state",
+          "statementEn": "For the mock approval exercise, keep the mock request in draft.",
+          "statementVi": "Với bài tập phê duyệt mô phỏng, hãy giữ yêu cầu mô phỏng ở bản nháp."
+        },
+        {
+          "alternativeEn": "For the mock approval exercise, record the demonstration draft-stage marker.",
+          "alternativeVi": "Với bài tập phê duyệt mô phỏng, hãy ghi dấu giai đoạn bản nháp trình diễn.",
+          "id": "approval-mock.handoff",
+          "questionEn": "For the mock approval exercise, what should the handoff include?",
+          "questionVi": "Với bài tập phê duyệt mô phỏng, cần ghi nhận gì khi bàn giao?",
+          "relation": "handoff",
+          "statementEn": "For the mock approval exercise, record the invented review-stage marker.",
+          "statementVi": "Với bài tập phê duyệt mô phỏng, hãy ghi dấu giai đoạn xem xét giả lập."
+        }
+      ],
+      "id": "approval-mock",
+      "subjectEn": "mock approval exercise",
+      "subjectVi": "bài tập phê duyệt mô phỏng"
+    },
+    {
+      "facts": [
+        {
+          "alternativeEn": "For the demo account reset, inspect the demonstration session-exercise card.",
+          "alternativeVi": "Với đặt lại tài khoản trình diễn, hãy kiểm tra thẻ bài tập phiên trình diễn.",
+          "id": "reset-demo.first_check",
+          "questionEn": "For the demo account reset, what should be checked first?",
+          "questionVi": "Với đặt lại tài khoản trình diễn, cần kiểm tra điều gì trước?",
+          "relation": "first_check",
+          "statementEn": "For the demo account reset, inspect the invented reset-exercise card.",
+          "statementVi": "Với đặt lại tài khoản trình diễn, hãy kiểm tra thẻ bài tập đặt lại giả lập."
+        },
+        {
+          "alternativeEn": "For the demo account reset, use an offline demonstration session.",
+          "alternativeVi": "Với đặt lại tài khoản trình diễn, hãy dùng phiên trình diễn ngoại tuyến.",
+          "id": "reset-demo.required_state",
+          "questionEn": "For the demo account reset, which state should be used?",
+          "questionVi": "Với đặt lại tài khoản trình diễn, cần dùng trạng thái nào?",
+          "relation": "required_state",
+          "statementEn": "For the demo account reset, use a disposable fictional session.",
+          "statementVi": "Với đặt lại tài khoản trình diễn, hãy dùng phiên giả lập dùng một lần."
+        },
+        {
+          "alternativeEn": "For the demo account reset, record the demonstration session-state label.",
+          "alternativeVi": "Với đặt lại tài khoản trình diễn, hãy ghi nhãn trạng thái phiên trình diễn.",
+          "id": "reset-demo.handoff",
+          "questionEn": "For the demo account reset, what should the handoff include?",
+          "questionVi": "Với đặt lại tài khoản trình diễn, cần ghi nhận gì khi bàn giao?",
+          "relation": "handoff",
+          "statementEn": "For the demo account reset, record the fictional reset-state label.",
+          "statementVi": "Với đặt lại tài khoản trình diễn, hãy ghi nhãn trạng thái đặt lại giả lập."
+        }
+      ],
+      "id": "reset-demo",
+      "subjectEn": "demo account reset",
+      "subjectVi": "đặt lại tài khoản trình diễn"
+    },
+    {
+      "facts": [
+        {
+          "alternativeEn": "For the guest demonstration device, inspect the training isolation badge.",
+          "alternativeVi": "Với thiết bị khách trình diễn, hãy kiểm tra dấu cách ly thực hành.",
+          "id": "guest-device.first_check",
+          "questionEn": "For the guest demonstration device, what should be checked first?",
+          "questionVi": "Với thiết bị khách trình diễn, cần kiểm tra điều gì trước?",
+          "relation": "first_check",
+          "statementEn": "For the guest demonstration device, inspect the example guest-mode badge.",
+          "statementVi": "Với thiết bị khách trình diễn, hãy kiểm tra dấu chế độ khách ví dụ."
+        },
+        {
+          "alternativeEn": "For the guest demonstration device, keep the device in the offline exercise segment.",
+          "alternativeVi": "Với thiết bị khách trình diễn, hãy giữ thiết bị trong phân đoạn bài tập ngoại tuyến.",
+          "id": "guest-device.required_state",
+          "questionEn": "For the guest demonstration device, which state should be used?",
+          "questionVi": "Với thiết bị khách trình diễn, cần dùng trạng thái nào?",
+          "relation": "required_state",
+          "statementEn": "For the guest demonstration device, keep the device in the mock guest segment.",
+          "statementVi": "Với thiết bị khách trình diễn, hãy giữ thiết bị trong phân đoạn khách mô phỏng."
+        },
+        {
+          "alternativeEn": "For the guest demonstration device, attach the demonstration isolation checklist.",
+          "alternativeVi": "Với thiết bị khách trình diễn, hãy đính kèm danh sách cách ly trình diễn.",
+          "id": "guest-device.handoff",
+          "questionEn": "For the guest demonstration device, what should the handoff include?",
+          "questionVi": "Với thiết bị khách trình diễn, cần ghi nhận gì khi bàn giao?",
+          "relation": "handoff",
+          "statementEn": "For the guest demonstration device, attach the invented guest-state checklist.",
+          "statementVi": "Với thiết bị khách trình diễn, hãy đính kèm danh sách trạng thái khách giả lập."
+        }
+      ],
+      "id": "guest-device",
+      "subjectEn": "guest demonstration device",
+      "subjectVi": "thiết bị khách trình diễn"
+    },
+    {
+      "facts": [
+        {
+          "alternativeEn": "For the temporary service simulation, read the example exercise-state board.",
+          "alternativeVi": "Với mô phỏng gián đoạn dịch vụ, hãy đọc bảng trạng thái bài tập ví dụ.",
+          "id": "outage-demo.first_check",
+          "questionEn": "For the temporary service simulation, what should be checked first?",
+          "questionVi": "Với mô phỏng gián đoạn dịch vụ, cần kiểm tra điều gì trước?",
+          "relation": "first_check",
+          "statementEn": "For the temporary service simulation, read the invented service-state board.",
+          "statementVi": "Với mô phỏng gián đoạn dịch vụ, hãy đọc bảng trạng thái dịch vụ giả lập."
+        },
+        {
+          "alternativeEn": "For the temporary service simulation, mark the demonstration service as paused.",
+          "alternativeVi": "Với mô phỏng gián đoạn dịch vụ, hãy đánh dấu dịch vụ trình diễn đang tạm dừng.",
+          "id": "outage-demo.required_state",
+          "questionEn": "For the temporary service simulation, which state should be used?",
+          "questionVi": "Với mô phỏng gián đoạn dịch vụ, cần dùng trạng thái nào?",
+          "relation": "required_state",
+          "statementEn": "For the temporary service simulation, mark the fictional service as under observation.",
+          "statementVi": "Với mô phỏng gián đoạn dịch vụ, hãy đánh dấu dịch vụ giả lập đang được theo dõi."
+        },
+        {
+          "alternativeEn": "For the temporary service simulation, attach the demonstration observation summary.",
+          "alternativeVi": "Với mô phỏng gián đoạn dịch vụ, hãy đính kèm tóm tắt theo dõi trình diễn.",
+          "id": "outage-demo.handoff",
+          "questionEn": "For the temporary service simulation, what should the handoff include?",
+          "questionVi": "Với mô phỏng gián đoạn dịch vụ, cần ghi nhận gì khi bàn giao?",
+          "relation": "handoff",
+          "statementEn": "For the temporary service simulation, attach the invented impact summary.",
+          "statementVi": "Với mô phỏng gián đoạn dịch vụ, hãy đính kèm tóm tắt ảnh hưởng giả lập."
+        }
+      ],
+      "id": "outage-demo",
+      "subjectEn": "temporary service simulation",
+      "subjectVi": "mô phỏng gián đoạn dịch vụ"
+    }
+  ],
+  "owner": "servicedesk",
+  "provenance": "AUTHORED_FICTIONAL_ONLY",
+  "schemaVersion": "0.2.0"
+}
