@@ -1,5 +1,8 @@
 # AI06-02 implementation handover
 
+Next implementation: [AI06 continuation status](AI06_COMPLETION_STATUS.md).
+The provider/model approval state recorded here remains unchanged.
+
 Date: 2026-10-23. Scope: governed local evidence-selection engineering.
 Release decision: **NOT_AUTHORIZED**. Real-model validation: **BLOCKED**.
 Architecture, Privacy, Security, Data Owner and Platform sign-offs remain pending.

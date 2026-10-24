@@ -8,6 +8,11 @@ Strict boundary recovery BND-00 through BND-07 is implemented; see
 [runtime configuration](docs/architecture/STRICT_BOUNDARY_OPERATIONS.md).
 Production security G9 remains FAIL; release remains BLOCKED.
 
+AI06 continuation adds synthetic DEV evaluation and disabled Service Desk
+assistance through HPDI, Core freshness checks and a browser-tested panel.
+See [AI06 implementation status](intelligence/docs/task/AI06/AI06_COMPLETION_STATUS.md)
+for reproduction commands, measured evidence and remaining model/review gates.
+
 <p align="center">
   <img src="https://img.shields.io/badge/Java-17-blue.svg" alt="Java 17" />
   <img src="https://img.shields.io/badge/Spring%20Boot-3.3-green.svg" alt="Spring Boot" />

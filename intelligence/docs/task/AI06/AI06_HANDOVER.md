@@ -1,5 +1,9 @@
 # AI06 foundation handover
 
+Continuation: [AI06 implementation status](AI06_COMPLETION_STATUS.md) covers the
+AI06-03 DEV tooling and AI06-04 synthetic integration on the AI06-02 branch.
+The original foundation evidence below remains historical.
+
 Base: `origin/develop@828fbcf2273e3ed54e5d67e7a2594f1190f319cc`.
 Branch: `feature/ai06-01-grounded-generation-foundation`.
 
