@@ -4,6 +4,11 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import org.springframework.stereotype.Component;
+
+import vn.haui.dx.hpdi.intelligence.api.IntelligenceFailure;
+
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.net.ProxySelector;
@@ -23,8 +28,6 @@ import java.util.concurrent.Flow;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
-import org.springframework.stereotype.Component;
-import vn.haui.dx.hpdi.intelligence.api.IntelligenceFailure;
 
 @Component
 public class HttpAssistanceTransport implements AssistanceTransport {
@@ -34,17 +37,19 @@ public class HttpAssistanceTransport implements AssistanceTransport {
     private final AssistanceConfiguration.Settings settings;
     private final ObjectMapper json;
     private final Semaphore slots = new Semaphore(4);
-    private final HttpClient http = HttpClient.newBuilder()
-        .connectTimeout(Duration.ofSeconds(1))
-        .followRedirects(HttpClient.Redirect.NEVER)
-        .proxy(ProxySelector.of(null))
-        .build();
+    private final HttpClient http =
+            HttpClient.newBuilder()
+                    .connectTimeout(Duration.ofSeconds(1))
+                    .followRedirects(HttpClient.Redirect.NEVER)
+                    .proxy(ProxySelector.of(null))
+                    .build();
 
     public HttpAssistanceTransport(AssistanceConfiguration.Settings settings, ObjectMapper json) {
         this.settings = settings;
-        this.json = json.copy()
-            .enable(JsonParser.Feature.STRICT_DUPLICATE_DETECTION)
-            .enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS);
+        this.json =
+                json.copy()
+                        .enable(JsonParser.Feature.STRICT_DUPLICATE_DETECTION)
+                        .enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS);
     }
 
     private URI endpoint() {
@@ -56,11 +61,21 @@ public class HttpAssistanceTransport implements AssistanceTransport {
             var base = URI.create(settings.baseUrl());
 
             if (!"http".equals(base.getScheme())
-                    || !Set.of("127.0.0.1", "localhost", "[::1]", "intelligence-assistance").contains(base.getHost())
-                    || base.getPort() == 0 || base.getPort() > 65535
-                    || base.getUserInfo() != null || base.getQuery() != null || base.getFragment() != null
+                    || !Set.of(
+                                    "127.0.0.1",
+                                    "localhost",
+                                    "[::1]",
+                                    "intelligence-assistance",
+                                    "intelligence-cloud")
+                            .contains(base.getHost())
+                    || base.getPort() == 0
+                    || base.getPort() > 65535
+                    || base.getUserInfo() != null
+                    || base.getQuery() != null
+                    || base.getFragment() != null
                     || !(base.getPath().isEmpty() || "/".equals(base.getPath()))
-                    || settings.token() == null || !settings.token().matches("[A-Za-z0-9._~+/-]{32,}=*")) {
+                    || settings.token() == null
+                    || !settings.token().matches("[A-Za-z0-9._~+/-]{32,}=*")) {
                 throw IntelligenceFailure.configuration();
             }
 
@@ -97,13 +112,14 @@ public class HttpAssistanceTransport implements AssistanceTransport {
     }
 
     private JsonNode send(URI target, byte[] body) {
-        var request = HttpRequest.newBuilder(target)
-            .timeout(Duration.ofSeconds(15))
-            .header("Authorization", "Bearer " + settings.token())
-            .header("Content-Type", "application/json")
-            .header("Accept", "application/json")
-            .POST(HttpRequest.BodyPublishers.ofByteArray(body))
-            .build();
+        var request =
+                HttpRequest.newBuilder(target)
+                        .timeout(Duration.ofSeconds(15))
+                        .header("Authorization", "Bearer " + settings.token())
+                        .header("Content-Type", "application/json")
+                        .header("Accept", "application/json")
+                        .POST(HttpRequest.BodyPublishers.ofByteArray(body))
+                        .build();
         var pending = http.sendAsync(request, info -> new LimitedBody());
 
         try {
@@ -115,7 +131,12 @@ public class HttpAssistanceTransport implements AssistanceTransport {
             if (status == 429 || status == 503) throw IntelligenceFailure.unavailable();
             if (status != 200) throw IntelligenceFailure.invalid();
 
-            String mediaType = response.headers().firstValue("Content-Type").orElse("").split(";", 2)[0].trim();
+            String mediaType =
+                    response.headers()
+                            .firstValue("Content-Type")
+                            .orElse("")
+                            .split(";", 2)[0]
+                            .trim();
 
             if (!"application/json".equalsIgnoreCase(mediaType)
                     || response.headers().firstValue("Content-Encoding").isPresent()) {
@@ -135,7 +156,8 @@ public class HttpAssistanceTransport implements AssistanceTransport {
             Thread.currentThread().interrupt();
             throw IntelligenceFailure.unavailable();
         } catch (ExecutionException error) {
-            if (error.getCause() instanceof HttpTimeoutException) throw IntelligenceFailure.timeout();
+            if (error.getCause() instanceof HttpTimeoutException)
+                throw IntelligenceFailure.timeout();
             if (error.getCause() instanceof IntelligenceFailure failure) throw failure;
             throw IntelligenceFailure.unavailable();
         }

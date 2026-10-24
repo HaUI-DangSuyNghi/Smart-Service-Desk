@@ -11,17 +11,24 @@ public record AssistanceInput(
         String profileVersion,
         String policyIdentity,
         List<SourcePin> sources,
-        Map<String, String> generationRuntime) {
+        Map<String, String> generationRuntime,
+        AssistanceRoute route) {
 
     public AssistanceInput {
         sources = List.copyOf(sources);
         generationRuntime = Map.copyOf(generationRuntime);
     }
 
+    public AssistanceInput(
+            String question,
+            String profileId,
+            String profileVersion,
+            String policyIdentity,
+            List<SourcePin> sources,
+            Map<String, String> generationRuntime) {
+        this(question, profileId, profileVersion, policyIdentity, sources, generationRuntime, null);
+    }
+
     /** Approval is an application governance concern; equality is enforced here. */
-    public record SourcePin(
-            UUID metadataId,
-            String version,
-            String checksum,
-            String usageRights) {}
+    public record SourcePin(UUID metadataId, String version, String checksum, String usageRights) {}
 }
