@@ -3,7 +3,6 @@ import { Controller, useForm } from "react-hook-form";
 import { useNavigate } from "react-router";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { IconUpload } from "@tabler/icons-react";
-import { z } from "zod";
 import { ApiError } from "@/platform/shared/api";
 import { Button } from "@/platform/shared/ui/button";
 import {
@@ -19,34 +18,15 @@ import { FileDropzone } from "@/platform/shared/ui/FileDropzone";
 import { Input } from "@/platform/shared/ui/input";
 import { Label } from "@/platform/shared/ui/label";
 import { useCreateKnowledge } from "./useKnowledge";
-
-const MAX_FILE_BYTES = 5 * 1024 * 1024;
-// Knowledge Hub chỉ nhận văn bản (backend chỉ liệt kê text/plain, text/markdown):
-// cần đọc được nội dung để xem trước và để AI trích dẫn
-const ACCEPTED_EXTENSIONS = [".txt", ".md", ".markdown"];
-const ACCEPTED_FILES = ACCEPTED_EXTENSIONS.join(",");
-
-const hasAcceptedExtension = (file: File) =>
-  ACCEPTED_EXTENSIONS.some((extension) => file.name.toLowerCase().endsWith(extension));
+import {
+  ACCEPTED_KNOWLEDGE_FILES,
+  uploadKnowledgeSchema,
+  type KnowledgeFormInput,
+  type KnowledgeFormOutput,
+} from "./uploadKnowledgeSchema";
 
 // Tên file bỏ phần mở rộng, dùng làm tiêu đề gợi ý
 const baseName = (file: File) => file.name.replace(/\.[^.]+$/, "");
-
-// Giới hạn độ dài khớp NewMetadata trong contracts/openapi/core.yaml.
-// Kiểm đuôi file ở đây vì kéo thả không bị lọc theo accept như hộp chọn file
-const schema = z.object({
-  file: z
-    .custom<File | null>()
-    .refine((file) => file instanceof File, "Chọn một file")
-    .refine((file) => !file || hasAcceptedExtension(file), "Chỉ nhận file .txt hoặc .md")
-    .refine((file) => !file || file.size <= MAX_FILE_BYTES, "File tối đa 5 MB"),
-  title: z.string().trim().min(1, "Nhập tiêu đề").max(200, "Tối đa 200 ký tự"),
-  source: z.string().trim().min(1, "Nhập nguồn tài liệu").max(1000, "Tối đa 1000 ký tự"),
-  version: z.string().trim().min(1, "Nhập phiên bản").max(100, "Tối đa 100 ký tự"),
-  usageRights: z.string().trim().min(1, "Nhập quyền sử dụng").max(200, "Tối đa 200 ký tự"),
-});
-
-type FormValues = z.infer<typeof schema>;
 
 interface FieldProps {
   id: string;
@@ -70,8 +50,8 @@ export const UploadKnowledgeDialog = () => {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const create = useCreateKnowledge();
-  const form = useForm<FormValues>({
-    resolver: zodResolver(schema),
+  const form = useForm<KnowledgeFormInput, unknown, KnowledgeFormOutput>({
+    resolver: zodResolver(uploadKnowledgeSchema),
     defaultValues: { file: null, title: "", source: "", version: "1.0", usageRights: "" },
   });
   const { errors } = form.formState;
@@ -95,7 +75,7 @@ export const UploadKnowledgeDialog = () => {
   const handleSubmit = form.handleSubmit(({ file, ...fields }) => {
     // schema đã kiểm có file
     create.mutate(
-      { file: file!, ...fields },
+      { file, ...fields },
       {
         onSuccess: (created) => {
           handleOpenChange(false);
@@ -135,7 +115,7 @@ export const UploadKnowledgeDialog = () => {
                   id="file"
                   value={field.value}
                   onChange={(file) => handleFileChange(file, field.onChange)}
-                  accept={ACCEPTED_FILES}
+                  accept={ACCEPTED_KNOWLEDGE_FILES}
                   hint="File .txt hoặc .md, UTF-8, tối đa 5 MB"
                   invalid={errors.file !== undefined}
                   disabled={create.isPending}
