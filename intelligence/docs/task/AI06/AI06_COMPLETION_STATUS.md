@@ -46,6 +46,7 @@ Engineering tests do not grant release rights.
 | Full Python source | 915 passed, 6 explicit optional-model skips; `final-source-tests.xml` |
 | Full installed generic + external cloud wheels | 915 passed, 6 skips; `final-wheel-tests.xml` |
 | Cloud source / installed wheel | 54 / 54 passed, including private HTTP v0.2 with fake vendors |
+| Linux installed cloud wheel in offline-staged container | 54 passed; no vendor network/API credentials |
 | Final untouched FE unit tests / typecheck | 28 passed; typecheck fails on the existing upload resolver |
 | Linux Java/Core/PostgreSQL/private Python + AI02 | 232 passed, zero failures/errors/skips; `linux-core-python-02/summary.json` |
 | Tier source / Java bytecode boundaries | PASS; scanner and Maven ArchUnit |
@@ -71,6 +72,12 @@ and Playwright configuration edits were removed. Existing FE build has the known
 upload resolver `File` / `File | null` type error and is left to the FE team.
 Earlier 31-unit/11-browser results included temporary edits and are not final FE
 acceptance. Existing auth/panel code remains in place.
+
+Final fetch found `develop@c61cdf9` (FE #40). A read-only `git merge-tree`
+simulation reports one conflict in `frontend/src/apps/servicedesk/index.ts`.
+No merge or frontend resolution was applied, preserving the user's FE exclusion.
+The FE owner must integrate that route registry before PR #37 can merge. This is
+separate from the already-merged #38/#39 baseline and local AI06 backend tests.
 
 ## Remaining owner/environment gates
 
