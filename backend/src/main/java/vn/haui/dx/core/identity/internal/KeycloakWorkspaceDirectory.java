@@ -24,6 +24,7 @@ import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
 import vn.haui.dx.core.common.CoreException;
 import vn.haui.dx.core.identity.api.DirectoryMember;
+import vn.haui.dx.core.identity.api.DirectoryPermission;
 import vn.haui.dx.core.identity.api.WorkspaceAccess;
 import vn.haui.dx.core.identity.api.WorkspaceDirectory;
 import vn.haui.dx.core.identity.api.WorkspaceRole;
@@ -39,8 +40,11 @@ class KeycloakWorkspaceDirectory implements WorkspaceDirectory {
     private static final Logger LOG = LoggerFactory.getLogger(KeycloakWorkspaceDirectory.class);
     // Gia hạn token sớm một chút để không gửi token vừa hết hạn
     private static final long TOKEN_SAFETY_SECONDS = 30;
+    /** Client chỉ chứa danh sách quyền (xem infra/keycloak/realm-template.json). */
+    static final String PERMISSION_CLIENT = "dx-permissions";
 
-    private record Snapshot(String displayName, List<DirectoryMember> members, Instant expiresAt) {}
+    private record Snapshot(String displayName, List<DirectoryMember> members,
+                            Map<String, List<DirectoryPermission>> permissions, Instant expiresAt) {}
     private record Token(String value, Instant expiresAt) {}
 
     private final WorkspaceAccess access;
@@ -84,6 +88,12 @@ class KeycloakWorkspaceDirectory implements WorkspaceDirectory {
         return snapshot(workspace).displayName();
     }
 
+    @Override
+    public Map<String, List<DirectoryPermission>> rolePermissions(String workspace) {
+        access.requireMember(workspace);
+        return snapshot(workspace).permissions();
+    }
+
     private Snapshot snapshot(String workspace) {
         Snapshot cached = cache.get(workspace);
         if (cached != null && cached.expiresAt().isAfter(clock.instant())) return cached;
@@ -104,11 +114,12 @@ class KeycloakWorkspaceDirectory implements WorkspaceDirectory {
     private Snapshot load(String workspace) {
         Instant expiresAt = clock.instant().plus(Duration.ofSeconds(CACHE_SECONDS));
         JsonNode group = get("/admin/realms/{realm}/group-by-path/workspaces/{workspace}", realm, workspace);
-        if (group == null) return new Snapshot(workspace, List.of(), expiresAt);
+        if (group == null) return new Snapshot(workspace, List.of(), Map.of(), expiresAt);
 
         String displayName = group.path("attributes").path("displayName").path(0).asText("");
         Map<String, JsonNode> users = new LinkedHashMap<>();
         Map<String, Set<WorkspaceRole>> roles = new LinkedHashMap<>();
+        Map<String, List<DirectoryPermission>> permissions = new LinkedHashMap<>();
 
         JsonNode roleGroups = get("/admin/realms/{realm}/groups/{id}/children?briefRepresentation=true&max=100",
             realm, group.path("id").asText());
@@ -124,13 +135,28 @@ class KeycloakWorkspaceDirectory implements WorkspaceDirectory {
                 users.putIfAbsent(sub, user);
                 roles.computeIfAbsent(sub, key -> new HashSet<>()).add(new WorkspaceRole(role));
             }
+            permissions.put(role, permissions(roleGroup.path("id").asText()));
         }
 
         List<DirectoryMember> result = new ArrayList<>();
         users.forEach((sub, user) -> result.add(new DirectoryMember(
             sub, user.path("username").asText(sub), fullName(user), roles.get(sub))));
         result.sort(Comparator.comparing(DirectoryMember::username));
-        return new Snapshot(displayName.isBlank() ? workspace : displayName, List.copyOf(result), expiresAt);
+        return new Snapshot(displayName.isBlank() ? workspace : displayName, List.copyOf(result),
+            Map.copyOf(permissions), expiresAt);
+    }
+
+    /** Quyền (role của client dx-permissions) gán trực tiếp cho một group vai trò. */
+    private List<DirectoryPermission> permissions(String groupId) {
+        JsonNode mappings = get("/admin/realms/{realm}/groups/{id}/role-mappings", realm, groupId);
+        if (mappings == null) return List.of();
+        List<DirectoryPermission> result = new ArrayList<>();
+        for (JsonNode role : iterable(mappings.path("clientMappings").path(PERMISSION_CLIENT).path("mappings"))) {
+            String description = role.path("description").asText("");
+            result.add(new DirectoryPermission(role.path("name").asText(), description.isBlank() ? null : description));
+        }
+        result.sort(Comparator.comparing(DirectoryPermission::name));
+        return List.copyOf(result);
     }
 
     /** GET Admin API; 404 → null, lỗi khác → RestClientException. */

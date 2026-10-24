@@ -12,6 +12,7 @@ import vn.haui.dx.core.identity.api.WorkspaceDirectory;
 import vn.haui.dx.hpdi.human.api.MemberDirectory;
 import vn.haui.dx.hpdi.human.api.WorkspaceContext;
 import vn.haui.dx.hpdi.human.api.WorkspaceMember;
+import vn.haui.dx.hpdi.human.api.WorkspacePermission;
 /**
  * Ghép danh bạ của Core với vai trò trong token. Lỗi quyền (CoreException) để Errors của Core xử lý;
  * chỉ lỗi danh bạ không phản hồi được hạ cấp ở những chỗ hiển thị phụ (tên workspace, tên người tạo).
@@ -46,6 +47,17 @@ public class IdentityMemberDirectory implements MemberDirectory {
             if (error.code() == ErrorCode.SERVICE_UNAVAILABLE) return Map.of();
             throw error;
         }
+    }
+    public List<WorkspacePermission> myPermissions(String workspace) {
+        var byRole = directory.rolePermissions(workspace);
+        // Vai trò lấy từ token đã ký, không lấy từ danh bạ; nhiều vai trò cùng quyền thì chỉ giữ một
+        Map<String, WorkspacePermission> merged = new TreeMap<>();
+        access.current().memberships().stream()
+            .filter(m -> m.workspace().equals(workspace))
+            .flatMap(m -> byRole.getOrDefault(m.role().value(), List.of()).stream())
+            .forEach(p -> merged.putIfAbsent(p.name(),
+                new WorkspacePermission(p.name(), p.description() != null ? p.description() : p.name())));
+        return List.copyOf(merged.values());
     }
     private String nameOrCode(String workspace) {
         try {

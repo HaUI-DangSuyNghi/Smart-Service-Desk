@@ -1,6 +1,7 @@
 package vn.haui.dx.core.identity.api;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Danh bạ workspace lấy từ Keycloak (đọc qua Admin API, không đọc DB Keycloak).
@@ -13,4 +14,10 @@ public interface WorkspaceDirectory {
 
     /** Thuộc tính {@code displayName} của group {@code /workspaces/{workspace}}; không có thì trả chính mã workspace. */
     String displayName(String workspace);
+
+    /**
+     * Vai trò → quyền nhỏ (role của client {@code dx-permissions}) gán cho group {@code /workspaces/{workspace}/{role}}.
+     * Chỉ để hiển thị cho người dùng biết mình có quyền gì.
+     */
+    Map<String, List<DirectoryPermission>> rolePermissions(String workspace);
 }

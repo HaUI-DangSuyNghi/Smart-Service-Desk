@@ -17,9 +17,29 @@ export interface WorkspaceMember {
   roles: string[];
 }
 
+/** Một quyền của tôi trong workspace (schema WorkspacePermission trong contracts/hpdi/openapi.yaml). */
+export interface WorkspacePermission {
+  /** Tên quyền, ví dụ "request:create". */
+  key: string;
+  /** Mô tả tiếng Việt khai báo trong Keycloak, ví dụ "Tạo yêu cầu". */
+  label: string;
+}
+
 /** GET /api/hpdi/v1/workspaces: workspace của tôi kèm tên hiển thị và vai trò. */
 export const getMyWorkspaces = async (signal?: AbortSignal): Promise<WorkspaceSummary[]> => {
   const { data } = await apiClient.get<WorkspaceSummary[]>("/hpdi/v1/workspaces", { signal });
+  return data;
+};
+
+/** GET quyền của tôi trong workspace (từ Keycloak); chỉ để hiển thị, backend tự kiểm quyền. */
+export const getMyPermissions = async (
+  workspace: string,
+  signal?: AbortSignal,
+): Promise<WorkspacePermission[]> => {
+  const { data } = await apiClient.get<WorkspacePermission[]>(
+    `${hpdiWorkspace(workspace)}/permissions`,
+    { signal },
+  );
   return data;
 };
 

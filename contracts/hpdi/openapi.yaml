@@ -27,6 +27,84 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+  /api/hpdi/v1/workspaces/{workspace}/processes:
+    parameters:
+    - *id001
+    get:
+      description: Mọi quy trình đã đăng ký kèm nhãn hiển thị, kết quả hợp lệ theo bước và canStart của người gọi.
+      responses:
+        '200':
+          description: Danh mục quy trình, sắp theo tên
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProcessDescriptor'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /api/hpdi/v1/workspaces/{workspace}/processes/{processKey}/instances:
+    parameters:
+    - *id001
+    - name: processKey
+      in: path
+      required: true
+      schema:
+        type: string
+    post:
+      description: Tạo yêu cầu từ form chung. Chỉ quy trình tự phục vụ (canStart); businessKey do server sinh.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                variables:
+                  type: object
+                  description: Chỉ các key trong startFields
+                  additionalProperties:
+                    type: string
+                    maxLength: 200
+      responses:
+        '201':
+          description: Đã tạo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProcessHandle'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /api/hpdi/v1/workspaces/{workspace}/instances:
+    parameters:
+    - *id001
+    get:
+      description: Yêu cầu người gọi đã tạo trong workspace, mọi quy trình, mới nhất trước.
+      parameters:
+      - $ref: '#/components/parameters/Page'
+      - $ref: '#/components/parameters/Size'
+      responses:
+        '200':
+          description: Một trang yêu cầu
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProcessSummaryPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
   /api/hpdi/v1/workspaces/{workspace}/inbox:
     parameters:
     - *id001
@@ -173,6 +251,47 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
+  /api/hpdi/v1/workspaces/{workspace}/permissions:
+    parameters:
+    - *id001
+    get:
+      description: Quyền của người gọi trong workspace – gộp quyền (role của client dx-permissions trong Keycloak) của các vai trò người gọi có; vai trò lấy từ token. Chỉ để hiển thị.
+      responses:
+        '200':
+          description: Quyền, sắp theo tên
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WorkspacePermission'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /api/hpdi/v1/workspaces/{workspace}/activity:
+    parameters:
+    - *id001
+    get:
+      description: Hoạt động của tôi – thao tác do chính người gọi làm trong workspace (lấy từ audit), mới nhất trước. Mọi thành viên workspace được xem; người thực hiện luôn lấy từ token.
+      parameters:
+      - $ref: '#/components/parameters/Page'
+      - $ref: '#/components/parameters/Size'
+      responses:
+        '200':
+          description: Một trang hoạt động
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActivityPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
   /api/hpdi/v1/workspaces/{workspace}/knowledge:
     parameters:
     - *id001
@@ -401,6 +520,152 @@ components:
           type: string
         workspace:
           type: string
+    ProcessOption:
+      type: object
+      required:
+      - key
+      - label
+      properties:
+        key:
+          type: string
+          description: Giá trị gửi lên server (outcome, tên biến)
+        label:
+          type: string
+          description: Nhãn hiển thị; thiếu nhãn thì bằng key
+    ProcessDescriptor:
+      type: object
+      required:
+      - processKey
+      - name
+      - canStart
+      - tasks
+      - startFields
+      properties:
+        processKey:
+          type: string
+        name:
+          type: string
+        canStart:
+          type: boolean
+          description: Người gọi được tạo yêu cầu từ form chung
+        tasks:
+          type: array
+          items:
+            type: object
+            required:
+            - key
+            - name
+            - outcomes
+            properties:
+              key:
+                type: string
+                description: id của userTask trong BPMN
+              name:
+                type: string
+              outcomes:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProcessOption'
+        startFields:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProcessOption'
+    ProcessSummary:
+      type: object
+      required:
+      - id
+      - processKey
+      - businessKey
+      - startedAt
+      - activeTaskKeys
+      properties:
+        id:
+          type: string
+        processKey:
+          type: string
+        businessKey:
+          type: string
+        startedAt:
+          type: string
+          format: date-time
+        endedAt:
+          type: string
+          format: date-time
+          nullable: true
+        activeTaskKeys:
+          type: array
+          description: Bước đang mở; rỗng khi đã kết thúc
+          items:
+            type: string
+    ProcessSummaryPage:
+      allOf:
+      - $ref: '#/components/schemas/PageMeta'
+      - type: object
+        required:
+        - items
+        properties:
+          items:
+            type: array
+            items:
+              $ref: '#/components/schemas/ProcessSummary'
+    WorkspacePermission:
+      type: object
+      required:
+      - key
+      - label
+      properties:
+        key:
+          type: string
+          example: request:create
+        label:
+          type: string
+          description: Mô tả tiếng Việt khai báo trong Keycloak; không có thì bằng key
+          example: Tạo yêu cầu
+    ActivityEntry:
+      type: object
+      required:
+      - id
+      - occurredAt
+      - action
+      - resourceType
+      - resource
+      - details
+      properties:
+        id:
+          type: string
+        occurredAt:
+          type: string
+          format: date-time
+        action:
+          type: string
+          description: Dạng <đối tượng>.<động từ>, ví dụ process.start, task.claim, task.complete, file.upload
+        resourceType:
+          type: string
+        resource:
+          type: string
+        processInstanceId:
+          type: string
+          nullable: true
+          description: Quy trình liên quan để mở trang tiến độ; null nếu không thuộc quy trình
+        processKey:
+          type: string
+          nullable: true
+        details:
+          type: object
+          description: Tham chiếu an toàn (taskKey, outcome, businessKey...)
+          additionalProperties:
+            type: string
+    ActivityPage:
+      allOf:
+      - $ref: '#/components/schemas/PageMeta'
+      - type: object
+        required:
+        - items
+        properties:
+          items:
+            type: array
+            items:
+              $ref: '#/components/schemas/ActivityEntry'
     PageMeta:
       type: object
       required:

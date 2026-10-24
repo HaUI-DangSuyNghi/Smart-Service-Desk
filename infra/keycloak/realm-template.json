@@ -5,16 +5,48 @@
   "accessTokenLifespan": 300,
   "registrationAllowed": false,
   "roles": {
-    "realm": [{"name": "platform-admin", "description": "Platform administration; no implicit access to workspace content"}]
+    "realm": [{"name": "platform-admin", "description": "Platform administration; no implicit access to workspace content"}],
+    "client": {
+      "dx-permissions": [
+        {"name": "request:create", "description": "Tạo yêu cầu"},
+        {"name": "request:view-all", "description": "Xem mọi yêu cầu trong workspace"},
+        {"name": "task:handle", "description": "Xử lý công việc"},
+        {"name": "task:assign", "description": "Giao việc cho người khác"},
+        {"name": "document:view", "description": "Xem tài liệu"},
+        {"name": "document:upload", "description": "Tải tài liệu lên"},
+        {"name": "member:view", "description": "Xem danh sách thành viên"},
+        {"name": "audit:view", "description": "Xem nhật ký hoạt động của mọi người trong workspace"},
+        {"name": "audit:view-own", "description": "Xem hoạt động của chính mình"}
+      ]
+    }
   },
   "groups": [{
     "name": "workspaces",
     "subGroups": [
-      {"name": "lab-a", "attributes": {"displayName": ["Phòng máy A"]}, "subGroups": [{"name": "requester"}, {"name": "agent"}, {"name": "coordinator"}]},
-      {"name": "lab-b", "attributes": {"displayName": ["Phòng máy B"]}, "subGroups": [{"name": "requester"}, {"name": "agent"}, {"name": "coordinator"}]}
+      {"name": "lab-a", "attributes": {"displayName": ["Phòng máy A"]}, "subGroups": [
+        {"name": "requester", "clientRoles": {"dx-permissions": ["request:create", "audit:view-own"]}},
+        {"name": "agent", "clientRoles": {"dx-permissions": ["request:create", "task:handle", "document:view", "document:upload", "audit:view-own"]}},
+        {"name": "coordinator", "clientRoles": {"dx-permissions": ["request:create", "request:view-all", "task:handle", "task:assign", "document:view", "document:upload", "member:view", "audit:view", "audit:view-own"]}}
+      ]},
+      {"name": "lab-b", "attributes": {"displayName": ["Phòng máy B"]}, "subGroups": [
+        {"name": "requester", "clientRoles": {"dx-permissions": ["request:create", "audit:view-own"]}},
+        {"name": "agent", "clientRoles": {"dx-permissions": ["request:create", "task:handle", "document:view", "document:upload", "audit:view-own"]}},
+        {"name": "coordinator", "clientRoles": {"dx-permissions": ["request:create", "request:view-all", "task:handle", "task:assign", "document:view", "document:upload", "member:view", "audit:view", "audit:view-own"]}}
+      ]}
     ]
   }],
   "clients": [
+    {
+      "clientId": "dx-permissions",
+      "name": "Quyền ứng dụng DX",
+      "description": "Chỉ chứa danh sách quyền để gán cho nhóm /workspaces/{ws}/{role}; không dùng để đăng nhập. Backend đọc quyền theo nhóm qua Admin API, không tin resource_access trong token vì token không ghi quyền thuộc workspace nào",
+      "publicClient": false,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false
+    },
     {
       "clientId": "dx-directory",
       "description": "Backend reads workspace members via Admin API (service account, read-only). Secret set by scripts/setup.ps1",
@@ -96,7 +128,8 @@
     },
     {
       "username": "user7", "enabled": true, "email": "user7@example.com", "emailVerified": true,
-      "firstName": "Demo", "lastName": "Administrator", "groups": [], "realmRoles": ["platform-admin"]
+      "firstName": "Demo", "lastName": "Administrator", "groups": [], "realmRoles": ["platform-admin"],
+      "clientRoles": {"realm-management": ["realm-admin"]}
     },
     {
       "username": "superadmin", "enabled": true, "email": "superadmin@example.com", "emailVerified": true,
@@ -105,7 +138,8 @@
         "/workspaces/lab-a/requester", "/workspaces/lab-a/agent", "/workspaces/lab-a/coordinator",
         "/workspaces/lab-b/requester", "/workspaces/lab-b/agent", "/workspaces/lab-b/coordinator"
       ],
-      "realmRoles": ["platform-admin"]
+      "realmRoles": ["platform-admin"],
+      "clientRoles": {"realm-management": ["realm-admin"]}
     }
   ]
 }

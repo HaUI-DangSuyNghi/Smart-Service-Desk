@@ -3,6 +3,7 @@
 Date: 2026-10-24. Branch: `feature/ai06-02-governed-real-model-provider`.
 Existing PR: [#37](https://github.com/HaUI-DangSuyNghi/Smart-Service-Desk/pull/37).
 FE #38/#39 from `develop@8137a4a` was already merged in `0316cd3`.
+The follow-up conflict resolution integrates FE #40 at `develop@c61cdf9`.
 
 Decision: **API-first engineering implemented; CLOUD DEV READY NOT_VERIFIED;
 official release BLOCKED**. No Gemini/Groq keys or genuine cloud approvals were
@@ -43,12 +44,12 @@ Engineering tests do not grant release rights.
 
 | Check | Observed local result |
 | --- | --- |
-| Full Python source | 915 passed, 6 explicit optional-model skips; `final-source-tests.xml` |
-| Full installed generic + external cloud wheels | 915 passed, 6 skips; `final-wheel-tests.xml` |
+| Full Python source at `8e500aa` (implementation unchanged by FE merge) | 915 passed, 6 explicit optional-model skips; `final-source-tests.xml` |
+| Full installed generic + external cloud wheels at `8e500aa` | 915 passed, 6 skips; `final-wheel-tests.xml` |
 | Cloud source / installed wheel | 54 / 54 passed, including private HTTP v0.2 with fake vendors |
 | Linux installed cloud wheel in offline-staged container | 54 passed; no vendor network/API credentials |
-| Final untouched FE unit tests / typecheck | 28 passed; typecheck fails on the existing upload resolver |
-| Linux Java/Core/PostgreSQL/private Python + AI02 | 232 passed, zero failures/errors/skips; `linux-core-python-02/summary.json` |
+| FE #40 integration build/typecheck / lint / unit / browser | PASS / PASS / 56 passed / 11 passed (2 browser workers) |
+| Merged Linux Java/Core/PostgreSQL/private Python + AI02 | 243 passed, zero failures/errors/skips; `.local/ai06-pr37-merge/linux-core-python/summary.json` |
 | Tier source / Java bytecode boundaries | PASS; scanner and Maven ArchUnit |
 | Boundary mutation proofs | 39 passed |
 | Foundation contracts | PASS; 8 schemas and 145 negative cases |
@@ -66,18 +67,17 @@ tracked separately from the normal network build. The derived staging build
 passed using the same pinned dependencies supplied offline; it is not a normal
 network build or a full approved deployment.
 
-Per the user's latest scope, **frontend is unchanged from session baseline
-`913ec5d`**. Temporary upload-resolver fixes were reverted in `25a9a33`; banner
-and Playwright configuration edits were removed. Existing FE build has the known
-upload resolver `File` / `File | null` type error and is left to the FE team.
-Earlier 31-unit/11-browser results included temporary edits and are not final FE
-acceptance. Existing auth/panel code remains in place.
+FE #40 from `develop@c61cdf9` supplies the current frontend baseline. Its upload
+typing fix and all other FE functionality are kept.
+The sole manual FE resolution is in `frontend/src/apps/servicedesk/index.ts`:
+use the team's plain lazy imports and retain both ticket-list and AI06 ticket-detail
+routes. No custom upload, page layout, permission or process UI edits were added.
 
-Final fetch found `develop@c61cdf9` (FE #40). A read-only `git merge-tree`
-simulation reports one conflict in `frontend/src/apps/servicedesk/index.ts`.
-No merge or frontend resolution was applied, preserving the user's FE exclusion.
-The FE owner must integrate that route registry before PR #37 can merge. This is
-separate from the already-merged #38/#39 baseline and local AI06 backend tests.
+The merged FE build/typecheck, lint, 56 unit tests and 11 browser contract controls
+passed. Browser controls still stub authentication/public assistance and do not
+prove the full cloud/SSO path. Merge acceptance artifacts are kept separately in
+`.local/ai06-pr37-merge/`; earlier receipts remain historical and HEAD-bound
+generation receipts must be regenerated after the merge commit.
 
 ## Remaining owner/environment gates
 
@@ -90,8 +90,8 @@ separate from the already-merged #38/#39 baseline and local AI06 backend tests.
    acceptance. Direct Python smoke alone cannot establish CLOUD DEV READY.
 4. Finish independent reviewed DEV labels, thresholds, adjudication, signed
    HOLDOUT/attempt ledger, revocation/TOCTOU review and owner release GO.
-5. Restore hosted CI execution and obtain independent PR reviews. No checks were
-   disabled/downgraded. FE build remains an explicit user-scoped exception.
+5. Verify hosted CI on the merged HEAD and obtain independent PR reviews. No
+   checks were disabled/downgraded. Local merged FE build/typecheck now passes.
 
 Cloudflare, OpenRouter/Cerebras, distributed budgets and optional local SLM/fine
 tuning are deferred. No historical AI05 pins, sign-offs, Core migration or

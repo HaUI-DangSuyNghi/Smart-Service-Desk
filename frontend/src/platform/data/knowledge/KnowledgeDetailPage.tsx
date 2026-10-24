@@ -1,4 +1,3 @@
-import type { ReactNode } from "react";
 import { Link, useParams } from "react-router";
 import { IconArrowLeft, IconDownload, IconFileText } from "@tabler/icons-react";
 import { useMemberNames } from "@/platform/human/workspace";
@@ -6,17 +5,11 @@ import { ApiError } from "@/platform/shared/api";
 import { formatDateTime } from "@/platform/shared/lib/format";
 import { Button } from "@/platform/shared/ui/button";
 import { ErrorState } from "@/platform/shared/ui/ErrorState";
-import { Loading } from "@/platform/shared/ui/Loading";
+import { FieldRow } from "@/platform/shared/ui/FieldRow";
 import { Page, PageBody, PageHeader } from "@/platform/shared/ui/page";
+import { FieldsSkeleton, TextSkeleton } from "@/platform/shared/ui/Skeleton";
+import { toastError } from "@/platform/shared/ui/toast";
 import { useDownloadKnowledgeFile, useKnowledgeContent, useKnowledgeRecord } from "./useKnowledge";
-
-// Điện thoại: nhãn nằm trên giá trị; từ sm: nhãn cột trái rộng 128px
-const FieldRow = ({ label, children }: { label: string; children: ReactNode }) => (
-  <div className="flex min-h-8 flex-col gap-0.5 py-1.5 sm:flex-row sm:items-start sm:gap-4">
-    <dt className="shrink-0 text-crm-text-3 sm:w-32">{label}</dt>
-    <dd className="min-w-0 break-all text-crm-text">{children}</dd>
-  </div>
-);
 
 /** Chi tiết một tài liệu: provenance (nguồn, phiên bản, quyền, checksum) và nội dung văn bản. */
 const KnowledgeDetailPage = () => {
@@ -38,17 +31,21 @@ const KnowledgeDetailPage = () => {
         actions={
           <>
             <Button variant="outline" size="sm" asChild>
-              <Link to="/knowledge" aria-label="Về danh sách tri thức">
+              <Link to="/knowledge" aria-label="Về danh sách tài liệu">
                 <IconArrowLeft size={14} stroke={2} />
                 {/* Điện thoại chỉ giữ mũi tên để tiêu đề còn chỗ */}
-                <span className="hidden sm:inline">Tri thức</span>
+                <span className="hidden sm:inline">Tài liệu</span>
               </Link>
             </Button>
             {fileId && (
               <Button
                 size="sm"
                 disabled={download.isPending}
-                onClick={() => download.mutate(fileId)}
+                onClick={() =>
+                  download.mutate(fileId, {
+                    onError: (error) => toastError("Không tải được file.", error),
+                  })
+                }
               >
                 <IconDownload size={14} stroke={2} />
                 {download.isPending ? "Đang tải..." : "Tải về"}
@@ -58,9 +55,8 @@ const KnowledgeDetailPage = () => {
         }
       />
       <PageBody>
-        <Loading active={record.isPending} label="Đang tải tài liệu" />
+        {record.isPending && <FieldsSkeleton rows={6} label="Đang tải tài liệu" />}
         {record.error && <ErrorState error={record.error} />}
-        {download.error && <ErrorState error={download.error} fallback="Không tải được file." />}
 
         {record.data && (
           <>
@@ -75,9 +71,11 @@ const KnowledgeDetailPage = () => {
               </FieldRow>
             </dl>
 
-            <section className="relative min-h-40 px-4 py-4">
+            <section className="px-4 py-4">
               {!fileId && <p className="text-crm-text-3">Bản ghi này không kèm file nội dung.</p>}
-              <Loading active={fileId !== null && content.isPending} label="Đang tải nội dung" />
+              {fileId !== null && content.isPending && (
+                <TextSkeleton lines={8} label="Đang tải nội dung" />
+              )}
               {notPreviewable && (
                 <p className="text-crm-text-3">
                   Định dạng này không xem trước được, hãy bấm Tải về.

@@ -4,8 +4,8 @@ import type { WorkspaceMember } from "@/platform/services";
 import { DataTable, type DataTableColumn } from "@/platform/shared/ui/DataTable";
 import { EmptyState } from "@/platform/shared/ui/EmptyState";
 import { ErrorState } from "@/platform/shared/ui/ErrorState";
-import { Loading } from "@/platform/shared/ui/Loading";
 import { Page, PageBody, PageHeader, PageToolbar } from "@/platform/shared/ui/page";
+import { TableSkeleton } from "@/platform/shared/ui/Skeleton";
 import { Tag } from "@/platform/shared/ui/Tag";
 
 const COLUMNS: readonly DataTableColumn<WorkspaceMember>[] = [
@@ -57,7 +57,9 @@ const MembersPage = () => {
         }
       />
       <PageBody>
-        <Loading active={current !== null && members.isPending} label="Đang tải danh bạ" />
+        {current !== null && members.isPending && (
+          <TableSkeleton columns={3} label="Đang tải danh bạ" />
+        )}
         {current === null && <EmptyState icon={IconUsers} title="Chưa thuộc workspace nào" />}
         {members.error && <ErrorState error={members.error} />}
         {members.data && members.data.length === 0 && (

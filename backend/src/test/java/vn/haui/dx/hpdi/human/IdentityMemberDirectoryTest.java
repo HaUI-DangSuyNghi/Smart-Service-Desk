@@ -7,11 +7,13 @@ import org.junit.jupiter.api.Test;
 import vn.haui.dx.core.common.CoreException;
 import vn.haui.dx.core.identity.api.CurrentUser;
 import vn.haui.dx.core.identity.api.DirectoryMember;
+import vn.haui.dx.core.identity.api.DirectoryPermission;
 import vn.haui.dx.core.identity.api.Membership;
 import vn.haui.dx.core.identity.api.WorkspaceAccess;
 import vn.haui.dx.core.identity.api.WorkspaceDirectory;
 import vn.haui.dx.core.identity.api.WorkspaceRole;
 import vn.haui.dx.hpdi.human.api.WorkspaceContext;
+import vn.haui.dx.hpdi.human.api.WorkspacePermission;
 import vn.haui.dx.hpdi.human.internal.IdentityMemberDirectory;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -45,6 +47,25 @@ class IdentityMemberDirectoryTest {
 
         when(directory.members("lab-b")).thenThrow(CoreException.unavailable("down"));
         assertEquals(Map.of(), members.displayNames("lab-b"));
+    }
+
+    @Test void myPermissionsMergeRolesFromTokenOnlyInThatWorkspace() {
+        var user = mock(CurrentUser.class);
+        when(user.memberships()).thenReturn(Set.of(
+            new Membership("lab-a", WorkspaceRole.REQUESTER),
+            new Membership("lab-a", WorkspaceRole.AGENT),
+            new Membership("lab-b", WorkspaceRole.COORDINATOR)));
+        when(access.current()).thenReturn(user);
+        when(directory.rolePermissions("lab-a")).thenReturn(Map.of(
+            "requester", List.of(new DirectoryPermission("request:create", "Tạo yêu cầu")),
+            "agent", List.of(new DirectoryPermission("request:create", "Tạo yêu cầu"),
+                new DirectoryPermission("document:upload", null)),
+            "coordinator", List.of(new DirectoryPermission("task:assign", "Giao việc cho người khác"))));
+
+        // Trùng quyền giữa hai vai trò chỉ giữ một; vai trò coordinator ở lab-b không tính cho lab-a;
+        // thiếu mô tả thì dùng tên quyền
+        assertEquals(List.of(new WorkspacePermission("document:upload", "document:upload"),
+            new WorkspacePermission("request:create", "Tạo yêu cầu")), members.myPermissions("lab-a"));
     }
 
     @Test void permissionErrorsAreNotHidden() {

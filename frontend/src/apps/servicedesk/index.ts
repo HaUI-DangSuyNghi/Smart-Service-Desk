@@ -1,10 +1,10 @@
 import { IconTicket } from "@tabler/icons-react";
 import { lazy } from "react";
-import { withMinDuration } from "../../platform/shared/lib/minDuration";
 import type { AppRegistry } from "../../platform/shell/router/registry";
 
-const TicketListPage = lazy(() => withMinDuration(import("./pages/TicketListPage")));
-const TicketDetailPage = lazy(() => withMinDuration(import("./pages/TicketDetailPage")));
+// Trang lazy hiện skeleton của AppLayout trong lúc tải, không cần giữ thời gian tối thiểu
+const TicketListPage = lazy(() => import("./pages/TicketListPage"));
+const TicketDetailPage = lazy(() => import("./pages/TicketDetailPage"));
 
 export const registerServiceDesk = (registry: AppRegistry) => {
   registry.register({
