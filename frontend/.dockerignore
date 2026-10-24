@@ -1,0 +1,11 @@
+# Không đưa vào image: thư viện cài trên máy (khác hệ điều hành), bản build cũ, file local
+node_modules
+dist
+coverage
+.env
+.env.*
+!.env.example
+plans
+rules
+Dockerfile
+.dockerignore

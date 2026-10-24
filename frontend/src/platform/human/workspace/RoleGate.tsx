@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Loading } from "@/platform/shared/ui/Loading";
+import { PageSkeleton } from "@/platform/shared/ui/Skeleton";
 import { hasAnyRole } from "./roles";
 import { useActor } from "./useActor";
 
@@ -15,12 +15,6 @@ interface Props {
 export const RoleGate = ({ roles, fallback, children }: Props) => {
   const { roles: actorRoles, isPending } = useActor();
 
-  if (isPending) {
-    return (
-      <div className="relative h-full">
-        <Loading label="Đang kiểm tra quyền" />
-      </div>
-    );
-  }
+  if (isPending) return <PageSkeleton label="Đang kiểm tra quyền" />;
   return hasAnyRole(actorRoles, roles) ? children : fallback;
 };

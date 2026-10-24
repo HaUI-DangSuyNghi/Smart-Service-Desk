@@ -30,13 +30,22 @@ export const createAuthSettings = (env: AuthEnv, origin: string): UserManagerSet
     scope: "openid",
     redirect_uri: origin + CALLBACK_PATH,
     silent_redirect_uri: origin + SILENT_PATH,
-    post_logout_redirect_uri: origin + "/",
+    // Đăng xuất xong về trang trong app (cần đăng nhập) để RequireAuth đưa thẳng sang trang đăng nhập,
+    // không quay ra landing
+    post_logout_redirect_uri: origin + DEFAULT_RETURN_TO,
     automaticSilentRenew: true,
     silentRequestTimeoutInSeconds: 5,
     monitorSession: false,
     loadUserInfo: false,
   };
 };
+
+/**
+ * Trang quản trị của realm: "http://host/realms/dx-lab" → "http://host/admin/dx-lab/console/".
+ * Đăng nhập bằng chính phiên SSO hiện tại; tài khoản cần role realm-admin của realm.
+ */
+export const adminConsoleUrl = (authority: string) =>
+  authority.replace(/\/realms\/([^/]+)\/?$/, "/admin/$1/console/");
 
 /** Chỉ cho quay về đường dẫn nội bộ, chặn open redirect qua state đăng nhập. */
 export const safeReturnTo = (value: unknown): string => {

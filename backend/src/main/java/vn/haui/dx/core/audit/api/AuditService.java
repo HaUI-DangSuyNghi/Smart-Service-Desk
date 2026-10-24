@@ -15,4 +15,10 @@ public interface AuditService {
 
     /** Mới nhất trước. Chỉ coordinator của workspace và platform-admin; người khác → FORBIDDEN. */
     Page<AuditEntry> search(String workspace, AuditQuery query, PageRequest page);
+
+    /**
+     * Nhật ký do chính người gọi thực hiện trong workspace, mới nhất trước; mọi thành viên workspace được đọc.
+     * Người thực hiện luôn lấy từ token, {@code query.actor()} bị bỏ qua để không xem được của người khác.
+     */
+    Page<AuditEntry> mine(String workspace, AuditQuery query, PageRequest page);
 }

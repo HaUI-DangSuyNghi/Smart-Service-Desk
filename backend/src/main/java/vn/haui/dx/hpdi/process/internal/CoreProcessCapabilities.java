@@ -6,6 +6,7 @@ import vn.haui.dx.hpdi.common.api.Page;
 import vn.haui.dx.hpdi.common.api.PageRequest;
 import vn.haui.dx.hpdi.process.api.*;
 import vn.haui.dx.hpdi.process.api.ProcessHandle;
+import vn.haui.dx.hpdi.process.api.ProcessSummary;
 
 /** Composes request correlation and a universal inbox without exposing engine/Core models. */
 @Service
@@ -22,6 +23,11 @@ public class CoreProcessCapabilities implements ProcessCapability, WorkInbox {
             h.startedAt(), h.endedAt(), h.currentTasks().stream().map(CoreProcessCapabilities::item).toList(),
             h.steps().stream().map(s -> new ProcessTimeline.Step(s.id(), s.key(), s.name(), s.assignee(),
                 s.outcome(), s.comment(), s.startedAt(), s.claimedAt(), s.endedAt())).toList());
+    }
+    public Page<ProcessSummary> startedByMe(String workspace, PageRequest page) {
+        var result = workflow.startedByMe(workspace, new vn.haui.dx.core.common.PageRequest(page.page(), page.size()));
+        return new Page<>(result.items().stream().map(p -> new ProcessSummary(p.id(), p.processKey(), p.businessKey(),
+            p.startedAt(), p.endedAt(), p.activeTaskKeys())).toList(), result.page(), result.size(), result.total());
     }
     public Page<WorkItem> list(String workspace, Scope scope, PageRequest page) {
         var result = workflow.inbox(workspace, new InboxFilter(InboxFilter.Scope.valueOf(scope.name())),

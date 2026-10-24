@@ -29,4 +29,7 @@ public interface WorkflowService {
 
     /** Người khởi tạo, người đã tham gia và coordinator của workspace được xem. */
     ProcessHistory history(String workspace, String processInstanceId);
+
+    /** Quy trình người gọi đã khởi tạo trong workspace, mọi processKey, mới nhất trước. */
+    Page<ProcessSummary> startedByMe(String workspace, PageRequest page);
 }

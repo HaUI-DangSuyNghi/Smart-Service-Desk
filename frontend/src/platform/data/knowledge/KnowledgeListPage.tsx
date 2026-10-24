@@ -3,8 +3,6 @@ import { useNavigate } from "react-router";
 import {
   IconBook,
   IconCalendar,
-  IconChevronLeft,
-  IconChevronRight,
   IconFileText,
   IconLicense,
   IconList,
@@ -13,17 +11,17 @@ import {
   IconUser,
   IconWorld,
 } from "@tabler/icons-react";
-import { hasAnyRole, useActor, useCurrentWorkspace } from "@/platform/human/workspace";
+import { PERMISSIONS, useCurrentWorkspace, usePermissions } from "@/platform/human/workspace";
 import type { KnowledgeSummary } from "@/platform/services";
 import { formatDateTime } from "@/platform/shared/lib/format";
-import { Button } from "@/platform/shared/ui/button";
 import { DataTable, type DataTableColumn } from "@/platform/shared/ui/DataTable";
 import { EmptyState } from "@/platform/shared/ui/EmptyState";
 import { ErrorState } from "@/platform/shared/ui/ErrorState";
-import { Loading } from "@/platform/shared/ui/Loading";
 import { Page, PageBody, PageHeader, PageToolbar } from "@/platform/shared/ui/page";
+import { Pagination } from "@/platform/shared/ui/Pagination";
+import { TableSkeleton } from "@/platform/shared/ui/Skeleton";
 import { UploadKnowledgeDialog } from "./UploadKnowledgeDialog";
-import { KNOWLEDGE_EDITOR_ROLES, KNOWLEDGE_PAGE_SIZE, useKnowledgeList } from "./useKnowledge";
+import { KNOWLEDGE_PAGE_SIZE, useKnowledgeList } from "./useKnowledge";
 
 const COLUMNS: readonly DataTableColumn<KnowledgeSummary>[] = [
   { key: "title", header: "Tiêu đề", icon: IconFileText, width: "320px", cell: (row) => row.title },
@@ -62,15 +60,14 @@ const COLUMNS: readonly DataTableColumn<KnowledgeSummary>[] = [
 const KnowledgeListPage = () => {
   const navigate = useNavigate();
   const { current } = useCurrentWorkspace();
-  const { roles } = useActor();
+  const { can } = usePermissions();
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(0);
   const query = useDeferredValue(search.trim());
   const list = useKnowledgeList(query, page);
 
   const total = list.data?.total ?? 0;
-  const pageCount = Math.max(1, Math.ceil(total / KNOWLEDGE_PAGE_SIZE));
-  const canUpload = hasAnyRole(roles, KNOWLEDGE_EDITOR_ROLES);
+  const canUpload = can(PERMISSIONS.documentUpload);
 
   const handleSearch = (value: string) => {
     setSearch(value);
@@ -80,7 +77,7 @@ const KnowledgeListPage = () => {
   return (
     <Page>
       <PageHeader
-        title="Tri thức"
+        title="Tài liệu"
         icon={IconBook}
         actions={canUpload && <UploadKnowledgeDialog />}
       />
@@ -105,32 +102,19 @@ const KnowledgeListPage = () => {
                 className="min-w-0 flex-1 bg-transparent outline-none placeholder:text-crm-text-3"
               />
             </label>
-            <span className="shrink-0 px-2 text-crm-text-3">
-              {page + 1}/{pageCount}
-            </span>
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              aria-label="Trang trước"
-              disabled={page === 0}
-              onClick={() => setPage(page - 1)}
-            >
-              <IconChevronLeft size={16} stroke={2} />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon-sm"
-              aria-label="Trang sau"
-              disabled={page + 1 >= pageCount}
-              onClick={() => setPage(page + 1)}
-            >
-              <IconChevronRight size={16} stroke={2} />
-            </Button>
+            <Pagination
+              page={page}
+              total={total}
+              pageSize={KNOWLEDGE_PAGE_SIZE}
+              onPageChange={setPage}
+            />
           </>
         }
       />
       <PageBody>
-        <Loading active={current !== null && list.isPending} label="Đang tải tài liệu" />
+        {current !== null && list.isPending && (
+          <TableSkeleton columns={6} label="Đang tải tài liệu" />
+        )}
         {current === null && (
           <EmptyState
             icon={IconBook}

@@ -6,7 +6,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import org.flowable.engine.ProcessEngine;
+import org.flowable.engine.history.HistoricProcessInstance;
 import org.flowable.task.api.Task;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DuplicateKeyException;
@@ -182,6 +184,32 @@ public final class FlowableWorkflowService implements WorkflowService {
         return new ProcessHistory(processInstanceId, (String) scope.get("process_key"), (String) scope.get("business_key"),
             workspace, (String) scope.get("owner"), instant(process.getStartTime()), instant(process.getEndTime()),
             currentTasks(processInstanceId), steps);
+    }
+
+    @Override
+    public Page<ProcessSummary> startedByMe(String workspace, PageRequest page) {
+        var user = member(workspace);
+        if (page == null || page.offset() > Integer.MAX_VALUE) throw CoreException.validation("Invalid page");
+        // start() luôn đặt biến workspace và initiator, nên lọc qua lịch sử biến của engine được
+        var query = engine.getHistoryService().createHistoricProcessInstanceQuery()
+            .variableValueEquals("workspace", workspace).variableValueEquals("initiator", user.sub());
+        long total = query.count();
+        var processes = query.orderByProcessInstanceStartTime().desc().orderByProcessInstanceId().asc()
+            .listPage((int) page.offset(), page.size());
+        var active = activeTaskKeys(processes.stream().map(HistoricProcessInstance::getId).toList());
+        var items = processes.stream().map(process -> new ProcessSummary(process.getId(),
+            process.getProcessDefinitionKey(), process.getBusinessKey(), instant(process.getStartTime()),
+            instant(process.getEndTime()), active.getOrDefault(process.getId(), List.of()))).toList();
+        return new Page<>(items, page.page(), page.size(), total);
+    }
+
+    /** Bước đang mở của nhiều quy trình trong một truy vấn, nhóm theo processInstanceId. */
+    private Map<String, List<String>> activeTaskKeys(List<String> processInstanceIds) {
+        if (processInstanceIds.isEmpty()) return Map.of();
+        return engine.getTaskService().createTaskQuery().processInstanceIdIn(processInstanceIds)
+            .orderByTaskCreateTime().asc().list().stream()
+            .collect(Collectors.groupingBy(Task::getProcessInstanceId,
+                Collectors.mapping(Task::getTaskDefinitionKey, Collectors.toList())));
     }
 
     private Task lockedTask(String workspace, String taskId) {
