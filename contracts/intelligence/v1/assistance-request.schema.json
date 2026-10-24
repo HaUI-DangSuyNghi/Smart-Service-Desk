@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:dx:intelligence:assistance-request:0.1.0",
+  "description": "Private snapshot: SERVER-INJECTED / TRUSTED ADAPTER CONTEXT. Only the authenticated adapter supplies workspace and source bytes after authorization; never deserialize public caller authority here.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contractVersion", "requestId", "workspaceId", "profileId", "profileVersion", "policyIdentity", "question", "documents"],
+  "properties": {
+    "contractVersion": {"const": "0.1.0"},
+    "requestId": {"type": "string", "format": "uuid"},
+    "workspaceId": {"type": "string", "minLength": 1, "maxLength": 100, "pattern": "^[a-zA-Z0-9_-]+$"},
+    "profileId": {"type": "string", "minLength": 1, "maxLength": 100},
+    "profileVersion": {"type": "string", "minLength": 1, "maxLength": 100},
+    "policyIdentity": {"type": "string", "minLength": 1, "maxLength": 100},
+    "question": {"type": "string", "minLength": 1, "maxLength": 2000, "pattern": "\\S"},
+    "documents": {
+      "type": "array",
+      "maxItems": 10,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["metadataId", "version", "checksum", "content", "mediaType"],
+        "properties": {
+          "metadataId": {"type": "string", "format": "uuid"},
+          "version": {"type": "string", "minLength": 1, "maxLength": 100},
+          "checksum": {"type": "string", "pattern": "^[a-f0-9]{64}$"},
+          "content": {"type": "string", "maxLength": 16000},
+          "mediaType": {"enum": ["text/plain", "text/markdown"]}
+        }
+      }
+    }
+  }
+}
