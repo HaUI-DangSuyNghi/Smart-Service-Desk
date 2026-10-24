@@ -1,0 +1,19 @@
+{
+  "schemaVersion": "cloud-egress@0.2.0",
+  "status": "PENDING",
+  "owner": "REQUIRED_DATA_OWNER",
+  "environmentId": "REQUIRED_ISOLATED_ENVIRONMENT",
+  "expiresAt": "REQUIRED_UTC_EXPIRY",
+  "catalogDigest": "REQUIRED_CATALOG_BYTE_SHA256",
+  "dataClass": "synthetic-public-evaluation",
+  "questionDigests": ["REQUIRED_SHA256_OF_EACH_APPROVED_EXACT_QUESTION"],
+  "sourceDigests": ["REQUIRED_SHA256_OF_EACH_APPROVED_SOURCE_BYTES"],
+  "actors": ["REQUIRED_APPROVED_KEYCLOAK_SUBJECT"],
+  "resources": [
+    {
+      "workspace": "REQUIRED_SYNTHETIC_WORKSPACE",
+      "id": "REQUIRED_SYNTHETIC_TICKET_UUID",
+      "contentDigest": "REQUIRED_SHA256_OF_TITLE_NEWLINE_DESCRIPTION"
+    }
+  ]
+}
