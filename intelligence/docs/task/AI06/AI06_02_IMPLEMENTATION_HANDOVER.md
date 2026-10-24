@@ -1,7 +1,10 @@
 # AI06-02 implementation handover
 
 Next implementation: [AI06 continuation status](AI06_COMPLETION_STATUS.md).
-The provider/model approval state recorded here remains unchanged.
+The historical local-provider approval state below remains unchanged. The current
+API-first Gemini/Groq path is described in [ADR-006](../../decisions/ADR-006-api-first-multi-provider.md)
+and the [cloud runbook](AI06_API_FIRST_OPERATIONS.md). Local model provisioning is
+optional and is not a prerequisite for cloud DEV readiness.
 
 Date: 2026-10-23. Scope: governed local evidence-selection engineering.
 Release decision: **NOT_AUTHORIZED**. Real-model validation: **BLOCKED**.

@@ -1,8 +1,9 @@
 # AI06 assistance engineering operations
 
-The default deployment has no assistance route. Current opt-in mode is an
-explicit deterministic reference over synthetic-only Core sources. Production
-and official model quality are BLOCKED; see the integration ADR and status.
+The default deployment has no assistance route. This document covers the explicit
+deterministic reference over synthetic-only Core sources. For Gemini/Groq use the
+separate [API-first cloud runbook](AI06_API_FIRST_OPERATIONS.md). Production and
+official model quality remain BLOCKED; see the integration ADR and status.
 
 ## Local reference composition
 

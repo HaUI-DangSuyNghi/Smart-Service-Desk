@@ -1,93 +1,97 @@
-# AI06 continuation status
+# AI06 API-first completion status
 
 Date: 2026-10-24. Branch: `feature/ai06-02-governed-real-model-provider`.
-Foundation: AI06-02 at `c3b9f43`; FE #38/#39 at `origin/develop@8137a4a` integrated
-by local merge `0316cd3`. No rebase/force push, Core migration or AI05 promotion.
+Existing PR: [#37](https://github.com/HaUI-DangSuyNghi/Smart-Service-Desk/pull/37).
+FE #38/#39 from `develop@8137a4a` was already merged in `0316cd3`.
 
-Decision: **engineering continuation delivered; official AI06 closure BLOCKED**.
-Do not equate reference integration or CI engineering PASS with a release GO.
+Decision: **API-first engineering implemented; CLOUD DEV READY NOT_VERIFIED;
+official release BLOCKED**. No Gemini/Groq keys or genuine cloud approvals were
+provided. Mock responses never count as real API or quality evidence.
 
-## Delivered scope
+## Delivered
 
-- AI06-03: 52 AI-authored synthetic DEV controls, 13 categories, generic metrics,
-  current-byte/source-revision evidence verification and source/wheel/OS CI
-  wiring. Every human review/rights decision remains PENDING. Official mode
-  writes a blocked receipt and exits 2 before case/model execution.
-- AI06-04: public HPDI assistance capability, bounded dedicated Java/Python HTTP
-  transport, request-local active TF-IDF retrieval and unchanged exact-quotation
-  generation. Application-selected source pins are resolved through HPDI Data
-  and rechecked against Core after inference; ticket visibility is read again.
-- Service Desk endpoint accepts only a bounded question. Default OFF; activation
-  supports only explicitly pinned `synthetic-reference` / `synthetic-test-only`
-  inputs. Unavailable, timeout, malformed, changed and denied states suppress
-  answers and preserve manual workflow authority.
-- An app-owned assistance panel/deep link uses the auth, shared API client,
-  workspace hooks and page shell from FE #39. AI06 adds no replacement auth,
-  layout or ticket-management feature. Safe display citations contain title,
-  version and local alias; no internal source UUID or URL.
-- Optional private reference Compose overlay, rollback/runbook and disposable
-  actual Core/PostgreSQL/Java/Python acceptance tooling. Real provider code from
-  AI06-02 remains available and unchanged; there is no implicit model fallback.
+- Separate optional cloud wheel: native Gemini/Groq structured SELECT/REFUSE,
+  strict envelope/alias/observed-model validation and unchanged exact quotation
+  grounding. Generic hdpi has no vendor/secret dependency.
+- Trusted Java selects one route before inference and binds catalog/route/approval
+  digests, attempt UUID and all runtime fields through additive private v0.2
+  schemas. Reference v0.1 is unchanged. No retry or same-request failover.
+- Synthetic-only actor/resource/content/question/source allowlists, external
+  expiring owner files and isolation attestation. Source rights alone cannot
+  authorize cloud processing. Templates remain PENDING.
+- Conservative single-instance DEV quota reservation, fixed error states,
+  cooldown and next-request vendor selection. Credential/invalid output disables
+  the route. No account cycling, paid escalation or template fallback.
+- Fixed vendor HTTPS origins, bounded DNS/TLS/body/deadline/concurrency, explicit
+  CONNECT relay and internal sidecar network. Credentials remain server-side.
+- Core snapshots and final selected-source bytes/version/ACL/rights checks,
+  exact Java runtime comparison and final ticket authorization remain intact.
+- Content-free metrics and an opt-in real API smoke runner, separate from fake
+  transport controls and full authorized cloud acceptance.
+- `.env.example` uses the user's unprefixed names (`GEMINI_API_KEY`,
+  `GROQ_API_KEY`, `PROVIDER_MODE`, etc.). Compose overlays are grouped under
+  `infra/compose/`, with scripts/CI/docs updated.
+- ADR-006, processing policy, templates, startup/rollback/incident runbook and
+  source/separate-wheel CI wiring. Local model stays dormant; GPU/weights/tokenizer
+  are not prerequisites for cloud DEV or approved-cloud production readiness.
 
-## Evidence and practical limits
+## Verification and limits
 
-Local artifacts are ignored under `.local/ai06-completion/`. They contain
-content-free summaries; private diagnostic logs must not be uploaded.
+Ignored artifacts: `.local/ai06-api-first/`. Share only sanitized summaries,
+never private logs. Regenerate HEAD-bound receipts after the final commit.
+Engineering tests do not grant release rights.
 
-Before FE #39 integration, the broad source run recorded 859 passed / 6 skipped;
-Linux Java recorded 202 tests, zero failures/errors/skips, and the dedicated
-actual Core/Python + AI02 HTTP suites recorded 8 passing tests. Windows full Core
-file tests cannot prove POSIX permissions/symlinks; their initial three errors
-are retained in `core-python-01/`, and the Linux run covers those tests. The
-Windows PowerShell wrapper also surfaced a native JVM stderr warning as exit 1
-despite Maven success and 202 passing JUnit results; the XML assertions are the
-test evidence. These records are not substituted for current-head verification.
-
-Post-integration checks:
-
-| Check | Observed result |
+| Check | Observed local result |
 | --- | --- |
-| Installed wheel and isolation smoke | PASS; external application assets, packaged shared schemas |
-| Full current source Python suite | 861 passed, 6 explicit optional-model skips; `final-source-tests.xml` |
-| Full installed-wheel Python suite | 861 passed, 6 explicit optional-model skips; `full-wheel-tests.xml` |
-| Linux Java + actual PostgreSQL regression | 212 passed, zero errors/failures/skips; Maven verify and wrapper exit 0 |
-| Windows scoped Core/Java/Python + AI02 regression | 120 passed, zero errors/failures/skips; `post-fe39-core-python/summary.json` |
-| Source/wheel 52-case DEV summary verification | PASS; identities and current execution agree; official decision BLOCKED |
-| FE lint and unit tests on the existing #39 shell | PASS; 28 unit tests |
-| Chromium assistance contract controls | 11 passed; stub authentication and public API |
-| FE production build/typecheck | BLOCKED by existing #39 `UploadKnowledgeDialog.tsx` resolver input/output types (`File` vs `File \| null`); left unchanged to keep AI06 scope |
+| Full Python source | 915 passed, 6 explicit optional-model skips; `final-source-tests.xml` |
+| Full installed generic + external cloud wheels | 915 passed, 6 skips; `final-wheel-tests.xml` |
+| Cloud source / installed wheel | 54 / 54 passed, including private HTTP v0.2 with fake vendors |
+| Final untouched FE unit tests / typecheck | 28 passed; typecheck fails on the existing upload resolver |
+| Linux Java/Core/PostgreSQL/private Python + AI02 | 232 passed, zero failures/errors/skips; `linux-core-python-02/summary.json` |
+| Tier source / Java bytecode boundaries | PASS; scanner and Maven ArchUnit |
+| Boundary mutation proofs | 39 passed |
+| Foundation contracts | PASS; 8 schemas and 145 negative cases |
+| Compose relocated overlays | Merged configuration validation PASS |
+| Real Gemini/Groq success and legitimate model REFUSE | BLOCKED: keys, exact approved model/catalog and owner receipt missing |
+| Full cloud Core/Keycloak/APISIX/browser flow | NOT_VERIFIED in an approved isolated environment |
+| Hosted final-head CI | No PASS claimed; previous head jobs failed/cancelled without executed steps |
 
-Six Python skips comprise five optional Dense-model cases and the explicitly
-unprovisioned real generation model. They are not treated as verified model
-behavior. Full current source suite and final-HEAD identity receipts are recorded
-in `.local/ai06-completion/`; HEAD-bound reports must be regenerated after any
-commit, even when outcomes are unchanged.
+Six skips cover five explicitly unprovisioned Dense-model cases and one optional
+local generation-model case. They are not cloud failures or real model evidence.
+The first Linux acceptance wrapper rejected a non-allowlisted alias; the corrected
+private alias run passed all 232 tests without weakening host validation. Docker
+package-registry downloads timed out; an offline dependency staging build is
+tracked separately from the normal network build. The derived staging build
+passed using the same pinned dependencies supplied offline; it is not a normal
+network build or a full approved deployment.
 
-Full Keycloak/APISIX/browser/Java/Python/**real model** acceptance is NOT_VERIFIED.
-The browser controls stub authentication and public HTTP, and cannot replace it.
+Per the user's latest scope, **frontend is unchanged from session baseline
+`913ec5d`**. Temporary upload-resolver fixes were reverted in `25a9a33`; banner
+and Playwright configuration edits were removed. Existing FE build has the known
+upload resolver `File` / `File | null` type error and is left to the FE team.
+Earlier 31-unit/11-browser results included temporary edits and are not final FE
+acceptance. Existing auth/panel code remains in place.
 
-Known reference result: eight malicious exact selections remain visible as
-content-safety failures. Technical quotation integrity does not imply safe,
-relevant or reviewed guidance. No invented semantic accuracy or model SLO.
+## Remaining owner/environment gates
 
-## Remaining external and production gates
+1. Obtain Gemini/Groq keys; verify exact models, strict JSON support, current
+   account quotas, free entitlement and provider spending caps.
+2. Data Owner/Security review hashes, actors, recipients, rights/privacy/terms/
+   retention and isolation; issue protected external approval with expiry.
+   Do not turn committed fixtures into approvals.
+3. Run real success and model REFUSE for each vendor, then full authorized cloud
+   acceptance. Direct Python smoke alone cannot establish CLOUD DEV READY.
+4. Finish independent reviewed DEV labels, thresholds, adjudication, signed
+   HOLDOUT/attempt ledger, revocation/TOCTOU review and owner release GO.
+5. Restore hosted CI execution and obtain independent PR reviews. No checks were
+   disabled/downgraded. FE build remains an explicit user-scoped exception.
 
-| Gate | Current state / owner |
-| --- | --- |
-| Exact real weights/tokenizer/quantization/serving image and receipt pins | NOT_PROVISIONED; Platform/Security |
-| Actual tokenizer/chat-format adapter and serving-engine wrapper | Requires approved model/deployment; Platform/AIE |
-| Real-model adversarial, quality and hardware/resource measurements | NOT_RUN; AIE/QA |
-| Genuine reviewed cases, adjudication, rights and thresholds | PENDING; PO/Data Owner/Security |
-| Signed HOLDOUT lock and owner-managed attempt ledger | NOT_AUTHORIZED; independent reviewer |
-| Production revocation propagation and residual TOCTOU review | PENDING; Core/Security |
-| Full gateway/Keycloak/real-model acceptance and owner GO | NOT_VERIFIED; Application/Platform/PO |
-| Hosted current-head CI and independent PR reviews | Required before merge/release; no hosted PASS claimed locally |
-| G9 security/licensing/AI05 ownership obligations | Remain BLOCKED; authorized owners |
+Cloudflare, OpenRouter/Cerebras, distributed budgets and optional local SLM/fine
+tuning are deferred. No historical AI05 pins, sign-offs, Core migration or
+official evaluation was changed. The 52 authored DEV controls and eight unsafe
+exact-selection findings remain provisional and visible.
 
-The historic GitHub billing incident is documented in the AI06-02 handover.
-Its current remote remediation state has not been re-audited in this local run.
-No CI check is disabled, downgraded or used to mint human approval.
-
-See [evaluation design](AI06_03_EVALUATION_DESIGN.md),
-[integration ADR](AI06_04_INTEGRATION_ADR.md) and
-[operations/reproduction](AI06_04_OPERATIONS.md).
+See [ADR-006](../../decisions/ADR-006-api-first-multi-provider.md),
+[processing policy](../../governance/ai06-cloud-processing-policy.md),
+[operator runbook](AI06_API_FIRST_OPERATIONS.md) and
+[evaluation design](AI06_03_EVALUATION_DESIGN.md).

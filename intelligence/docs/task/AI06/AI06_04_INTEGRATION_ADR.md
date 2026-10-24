@@ -3,6 +3,12 @@
 State: implemented for **opt-in synthetic reference engineering**. Independent
 BE/Core, AIE, Architecture and Security review remain PENDING. Production OFF.
 
+Additive API-first cloud composition now uses a trusted preselected route and
+private v0.2 binding, preserving the snapshot and final Core checks described
+below. See [ADR-006](../../decisions/ADR-006-api-first-multi-provider.md) for the
+separate vendor wheel, approval boundary, quota and no-retry policy. Reference
+v0.1 retains its original behavior.
+
 The existing HPDI Data `KnowledgeCatalog` already reads Core metadata, file
 visibility and exact bytes under the current authenticated actor. Use it instead
 of forwarding end-user JWTs or introducing a new broad Core service account.

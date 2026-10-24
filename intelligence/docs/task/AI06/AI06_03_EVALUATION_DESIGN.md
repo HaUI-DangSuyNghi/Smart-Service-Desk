@@ -2,6 +2,13 @@
 
 State: **synthetic DEV tooling implemented; official quality BLOCKED**.
 
+API-first real synthetic smoke is a separate opt-in tool:
+`scripts/intelligence/cloud-api-smoke.py`. It requires approved external cases,
+records each Gemini/Groq result independently and never relabels these authored
+controls as reviewed gold. See [cloud operations](AI06_API_FIRST_OPERATIONS.md).
+Keys/approvals were not supplied; real cloud success/refusal and full cloud
+Core/Keycloak/APISIX/browser acceptance remain NOT_VERIFIED.
+
 The application owns `fixtures/intelligence/service-desk/generation/dev-v0.1.json`:
 52 AI-authored synthetic controls across 13 categories. Expected behaviors are
 provisional design hypotheses, not gold labels. Every review and rights decision
