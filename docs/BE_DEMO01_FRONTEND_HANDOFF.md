@@ -99,13 +99,13 @@ Tat ca mat khau nguoi dung duoc sinh tu dong vao file `.env` (bien `DEMO_PASSWOR
 
 | Username | Ho va Ten | Workspace | Vai tro (Role) | Chuc nang phu hop khi Demo |
 | --- | --- | --- | --- | --- |
-| `user1` | Demo Requester | `lab-a` | `requester` | Tao Ticket, xem tien do, xac nhan hoan thanh |
-| `user2` | Demo Agent | `lab-a` | `agent` | Nhan ticket (claim), xu ly ticket (complete handle) |
-| `user3` | Demo Coordinator | `lab-a` | `coordinator` | Xem toan bo ticket cua workspace, xem bao cao thong ke |
-| `user4` | Demo Requester B | `lab-b` | `requester` | Thu nghiem co lap giua cac workspace (cross-workspace) |
-| `user5` | Demo Agent B | `lab-b` | `agent` | Agent thuoc workspace khac |
-| `user6` | Demo Coordinator B| `lab-b` | `coordinator` | Coordinator thuoc workspace khac |
-| `user7` | Demo Admin | *(none)* | `platform-admin` | Quan tri he thong (khong co quyen xem du lieu nghiep vu) |
+| `user1` | Nguyễn Văn An | `lab-a` | `requester` | Tao Ticket, xem tien do, xac nhan hoan thanh |
+| `user2` | Trần Thị Bình | `lab-a` | `agent` | Nhan ticket (claim), xu ly ticket (complete handle) |
+| `user3` | Lê Minh Châu | `lab-a` | `coordinator` | Xem toan bo ticket cua workspace, xem bao cao thong ke |
+| `user4` | Phạm Quốc Dũng | `lab-b` | `requester` | Thu nghiem co lap giua cac workspace (cross-workspace) |
+| `user5` | Hoàng Thu Hà | `lab-b` | `agent` | Agent thuoc workspace khac |
+| `user6` | Vũ Đức Khánh | `lab-b` | `coordinator` | Coordinator thuoc workspace khac |
+| `user7` | Đỗ Thanh Long | *(none)* | `platform-admin` | Quan tri he thong (khong co quyen xem du lieu nghiep vu) |
 
 ---
 

@@ -19,6 +19,8 @@ import vn.haui.dx.hpdi.process.api.ProcessHandle;
 /** Danh mục dựng từ ProcessContribution của các app; không biết app nào hay quy trình nào cụ thể. */
 @Service
 public class ContributedProcessCatalog implements ProcessCatalog {
+    /** Ô một dòng của form chung; Core cho mọi biến tới 2000 ký tự, chỉ ô nhiều dòng được dài hơn. */
+    static final int SHORT_TEXT = 200;
     private final Map<String, ProcessDefinition> definitions;
     private final HumanContext human;
     private final ProcessCapability processes;
@@ -44,6 +46,10 @@ public class ContributedProcessCatalog implements ProcessCatalog {
         var definition = definitions.get(processKey);
         if (definition == null) throw CapabilityException.notFound("Process not found");
         if (!definition.selfService()) throw CapabilityException.forbidden("Process must be started from its app");
+        var multiline = definition.labels().multiline();
+        if (variables != null && variables.entrySet().stream().anyMatch(entry -> entry.getValue() != null
+                && entry.getValue().length() > SHORT_TEXT && !multiline.contains(entry.getKey())))
+            throw CapabilityException.validation("Start variable too long");
         // Vai trò khởi tạo và tên biến hợp lệ do Core kiểm khi start
         var input = new HashMap<String, Object>(variables == null ? Map.of() : variables);
         return processes.start(workspace, processKey, UUID.randomUUID().toString(), input);
@@ -58,12 +64,18 @@ public class ContributedProcessCatalog implements ProcessCatalog {
         boolean canStart = definition.selfService() && definition.starterRoles().stream().anyMatch(roles::contains);
         String name = labels.name() == null ? definition.processKey() : labels.name();
         return new ProcessDescriptor(definition.processKey(), name, canStart, tasks,
-            options(labels.variables(), definition.allowedStartVariables()));
+            fields(labels, definition.allowedStartVariables()));
     }
 
     private static List<ProcessDescriptor.Option> options(Map<String, String> labels, Set<String> keys) {
         return ordered(labels.keySet(), keys).stream()
             .map(key -> new ProcessDescriptor.Option(key, labels.getOrDefault(key, key))).toList();
+    }
+
+    private static List<ProcessDescriptor.Field> fields(ProcessLabels labels, Set<String> keys) {
+        return ordered(labels.variables().keySet(), keys).stream()
+            .map(key -> new ProcessDescriptor.Field(key, labels.variables().getOrDefault(key, key),
+                labels.multiline().contains(key))).toList();
     }
 
     /** Key có nhãn theo thứ tự khai báo nhãn, sau đó key chưa có nhãn theo bảng chữ cái. */

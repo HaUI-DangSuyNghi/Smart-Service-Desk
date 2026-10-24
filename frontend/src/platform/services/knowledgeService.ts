@@ -15,7 +15,7 @@ export interface KnowledgeSummary {
   createdAt: string;
 }
 
-/** Bản ghi metadata đầy đủ của Core (schema Metadata trong core.yaml), dùng ở trang chi tiết. */
+/** Provenance của một tài liệu (schema KnowledgeRecord trong hpdi/openapi.yaml), dùng ở trang chi tiết. */
 export interface KnowledgeRecord {
   id: string;
   workspace: string;
@@ -26,6 +26,8 @@ export interface KnowledgeRecord {
   checksum: string;
   fileId: string | null;
   owner: string;
+  /** null khi danh bạ không phản hồi. */
+  ownerName: string | null;
   createdAt: string;
 }
 
@@ -75,16 +77,15 @@ export const searchKnowledge = async (
   return data;
 };
 
+/** GET hpdi provenance một tài liệu (cần quyền xem tài liệu). */
 export const getKnowledgeRecord = async (
   workspace: string,
   id: string,
   signal?: AbortSignal,
 ): Promise<KnowledgeRecord> => {
   const { data } = await apiClient.get<KnowledgeRecord>(
-    `${coreWorkspace(workspace)}/metadata/${encodeURIComponent(id)}`,
-    {
-      signal,
-    },
+    `${hpdiWorkspace(workspace)}/knowledge/${encodeURIComponent(id)}/record`,
+    { signal },
   );
   return data;
 };

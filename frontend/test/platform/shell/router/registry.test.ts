@@ -50,6 +50,8 @@ describe("createAppRoutes", () => {
     const layout = protectedArea?.children?.[0];
     expect(layout?.children?.map((route) => route.path)).toEqual([
       "home",
+      "dashboard",
+      "audit",
       "profile",
       "members",
       "inbox",

@@ -26,4 +26,19 @@ new ProcessDefinition("equipment-approval", starters, Set.of("title"), outcomes,
 - Nhãn đặt ở Java, **không sửa `name` trong BPMN**: sửa BPMN sinh phiên bản mới, instance đang chạy bị khóa.
 - Key nhãn sai (bước, kết quả, biến không tồn tại) làm ứng dụng báo lỗi lúc khởi động.
 - Thứ tự khai báo nhãn là thứ tự hiển thị (ví dụ nút Duyệt đứng trước Từ chối).
+- Biến khởi tạo là chuỗi: `.variable` là ô một dòng (≤ 200 ký tự), `.longVariable` là ô nhiều dòng (≤ 2000).
+  Trang tiến độ (`GET /instances/{id}/timeline`) trả lại nội dung đã nhập trong `variables`.
 - Quy trình như ticket phải tạo qua API của app (bản ghi và process ra đời cùng lúc), nên không bật `allowSelfService()`.
+
+## Giao việc, tất cả việc, tất cả yêu cầu, thống kê
+
+| Endpoint | Quyền | Ghi chú |
+|---|---|---|
+| `GET /inbox?scope=ALL` | `task:assign` | Mọi việc đang mở trong workspace (Core: chỉ coordinator) |
+| `POST /tasks/{id}/assign` `{assignee}` | `task:assign` | Chỉ giao cho người thuộc nhóm xử lý của bước; không giao cho người tạo yêu cầu; bước giao thẳng người tạo không giao lại được; ghi audit `task.assign` |
+| `GET /instances?scope=mine` / `scope=all` | `request:create` / `request:view-all` | `all`: mọi yêu cầu mà vai trò của người gọi là reader của quy trình |
+| `GET /processes/statistics?from&to&zone` | `dashboard:view` | Khoảng tối đa 366 ngày; Core: chỉ coordinator |
+| `GET /inbox?scope=ASSIGNED|CANDIDATE`, `POST /tasks/{id}/claim` | `task:handle` | |
+| `POST /tasks/{id}/complete` | — | Core chỉ cho người đang giữ việc (kể cả người tạo xác nhận kết quả) |
+
+Audit `task.claim`, `task.complete`, `task.assign` ghi kèm `processKey` để nhật ký hiện tên quy trình.

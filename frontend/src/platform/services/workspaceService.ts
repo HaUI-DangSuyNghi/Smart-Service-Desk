@@ -43,6 +43,25 @@ export const getMyPermissions = async (
   return data;
 };
 
+/**
+ * GET tên hiển thị của các subject đã biết (người tạo, người xử lý). Không cần quyền xem danh bạ;
+ * danh bạ lỗi thì trả object rỗng.
+ */
+export const getPeopleNames = async (
+  workspace: string,
+  ids: readonly string[],
+  signal?: AbortSignal,
+): Promise<Record<string, string>> => {
+  const { data } = await apiClient.get<Record<string, string>>(
+    `${hpdiWorkspace(workspace)}/people`,
+    {
+      params: { ids: ids.join(",") },
+      signal,
+    },
+  );
+  return data;
+};
+
 /** GET /api/hpdi/v1/workspaces/{ws}/members: danh bạ workspace (503 khi Keycloak không phản hồi). */
 export const getMembers = async (
   workspace: string,

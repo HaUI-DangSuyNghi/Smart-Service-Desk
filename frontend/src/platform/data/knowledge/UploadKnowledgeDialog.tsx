@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { IconUpload } from "@tabler/icons-react";
 import { z } from "zod";
 import { ApiError } from "@/platform/shared/api";
+import { submitOnEnter } from "@/platform/shared/lib/submitOnEnter";
 import { Button } from "@/platform/shared/ui/button";
 import {
   Dialog,
@@ -78,15 +79,12 @@ export const UploadKnowledgeDialog = () => {
   };
 
   const handleSubmit = form.handleSubmit((values) => {
-    create.mutate(
-      values,
-      {
-        onSuccess: (created) => {
-          handleOpenChange(false);
-          navigate(`/knowledge/${created.id}`);
-        },
+    create.mutate(values, {
+      onSuccess: (created) => {
+        handleOpenChange(false);
+        navigate(`/knowledge/${created.id}`);
       },
-    );
+    });
   });
 
   const submitError = create.error instanceof ApiError ? create.error : null;
@@ -109,7 +107,12 @@ export const UploadKnowledgeDialog = () => {
           </DialogDescription>
         </DialogHeader>
 
-        <form id="upload-knowledge" onSubmit={handleSubmit} className="flex flex-col gap-3">
+        <form
+          id="upload-knowledge"
+          onSubmit={handleSubmit}
+          onKeyDown={submitOnEnter}
+          className="flex flex-col gap-3"
+        >
           <FormField id="file" label="Tệp tài liệu" error={errors.file?.message}>
             <Controller
               control={form.control}

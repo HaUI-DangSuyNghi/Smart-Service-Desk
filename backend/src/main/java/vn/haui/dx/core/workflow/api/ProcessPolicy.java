@@ -10,7 +10,7 @@ import vn.haui.dx.core.identity.api.WorkspaceRole;
  *
  * @param processKey id process trong BPMN, khớp file {@code processes/<processKey>.bpmn20.xml}
  * @param starterRoles vai trò được khởi tạo
- * @param allowedStartVariables tên biến client được truyền khi start (chuỗi ≤ 200 ký tự);
+ * @param allowedStartVariables tên biến client được truyền khi start (chuỗi ≤ 2000 ký tự);
  *        {@code initiator}, {@code workspace} luôn do server đặt
  * @param outcomesByTask taskKey → outcome hợp lệ, ví dụ {@code review → {approved, rejected}}
  */

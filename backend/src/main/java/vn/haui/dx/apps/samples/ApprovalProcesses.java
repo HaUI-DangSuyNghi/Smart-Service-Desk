@@ -14,14 +14,16 @@ public final class ApprovalProcesses implements ProcessContribution {
     @Override
     public List<ProcessDefinition> definitions() {
         return List.of(
-            new ProcessDefinition("document-review", Set.of("requester", "agent", "coordinator"), Set.of("title"),
+            // Key giữ "document-review" để không vỡ dữ liệu, test cũ; tên hiển thị là "Đề xuất chung"
+            new ProcessDefinition("document-review", Set.of("requester", "agent", "coordinator"), Set.of("title", "content"),
                 Map.of("review", Set.of("approved", "rejected")), Set.of(), Set.of("coordinator"))
                 .allowSelfService()
-                .withLabels(ProcessLabels.named("Duyệt tài liệu")
-                    .task("review", "Xem xét tài liệu")
+                .withLabels(ProcessLabels.named("Đề xuất chung")
+                    .task("review", "Xem xét đề xuất")
                     .outcome("approved", "Duyệt")
                     .outcome("rejected", "Từ chối")
-                    .variable("title", "Tên tài liệu")),
+                    .variable("title", "Tiêu đề")
+                    .longVariable("content", "Nội dung")),
             new ProcessDefinition("equipment-approval", Set.of("requester", "agent", "coordinator"), Set.of("title"),
                 Map.of("approve", Set.of("approved", "rejected"), "handover", Set.of("delivered")), Set.of(), Set.of("coordinator"))
                 .allowSelfService()

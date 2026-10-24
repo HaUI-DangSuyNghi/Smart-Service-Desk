@@ -1,14 +1,6 @@
-import { useState, type ComponentType } from "react";
+import { useState } from "react";
 import { Link } from "react-router";
-import {
-  IconChecks,
-  IconDots,
-  IconFileText,
-  IconHandGrab,
-  IconHistory,
-  IconPaperclip,
-  IconSend,
-} from "@tabler/icons-react";
+import { IconHistory } from "@tabler/icons-react";
 import { cn } from "cn";
 import { outcomeTone, useProcessLabels, type ProcessLabels } from "@/platform/process";
 import type { ActivityEntry } from "@/platform/services";
@@ -18,21 +10,20 @@ import { ErrorState } from "@/platform/shared/ui/ErrorState";
 import { Pagination } from "@/platform/shared/ui/Pagination";
 import { TextSkeleton } from "@/platform/shared/ui/Skeleton";
 import { Tag } from "@/platform/shared/ui/Tag";
-import { describeActivity, type ActivityKind } from "./describeActivity";
+import { usePeopleNames } from "../workspace";
+import { ACTIVITY_ICONS } from "./activityIcons";
+import { describeActivity } from "./describeActivity";
 import { ACTIVITY_PAGE_SIZE, useMyActivity } from "./useMyActivity";
 
-const KIND_ICON: Record<ActivityKind, ComponentType<{ size?: number; stroke?: number; className?: string }>> = {
-  request: IconSend,
-  claim: IconHandGrab,
-  complete: IconChecks,
-  document: IconFileText,
-  file: IconPaperclip,
-  other: IconDots,
-};
+interface RowProps {
+  entry: ActivityEntry;
+  labels: ProcessLabels;
+  names: ReadonlyMap<string, string>;
+}
 
-const ActivityRow = ({ entry, labels }: { entry: ActivityEntry; labels: ProcessLabels }) => {
-  const view = describeActivity(entry, labels);
-  const Icon = KIND_ICON[view.kind];
+const ActivityRow = ({ entry, labels, names }: RowProps) => {
+  const view = describeActivity(entry, labels, names);
+  const Icon = ACTIVITY_ICONS[view.kind];
 
   const content = (
     <>
@@ -40,9 +31,11 @@ const ActivityRow = ({ entry, labels }: { entry: ActivityEntry; labels: ProcessL
       <span className="flex min-w-0 flex-1 flex-col gap-0.5 sm:flex-row sm:items-center sm:gap-2">
         <span className="truncate text-crm-text">{view.title}</span>
         {view.detail && <span className="truncate text-crm-sm text-crm-text-3">{view.detail}</span>}
-        {view.outcome && entry.processKey && (
+        {view.outcome && (
           <span className="sm:ml-auto">
-            <Tag tone={outcomeTone(view.outcome)}>{labels.outcomeLabel(entry.processKey, view.outcome)}</Tag>
+            <Tag tone={outcomeTone(view.outcome)}>
+              {labels.outcomeLabel(entry.processKey, view.outcome)}
+            </Tag>
           </span>
         )}
       </span>
@@ -60,7 +53,10 @@ const ActivityRow = ({ entry, labels }: { entry: ActivityEntry; labels: ProcessL
   return (
     <li>
       {view.href ? (
-        <Link to={view.href} className={cn(rowClass, "transition-colors duration-100 hover:bg-crm-hover")}>
+        <Link
+          to={view.href}
+          className={cn(rowClass, "transition-colors duration-100 hover:bg-crm-hover")}
+        >
           {content}
         </Link>
       ) : (
@@ -76,6 +72,7 @@ export const MyActivity = () => {
   const activity = useMyActivity(page);
   const labels = useProcessLabels();
   const items = activity.data?.items ?? [];
+  const names = usePeopleNames(items.map((entry) => entry.details.assignee));
 
   return (
     <section className="flex flex-col gap-2">
@@ -102,7 +99,7 @@ export const MyActivity = () => {
       {items.length > 0 && (
         <ul className="divide-y divide-crm-line-light rounded-crm-sm border border-crm-line">
           {items.map((entry) => (
-            <ActivityRow key={entry.id} entry={entry} labels={labels} />
+            <ActivityRow key={entry.id} entry={entry} labels={labels} names={names} />
           ))}
         </ul>
       )}

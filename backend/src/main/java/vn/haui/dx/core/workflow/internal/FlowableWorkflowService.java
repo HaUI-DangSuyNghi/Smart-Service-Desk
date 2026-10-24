@@ -1,6 +1,11 @@
 package vn.haui.dx.core.workflow.internal;
 
+import java.time.Duration;
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -22,6 +27,7 @@ import vn.haui.dx.core.common.Page;
 import vn.haui.dx.core.common.PageRequest;
 import vn.haui.dx.core.identity.api.CurrentUser;
 import vn.haui.dx.core.identity.api.WorkspaceAccess;
+import vn.haui.dx.core.identity.api.WorkspaceDirectory;
 import vn.haui.dx.core.identity.api.WorkspaceRole;
 import vn.haui.dx.core.workflow.api.*;
 
@@ -33,27 +39,41 @@ public final class FlowableWorkflowService implements WorkflowService {
     private final AuditService audit;
     private final ProcessRegistry registry;
     private final TransactionTemplate transaction;
+    /** Danh bạ Keycloak, để kiểm người được giao việc; null trong test không cần giao việc. */
+    private final WorkspaceDirectory directory;
     static final int MAX_COMMENT = 1000;
+    /** Độ dài tối đa một biến khởi tạo; ô một dòng (200) do form của Tầng 2 tự giới hạn. */
+    static final int MAX_VARIABLE = 2000;
+    /** Số quy trình tối đa đọc cho một lần thống kê; khoảng dài hơn nên chia nhỏ. */
+    static final int MAX_STATISTICS_PROCESSES = 10_000;
 
     public FlowableWorkflowService(ProcessEngine engine, JdbcTemplate jdbc, CurrentUser user,
             AuditService audit, ProcessRegistry registry, PlatformTransactionManager manager) {
-        this(engine, jdbc, (Supplier<CurrentUser>) () -> user, audit, registry, manager);
+        this(engine, jdbc, (Supplier<CurrentUser>) () -> user, audit, registry, manager, null);
+    }
+
+    /** Cho test giao việc: người dùng cố định và danh bạ giả. */
+    public FlowableWorkflowService(ProcessEngine engine, JdbcTemplate jdbc, CurrentUser user, AuditService audit,
+            ProcessRegistry registry, PlatformTransactionManager manager, WorkspaceDirectory directory) {
+        this(engine, jdbc, (Supplier<CurrentUser>) () -> user, audit, registry, manager, directory);
     }
 
     @Autowired
     public FlowableWorkflowService(ProcessEngine engine, JdbcTemplate jdbc, WorkspaceAccess access,
-            AuditService audit, @org.springframework.context.annotation.Lazy ProcessRegistry registry, PlatformTransactionManager manager) {
-        this(engine, jdbc, access::current, audit, registry, manager);
+            AuditService audit, @org.springframework.context.annotation.Lazy ProcessRegistry registry, PlatformTransactionManager manager,
+            WorkspaceDirectory directory) {
+        this(engine, jdbc, access::current, audit, registry, manager, directory);
     }
 
     private FlowableWorkflowService(ProcessEngine engine, JdbcTemplate jdbc, Supplier<CurrentUser> current,
-            AuditService audit, ProcessRegistry registry, PlatformTransactionManager manager) {
+            AuditService audit, ProcessRegistry registry, PlatformTransactionManager manager, WorkspaceDirectory directory) {
         this.engine = engine;
         this.jdbc = jdbc;
         this.current = current;
         this.audit = audit;
         this.registry = registry;
         this.transaction = new TransactionTemplate(manager);
+        this.directory = directory;
     }
 
     @Override
@@ -78,7 +98,7 @@ public final class FlowableWorkflowService implements WorkflowService {
         input.forEach((key, value) -> {
             if (key == null || !policy.allowedStartVariables().contains(key) || !(value instanceof String))
                 throw CoreException.validation("Unsupported start variable");
-            text((String) value, 200, key);
+            text((String) value, MAX_VARIABLE, key);
         });
         input.put("workspace", workspace);
         input.put("initiator", user.sub());
@@ -103,7 +123,10 @@ public final class FlowableWorkflowService implements WorkflowService {
             throw CoreException.validation("Invalid inbox page");
         var query = engine.getTaskService().createTaskQuery().processVariableValueEquals("workspace", workspace);
         if (filter.scope() == InboxFilter.Scope.ASSIGNED) query.taskAssignee(user.sub());
-        else {
+        else if (filter.scope() == InboxFilter.Scope.ALL) {
+            // Xem mọi việc đang mở để giao việc: chỉ coordinator
+            if (!user.hasRole(workspace, WorkspaceRole.COORDINATOR)) throw CoreException.forbidden("Coordinator required");
+        } else {
             var groups = groups(user, workspace);
             if (groups.isEmpty()) return new Page<>(List.of(), page.page(), page.size(), 0);
             query.taskCandidateGroupIn(groups).taskUnassigned().processVariableValueNotEquals("initiator", user.sub());
@@ -131,8 +154,9 @@ public final class FlowableWorkflowService implements WorkflowService {
             if (task.getAssignee() != null) throw CoreException.conflict("Task already claimed");
             candidate(user, workspace, task);
             engine.getTaskService().claim(taskId, user.sub());
+            // Ghi kèm processKey để nhật ký hiện được tên quy trình mà không phải tra lại
             audit.record("task.claim", "task", taskId, workspace,
-                Map.of("processInstanceId", task.getProcessInstanceId()));
+                Map.of("processInstanceId", task.getProcessInstanceId(), "processKey", scope.get("process_key")));
             return view(engine.getTaskService().createTaskQuery().taskId(taskId).singleResult());
         });
     }
@@ -167,7 +191,8 @@ public final class FlowableWorkflowService implements WorkflowService {
             }
             engine.getTaskService().complete(taskId, Map.of("outcome_" + expectedTaskKey, outcome));
             audit.record("task.complete", "task", taskId, workspace,
-                Map.of("taskKey", expectedTaskKey, "processInstanceId", task.getProcessInstanceId(), "outcome", outcome));
+                Map.of("taskKey", expectedTaskKey, "processInstanceId", task.getProcessInstanceId(), "outcome", outcome,
+                    "processKey", scope.get("process_key")));
         });
     }
 
@@ -183,24 +208,152 @@ public final class FlowableWorkflowService implements WorkflowService {
                 instant(task.getStartTime()), instant(task.getClaimTime()), instant(task.getEndTime()))).toList();
         return new ProcessHistory(processInstanceId, (String) scope.get("process_key"), (String) scope.get("business_key"),
             workspace, (String) scope.get("owner"), instant(process.getStartTime()), instant(process.getEndTime()),
-            currentTasks(processInstanceId), steps);
+            currentTasks(processInstanceId), steps, startVariables((String) scope.get("process_key"), processInstanceId));
+    }
+
+    /** Nội dung người tạo nhập lúc start; chỉ biến khởi tạo, không lộ biến nội bộ như outcome_*. */
+    private Map<String, String> startVariables(String processKey, String processInstanceId) {
+        var allowed = registry.require(processKey).allowedStartVariables();
+        var values = new HashMap<String, String>();
+        if (allowed.isEmpty()) return values;
+        engine.getHistoryService().createHistoricVariableInstanceQuery().processInstanceId(processInstanceId)
+            .excludeTaskVariables().list().forEach(variable -> {
+                if (allowed.contains(variable.getVariableName()) && variable.getValue() instanceof String value)
+                    values.put(variable.getVariableName(), value);
+            });
+        return values;
     }
 
     @Override
     public Page<ProcessSummary> startedByMe(String workspace, PageRequest page) {
         var user = member(workspace);
-        if (page == null || page.offset() > Integer.MAX_VALUE) throw CoreException.validation("Invalid page");
+        validPage(page);
         // start() luôn đặt biến workspace và initiator, nên lọc qua lịch sử biến của engine được
-        var query = engine.getHistoryService().createHistoricProcessInstanceQuery()
-            .variableValueEquals("workspace", workspace).variableValueEquals("initiator", user.sub());
+        return summaries(engine.getHistoryService().createHistoricProcessInstanceQuery()
+            .variableValueEquals("workspace", workspace).variableValueEquals("initiator", user.sub()), page);
+    }
+
+    @Override
+    public Page<ProcessSummary> readable(String workspace, PageRequest page) {
+        var user = member(workspace);
+        validPage(page);
+        // Quy trình mà vai trò của người gọi nằm trong readerRoles (ví dụ coordinator đọc mọi ticket)
+        var keys = registry.policies().stream()
+            .filter(policy -> policy.readerRoles().stream().anyMatch(role -> user.hasRole(workspace, role)))
+            .map(ProcessPolicy::processKey).toList();
+        if (keys.isEmpty()) return new Page<>(List.of(), page.page(), page.size(), 0);
+        return summaries(engine.getHistoryService().createHistoricProcessInstanceQuery()
+            .variableValueEquals("workspace", workspace).processDefinitionKeyIn(keys), page);
+    }
+
+    private Page<ProcessSummary> summaries(org.flowable.engine.history.HistoricProcessInstanceQuery query, PageRequest page) {
         long total = query.count();
         var processes = query.orderByProcessInstanceStartTime().desc().orderByProcessInstanceId().asc()
             .listPage((int) page.offset(), page.size());
-        var active = activeTaskKeys(processes.stream().map(HistoricProcessInstance::getId).toList());
+        var ids = processes.stream().map(HistoricProcessInstance::getId).toList();
+        var active = activeTaskKeys(ids);
+        var owners = owners(ids);
         var items = processes.stream().map(process -> new ProcessSummary(process.getId(),
-            process.getProcessDefinitionKey(), process.getBusinessKey(), instant(process.getStartTime()),
-            instant(process.getEndTime()), active.getOrDefault(process.getId(), List.of()))).toList();
+            process.getProcessDefinitionKey(), process.getBusinessKey(), owners.get(process.getId()),
+            instant(process.getStartTime()), instant(process.getEndTime()),
+            active.getOrDefault(process.getId(), List.of()))).toList();
         return new Page<>(items, page.page(), page.size(), total);
+    }
+
+    /** Người tạo của nhiều quy trình trong một truy vấn (bảng process_scope của Core). */
+    private Map<String, String> owners(List<String> ids) {
+        if (ids.isEmpty()) return Map.of();
+        String marks = String.join(",", Collections.nCopies(ids.size(), "?"));
+        Map<String, String> result = new HashMap<>();
+        jdbc.query("select id, owner from process_scope where id in (" + marks + ")",
+            (java.sql.ResultSet row) -> { result.put(row.getString("id"), row.getString("owner")); }, ids.toArray());
+        return result;
+    }
+
+    private static void validPage(PageRequest page) {
+        if (page == null || page.offset() > Integer.MAX_VALUE) throw CoreException.validation("Invalid page");
+    }
+
+    @Override
+    public TaskView assign(String workspace, String taskId, String assignee) {
+        var user = member(workspace);
+        if (!user.hasRole(workspace, WorkspaceRole.COORDINATOR)) throw CoreException.forbidden("Coordinator required");
+        text(assignee, 100, "assignee");
+        if (directory == null) throw CoreException.unavailable("Workspace directory is not configured");
+        // Vai trò của người được giao lấy từ danh bạ Keycloak (người gọi không có token của họ)
+        var target = directory.members(workspace).stream().filter(member -> member.sub().equals(assignee)).findFirst()
+            .orElseThrow(() -> CoreException.validation("Assignee is not a workspace member"));
+        return transaction.execute(status -> {
+            var task = lockedTask(workspace, taskId);
+            var scope = scope(workspace, task.getProcessInstanceId());
+            var groups = view(task).candidateGroups();
+            if (groups.isEmpty()) throw CoreException.conflict("Initiator step cannot be reassigned");
+            if (assignee.equals(scope.get("owner"))) throw CoreException.forbidden("Independent assignee required");
+            if (target.roles().stream().noneMatch(role -> groups.contains(workspace + ":" + role.value())))
+                throw CoreException.validation("Assignee is not in the task's candidate group");
+            String previous = task.getAssignee();
+            engine.getTaskService().setAssignee(taskId, assignee);
+            Map<String, Object> details = new HashMap<>();
+            details.put("processInstanceId", task.getProcessInstanceId());
+            details.put("taskKey", task.getTaskDefinitionKey());
+            details.put("processKey", scope.get("process_key"));
+            details.put("assignee", assignee);
+            if (previous != null) details.put("previousAssignee", previous);
+            audit.record("task.assign", "task", taskId, workspace, details);
+            return view(engine.getTaskService().createTaskQuery().taskId(taskId).singleResult());
+        });
+    }
+
+    @Override
+    public ProcessStatistics statistics(String workspace, Instant from, Instant to, ZoneId zone) {
+        var user = member(workspace);
+        if (!user.hasRole(workspace, WorkspaceRole.COORDINATOR)) throw CoreException.forbidden("Coordinator required");
+        if (from == null || to == null || zone == null || !from.isBefore(to) || Duration.between(from, to).toDays() > 366)
+            throw CoreException.validation("Invalid statistics range");
+
+        // Đợt quy trình bắt đầu trong khoảng; giới hạn số dòng đọc để một lần gọi không quét vô hạn
+        var started = engine.getHistoryService().createHistoricProcessInstanceQuery()
+            .variableValueEquals("workspace", workspace)
+            .startedAfter(Date.from(from)).startedBefore(Date.from(to))
+            .listPage(0, MAX_STATISTICS_PROCESSES);
+        Map<String, long[]> cohort = new HashMap<>(); // key → [bắt đầu, đang chạy, hoàn thành, tổng ms hoàn thành]
+        Map<LocalDate, Long> perDay = new HashMap<>();
+        for (var process : started) {
+            long[] counts = cohort.computeIfAbsent(process.getProcessDefinitionKey(), key -> new long[4]);
+            counts[0]++;
+            if (process.getEndTime() == null) counts[1]++;
+            else if (process.getDeleteReason() == null) {
+                counts[2]++;
+                counts[3] += process.getDurationInMillis() == null ? 0 : process.getDurationInMillis();
+            }
+            perDay.merge(LocalDate.ofInstant(process.getStartTime().toInstant(), zone), 1L, Long::sum);
+        }
+
+        // Hiện trạng việc đang mở (không theo khoảng thời gian)
+        Map<String, long[]> backlog = new HashMap<>(); // key → [chờ nhận, đang xử lý]
+        Map<String, String> keyOfDefinition = new HashMap<>();
+        for (Task task : engine.getTaskService().createTaskQuery().processVariableValueEquals("workspace", workspace).list()) {
+            String key = keyOfDefinition.computeIfAbsent(task.getProcessDefinitionId(),
+                id -> engine.getRepositoryService().getProcessDefinition(id).getKey());
+            backlog.computeIfAbsent(key, k -> new long[2])[task.getAssignee() == null ? 0 : 1]++;
+        }
+
+        var keys = new java.util.TreeSet<String>();
+        keys.addAll(cohort.keySet());
+        keys.addAll(backlog.keySet());
+        var processes = keys.stream().map(key -> {
+            long[] c = cohort.getOrDefault(key, new long[4]);
+            long[] b = backlog.getOrDefault(key, new long[2]);
+            Long average = c[2] == 0 ? null : c[3] / c[2] / 1000;
+            return new ProcessStatistics.ProcessCount(key, c[0], c[1], c[2], average, b[0], b[1]);
+        }).toList();
+
+        // Đủ mọi ngày trong khoảng (ngày không có yêu cầu = 0) để giao diện vẽ thẳng
+        List<ProcessStatistics.DailyCount> daily = new ArrayList<>();
+        LocalDate last = LocalDate.ofInstant(to.minusNanos(1), zone);
+        for (LocalDate day = LocalDate.ofInstant(from, zone); !day.isAfter(last); day = day.plusDays(1))
+            daily.add(new ProcessStatistics.DailyCount(day, perDay.getOrDefault(day, 0L)));
+        return new ProcessStatistics(from, to, processes, daily);
     }
 
     /** Bước đang mở của nhiều quy trình trong một truy vấn, nhóm theo processInstanceId. */

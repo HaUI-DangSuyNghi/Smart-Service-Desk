@@ -1,5 +1,6 @@
 package vn.haui.dx.hpdi.human.internal;
 
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -30,15 +31,28 @@ public class AuditActivityFeed implements ActivityFeed {
     @Override
     public Page<ActivityEntry> mine(String workspace, PageRequest page) {
         // Core tự kiểm thành viên workspace và luôn lọc theo người gọi lấy từ token
-        var result = audit.mine(workspace, new AuditQuery(null, null, null, null),
-            new vn.haui.dx.core.common.PageRequest(page.page(), page.size()));
+        return entries(workspace, audit.mine(workspace, new AuditQuery(null, null, null, null), corePage(page)));
+    }
+
+    @Override
+    public Page<ActivityEntry> workspace(String workspace, Instant from, Instant to, String action, String actor,
+                                         PageRequest page) {
+        // Core kiểm quyền đọc audit chung (điều phối viên hoặc quản trị nền tảng)
+        return entries(workspace, audit.search(workspace, new AuditQuery(from, to, action, actor), corePage(page)));
+    }
+
+    private static vn.haui.dx.core.common.PageRequest corePage(PageRequest page) {
+        return new vn.haui.dx.core.common.PageRequest(page.page(), page.size());
+    }
+
+    private Page<ActivityEntry> entries(String workspace, vn.haui.dx.core.common.Page<AuditEntry> result) {
         var processKeys = processKeys(workspace, result.items());
         var items = result.items().stream().map(entry -> {
             String instance = processInstanceId(entry);
             String key = text(entry.details().get("processKey"));
             // Map.of() ném lỗi khi tra key null, nên chỉ tra khi thao tác thuộc quy trình
             if (key == null && instance != null) key = processKeys.get(instance);
-            return new ActivityEntry(entry.id().toString(), entry.occurredAt(), entry.action(), entry.resourceType(),
+            return new ActivityEntry(entry.id().toString(), entry.occurredAt(), entry.actor(), entry.action(), entry.resourceType(),
                 entry.resource(), instance, key, strings(entry.details()));
         }).toList();
         return new Page<>(items, result.page(), result.size(), result.total());

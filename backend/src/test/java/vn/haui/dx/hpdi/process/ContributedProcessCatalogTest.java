@@ -19,14 +19,15 @@ class ContributedProcessCatalogTest {
     private final HumanContext human = mock(HumanContext.class);
     private final ProcessCapability processes = mock(ProcessCapability.class);
 
-    private final ProcessDefinition selfService = new ProcessDefinition("loan", Set.of("requester"), Set.of("title"),
+    private final ProcessDefinition selfService = new ProcessDefinition("loan", Set.of("requester"), Set.of("title", "note"),
         Map.of("approve", Set.of("rejected", "approved"), "handover", Set.of("delivered")))
         .allowSelfService()
         .withLabels(ProcessLabels.named("Mượn đồ")
             .task("approve", "Duyệt")
             .outcome("approved", "Đồng ý")
             .outcome("rejected", "Từ chối")
-            .variable("title", "Tên đồ"));
+            .variable("title", "Tên đồ")
+            .longVariable("note", "Ghi chú"));
     private final ProcessDefinition appOwned = new ProcessDefinition("ticket-like", Set.of("requester"), Set.of(),
         Map.of("handle", Set.of("resolved")));
 
@@ -47,7 +48,8 @@ class ContributedProcessCatalogTest {
             loan.tasks().get(0).outcomes().stream().map(ProcessDescriptor.Option::label).toList());
         assertEquals("handover", loan.tasks().get(1).name());
         assertEquals("delivered", loan.tasks().get(1).outcomes().get(0).label());
-        assertEquals(List.of(new ProcessDescriptor.Option("title", "Tên đồ")), loan.startFields());
+        assertEquals(List.of(new ProcessDescriptor.Field("title", "Tên đồ", false),
+            new ProcessDescriptor.Field("note", "Ghi chú", true)), loan.startFields());
     }
 
     @Test void canStartNeedsSelfServiceAndStarterRole() {
@@ -69,6 +71,16 @@ class ContributedProcessCatalogTest {
         assertEquals(CapabilityException.Code.FORBIDDEN, forbidden.code());
         var missing = assertThrows(CapabilityException.class, () -> catalog.startSelfService("lab-a", "unknown", Map.of()));
         assertEquals(CapabilityException.Code.NOT_FOUND, missing.code());
+    }
+
+    @Test void singleLineFieldsKeep200CharactersMultilineGoLonger() {
+        var catalog = catalog("requester");
+        var tooLong = assertThrows(CapabilityException.class,
+            () -> catalog.startSelfService("lab-a", "loan", Map.of("title", "x".repeat(201))));
+        assertEquals(CapabilityException.Code.VALIDATION_FAILED, tooLong.code());
+        catalog.startSelfService("lab-a", "loan", Map.of("title", "x", "note", "x".repeat(2000)));
+        verify(processes).start(eq("lab-a"), eq("loan"), anyString(),
+            eq(Map.<String, Object>of("title", "x", "note", "x".repeat(2000))));
     }
 
     @Test void labelsForUnknownKeysFailAtStartup() {

@@ -20,8 +20,12 @@ export const formatRelativeTime = (iso: string, now = Date.now()) => {
 };
 
 /** Khoảng thời gian giữa hai mốc: "dưới 1 phút", "15 phút", "2 giờ 5 phút", "1 ngày 3 giờ". */
-export const formatDuration = (fromIso: string, toIso: string) => {
-  const minutes = Math.floor((new Date(toIso).getTime() - new Date(fromIso).getTime()) / 60_000);
+export const formatDuration = (fromIso: string, toIso: string) =>
+  formatSeconds((new Date(toIso).getTime() - new Date(fromIso).getTime()) / 1000);
+
+/** Số giây → "dưới 1 phút", "15 phút", "2 giờ 5 phút", "1 ngày 3 giờ" (từ 1 ngày bỏ phút cho gọn). */
+export const formatSeconds = (seconds: number) => {
+  const minutes = Math.floor(seconds / 60);
   if (minutes < 1) return "dưới 1 phút";
 
   const days = Math.floor(minutes / (24 * 60));
@@ -30,7 +34,6 @@ export const formatDuration = (fromIso: string, toIso: string) => {
   const parts: string[] = [];
   if (days > 0) parts.push(`${days} ngày`);
   if (hours > 0) parts.push(`${hours} giờ`);
-  // Đã tính theo ngày thì bỏ phút cho gọn
   if (rest > 0 && days === 0) parts.push(`${rest} phút`);
   return parts.join(" ");
 };

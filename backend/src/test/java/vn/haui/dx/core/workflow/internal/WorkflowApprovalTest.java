@@ -103,6 +103,7 @@ class WorkflowApprovalTest {
             assertNotNull(history.endedAt());
             assertTrue(history.currentTasks().isEmpty());
             assertEquals(1, history.steps().size());
+            assertEquals(Map.of("title", "Example"), history.variables());
             var step = history.steps().get(0);
             assertEquals(outcome, step.outcome());
             assertEquals("Reviewed", step.comment());
@@ -170,6 +171,45 @@ class WorkflowApprovalTest {
         assertTrue(service(reviewer).inbox("lab-a", new InboxFilter(InboxFilter.Scope.ASSIGNED), new PageRequest(0, 100))
             .items().stream().anyMatch(item -> item.id().equals(otherTask.id())));
         denied(ErrorCode.VALIDATION_FAILED, () -> service(reviewer).inbox("lab-a", new InboxFilter(InboxFilter.Scope.CANDIDATE), new PageRequest(Integer.MAX_VALUE, 100)));
+    }
+
+    @Test void coordinatorAssignsOnlyToCandidateMembersAndSeesAllTasksAndStatistics() {
+        var directory = mock(vn.haui.dx.core.identity.api.WorkspaceDirectory.class);
+        when(directory.members("lab-a")).thenReturn(List.of(
+            new vn.haui.dx.core.identity.api.DirectoryMember("reviewer", "reviewer", null, Set.of(COORDINATOR)),
+            new vn.haui.dx.core.identity.api.DirectoryMember("agent", "agent", null, Set.of(AGENT)),
+            new vn.haui.dx.core.identity.api.DirectoryMember("requester", "requester", null, Set.of(REQUESTER))));
+        var coordinator = new FlowableWorkflowService(engine, jdbc, reviewer, audit(reviewer), registry, manager, directory);
+        var process = start("equipment-approval");
+        var approve = task(process);
+
+        // Bước duyệt thuộc nhóm coordinator: không giao cho agent, không giao cho người tạo
+        denied(ErrorCode.VALIDATION_FAILED, () -> coordinator.assign("lab-a", approve.id(), "agent"));
+        denied(ErrorCode.FORBIDDEN, () -> coordinator.assign("lab-a", approve.id(), "requester"));
+        assertEquals("reviewer", coordinator.assign("lab-a", approve.id(), "reviewer").assignee());
+        service(reviewer).complete("lab-a", approve.id(), "approve", "approved", null);
+
+        // Bước bàn giao thuộc nhóm agent: coordinator giao được cho agent; người không phải coordinator thì không
+        var handover = task(process);
+        assertEquals("agent", coordinator.assign("lab-a", handover.id(), "agent").assignee());
+        var asAgent = new FlowableWorkflowService(engine, jdbc, agent, audit(agent), registry, manager, directory);
+        denied(ErrorCode.FORBIDDEN, () -> asAgent.assign("lab-a", handover.id(), "agent"));
+
+        // Tab "Tất cả việc" chỉ coordinator
+        assertTrue(coordinator.inbox("lab-a", new InboxFilter(InboxFilter.Scope.ALL), new PageRequest(0, 100))
+            .items().stream().anyMatch(item -> item.id().equals(handover.id())));
+        denied(ErrorCode.FORBIDDEN, () -> asAgent.inbox("lab-a", new InboxFilter(InboxFilter.Scope.ALL), new PageRequest(0, 100)));
+
+        // Coordinator là reader của quy trình mẫu nên thấy yêu cầu do người khác tạo
+        assertTrue(coordinator.readable("lab-a", new PageRequest(0, 100)).items().stream()
+            .anyMatch(item -> item.id().equals(process.processInstanceId()) && "requester".equals(item.initiator())));
+
+        var now = java.time.Instant.now();
+        var stats = coordinator.statistics("lab-a", now.minus(java.time.Duration.ofDays(1)), now.plusSeconds(60),
+            java.time.ZoneId.of("Asia/Ho_Chi_Minh"));
+        assertTrue(stats.processes().stream().anyMatch(count -> count.processKey().equals("equipment-approval") && count.started() > 0));
+        assertFalse(stats.daily().isEmpty());
+        denied(ErrorCode.FORBIDDEN, () -> asAgent.statistics("lab-a", now.minusSeconds(60), now, java.time.ZoneId.of("UTC")));
     }
 
     @Test void startedByMeListsOnlyOwnProcessesNewestFirstWithActiveSteps() {
@@ -254,7 +294,7 @@ class WorkflowApprovalTest {
         denied(ErrorCode.VALIDATION_FAILED, () -> service(requester).start("lab-a", "document-review", "x".repeat(201), Map.of()));
         denied(ErrorCode.VALIDATION_FAILED, () -> service(requester).start("lab-a", "document-review", "x", null));
         denied(ErrorCode.VALIDATION_FAILED, () -> service(requester).start("lab-a", "document-review", "x", Map.of("title", 7)));
-        denied(ErrorCode.VALIDATION_FAILED, () -> service(requester).start("lab-a", "document-review", "x", Map.of("title", "x".repeat(201))));
+        denied(ErrorCode.VALIDATION_FAILED, () -> service(requester).start("lab-a", "document-review", "x", Map.of("title", "x".repeat(FlowableWorkflowService.MAX_VARIABLE + 1))));
         denied(ErrorCode.VALIDATION_FAILED, () -> service(requester).start("lab-a", "document-review", "x", Map.of("outcome_review", "approved")));
         assertEquals(before, engine.getRuntimeService().createProcessInstanceQuery().count());
     }

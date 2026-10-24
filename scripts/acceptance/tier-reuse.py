@@ -63,7 +63,8 @@ def main():
     metadata = call('POST', '/api/core/v1/workspaces/lab-a/metadata', 'user2', 201,
                     {'title': 'Synthetic room guide', 'source': 'src:room-proof:' + uuid4().hex, 'version': 'proof-v1',
                      'usageRights': 'CC0', 'fileId': file['id']})
-    knowledge = call('GET', '/api/hpdi/v1/workspaces/lab-a/knowledge/' + metadata['id'], 'user1', 200, contract='hpdi')
+    # Xem tài liệu cần quyền document:view (kỹ thuật viên, điều phối viên); người yêu cầu bị chặn
+    knowledge = call('GET', '/api/hpdi/v1/workspaces/lab-a/knowledge/' + metadata['id'], 'user2', 200, contract='hpdi')
     assert base64.b64decode(knowledge['content']) == content
     assert knowledge['checksum'] == sha256(content).hexdigest()
     passed.append('authorized-knowledge-exact-provenance')
