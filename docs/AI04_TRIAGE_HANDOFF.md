@@ -78,7 +78,7 @@ Java bridge. Retain existing setup-generated PostgreSQL/Keycloak settings. Set t
 and `INTELLIGENCE_TRIAGE_BASE_URL=http://intelligence:8000` in deployment configuration.
 
 ```sh
-docker compose -f compose.yaml -f compose.triage.yaml --profile intelligence up -d --build
+docker compose -f compose.yaml -f infra/compose/compose.triage.yaml --profile intelligence up -d --build
 ```
 
 Python has no host port and no public APISIX route. The overlay injects the same secret

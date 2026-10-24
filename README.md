@@ -243,7 +243,7 @@ contracts/
 scripts/                        # Boundary, regression and acceptance checks
 infra/                          # Keycloak, APISIX and PostgreSQL configuration
 docs/architecture/              # ADR, ownership map and validation evidence
-compose.yaml + compose.triage.yaml
+compose.yaml + infra/compose/compose.triage.yaml
 ```
 
 ---

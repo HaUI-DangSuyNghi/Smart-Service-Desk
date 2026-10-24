@@ -24,7 +24,7 @@ and official model quality are BLOCKED; see the integration ADR and status.
 6. Start the explicitly selected reference profile:
 
 ```text
-docker compose -f compose.yaml -f compose.generation.yaml --profile assistance-reference up -d --build --wait
+docker compose -f compose.yaml -f infra/compose/compose.generation.yaml --profile assistance-reference up -d --build --wait
 ```
 
 This starts local demo infrastructure and requires the existing setup secrets.

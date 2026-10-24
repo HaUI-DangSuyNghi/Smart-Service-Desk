@@ -12,10 +12,10 @@ From the repository root, prepare local secrets with `scripts/setup.ps1`. Supply
 
 ```powershell
 $env:INTELLIGENCE_TRIAGE_BASE_URL = 'http://intelligence:8000'
-docker compose -f compose.yaml -f compose.triage.yaml --profile intelligence up -d --build --wait
+docker compose -f compose.yaml -f infra/compose/compose.triage.yaml --profile intelligence up -d --build --wait
 ```
 
-`compose.triage.yaml` mounts the application profile root read-only at `/profiles`.
+`infra/compose/compose.triage.yaml` mounts the application profile root read-only at `/profiles`.
 The default is `intelligence/src/apps/servicedesk/intelligence/profiles`. To run the second-domain
 architecture proof, configure `INTELLIGENCE_PROFILE_ROOT` to
 `./intelligence/src/apps/roomrequest/intelligence/profiles` and `INTELLIGENCE_REQUIRED_PROFILES` to

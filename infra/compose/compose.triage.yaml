@@ -1,3 +1,4 @@
+# Overlay paths resolve from the first file: always use -f compose.yaml first.
 services:
   intelligence:
     profiles: [intelligence]

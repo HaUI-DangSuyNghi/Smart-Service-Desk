@@ -1,0 +1,92 @@
+# Overlay paths resolve from the first file: always use -f compose.yaml first.
+services:
+  intelligence-cloud:
+    profiles: [assistance-cloud-dev]
+    build:
+      context: .
+      dockerfile: intelligence/Dockerfile.cloud
+    environment:
+      PROVIDER_MODE: ${PROVIDER_MODE:-disabled}
+      PROVIDER_CATALOG_PATH: /run/cloud/catalog.json
+      PROVIDER_CATALOG_SHA256: ${PROVIDER_CATALOG_SHA256:-}
+      CLOUD_EGRESS_APPROVAL_FILE: /run/cloud/approval.json
+      CLOUD_EGRESS_APPROVAL_SHA256: ${CLOUD_EGRESS_APPROVAL_SHA256:-}
+      CLOUD_ISOLATION_FILE: /run/cloud/isolation.json
+      CLOUD_ENVIRONMENT: ${CLOUD_ENVIRONMENT:-disabled}
+      CLOUD_EGRESS_PROXY: http://cloud-egress:8080
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
+      INTELLIGENCE_ASSISTANCE_TOKEN: ${INTELLIGENCE_ASSISTANCE_TOKEN:-}
+      HDPI_PROFILE_ROOT: /profiles
+    volumes:
+      - ${PROVIDER_CATALOG_PATH:-./.local/missing-cloud-catalog.json}:/run/cloud/catalog.json:ro
+      - ${CLOUD_EGRESS_APPROVAL_FILE:-./.local/missing-cloud-approval.json}:/run/cloud/approval.json:ro
+      - ${CLOUD_ISOLATION_FILE:-./.local/missing-cloud-isolation.json}:/run/cloud/isolation.json:ro
+      - ./intelligence/src/apps/servicedesk/intelligence/profiles:/profiles:ro
+    networks: [assistance-private]
+    depends_on: [cloud-egress]
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 64
+    mem_limit: 384m
+    cpus: 1
+    healthcheck:
+      test: [CMD, python, -c, "import socket; socket.create_connection(('127.0.0.1', 8001), timeout=1).close()"]
+      interval: 10s
+      timeout: 2s
+      retries: 5
+
+  cloud-egress:
+    profiles: [assistance-cloud-dev]
+    build:
+      context: .
+      dockerfile: intelligence/Dockerfile.cloud
+    entrypoint: [python, scripts/intelligence/cloud-egress-proxy.py, --host, 0.0.0.0]
+    networks: [assistance-private, cloud-outbound]
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 32
+    mem_limit: 64m
+    cpus: 0.5
+
+  intelligence-assistance:
+    profiles: [assistance-reference]
+    build:
+      context: .
+      dockerfile: intelligence/Dockerfile
+    entrypoint: [python, -m, hdpi.assistance_http, --host, 0.0.0.0]
+    environment:
+      HDPI_ASSISTANCE_REFERENCE_ENABLED: ${HDPI_ASSISTANCE_REFERENCE_ENABLED:-0}
+      HDPI_ASSISTANCE_CONFIG: /assistance-config.json
+      HDPI_ASSISTANCE_CONFIG_SHA256: ${HDPI_ASSISTANCE_CONFIG_SHA256:-}
+      INTELLIGENCE_ASSISTANCE_TOKEN: ${INTELLIGENCE_ASSISTANCE_TOKEN:-}
+      HDPI_PROFILE_ROOT: /profiles
+    volumes:
+      - ./intelligence/src/apps/servicedesk/intelligence/assistance-reference.json:/assistance-config.json:ro
+      - ./intelligence/src/apps/servicedesk/intelligence/profiles:/profiles:ro
+    networks: [assistance-private]
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 64
+    mem_limit: 384m
+    cpus: 1
+    healthcheck:
+      test: [CMD, python, -c, "import socket; socket.create_connection(('127.0.0.1', 8001), timeout=1).close()"]
+      interval: 10s
+      timeout: 2s
+      retries: 5
+  platform:
+    networks: [default, assistance-private]
+    environment:
+      INTELLIGENCE_ASSISTANCE_BASE_URL: ${INTELLIGENCE_ASSISTANCE_BASE_URL:-}
+      INTELLIGENCE_ASSISTANCE_TOKEN: ${INTELLIGENCE_ASSISTANCE_TOKEN:-}
+      serviceDesk.assistance.enabled: ${SERVICE_DESK_ASSISTANCE_ENABLED:-false}
+      serviceDesk.assistance.mode: ${SERVICE_DESK_ASSISTANCE_MODE:-disabled}
+      serviceDesk.assistance.source-pins: ${SERVICE_DESK_ASSISTANCE_SOURCE_PINS:-}
+networks:
+  cloud-outbound: {}
+  assistance-private:
+    internal: true

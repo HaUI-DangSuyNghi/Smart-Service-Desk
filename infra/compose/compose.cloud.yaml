@@ -1,0 +1,16 @@
+# Explicit overlay for the platform only. Use with the generation overlay and
+# --profile assistance-cloud-dev in a separate synthetic deployment/project.
+services:
+  platform:
+    environment:
+      PROVIDER_MODE: ${PROVIDER_MODE:-disabled}
+      PROVIDER_CATALOG_PATH: /run/cloud/catalog.json
+      PROVIDER_CATALOG_SHA256: ${PROVIDER_CATALOG_SHA256:-}
+      CLOUD_EGRESS_APPROVAL_FILE: /run/cloud/approval.json
+      CLOUD_EGRESS_APPROVAL_SHA256: ${CLOUD_EGRESS_APPROVAL_SHA256:-}
+      CLOUD_ISOLATION_FILE: /run/cloud/isolation.json
+      CLOUD_ENVIRONMENT: ${CLOUD_ENVIRONMENT:-disabled}
+    volumes:
+      - ${PROVIDER_CATALOG_PATH:-./.local/missing-cloud-catalog.json}:/run/cloud/catalog.json:ro
+      - ${CLOUD_EGRESS_APPROVAL_FILE:-./.local/missing-cloud-approval.json}:/run/cloud/approval.json:ro
+      - ${CLOUD_ISOLATION_FILE:-./.local/missing-cloud-isolation.json}:/run/cloud/isolation.json:ro
