@@ -12,11 +12,13 @@ describe("formatRelativeTime", () => {
   it("hiện phút, giờ, ngày trước", () => {
     expect(formatRelativeTime(ago(5 * 60), NOW)).toBe("5 phút trước");
     expect(formatRelativeTime(ago(3 * 3600), NOW)).toBe("3 giờ trước");
-    expect(formatRelativeTime(ago(2 * 86400), NOW)).toBe("2 ngày trước");
+    // 1–2 ngày tiếng Việt có chữ riêng ("Hôm qua", "Hôm kia"), nên thử với 3 ngày
+    expect(formatRelativeTime(ago(3 * 86400), NOW)).toBe("3 ngày trước");
   });
 
   it("cũ hơn 7 ngày thì hiện ngày tháng", () => {
-    expect(formatRelativeTime(ago(8 * 86400), NOW)).toMatch(/16\/10\/2026/);
+    // Ngày giờ dạng ngắn của tiếng Việt in năm 2 chữ số
+    expect(formatRelativeTime(ago(8 * 86400), NOW)).toMatch(/16\/10\/26/);
   });
 });
 

@@ -46,14 +46,16 @@ const schema = z.object({
   usageRights: z.string().trim().min(1, "Nhập quyền sử dụng").max(200, "Tối đa 200 ký tự"),
 });
 
-type FormValues = z.infer<typeof schema>;
+// Lúc nhập file có thể còn null; sau khi zod kiểm xong (lúc gửi) chắc chắn là File
+type FormInput = z.input<typeof schema>;
+type FormOutput = z.output<typeof schema>;
 
 /** Nút "Tải tài liệu lên" + form: tải file rồi tạo metadata (nguồn, phiên bản, quyền sử dụng). */
 export const UploadKnowledgeDialog = () => {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const create = useCreateKnowledge();
-  const form = useForm<FormValues>({
+  const form = useForm<FormInput, unknown, FormOutput>({
     resolver: zodResolver(schema),
     defaultValues: { file: null, title: "", source: "", version: "1.0", usageRights: "" },
   });
@@ -75,10 +77,9 @@ export const UploadKnowledgeDialog = () => {
     }
   };
 
-  const handleSubmit = form.handleSubmit(({ file, ...fields }) => {
-    // schema đã kiểm có file
+  const handleSubmit = form.handleSubmit((values) => {
     create.mutate(
-      { file: file!, ...fields },
+      values,
       {
         onSuccess: (created) => {
           handleOpenChange(false);
