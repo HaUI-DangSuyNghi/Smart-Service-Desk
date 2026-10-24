@@ -1,12 +1,15 @@
 import {
   IconBook,
-  IconUsers,
   IconHome,
+  IconInbox,
   IconLayoutSidebarLeftCollapse,
   IconLayoutSidebarLeftExpand,
+  IconSend,
+  IconUsers,
 } from "@tabler/icons-react";
 import { cn } from "cn";
-import { hasAnyRole, useActor } from "@/platform/human/workspace";
+import { hasAnyRole, PERMISSIONS, useActor, usePermissions } from "@/platform/human/workspace";
+import { InboxBadge } from "@/platform/process";
 import { useIsMobile } from "@/platform/shared/lib/useMediaQuery";
 import type { MenuItem } from "../../router/registry";
 import { NavItem } from "./NavItem";
@@ -17,8 +20,35 @@ import { WorkspaceSwitcher } from "./WorkspaceSwitcher";
 /** Trang của Tầng 2; chỉ liệt kê trang đã có thật. */
 const PLATFORM_MENU: readonly MenuItem[] = [
   { label: "Trang chủ", path: "/home", icon: IconHome },
-  { label: "Thành viên", path: "/members", icon: IconUsers, tone: "purple" },
-  { label: "Tri thức", path: "/knowledge", icon: IconBook, tone: "blue" },
+  {
+    label: "Công việc",
+    path: "/inbox",
+    icon: IconInbox,
+    tone: "red",
+    badge: InboxBadge,
+    requiredPermissions: [PERMISSIONS.taskHandle],
+  },
+  {
+    label: "Yêu cầu",
+    path: "/requests",
+    icon: IconSend,
+    tone: "green",
+    requiredPermissions: [PERMISSIONS.requestCreate],
+  },
+  {
+    label: "Thành viên",
+    path: "/members",
+    icon: IconUsers,
+    tone: "purple",
+    requiredPermissions: [PERMISSIONS.memberView],
+  },
+  {
+    label: "Tài liệu",
+    path: "/knowledge",
+    icon: IconBook,
+    tone: "blue",
+    requiredPermissions: [PERMISSIONS.documentView],
+  },
 ];
 
 interface Props {
@@ -37,9 +67,13 @@ export const AppSidebar = ({ appMenu }: Props) => {
   const collapsed = collapsedByUser || isMobile;
   const toggle = useSidebarStore((state) => state.toggle);
   const ToggleIcon = collapsed ? IconLayoutSidebarLeftExpand : IconLayoutSidebarLeftCollapse;
-  // Ẩn mục người dùng không đủ vai trò ở workspace đang chọn (backend vẫn tự kiểm quyền)
+  // Ẩn mục người dùng không đủ vai trò/quyền ở workspace đang chọn (backend vẫn tự kiểm quyền)
   const { roles } = useActor();
-  const visibleAppMenu = appMenu.filter((item) => hasAnyRole(roles, item.requiredRoles));
+  const { can } = usePermissions();
+  const isVisible = (item: MenuItem) =>
+    hasAnyRole(roles, item.requiredRoles) && can(...(item.requiredPermissions ?? []));
+  const visiblePlatformMenu = PLATFORM_MENU.filter(isVisible);
+  const visibleAppMenu = appMenu.filter(isVisible);
 
   return (
     <aside
@@ -66,7 +100,7 @@ export const AppSidebar = ({ appMenu }: Props) => {
 
       <nav className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto">
         <NavSection title="Nền tảng" collapsed={collapsed}>
-          {PLATFORM_MENU.map((item) => (
+          {visiblePlatformMenu.map((item) => (
             <NavItem key={item.path} item={item} collapsed={collapsed} />
           ))}
         </NavSection>

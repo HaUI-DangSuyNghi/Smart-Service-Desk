@@ -30,7 +30,7 @@ describe("createAuthSettings", () => {
       scope: "openid",
       redirect_uri: "http://localhost:5173/auth/callback",
       silent_redirect_uri: "http://localhost:5173/auth/silent",
-      post_logout_redirect_uri: "http://localhost:5173/",
+      post_logout_redirect_uri: "http://localhost:5173/home",
     });
   });
 });

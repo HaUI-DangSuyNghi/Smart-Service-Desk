@@ -6,6 +6,8 @@ export interface AppRoute {
   readonly component: ComponentType;
   /** Cần ít nhất một vai trò này ở workspace đang chọn; thiếu thì hiện trang 403. */
   readonly requiredRoles?: readonly string[];
+  /** Cần ít nhất một quyền này (Keycloak, client dx-permissions); thiếu thì hiện trang 403. */
+  readonly requiredPermissions?: readonly string[];
 }
 
 /** Icon cho menu; khớp component của @tabler/icons-react. */
@@ -21,6 +23,10 @@ export interface MenuItem {
   readonly tone?: MenuTone;
   /** Chỉ hiện mục menu khi có ít nhất một vai trò này. */
   readonly requiredRoles?: readonly string[];
+  /** Chỉ hiện mục menu khi có ít nhất một quyền này. */
+  readonly requiredPermissions?: readonly string[];
+  /** Component số đếm cạnh mục menu (tự lấy dữ liệu), ví dụ số việc đang chờ ở trang Công việc. */
+  readonly badge?: ComponentType;
 }
 
 /** Những gì một app (Tầng 3) đăng ký vào platform (Tầng 2). */

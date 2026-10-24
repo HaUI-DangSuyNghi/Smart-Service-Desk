@@ -54,6 +54,23 @@ class JdbcAuditServiceTest {
         searched();
     }
 
+    @Test void mineIsOpenToMembersButAlwaysFiltersByCallerFromToken() {
+        // Agent không đọc được audit chung nhưng đọc được của chính mình; actor do client gửi bị bỏ qua
+        service(false, new Membership("lab-a", AGENT))
+            .mine("lab-a", new AuditQuery(null, null, null, "someone-else"), PageRequest.of(0, 10));
+        verify(jdbc).queryForObject(contains("and actor = ?"), eq(Long.class), eq("lab-a"), eq("sub-1"));
+        searched();
+    }
+
+    @Test void mineRequiresWorkspaceMembershipBeforeQuerying() {
+        WorkspaceAccess access = mock(WorkspaceAccess.class);
+        doThrow(CoreException.forbidden("Workspace membership required")).when(access).requireMember("lab-a");
+        var denied = new JdbcAuditService(jdbc, access, new ObjectMapper());
+        assertThrows(CoreException.class,
+            () -> denied.mine("lab-a", new AuditQuery(null, null, null, null), PageRequest.of(null, null)));
+        verifyNoInteractions(jdbc);
+    }
+
     @Test void othersAreForbiddenBeforeQuerying() {
         for (JdbcAuditService denied : List.of(service(false, new Membership("lab-a", AGENT)), service(false, new Membership("lab-b", COORDINATOR)))) {
             var error = assertThrows(CoreException.class,

@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useNavigate } from "react-router";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -16,8 +16,8 @@ import {
   DialogTrigger,
 } from "@/platform/shared/ui/dialog";
 import { FileDropzone } from "@/platform/shared/ui/FileDropzone";
+import { FormField } from "@/platform/shared/ui/FormField";
 import { Input } from "@/platform/shared/ui/input";
-import { Label } from "@/platform/shared/ui/label";
 import { useCreateKnowledge } from "./useKnowledge";
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
@@ -46,31 +46,16 @@ const schema = z.object({
   usageRights: z.string().trim().min(1, "Nhập quyền sử dụng").max(200, "Tối đa 200 ký tự"),
 });
 
-type FormValues = z.infer<typeof schema>;
-
-interface FieldProps {
-  id: string;
-  label: string;
-  error?: string;
-  children: ReactNode;
-}
-
-const Field = ({ id, label, error, children }: FieldProps) => (
-  <div className="flex flex-col gap-1">
-    <Label htmlFor={id} className="text-crm-sm font-normal text-crm-text-2">
-      {label}
-    </Label>
-    {children}
-    {error && <p className="text-crm-sm text-crm-danger">{error}</p>}
-  </div>
-);
+// Lúc nhập file có thể còn null; sau khi zod kiểm xong (lúc gửi) chắc chắn là File
+type FormInput = z.input<typeof schema>;
+type FormOutput = z.output<typeof schema>;
 
 /** Nút "Tải tài liệu lên" + form: tải file rồi tạo metadata (nguồn, phiên bản, quyền sử dụng). */
 export const UploadKnowledgeDialog = () => {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
   const create = useCreateKnowledge();
-  const form = useForm<FormValues>({
+  const form = useForm<FormInput, unknown, FormOutput>({
     resolver: zodResolver(schema),
     defaultValues: { file: null, title: "", source: "", version: "1.0", usageRights: "" },
   });
@@ -92,10 +77,9 @@ export const UploadKnowledgeDialog = () => {
     }
   };
 
-  const handleSubmit = form.handleSubmit(({ file, ...fields }) => {
-    // schema đã kiểm có file
+  const handleSubmit = form.handleSubmit((values) => {
     create.mutate(
-      { file: file!, ...fields },
+      values,
       {
         onSuccess: (created) => {
           handleOpenChange(false);
@@ -126,7 +110,7 @@ export const UploadKnowledgeDialog = () => {
         </DialogHeader>
 
         <form id="upload-knowledge" onSubmit={handleSubmit} className="flex flex-col gap-3">
-          <Field id="file" label="Tệp tài liệu" error={errors.file?.message}>
+          <FormField id="file" label="Tệp tài liệu" error={errors.file?.message}>
             <Controller
               control={form.control}
               name="file"
@@ -142,27 +126,27 @@ export const UploadKnowledgeDialog = () => {
                 />
               )}
             />
-          </Field>
-          <Field id="title" label="Tiêu đề" error={errors.title?.message}>
+          </FormField>
+          <FormField id="title" label="Tiêu đề" error={errors.title?.message}>
             <Input id="title" {...form.register("title")} />
-          </Field>
-          <Field
+          </FormField>
+          <FormField
             id="source"
             label="Nguồn (đường dẫn hoặc tên tài liệu gốc)"
             error={errors.source?.message}
           >
             <Input id="source" {...form.register("source")} />
-          </Field>
-          <Field id="version" label="Phiên bản" error={errors.version?.message}>
+          </FormField>
+          <FormField id="version" label="Phiên bản" error={errors.version?.message}>
             <Input id="version" {...form.register("version")} />
-          </Field>
-          <Field
+          </FormField>
+          <FormField
             id="usageRights"
             label="Quyền sử dụng (ví dụ CC BY 4.0, nội bộ)"
             error={errors.usageRights?.message}
           >
             <Input id="usageRights" {...form.register("usageRights")} />
-          </Field>
+          </FormField>
         </form>
 
         {create.isError && (

@@ -172,6 +172,20 @@ class WorkflowApprovalTest {
         denied(ErrorCode.VALIDATION_FAILED, () -> service(reviewer).inbox("lab-a", new InboxFilter(InboxFilter.Scope.CANDIDATE), new PageRequest(Integer.MAX_VALUE, 100)));
     }
 
+    @Test void startedByMeListsOnlyOwnProcessesNewestFirstWithActiveSteps() {
+        var older = start("equipment-approval");
+        var newer = start("document-review");
+        service(reviewer).start("lab-a", "document-review", UUID.randomUUID().toString(), Map.of());
+        var mine = service(requester).startedByMe("lab-a", new PageRequest(0, 100)).items();
+        var ids = mine.stream().map(ProcessSummary::id).toList();
+        assertTrue(ids.indexOf(newer.processInstanceId()) < ids.indexOf(older.processInstanceId()));
+        assertTrue(mine.stream().allMatch(item -> service(requester).history("lab-a", item.id()).initiator().equals("requester")));
+        var summary = mine.stream().filter(item -> item.id().equals(older.processInstanceId())).findFirst().orElseThrow();
+        assertEquals(List.of("approve"), summary.activeTaskKeys());
+        assertNull(summary.endedAt());
+        denied(ErrorCode.FORBIDDEN, () -> service(requester).startedByMe("lab-b", new PageRequest(0, 100)));
+    }
+
     @Test void duplicateStartAndAuditFailureRollBackEngineAndScope() {
         var process = start("document-review");
         long before = engine.getRuntimeService().createProcessInstanceQuery().count();

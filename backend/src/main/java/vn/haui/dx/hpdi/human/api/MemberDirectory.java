@@ -9,4 +9,9 @@ public interface MemberDirectory {
     List<WorkspaceMember> members(String workspace);
     /** subject → tên hiển thị (họ tên, không có thì username); danh bạ lỗi → map rỗng. */
     Map<String, String> displayNames(String workspace);
+    /**
+     * Quyền của người gọi trong workspace: gộp quyền của các vai trò người gọi có (vai trò lấy từ token),
+     * sắp theo tên. Chỉ để hiển thị. Danh bạ lỗi → SERVICE_UNAVAILABLE.
+     */
+    List<WorkspacePermission> myPermissions(String workspace);
 }

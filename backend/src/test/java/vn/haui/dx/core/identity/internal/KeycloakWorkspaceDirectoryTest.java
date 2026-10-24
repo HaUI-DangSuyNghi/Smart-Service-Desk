@@ -3,6 +3,7 @@ package vn.haui.dx.core.identity.internal;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.ZoneOffset;
+import java.util.List;
 import java.util.Set;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -12,6 +13,7 @@ import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClient;
 import vn.haui.dx.core.common.CoreException;
 import vn.haui.dx.core.common.ErrorCode;
+import vn.haui.dx.core.identity.api.DirectoryPermission;
 import vn.haui.dx.core.identity.api.WorkspaceAccess;
 import vn.haui.dx.core.identity.api.WorkspaceRole;
 import static org.junit.jupiter.api.Assertions.*;
@@ -55,14 +57,25 @@ class KeycloakWorkspaceDirectoryTest {
             "[{\"id\":\"s2\",\"username\":\"user2\",\"firstName\":\"Demo\",\"lastName\":\"Agent\"},"
                 + "{\"id\":\"s9\",\"username\":\"superadmin\"},"
                 + "{\"id\":\"off\",\"username\":\"disabled\",\"enabled\":false}]");
+        expectGet("/admin/realms/dx-lab/groups/r1/role-mappings",
+            "{\"clientMappings\":{\"dx-permissions\":{\"mappings\":["
+                + "{\"name\":\"request:create\",\"description\":\"Tạo yêu cầu\"},"
+                + "{\"name\":\"document:upload\",\"description\":\"Tải tài liệu lên\"}]},"
+                + "\"other-client\":{\"mappings\":[{\"name\":\"ignored\"}]}}}");
         expectGet("/admin/realms/dx-lab/groups/r2/members?briefRepresentation=true&max=1000",
             "[{\"id\":\"s9\",\"username\":\"superadmin\"}]");
+        expectGet("/admin/realms/dx-lab/groups/r2/role-mappings", "{\"realmMappings\":[]}");
 
         var members = directory.members("lab-a");
         assertEquals("Phòng máy A", directory.displayName("lab-a")); // lấy từ cache, không gọi lại Keycloak
+        var permissions = directory.rolePermissions("lab-a");
         server.verify();
 
-        verify(access, times(2)).requireMember("lab-a");
+        verify(access, times(3)).requireMember("lab-a");
+        // Chỉ lấy role của client dx-permissions, sắp theo tên; group không gán quyền → danh sách rỗng
+        assertEquals(List.of(new DirectoryPermission("document:upload", "Tải tài liệu lên"),
+            new DirectoryPermission("request:create", "Tạo yêu cầu")), permissions.get("agent"));
+        assertEquals(List.of(), permissions.get("coordinator"));
         assertEquals(2, members.size());
         assertEquals("superadmin", members.get(0).username());
         assertEquals(Set.of(WorkspaceRole.AGENT, WorkspaceRole.COORDINATOR), members.get(0).roles());

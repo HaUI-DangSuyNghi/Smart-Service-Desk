@@ -74,6 +74,24 @@ services:
       interval: 10s
       timeout: 5s
       retries: 20
+  frontend:
+    image: dx-frontend:0.1.0
+    build:
+      context: ./frontend
+      args:
+        VITE_OIDC_AUTHORITY: ${VITE_OIDC_AUTHORITY:-http://localhost:8081/realms/dx-lab}
+        VITE_OIDC_CLIENT_ID: ${VITE_OIDC_CLIENT_ID:-dx-web}
+    # Cổng 5173 vì Keycloak (client dx-web) chỉ cho redirect về 5173/9080.
+    # Muốn chạy `npm run dev` (hot reload) thì dừng service này trước: docker compose stop frontend
+    ports: ["127.0.0.1:5173:8080"]
+    depends_on:
+      gateway: {condition: service_healthy}
+    healthcheck:
+      # 127.0.0.1 chứ không localhost: trong Alpine localhost ra IPv6 (::1) còn nginx chỉ nghe IPv4
+      test: [CMD-SHELL, "wget -q --spider http://127.0.0.1:8080/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
 volumes:
   postgres-data:
   files:

@@ -13,9 +13,6 @@ import { saveBlob } from "@/platform/shared/lib/saveBlob";
 
 export const KNOWLEDGE_PAGE_SIZE = 20;
 
-/** Vai trò được tải tài liệu lên (backend: tạo metadata cần agent hoặc coordinator). */
-export const KNOWLEDGE_EDITOR_ROLES = ["agent", "coordinator"] as const;
-
 export const useKnowledgeList = (q: string, page: number) => {
   const { current } = useCurrentWorkspace();
   return useQuery({

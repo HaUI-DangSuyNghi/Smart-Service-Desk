@@ -62,6 +62,18 @@ class JdbcAuditService implements AuditService {
         CurrentUser user = access.current();
         if (!user.platformAdmin() && !user.hasRole(workspace, COORDINATOR))
             throw CoreException.forbidden("Audit read requires coordinator or platform-admin");
+        return find(workspace, query, page);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<AuditEntry> mine(String workspace, AuditQuery query, PageRequest page) {
+        access.requireMember(workspace);
+        var own = new AuditQuery(query.from(), query.to(), query.action(), access.current().sub());
+        return find(workspace, own, page);
+    }
+
+    private Page<AuditEntry> find(String workspace, AuditQuery query, PageRequest page) {
         StringBuilder where = new StringBuilder(" where workspace = ?");
         List<Object> args = new ArrayList<>(List.of(workspace));
         if (query.from() != null) { where.append(" and occurred_at >= ?"); args.add(Timestamp.from(query.from())); }

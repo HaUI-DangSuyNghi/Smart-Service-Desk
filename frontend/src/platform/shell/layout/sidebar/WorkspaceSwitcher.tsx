@@ -1,7 +1,13 @@
-import { IconCheck, IconChevronDown, IconLogout, IconUserCircle } from "@tabler/icons-react";
+import {
+  IconCheck,
+  IconChevronDown,
+  IconLogout,
+  IconShieldLock,
+  IconUserCircle,
+} from "@tabler/icons-react";
 import { useNavigate } from "react-router";
 import { cn } from "cn";
-import { useAuth } from "@/platform/human/auth";
+import { keycloakAdminUrl, useAuth } from "@/platform/human/auth";
 import { useCurrentWorkspace, useMe } from "@/platform/human/workspace";
 import {
   DropdownMenu,
@@ -72,6 +78,15 @@ export const WorkspaceSwitcher = ({ collapsed }: Props) => {
           <IconUserCircle size={16} stroke={2} />
           Tài khoản
         </DropdownMenuItem>
+        {/* Chỉ quản trị nền tảng: mở trang quản trị Keycloak (người dùng, nhóm, vai trò) ở tab mới */}
+        {me?.platformAdmin && (
+          <DropdownMenuItem asChild>
+            <a href={keycloakAdminUrl()} target="_blank" rel="noopener noreferrer">
+              <IconShieldLock size={16} stroke={2} />
+              Quản trị phân quyền
+            </a>
+          </DropdownMenuItem>
+        )}
         <DropdownMenuItem onSelect={() => void logout()}>
           <IconLogout size={16} stroke={2} />
           Đăng xuất
