@@ -2,6 +2,7 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/geist";
+@import "@fontsource-variable/inter";
 
 @custom-variant dark (&:is(.dark *));
 
@@ -48,31 +49,112 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+/*
+ * Twenty tokens – giá trị lấy từ twenty-ui (MIT, https://github.com/twentyhq/twenty,
+ * packages/twenty-ui/src/theme/constants/ThemeLight.ts). Xem frontend/rules/Design.md.
+ */
+@theme {
+  --font-crm: "Inter Variable", "Inter", sans-serif;
+
+  --text-crm-xxs: 8px;
+  --text-crm-xs: 11px;
+  --text-crm-sm: 12px;
+  --text-crm-md: 13px;
+  --text-crm-lg: 16px;
+  --text-crm-xl: 20px;
+  --text-crm-xxl: 24px;
+
+  --color-crm-text: #333333;
+  --color-crm-text-2: #666666;
+  --color-crm-text-3: #999999;
+  --color-crm-text-light: #b3b3b3;
+  --color-crm-text-faint: #cccccc;
+
+  --color-crm-surface: #ffffff;
+  --color-crm-subtle: #fcfcfc;
+  --color-crm-canvas: #f1f1f1;
+  --color-crm-sidebar: #f9f9f9;
+  --color-crm-muted: #ebebeb;
+  --color-crm-hover: rgb(0 0 0 / 0.039);
+  --color-crm-press: rgb(0 0 0 / 0.078);
+  --color-crm-overlay: rgb(0 0 0 / 0.361);
+
+  --color-crm-line: #ebebeb;
+  --color-crm-line-light: #f1f1f1;
+  --color-crm-line-strong: #d6d6d6;
+  --color-crm-focus: color(display-p3 0.685 0.74 0.957);
+
+  --color-crm-accent: color(display-p3 0.276 0.384 0.837);
+  --color-crm-accent-hover: color(display-p3 0.234 0.343 0.801);
+  --color-crm-accent-soft: color(display-p3 0.933 0.948 0.992);
+
+  --color-crm-danger: color(display-p3 0.83 0.329 0.324);
+
+  /* Màu icon menu theo từng mục, lấy từ tag.text của Twenty */
+  --color-crm-tone-gray: #666666;
+  --color-crm-tone-blue: color(display-p3 0.256 0.354 0.755);
+  --color-crm-tone-red: color(display-p3 0.744 0.234 0.222);
+  --color-crm-tone-green: color(display-p3 0.19 0.5 0.32);
+  --color-crm-tone-orange: color(display-p3 0.76 0.34 0);
+  --color-crm-tone-purple: color(display-p3 0.473 0.281 0.687);
+  --color-crm-tone-turquoise: color(display-p3 0.08 0.5 0.43);
+  /* Nền nhạt của tag cùng tông, lấy từ tag.background của Twenty */
+  --color-crm-tone-gray-soft: color(display-p3 0.976 0.976 0.976);
+  --color-crm-tone-blue-soft: color(display-p3 0.933 0.948 0.992);
+  --color-crm-tone-red-soft: color(display-p3 0.985 0.925 0.925);
+  --color-crm-tone-green-soft: color(display-p3 0.913 0.964 0.925);
+  --color-crm-tone-orange-soft: color(display-p3 0.989 0.938 0.85);
+  --color-crm-tone-purple-soft: color(display-p3 0.963 0.931 0.989);
+  --color-crm-tone-turquoise-soft: color(display-p3 0.895 0.971 0.952);
+  --color-crm-danger-soft: color(display-p3 0.985 0.925 0.925);
+
+  --radius-crm-xs: 2px;
+  --radius-crm-sm: 4px;
+  --radius-crm-md: 8px;
+  --radius-crm-xl: 20px;
+
+  --shadow-crm-light: 0px 2px 4px 0px rgb(0 0 0 / 0.039), 0px 0px 4px 0px rgb(0 0 0 / 0.078);
+  --shadow-crm-strong: 2px 4px 16px 0px rgb(0 0 0 / 0.161), 0px 2px 4px 0px rgb(0 0 0 / 0.078);
+  --shadow-crm-super:
+    0px 0px 8px 0px rgb(0 0 0 / 0.161), 0px 8px 64px -16px rgb(0 0 0 / 0.478),
+    0px 24px 56px -16px rgb(0 0 0 / 0.078);
+}
+
+/* Khung app sau đăng nhập: chữ Inter 13px như Twenty (landing không dùng class này) */
+@utility crm-app {
+  font-family: var(--font-crm);
+  font-size: var(--text-crm-md);
+  line-height: 1.5;
+  color: var(--color-crm-text);
+  background-color: var(--color-crm-surface);
+}
+
 :root {
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.145 0 0);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.145 0 0);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.145 0 0);
-  --primary: oklch(0.205 0 0);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.97 0 0);
-  --secondary-foreground: oklch(0.205 0 0);
-  --muted: oklch(0.97 0 0);
-  --muted-foreground: oklch(0.556 0 0);
-  --accent: oklch(0.97 0 0);
-  --accent-foreground: oklch(0.205 0 0);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.922 0 0);
-  --input: oklch(0.922 0 0);
-  --ring: oklch(0.708 0 0);
+  /* Biến của shadcn, nối sang màu Twenty (xem Design.md) */
+  --background: #ffffff;
+  --foreground: #333333;
+  --card: #ffffff;
+  --card-foreground: #333333;
+  --popover: #ffffff;
+  --popover-foreground: #333333;
+  --primary: color(display-p3 0.276 0.384 0.837);
+  --primary-foreground: #ffffff;
+  --secondary: #f1f1f1;
+  --secondary-foreground: #333333;
+  --muted: #f1f1f1;
+  --muted-foreground: #666666;
+  --accent: #f1f1f1;
+  --accent-foreground: #333333;
+  --destructive: color(display-p3 0.83 0.329 0.324);
+  --border: #ebebeb;
+  --input: #ebebeb;
+  --ring: color(display-p3 0.685 0.74 0.957);
   --chart-1: oklch(0.87 0 0);
   --chart-2: oklch(0.556 0 0);
   --chart-3: oklch(0.439 0 0);
   --chart-4: oklch(0.371 0 0);
   --chart-5: oklch(0.269 0 0);
-  --radius: 0.625rem;
+  --radius: 0.25rem;
   --sidebar: oklch(0.985 0 0);
   --sidebar-foreground: oklch(0.145 0 0);
   --sidebar-primary: oklch(0.205 0 0);
@@ -115,6 +197,67 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+}
+
+/* Loader 3 thanh nhấp nhô của Loading; màu theo currentColor */
+@layer components {
+  .bar-loader {
+    display: inline-block;
+    width: 45px;
+    aspect-ratio: 0.75;
+    --bar: no-repeat linear-gradient(currentColor 0 0);
+    background:
+      var(--bar) 0% 50%,
+      var(--bar) 50% 50%,
+      var(--bar) 100% 50%;
+    background-size: 20% 50%;
+    animation: bar-loader 1s infinite linear alternate;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .bar-loader {
+      animation: none;
+    }
+  }
+}
+
+@keyframes bar-loader {
+  0% {
+    background-size:
+      20% 50%,
+      20% 50%,
+      20% 50%;
+  }
+  20% {
+    background-size:
+      20% 20%,
+      20% 50%,
+      20% 50%;
+  }
+  40% {
+    background-size:
+      20% 100%,
+      20% 20%,
+      20% 50%;
+  }
+  60% {
+    background-size:
+      20% 50%,
+      20% 100%,
+      20% 20%;
+  }
+  80% {
+    background-size:
+      20% 50%,
+      20% 50%,
+      20% 100%;
+  }
+  100% {
+    background-size:
+      20% 50%,
+      20% 50%,
+      20% 50%;
+  }
 }
 
 @layer base {

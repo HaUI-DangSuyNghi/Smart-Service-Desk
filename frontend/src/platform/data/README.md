@@ -1,3 +1,3 @@
 # data
 
-Tìm metadata, khung dashboard, audit. Chưa cài đặt.
+D: Knowledge Hub ở `knowledge/` (danh sách, tìm kiếm, xem nội dung, tải về, tải lên cho agent/coordinator). Dashboard, audit: chưa làm.

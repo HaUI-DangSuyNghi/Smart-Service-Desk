@@ -14,4 +14,6 @@ public class CoreException extends RuntimeException {
     public static CoreException forbidden(String detail) { return new CoreException(ErrorCode.FORBIDDEN, detail); }
     public static CoreException notFound(String detail) { return new CoreException(ErrorCode.NOT_FOUND, detail); }
     public static CoreException conflict(String detail) { return new CoreException(ErrorCode.CONFLICT, detail); }
+    /** Dịch vụ phụ thuộc (ví dụ Keycloak Admin API) không phản hồi; thử lại sau. */
+    public static CoreException unavailable(String detail) { return new CoreException(ErrorCode.SERVICE_UNAVAILABLE, detail); }
 }

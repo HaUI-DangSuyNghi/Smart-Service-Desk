@@ -93,6 +93,29 @@ Script sẽ tự động:
 2. Kiểm tra tính hợp lệ của `compose.yaml`.
 3. Build và khởi động các container với cơ chế chờ healthcheck hoàn tất.
 
+#### Làm mới realm Keycloak (`-Reset`)
+
+Keycloak chỉ import `dx-lab` **lần đầu**, khi realm chưa tồn tại. Máy đã chạy từ bản cũ sẽ giữ realm cũ và **không nhận** thay đổi mới trong `infra/keycloak/realm-template.json` (client `dx-web`, tài khoản, nhóm mới). Dấu hiệu: trang Keycloak báo *"Client not found"*, hoặc đăng nhập `user1` báo sai mật khẩu.
+
+Khởi động kèm xóa và import lại realm bằng một lệnh:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start.ps1 -Reset
+```
+
+Stack đang chạy sẵn thì chỉ cần chạy riêng bước reset:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/reset-keycloak-realm.ps1
+```
+
+Cần chạy `-Reset` khi template có client, nhóm hoặc thuộc tính mới (ví dụ client `dx-directory` cho danh bạ và tên hiển thị workspace). `scripts/setup.ps1` tự bổ sung biến còn thiếu (như `DIRECTORY_CLIENT_SECRET`) vào `.env` mà không đổi mật khẩu đã có.
+
+Script sẽ: sinh lại `.local/dx-lab-realm.json` từ template → xóa realm `dx-lab` → khởi động lại Keycloak để import → kiểm tra log có dòng `Realm 'dx-lab' imported` → khởi động lại backend để nạp khóa ký mới.
+
+> [!WARNING]
+> Chỉ xóa realm `dx-lab`; realm `master` và dữ liệu PostgreSQL của core giữ nguyên. Tuy vậy user được tạo lại với **ID (`sub`) mới**, nên ticket/quy trình tạo bằng tài khoản cũ trên máy đó sẽ không còn ai xem được. Chỉ dùng cho môi trường local/demo.
+
 ### 2. Kiểm tra trạng thái dịch vụ
 
 ```powershell
@@ -124,9 +147,10 @@ Mật khẩu của tất cả tài khoản mẫu được sinh ngẫu nhiên t�
 | `user5` | `/workspaces/lab-b/agent` | `lab-b` (Chuyên viên giải quyết) |
 | `user6` | `/workspaces/lab-b/coordinator` | `lab-b` (Điều phối viên) |
 | `user7` | Realm role `platform-admin` | Quản trị hệ thống (Toàn cục, không thuộc workspace) |
+| `superadmin` | Cả 3 vai trò ở `lab-a`, `lab-b` + `platform-admin` | Tài khoản thử nghiệm đầy đủ quyền; vẫn tuân thủ quy tắc tách quyền (không tự xử lý ticket mình tạo) |
 
 > [!TIP]
-> **Mở rộng workspace:** Để thêm workspace hoặc role mới, chỉ cần tạo nhóm `/workspaces/<workspace>/<role>` trên giao diện Keycloak, không cần sửa đổi mã nguồn Core. Keycloak chỉ import cấu hình lần đầu khi realm chưa tồn tại; không xóa volume dùng chung để import lại.
+> **Mở rộng workspace:** Để thêm workspace hoặc role mới, chỉ cần tạo nhóm `/workspaces/<workspace>/<role>` trên giao diện Keycloak, không cần sửa đổi mã nguồn Core. Keycloak chỉ import cấu hình lần đầu khi realm chưa tồn tại; muốn nhận thay đổi mới trong template thì chạy `scripts/start.ps1 -Reset`, không xóa volume dùng chung.
 
 ---
 
@@ -136,6 +160,9 @@ Mật khẩu của tất cả tài khoản mẫu được sinh ngẫu nhiên t�
 - **Đường dẫn gốc:** `/api/core/v1` (Core), `/api/hpdi/v1` (capabilities), `/api/apps/<app>/v1` (applications)
 - **Các nhóm endpoint tiêu biểu:**
   - `GET /api/core/v1/me`: Trả về danh tính người dùng và danh sách nhóm/workspace trực thuộc.
+  - `GET /api/hpdi/v1/workspaces`: Workspace của tôi kèm tên hiển thị và vai trò.
+  - `GET /api/hpdi/v1/workspaces/{workspace}/members`: Danh bạ thành viên workspace (đọc từ Keycloak qua service account `dx-directory`, chỉ có quyền xem).
+  - `GET /api/hpdi/v1/workspaces/{workspace}/knowledge`: Knowledge Hub, tài liệu văn bản kèm tên người tạo.
   - `POST /api/core/v1/workspaces/{workspace}/processes`: Khởi tạo quy trình xử lý công việc.
   - `GET /api/core/v1/workspaces/{workspace}/tasks`: Lấy hộp thư nhiệm vụ (inbox) theo quyền hạn.
   - `POST /api/core/v1/workspaces/{workspace}/tasks/{taskId}/claim`: Nhận quyền xử lý nhiệm vụ.
@@ -180,6 +207,7 @@ docker compose up -d --wait --wait-timeout 300
 - **Lỗi kết nối Docker:** Khởi động Docker Desktop trước khi chạy lệnh.
 - **Lỗi 401 Unauthorized:** Kiểm tra JWT issuer (`http://localhost:8081/realms/dx-lab`), audience (`dx-core`), thời hạn token và kết nối mạng nội bộ tới JWKS.
 - **Lỗi 403 Forbidden:** Kiểm tra phân nhóm người dùng và vai trò tương ứng với workspace đang truy cập.
+- **Keycloak báo "Client not found" / tài khoản demo không đăng nhập được:** realm cũ, chạy `scripts/start.ps1 -Reset` (xem mục *Làm mới realm Keycloak*).
 - **Lỗi khởi động container:** Kiểm tra log bằng `docker compose logs`; tuyệt đối không tắt xác thực bảo mật để khắc phục lỗi.
 
 ---

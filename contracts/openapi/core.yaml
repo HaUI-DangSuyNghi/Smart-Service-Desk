@@ -457,7 +457,7 @@ components:
         instance: {type: string}
         code:
           type: string
-          enum: [VALIDATION_FAILED, UNAUTHENTICATED, FORBIDDEN, NOT_FOUND, CONFLICT, PAYLOAD_TOO_LARGE, UNSUPPORTED_MEDIA_TYPE]
+          enum: [VALIDATION_FAILED, UNAUTHENTICATED, FORBIDDEN, NOT_FOUND, CONFLICT, PAYLOAD_TOO_LARGE, UNSUPPORTED_MEDIA_TYPE, SERVICE_UNAVAILABLE]
         requestId: {type: string, description: Trùng header X-Request-ID}
     # Phần thông tin trang; schema danh sách = allOf [PageMeta, {items: [...]}]
     PageMeta:

@@ -53,6 +53,14 @@ public class MetadataRepository {
             where.append(" and source=?");
             args.add(query.source());
         }
+        if (query.fileMediaTypes() != null) {
+            // Rỗng = không loại nào hợp lệ → không trả bản ghi nào
+            if (query.fileMediaTypes().isEmpty()) return new Page<>(List.of(), page.page(), page.size(), 0);
+            where.append(" and file_id in (select id from file_object where workspace=metadata.workspace and media_type in (")
+                .append(String.join(",", java.util.Collections.nCopies(query.fileMediaTypes().size(), "?")))
+                .append("))");
+            args.addAll(query.fileMediaTypes());
+        }
         Long total = jdbc.queryForObject("select count(*) from metadata" + where, Long.class, args.toArray());
         args.add(page.size());
         args.add(page.offset());
