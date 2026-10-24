@@ -29,6 +29,7 @@ def pinned_file(path, expected, *, outside=None):
         require(not Path(path).is_symlink())
         if outside is not None:
             require(not file.is_relative_to(outside.resolve()))
+        require(file.is_file() and 0 < file.stat().st_size <= 131072)
         raw = file.read_bytes()
         require(0 < len(raw) <= 131072)
         require(type(expected) is str and re.fullmatch(r"[a-f0-9]{64}", expected))
@@ -60,6 +61,10 @@ class ProviderRegistry:
         self.catalog_digest = catalog_digest
         self.approval_digest = approval_digest
         try:
+            require(
+                Path(isolation_path).is_file()
+                and 0 < Path(isolation_path).stat().st_size <= 131072
+            )
             isolation_raw = Path(isolation_path).read_bytes()
             isolation_digest = sha256(isolation_raw).hexdigest()
             isolation, self.isolation_path = pinned_file(
