@@ -1,4 +1,13 @@
-import { IconCheckbox, IconClock, IconHash, IconRoute, IconUsersGroup } from "@tabler/icons-react";
+import type { MouseEvent } from "react";
+import {
+  IconCheckbox,
+  IconClock,
+  IconHash,
+  IconRoute,
+  IconUser,
+  IconUsersGroup,
+} from "@tabler/icons-react";
+import { usePeopleNames, personName } from "@/platform/human/workspace";
 import type { InboxScope, WorkItem } from "@/platform/services";
 import { formatDateTime, formatRelativeTime } from "@/platform/shared/lib/format";
 import { Button } from "@/platform/shared/ui/button";
@@ -14,37 +23,66 @@ interface Props {
   claimingId?: string;
   onClaim: (task: WorkItem) => void;
   onComplete: (task: WorkItem) => void;
-  /** Mở trang tiến độ; chỉ dùng cho việc của tôi (việc chưa nhận thì backend chưa cho xem). */
+  onAssign: (task: WorkItem) => void;
+  /** Mở trang tiến độ; việc chưa nhận thì backend chưa cho xem nên view "Có thể nhận" không mở. */
   onOpen: (task: WorkItem) => void;
 }
 
-/** Bảng việc: cùng cột cho mọi quy trình, nút theo view (Nhận việc / Hoàn thành). */
-export const InboxTable = ({ scope, items, claimingId, onClaim, onComplete, onOpen }: Props) => {
+// Nút thao tác rộng bằng nhau (cả cột) cho các dòng thẳng hàng, không co theo chữ
+const ACTION_BUTTON = "w-full";
+
+// Nút trong dòng: chặn cú bấm lan lên dòng (dòng cũng bấm được để mở trang tiến độ)
+const stop = (action: () => void) => (event: MouseEvent) => {
+  event.stopPropagation();
+  action();
+};
+
+/** Bảng việc: cùng cột cho mọi quy trình, nút theo view (Nhận việc / Xử lý / Giao việc). */
+export const InboxTable = ({
+  scope,
+  items,
+  claimingId,
+  onClaim,
+  onComplete,
+  onAssign,
+  onOpen,
+}: Props) => {
   const labels = useProcessLabels();
+  const names = usePeopleNames(items.map((task) => task.assignee));
 
   const actionCell = (task: WorkItem) => {
     if (scope === "CANDIDATE") {
       return (
-        <Button size="xs" disabled={claimingId === task.id} onClick={() => onClaim(task)}>
+        <Button
+          size="xs"
+          className={ACTION_BUTTON}
+          disabled={claimingId === task.id}
+          onClick={() => onClaim(task)}
+        >
           {claimingId === task.id ? "Đang nhận..." : "Nhận việc"}
         </Button>
       );
     }
+    if (scope === "ALL") {
+      return (
+        <Button
+          size="xs"
+          variant="outline"
+          className={ACTION_BUTTON}
+          onClick={stop(() => onAssign(task))}
+        >
+          {task.assignee ? "Giao lại" : "Giao việc"}
+        </Button>
+      );
+    }
     return (
-      <Button
-        size="xs"
-        onClick={(event) => {
-          // Không để dòng bắt cú bấm này rồi mở trang tiến độ
-          event.stopPropagation();
-          onComplete(task);
-        }}
-      >
-        Hoàn thành
+      <Button size="xs" className={ACTION_BUTTON} onClick={stop(() => onComplete(task))}>
+        Xử lý
       </Button>
     );
   };
 
-  const columns: readonly DataTableColumn<WorkItem>[] = [
+  const columns: DataTableColumn<WorkItem>[] = [
     {
       key: "task",
       header: "Việc",
@@ -64,7 +102,9 @@ export const InboxTable = ({ scope, items, claimingId, onClaim, onComplete, onOp
       header: "Mã yêu cầu",
       icon: IconHash,
       width: "130px",
-      cell: (task) => <BusinessKeyLink processKey={task.processKey} businessKey={task.businessKey} />,
+      cell: (task) => (
+        <BusinessKeyLink processKey={task.processKey} businessKey={task.businessKey} />
+      ),
     },
     {
       key: "groups",
@@ -73,6 +113,22 @@ export const InboxTable = ({ scope, items, claimingId, onClaim, onComplete, onOp
       width: "160px",
       cell: (task) => <CandidateGroups groups={task.candidateGroups} />,
     },
+  ];
+  if (scope === "ALL") {
+    columns.push({
+      key: "assignee",
+      header: "Người giữ",
+      icon: IconUser,
+      width: "180px",
+      cell: (task) =>
+        task.assignee ? (
+          personName(names, task.assignee)
+        ) : (
+          <span className="text-crm-text-3">Chưa ai nhận</span>
+        ),
+    });
+  }
+  columns.push(
     {
       key: "createdAt",
       header: "Tạo lúc",
@@ -84,15 +140,16 @@ export const InboxTable = ({ scope, items, claimingId, onClaim, onComplete, onOp
         </time>
       ),
     },
-    { key: "action", header: "Thao tác", width: "120px", cell: actionCell },
-  ];
+    // Vừa đủ cho chữ dài nhất ("Đang nhận...") ở cỡ nút xs
+    { key: "action", header: "Thao tác", width: "104px", cell: actionCell },
+  );
 
   return (
     <DataTable
       columns={columns}
       rows={items}
       getRowKey={(task) => task.id}
-      onRowClick={scope === "ASSIGNED" ? onOpen : undefined}
+      onRowClick={scope === "CANDIDATE" ? undefined : onOpen}
     />
   );
 };

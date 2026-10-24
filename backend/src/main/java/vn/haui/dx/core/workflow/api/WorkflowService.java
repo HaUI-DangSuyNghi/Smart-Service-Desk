@@ -1,5 +1,7 @@
 package vn.haui.dx.core.workflow.api;
 
+import java.time.Instant;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 import vn.haui.dx.core.common.Page;
@@ -32,4 +34,16 @@ public interface WorkflowService {
 
     /** Quy trình người gọi đã khởi tạo trong workspace, mọi processKey, mới nhất trước. */
     Page<ProcessSummary> startedByMe(String workspace, PageRequest page);
+
+    /** Quy trình người gọi được xem với tư cách reader (readerRoles của từng quy trình), mới nhất trước. */
+    Page<ProcessSummary> readable(String workspace, PageRequest page);
+
+    /**
+     * Giao (hoặc giao lại) task cho {@code assignee}. Chỉ coordinator; assignee phải thuộc candidate group
+     * của task và không phải người tạo quy trình; bước giao thẳng người tạo không giao lại được.
+     */
+    TaskView assign(String workspace, String taskId, String assignee);
+
+    /** Số liệu cho dashboard; chỉ coordinator. Khoảng [from, to) tối đa 366 ngày, ngày tính theo {@code zone}. */
+    ProcessStatistics statistics(String workspace, Instant from, Instant to, ZoneId zone);
 }

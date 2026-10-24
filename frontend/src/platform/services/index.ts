@@ -1,6 +1,11 @@
 // Mọi API của Tầng 2 (core, hpdi). API riêng của app nằm ở apps/<app>/services.
 export { getActor, type Actor } from "./actorService";
-export { getMyActivity, type ActivityEntry } from "./activityService";
+export {
+  getMyActivity,
+  getWorkspaceAudit,
+  type ActivityEntry,
+  type AuditFilter,
+} from "./activityService";
 export {
   createKnowledge,
   describeFile,
@@ -17,18 +22,25 @@ export {
 } from "./knowledgeService";
 export { getMe, type Me, type Membership } from "./meService";
 export {
+  assignTask,
   claimTask,
   completeTask,
+  getProcessStatistics,
   getTimeline,
   listInbox,
-  listMyRequests,
   listProcesses,
+  listRequests,
   startProcess,
   type InboxScope,
   type PageQuery,
+  type ProcessCount,
+  type ProcessStatistics,
+  type RequestScope,
+  type StatisticsQuery,
   type ProcessDescriptor,
   type ProcessHandle,
   type ProcessOption,
+  type ProcessStartField,
   type ProcessStep,
   type ProcessSummary,
   type ProcessTaskDescriptor,
@@ -39,6 +51,7 @@ export {
 export {
   getMembers,
   getMyPermissions,
+  getPeopleNames,
   getMyWorkspaces,
   type WorkspaceMember,
   type WorkspacePermission,

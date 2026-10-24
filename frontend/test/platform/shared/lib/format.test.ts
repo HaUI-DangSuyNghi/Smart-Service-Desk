@@ -1,5 +1,9 @@
 import { describe, expect, it } from "vitest";
-import { formatDuration, formatRelativeTime } from "../../../../src/platform/shared/lib/format";
+import {
+  formatDuration,
+  formatRelativeTime,
+  formatSeconds,
+} from "../../../../src/platform/shared/lib/format";
 
 const NOW = new Date("2026-10-24T10:00:00Z").getTime();
 const ago = (seconds: number) => new Date(NOW - seconds * 1000).toISOString();
@@ -36,5 +40,12 @@ describe("formatDuration", () => {
 
   it("từ 1 ngày trở lên bỏ phút", () => {
     expect(formatDuration(start, "2026-10-25T11:20:00Z")).toBe("1 ngày 3 giờ");
+  });
+});
+
+describe("formatSeconds", () => {
+  it("đổi số giây ra chữ như formatDuration", () => {
+    expect(formatSeconds(30)).toBe("dưới 1 phút");
+    expect(formatSeconds(3 * 3600 + 120)).toBe("3 giờ 2 phút");
   });
 });

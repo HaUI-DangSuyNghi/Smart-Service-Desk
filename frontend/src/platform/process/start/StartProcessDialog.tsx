@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { IconPlus } from "@tabler/icons-react";
 import { z } from "zod";
 import { PERMISSIONS, usePermissions } from "@/platform/human/workspace";
+import { submitOnEnter } from "@/platform/shared/lib/submitOnEnter";
 import { Button } from "@/platform/shared/ui/button";
 import { ChoiceCard } from "@/platform/shared/ui/ChoiceCard";
 import {
@@ -18,14 +19,19 @@ import {
 } from "@/platform/shared/ui/dialog";
 import { FormField } from "@/platform/shared/ui/FormField";
 import { Input } from "@/platform/shared/ui/input";
+import { Textarea } from "@/platform/shared/ui/textarea";
 import { toast, toastError } from "@/platform/shared/ui/toast";
 import { useProcessCatalog } from "../catalog/useProcessCatalog";
 import { useStartProcess } from "./useStartProcess";
 
-// Mỗi biến khởi tạo là chuỗi ≤ 200 ký tự (luật của Core); form bắt nhập đủ cho dữ liệu dùng được
+// Ô một dòng ≤ 200 ký tự, ô nhiều dòng ≤ 2000 (backend kiểm cùng luật); maxLength của từng ô chặn gõ quá
+const SHORT_TEXT = 200;
+const LONG_TEXT = 2000;
 const schema = z.object({
   processKey: z.string().min(1, "Chọn quy trình"),
-  variables: z.record(z.string().trim().min(1, "Không được để trống").max(200, "Tối đa 200 ký tự")),
+  variables: z.record(
+    z.string().trim().min(1, "Không được để trống").max(LONG_TEXT, `Tối đa ${LONG_TEXT} ký tự`),
+  ),
 });
 
 type FormValues = z.infer<typeof schema>;
@@ -93,11 +99,20 @@ export const StartProcessDialog = () => {
           </DialogDescription>
         </DialogHeader>
 
-        <form id="start-process" onSubmit={handleSubmit} className="flex flex-col gap-3">
+        <form
+          id="start-process"
+          onSubmit={handleSubmit}
+          onKeyDown={submitOnEnter}
+          className="flex flex-col gap-3"
+        >
           <fieldset className="flex flex-col gap-1.5">
             <legend className="mb-1 text-crm-sm text-crm-text-2">Quy trình</legend>
             {startable.map((process) => (
-              <ChoiceCard key={process.processKey} value={process.processKey} {...form.register("processKey")}>
+              <ChoiceCard
+                key={process.processKey}
+                value={process.processKey}
+                {...form.register("processKey")}
+              >
                 {process.name}
               </ChoiceCard>
             ))}
@@ -113,11 +128,20 @@ export const StartProcessDialog = () => {
               label={field.label}
               error={errors.variables?.[field.key]?.message}
             >
-              <Input
-                id={`variable-${field.key}`}
-                maxLength={200}
-                {...form.register(`variables.${field.key}`)}
-              />
+              {field.multiline ? (
+                <Textarea
+                  id={`variable-${field.key}`}
+                  rows={5}
+                  maxLength={LONG_TEXT}
+                  {...form.register(`variables.${field.key}`)}
+                />
+              ) : (
+                <Input
+                  id={`variable-${field.key}`}
+                  maxLength={SHORT_TEXT}
+                  {...form.register(`variables.${field.key}`)}
+                />
+              )}
             </FormField>
           ))}
         </form>

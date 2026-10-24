@@ -30,7 +30,9 @@ export const MyPermissions = () => {
               <IconCircleCheck size={16} stroke={2} className="shrink-0 text-crm-tone-green" />
               <span className="min-w-0 truncate text-crm-text">{permission.label}</span>
               {/* Tên quyền gốc, để đối chiếu khi trao đổi với quản trị */}
-              <span className="shrink-0 font-mono text-crm-xs text-crm-text-3">{permission.key}</span>
+              <span className="shrink-0 font-mono text-crm-xs text-crm-text-3">
+                {permission.key}
+              </span>
             </li>
           ))}
         </ul>

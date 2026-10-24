@@ -2,6 +2,7 @@ import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import type { WorkItem } from "@/platform/services";
+import { submitOnEnter } from "@/platform/shared/lib/submitOnEnter";
 import { Button } from "@/platform/shared/ui/button";
 import { ChoiceCard } from "@/platform/shared/ui/ChoiceCard";
 import {
@@ -72,18 +73,26 @@ const CompleteTaskForm = ({ task, onDone }: FormProps) => {
   return (
     <>
       <DialogHeader>
-        <DialogTitle>Hoàn thành bước</DialogTitle>
+        {/* Tiêu đề theo đúng việc của bước (Duyệt yêu cầu, Bàn giao thiết bị...) */}
+        <DialogTitle>{taskName}</DialogTitle>
         <DialogDescription>
-          {labels.processName(task.processKey)} · {taskName}
+          {labels.processName(task.processKey)} · chọn kết quả của bước này.
         </DialogDescription>
       </DialogHeader>
 
-      <form id="complete-task" onSubmit={handleSubmit} className="flex flex-col gap-3">
+      <form
+        id="complete-task"
+        onSubmit={handleSubmit}
+        onKeyDown={submitOnEnter}
+        className="flex flex-col gap-3"
+      >
         <fieldset className="flex flex-col gap-1.5">
           <legend className="mb-1 text-crm-sm text-crm-text-2">Kết quả</legend>
           {catalog.isPending && <TextSkeleton lines={2} label="Đang tải kết quả" />}
           {!catalog.isPending && outcomes.length === 0 && (
-            <p className="text-crm-sm text-crm-danger">Không tải được danh sách kết quả của bước.</p>
+            <p className="text-crm-sm text-crm-danger">
+              Không tải được danh sách kết quả của bước.
+            </p>
           )}
           <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {outcomes.map((option) => (
@@ -92,7 +101,9 @@ const CompleteTaskForm = ({ task, onDone }: FormProps) => {
               </ChoiceCard>
             ))}
           </div>
-          {errors.outcome && <p className="text-crm-sm text-crm-danger">{errors.outcome.message}</p>}
+          {errors.outcome && (
+            <p className="text-crm-sm text-crm-danger">{errors.outcome.message}</p>
+          )}
         </fieldset>
 
         <FormField id="comment" label="Ghi chú (không bắt buộc)" error={errors.comment?.message}>
@@ -114,7 +125,7 @@ const CompleteTaskForm = ({ task, onDone }: FormProps) => {
           size="sm"
           disabled={complete.isPending || outcomes.length === 0}
         >
-          {complete.isPending ? "Đang gửi..." : "Hoàn thành"}
+          {complete.isPending ? "Đang gửi..." : "Xác nhận"}
         </Button>
       </DialogFooter>
     </>
@@ -127,7 +138,7 @@ interface Props {
   onClose: () => void;
 }
 
-/** Dialog chọn kết quả + ghi chú để hoàn thành một bước; dùng ở công việc và trang tiến độ. */
+/** Dialog chọn kết quả + ghi chú để xử lý xong một bước; dùng ở trang Công việc và trang tiến độ. */
 export const CompleteTaskDialog = ({ task, onClose }: Props) => {
   return (
     <Dialog open={task !== null} onOpenChange={(open) => !open && onClose()}>

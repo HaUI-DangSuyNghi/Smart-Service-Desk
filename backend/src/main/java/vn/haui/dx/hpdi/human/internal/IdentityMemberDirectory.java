@@ -1,6 +1,7 @@
 package vn.haui.dx.hpdi.human.internal;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
@@ -47,6 +48,10 @@ public class IdentityMemberDirectory implements MemberDirectory {
             if (error.code() == ErrorCode.SERVICE_UNAVAILABLE) return Map.of();
             throw error;
         }
+    }
+    public Map<String, String> names(String workspace, Set<String> subjects) {
+        return displayNames(workspace).entrySet().stream().filter(entry -> subjects.contains(entry.getKey()))
+            .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
     }
     public List<WorkspacePermission> myPermissions(String workspace) {
         var byRole = directory.rolePermissions(workspace);

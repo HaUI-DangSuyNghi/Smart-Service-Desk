@@ -4,19 +4,32 @@ import org.springframework.web.bind.annotation.*;
 import vn.haui.dx.hpdi.common.api.Page;
 import vn.haui.dx.hpdi.common.api.PageRequest;
 import vn.haui.dx.hpdi.data.api.*;
+import vn.haui.dx.hpdi.human.api.PermissionGuard;
+import vn.haui.dx.hpdi.human.api.Permissions;
+/** Knowledge Hub; mọi API cần quyền xem tài liệu (Keycloak). Tải lên đi qua Core (kiểm vai trò). */
 @RestController
 @RequestMapping("/api/hpdi/v1/workspaces/{workspace}/knowledge")
 public class KnowledgeController {
     private final KnowledgeCatalog knowledge;
-    public KnowledgeController(KnowledgeCatalog knowledge) { this.knowledge=knowledge; }
+    private final PermissionGuard permissions;
+    public KnowledgeController(KnowledgeCatalog knowledge, PermissionGuard permissions) {
+        this.knowledge = knowledge; this.permissions = permissions;
+    }
     @GetMapping
     public Page<KnowledgeSummary> search(@PathVariable String workspace, @RequestParam(required = false) String q,
                                          @RequestParam(required = false) Integer page,
                                          @RequestParam(required = false) Integer size) {
+        permissions.require(workspace, Permissions.DOCUMENT_VIEW);
         return knowledge.search(workspace, q, PageRequest.of(page, size));
     }
     @GetMapping("/{id}")
     public AuthorizedKnowledge resolve(@PathVariable String workspace, @PathVariable UUID id) {
-        return knowledge.resolve(workspace,id);
+        permissions.require(workspace, Permissions.DOCUMENT_VIEW);
+        return knowledge.resolve(workspace, id);
+    }
+    @GetMapping("/{id}/record")
+    public KnowledgeRecord record(@PathVariable String workspace, @PathVariable UUID id) {
+        permissions.require(workspace, Permissions.DOCUMENT_VIEW);
+        return knowledge.record(workspace, id);
     }
 }

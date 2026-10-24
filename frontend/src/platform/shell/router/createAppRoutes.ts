@@ -1,5 +1,7 @@
 import { createElement } from "react";
 import type { RouteObject } from "react-router";
+import { AuditPage } from "@/platform/data/audit";
+import { DashboardPage } from "@/platform/data/dashboard";
 import { KnowledgeDetailPage, KnowledgeListPage } from "@/platform/data/knowledge";
 import { CALLBACK_PATH, CallbackPage, RequireAuth } from "@/platform/human/auth";
 import MembersPage from "@/platform/human/members/MembersPage";
@@ -38,13 +40,19 @@ const routeElement = (route: AppRoute) => {
 /** Trang của Tầng 2 (platform), đăng ký giống trang của app. */
 const PLATFORM_ROUTES: readonly AppRoute[] = [
   { path: "home", component: HomePage },
+  { path: "dashboard", component: DashboardPage, requiredPermissions: [PERMISSIONS.dashboardView] },
+  { path: "audit", component: AuditPage, requiredPermissions: [PERMISSIONS.auditView] },
   { path: "profile", component: ProfilePage },
   { path: "members", component: MembersPage, requiredPermissions: [PERMISSIONS.memberView] },
   { path: "inbox", component: InboxPage, requiredPermissions: [PERMISSIONS.taskHandle] },
   { path: "requests", component: MyRequestsPage, requiredPermissions: [PERMISSIONS.requestCreate] },
   // Ai xem được tiến độ do backend quyết định theo từng quy trình (người tạo, người đã xử lý...)
   { path: "processes/:id", component: ProcessTimelinePage },
-  { path: "knowledge", component: KnowledgeListPage, requiredPermissions: [PERMISSIONS.documentView] },
+  {
+    path: "knowledge",
+    component: KnowledgeListPage,
+    requiredPermissions: [PERMISSIONS.documentView],
+  },
   {
     path: "knowledge/:id",
     component: KnowledgeDetailPage,

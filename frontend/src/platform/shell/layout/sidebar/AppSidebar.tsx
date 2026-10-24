@@ -1,5 +1,7 @@
 import {
   IconBook,
+  IconChartBar,
+  IconHistory,
   IconHome,
   IconInbox,
   IconLayoutSidebarLeftCollapse,
@@ -20,6 +22,13 @@ import { WorkspaceSwitcher } from "./WorkspaceSwitcher";
 /** Trang của Tầng 2; chỉ liệt kê trang đã có thật. */
 const PLATFORM_MENU: readonly MenuItem[] = [
   { label: "Trang chủ", path: "/home", icon: IconHome },
+  {
+    label: "Dashboard",
+    path: "/dashboard",
+    icon: IconChartBar,
+    tone: "turquoise",
+    requiredPermissions: [PERMISSIONS.dashboardView],
+  },
   {
     label: "Công việc",
     path: "/inbox",
@@ -48,6 +57,13 @@ const PLATFORM_MENU: readonly MenuItem[] = [
     icon: IconBook,
     tone: "blue",
     requiredPermissions: [PERMISSIONS.documentView],
+  },
+  {
+    label: "Nhật ký",
+    path: "/audit",
+    icon: IconHistory,
+    tone: "gray",
+    requiredPermissions: [PERMISSIONS.auditView],
   },
 ];
 

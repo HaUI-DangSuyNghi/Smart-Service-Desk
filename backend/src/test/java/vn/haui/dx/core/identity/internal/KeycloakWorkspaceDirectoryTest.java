@@ -54,7 +54,7 @@ class KeycloakWorkspaceDirectoryTest {
         expectGet("/admin/realms/dx-lab/groups/g/children?briefRepresentation=true&max=100",
             "[{\"id\":\"r1\",\"name\":\"agent\"},{\"id\":\"r2\",\"name\":\"coordinator\"},{\"id\":\"bad\",\"name\":\"Bad Role\"}]");
         expectGet("/admin/realms/dx-lab/groups/r1/members?briefRepresentation=true&max=1000",
-            "[{\"id\":\"s2\",\"username\":\"user2\",\"firstName\":\"Demo\",\"lastName\":\"Agent\"},"
+            "[{\"id\":\"s2\",\"username\":\"user2\",\"firstName\":\"Thị Bình\",\"lastName\":\"Trần\"},"
                 + "{\"id\":\"s9\",\"username\":\"superadmin\"},"
                 + "{\"id\":\"off\",\"username\":\"disabled\",\"enabled\":false}]");
         expectGet("/admin/realms/dx-lab/groups/r1/role-mappings",
@@ -80,7 +80,8 @@ class KeycloakWorkspaceDirectoryTest {
         assertEquals("superadmin", members.get(0).username());
         assertEquals(Set.of(WorkspaceRole.AGENT, WorkspaceRole.COORDINATOR), members.get(0).roles());
         assertNull(members.get(0).fullName());
-        assertEquals("Demo Agent", members.get(1).fullName());
+        // Họ (lastName) đứng trước tên (firstName)
+        assertEquals("Trần Thị Bình", members.get(1).fullName());
     }
 
     @Test void unknownWorkspaceGroupMeansNoMembersAndCodeAsName() {

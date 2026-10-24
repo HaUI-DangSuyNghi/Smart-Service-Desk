@@ -45,6 +45,88 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+  /api/hpdi/v1/workspaces/{workspace}/processes/statistics:
+    parameters:
+    - *id001
+    get:
+      description: Số liệu dashboard (quyền dashboard:view). started/running/completed tính trên yêu cầu tạo trong [from, to); waitingClaim/inProgress là việc đang mở lúc gọi. Khoảng tối đa 366 ngày.
+      parameters:
+      - name: from
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date-time
+      - name: to
+        in: query
+        required: true
+        schema:
+          type: string
+          format: date-time
+      - name: zone
+        in: query
+        description: Múi giờ IANA để chia số liệu theo ngày
+        schema:
+          type: string
+          default: UTC
+          example: Asia/Ho_Chi_Minh
+      responses:
+        '200':
+          description: Số liệu
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProcessStatistics'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /api/hpdi/v1/workspaces/{workspace}/tasks/{id}/assign:
+    parameters:
+    - *id001
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    post:
+      description: Giao (lại) việc (quyền task:assign, Core yêu cầu coordinator). Chỉ giao cho người thuộc nhóm xử lý của bước, không giao cho người tạo yêu cầu.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+              - assignee
+              properties:
+                assignee:
+                  type: string
+                  description: subject người được giao
+      responses:
+        '200':
+          description: Việc sau khi giao
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkItem'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
   /api/hpdi/v1/workspaces/{workspace}/processes/{processKey}/instances:
     parameters:
     - *id001
@@ -65,10 +147,10 @@ paths:
               properties:
                 variables:
                   type: object
-                  description: Chỉ các key trong startFields
+                  description: Chỉ các key trong startFields; ô một dòng ≤ 200 ký tự, ô multiline ≤ 2000
                   additionalProperties:
                     type: string
-                    maxLength: 200
+                    maxLength: 2000
       responses:
         '201':
           description: Đã tạo
@@ -88,8 +170,16 @@ paths:
     parameters:
     - *id001
     get:
-      description: Yêu cầu người gọi đã tạo trong workspace, mọi quy trình, mới nhất trước.
+      description: Yêu cầu, mới nhất trước. scope=mine (mặc định, cần request:create) là yêu cầu người gọi đã tạo; scope=all (cần request:view-all) là mọi yêu cầu người gọi được xem với tư cách reader.
       parameters:
+      - name: scope
+        in: query
+        schema:
+          type: string
+          enum:
+          - mine
+          - all
+          default: mine
       - $ref: '#/components/parameters/Page'
       - $ref: '#/components/parameters/Size'
       responses:
@@ -132,7 +222,9 @@ paths:
           enum:
           - ASSIGNED
           - CANDIDATE
+          - ALL
           default: CANDIDATE
+        description: ASSIGNED/CANDIDATE cần quyền task:handle; ALL (mọi việc đang mở, để giao việc) cần task:assign
       - $ref: '#/components/parameters/Page'
       - $ref: '#/components/parameters/Size'
   /api/hpdi/v1/workspaces/{workspace}/instances/{id}/timeline:
@@ -251,6 +343,79 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
+  /api/hpdi/v1/workspaces/{workspace}/people:
+    parameters:
+    - *id001
+    get:
+      description: Tên hiển thị của các subject người gọi đã thấy (người tạo, người xử lý); mọi thành viên workspace. Danh bạ lỗi → object rỗng.
+      parameters:
+      - name: ids
+        in: query
+        required: true
+        style: form
+        explode: false
+        schema:
+          type: array
+          maxItems: 100
+          items:
+            type: string
+      responses:
+        '200':
+          description: subject → tên
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /api/hpdi/v1/workspaces/{workspace}/audit:
+    parameters:
+    - *id001
+    get:
+      description: Nhật ký của cả workspace (quyền audit:view; Core yêu cầu coordinator hoặc platform-admin), mới nhất trước.
+      parameters:
+      - name: from
+        in: query
+        schema:
+          type: string
+          format: date-time
+      - name: to
+        in: query
+        schema:
+          type: string
+          format: date-time
+      - name: action
+        in: query
+        schema:
+          type: string
+      - name: actor
+        in: query
+        description: subject người thực hiện
+        schema:
+          type: string
+      - $ref: '#/components/parameters/Page'
+      - $ref: '#/components/parameters/Size'
+      responses:
+        '200':
+          description: Một trang nhật ký
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ActivityPage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
   /api/hpdi/v1/workspaces/{workspace}/permissions:
     parameters:
     - *id001
@@ -344,6 +509,30 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+  /api/hpdi/v1/workspaces/{workspace}/knowledge/{id}/record:
+    parameters:
+    - *id001
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      description: Provenance của một tài liệu cho trang chi tiết (quyền document:view).
+      responses:
+        '200':
+          description: Provenance
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/KnowledgeRecord'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
 components:
   schemas:
     Problem:
@@ -393,6 +582,7 @@ components:
       - startedAt
       - currentTasks
       - steps
+      - variables
       properties:
         ended:
           type: boolean
@@ -427,6 +617,11 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/HistoryStep'
+        variables:
+          type: object
+          description: Nội dung người tạo nhập lúc tạo yêu cầu, theo key của startFields
+          additionalProperties:
+            type: string
     HistoryStep:
       type: object
       required:
@@ -532,6 +727,21 @@ components:
         label:
           type: string
           description: Nhãn hiển thị; thiếu nhãn thì bằng key
+    ProcessStartField:
+      type: object
+      required:
+      - key
+      - label
+      - multiline
+      properties:
+        key:
+          type: string
+          description: Tên biến gửi lên khi tạo
+        label:
+          type: string
+        multiline:
+          type: boolean
+          description: Ô nhiều dòng, tối đa 2000 ký tự; ô thường tối đa 200
     ProcessDescriptor:
       type: object
       required:
@@ -569,13 +779,14 @@ components:
         startFields:
           type: array
           items:
-            $ref: '#/components/schemas/ProcessOption'
+            $ref: '#/components/schemas/ProcessStartField'
     ProcessSummary:
       type: object
       required:
       - id
       - processKey
       - businessKey
+      - initiator
       - startedAt
       - activeTaskKeys
       properties:
@@ -585,6 +796,9 @@ components:
           type: string
         businessKey:
           type: string
+        initiator:
+          type: string
+          description: subject người tạo
         startedAt:
           type: string
           format: date-time
@@ -626,6 +840,7 @@ components:
       required:
       - id
       - occurredAt
+      - actor
       - action
       - resourceType
       - resource
@@ -636,6 +851,9 @@ components:
         occurredAt:
           type: string
           format: date-time
+        actor:
+          type: string
+          description: subject người thực hiện
         action:
           type: string
           description: Dạng <đối tượng>.<động từ>, ví dụ process.start, task.claim, task.complete, file.upload
@@ -666,6 +884,107 @@ components:
             type: array
             items:
               $ref: '#/components/schemas/ActivityEntry'
+    ProcessStatistics:
+      type: object
+      required:
+      - from
+      - to
+      - processes
+      - daily
+      properties:
+        from:
+          type: string
+          format: date-time
+        to:
+          type: string
+          format: date-time
+        processes:
+          type: array
+          items:
+            type: object
+            required:
+            - processKey
+            - started
+            - running
+            - completed
+            - waitingClaim
+            - inProgress
+            properties:
+              processKey:
+                type: string
+              started:
+                type: integer
+                format: int64
+              running:
+                type: integer
+                format: int64
+              completed:
+                type: integer
+                format: int64
+              averageCompletionSeconds:
+                type: integer
+                format: int64
+                nullable: true
+              waitingClaim:
+                type: integer
+                format: int64
+              inProgress:
+                type: integer
+                format: int64
+        daily:
+          type: array
+          items:
+            type: object
+            required:
+            - date
+            - started
+            properties:
+              date:
+                type: string
+                format: date
+              started:
+                type: integer
+                format: int64
+    KnowledgeRecord:
+      type: object
+      required:
+      - id
+      - workspace
+      - title
+      - source
+      - version
+      - usageRights
+      - checksum
+      - owner
+      - createdAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        workspace:
+          type: string
+        title:
+          type: string
+        source:
+          type: string
+        version:
+          type: string
+        usageRights:
+          type: string
+        checksum:
+          type: string
+        fileId:
+          type: string
+          format: uuid
+          nullable: true
+        owner:
+          type: string
+        ownerName:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
     PageMeta:
       type: object
       required:

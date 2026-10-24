@@ -33,6 +33,8 @@ class RoomRequestIntegrationTest {
         p.add("spring.security.oauth2.resourceserver.jwt.jwk-set-uri",()->"http://127.0.0.1:9/no-jwks");
     }
     @Autowired MockMvc mvc; @Autowired ObjectMapper json; @Autowired JdbcTemplate jdbc;
+    // Test không có Keycloak nên không đọc được quyền nhỏ; luồng app ở đây không kiểm quyền, kiểm riêng ở KeycloakPermissionGuardTest
+    @org.springframework.boot.test.mock.mockito.MockBean vn.haui.dx.hpdi.human.api.PermissionGuard permissions;
     private RequestPostProcessor as(String subject,String workspace,String role) {
         return jwt().jwt(token->token.subject(subject).claim("groups",List.of("/workspaces/"+workspace+"/"+role)));
     }

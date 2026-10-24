@@ -197,7 +197,8 @@ class KeycloakWorkspaceDirectory implements WorkspaceDirectory {
     }
 
     private static String fullName(JsonNode user) {
-        String name = (user.path("firstName").asText("") + " " + user.path("lastName").asText("")).trim();
+        // Tên người Việt viết họ trước: Keycloak lưu họ ở lastName, tên ở firstName → "Bùi" + "Huy Hoàng"
+        String name = (user.path("lastName").asText("") + " " + user.path("firstName").asText("")).trim();
         return name.isEmpty() ? null : name;
     }
 

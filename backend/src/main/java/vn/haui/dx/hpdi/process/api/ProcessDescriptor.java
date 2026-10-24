@@ -8,7 +8,7 @@ import java.util.List;
  * @param canStart người gọi được tạo yêu cầu từ form chung (quy trình tự phục vụ và có vai trò khởi tạo)
  */
 public record ProcessDescriptor(String processKey, String name, boolean canStart, List<Task> tasks,
-                                List<Option> startFields) {
+                                List<Field> startFields) {
     public ProcessDescriptor {
         tasks = List.copyOf(tasks);
         startFields = List.copyOf(startFields);
@@ -21,4 +21,7 @@ public record ProcessDescriptor(String processKey, String name, boolean canStart
 
     /** Cặp key gửi lên server và nhãn hiển thị. */
     public record Option(String key, String label) {}
+
+    /** Biến nhập khi tạo; {@code multiline}: ô nhiều dòng tối đa 2000 ký tự, ô thường 200. */
+    public record Field(String key, String label, boolean multiline) {}
 }

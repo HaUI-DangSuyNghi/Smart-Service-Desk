@@ -109,7 +109,7 @@ paths:
                 # Chỉ các tên trong allowedStartVariables của quy trình
                 variables:
                   type: object
-                  additionalProperties: {type: string, maxLength: 200}
+                  additionalProperties: {type: string, maxLength: 2000}
       responses:
         '201':
           description: Đã khởi tạo
@@ -513,7 +513,7 @@ components:
         createdAt: {type: string, format: date-time}
     ProcessHistory:
       type: object
-      required: [id, processKey, businessKey, workspace, initiator, startedAt, currentTasks, steps]
+      required: [id, processKey, businessKey, workspace, initiator, startedAt, currentTasks, steps, variables]
       properties:
         ended: {type: boolean, description: Legacy completion flag}
         tasks: {type: array, description: Legacy alias of steps, items: {$ref: '#/components/schemas/HistoryStep'}}
@@ -526,6 +526,10 @@ components:
         endedAt: {type: string, format: date-time, nullable: true}
         currentTasks: {type: array, items: {$ref: '#/components/schemas/Task'}}
         steps: {type: array, items: {$ref: '#/components/schemas/HistoryStep'}}
+        variables:
+          type: object
+          description: Nội dung nhập lúc start, chỉ biến trong allowedStartVariables
+          additionalProperties: {type: string}
     HistoryStep:
       type: object
       required: [key, name, startedAt]

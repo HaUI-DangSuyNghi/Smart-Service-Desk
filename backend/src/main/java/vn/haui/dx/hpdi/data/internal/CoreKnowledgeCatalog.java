@@ -33,6 +33,12 @@ public class CoreKnowledgeCatalog implements KnowledgeCatalog {
             r.version(), r.usageRights(), r.owner(), names.get(r.owner()), r.createdAt())).toList();
         return new Page<>(items, found.page(), found.size(), found.total());
     }
+    public KnowledgeRecord record(String workspace, UUID id) {
+        human.currentActor(workspace);
+        var r = metadata.get(workspace, id);
+        return new KnowledgeRecord(r.id(), r.workspace(), r.title(), r.source(), r.version(), r.usageRights(),
+            r.checksum(), r.fileId(), r.owner(), directory.displayNames(workspace).get(r.owner()), r.createdAt());
+    }
     public AuthorizedKnowledge resolve(String workspace, UUID id) {
         human.currentActor(workspace);
         var record = metadata.get(workspace, id);

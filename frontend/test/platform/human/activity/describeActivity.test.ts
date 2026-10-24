@@ -25,6 +25,7 @@ const labels = createProcessLabels([
 const entry = (overrides: Partial<ActivityEntry>): ActivityEntry => ({
   id: "1",
   occurredAt: "2026-10-24T08:00:00Z",
+  actor: "me",
   action: "process.start",
   resourceType: "process",
   resource: "p-1",
@@ -54,19 +55,65 @@ describe("describeActivity", () => {
       labels,
     );
     expect(view.title).toBe("Hoàn thành bước Duyệt yêu cầu");
-    expect(view.detail).toBe("Mượn thiết bị · Từ chối");
+    // Kết quả chỉ nằm ở outcome (tag màu), không lặp trong dòng chữ phụ
+    expect(view.detail).toBe("Mượn thiết bị");
     expect(view.outcome).toBe("rejected");
+    expect(labels.outcomeLabel("equipment-approval", "rejected")).toBe("Từ chối");
   });
 
   it("tạo tài liệu mở trang tài liệu, tải file thì không có trang để mở", () => {
-    const document = entry({ action: "metadata.create", resourceType: "metadata", resource: "m-1", processInstanceId: null, processKey: null });
+    const document = entry({
+      action: "metadata.create",
+      resourceType: "metadata",
+      resource: "m-1",
+      processInstanceId: null,
+      processKey: null,
+    });
     expect(describeActivity(document, labels).href).toBe("/knowledge/m-1");
-    const file = entry({ action: "file.upload", resourceType: "file", processInstanceId: null, processKey: null });
+    const file = entry({
+      action: "file.upload",
+      resourceType: "file",
+      processInstanceId: null,
+      processKey: null,
+    });
     expect(describeActivity(file, labels).href).toBeNull();
   });
 
+  it("giao việc ghi tên bước và người được giao", () => {
+    const view = describeActivity(
+      entry({
+        action: "task.assign",
+        resourceType: "task",
+        details: { taskKey: "approve", assignee: "s2" },
+      }),
+      labels,
+      new Map([["s2", "Demo Agent"]]),
+    );
+    expect(view.title).toBe("Giao việc Duyệt yêu cầu");
+    expect(view.detail).toBe("Mượn thiết bị · cho Demo Agent");
+  });
+
+  it("nhật ký cũ không ghi quy trình vẫn ra nhãn tiếng Việt (tra trong mọi quy trình)", () => {
+    const view = describeActivity(
+      entry({
+        action: "task.complete",
+        resourceType: "task",
+        processInstanceId: null,
+        processKey: null,
+        details: { taskKey: "approve", outcome: "approved" },
+      }),
+      labels,
+    );
+    expect(view.title).toBe("Hoàn thành bước Duyệt yêu cầu");
+    expect(view.detail).toBeNull();
+    expect(labels.outcomeLabel(null, "approved")).toBe("Duyệt");
+  });
+
   it("thao tác riêng của app chưa có nhãn thì hiện mã thao tác", () => {
-    const view = describeActivity(entry({ action: "servicedesk.ticket.create", processKey: null }), labels);
+    const view = describeActivity(
+      entry({ action: "servicedesk.ticket.create", processKey: null }),
+      labels,
+    );
     expect(view.title).toBe("servicedesk.ticket.create");
     expect(view.href).toBe("/processes/p-1");
   });

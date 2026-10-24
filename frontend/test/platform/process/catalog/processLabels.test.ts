@@ -19,7 +19,7 @@ const CATALOG: ProcessDescriptor[] = [
       // Backend trả name = key khi app chưa khai báo nhãn
       { key: "handover", name: "handover", outcomes: [{ key: "delivered", label: "delivered" }] },
     ],
-    startFields: [{ key: "title", label: "Thiết bị cần mượn" }],
+    startFields: [{ key: "title", label: "Thiết bị cần mượn", multiline: false }],
   },
 ];
 
@@ -46,11 +46,18 @@ describe("createProcessLabels", () => {
     expect(labels.taskName("equipment-approval", "handover")).toBe("handover");
   });
 
+  it("trả ô nhập lúc tạo theo quy trình", () => {
+    expect(labels.startFields("equipment-approval").map((field) => field.label)).toEqual([
+      "Thiết bị cần mượn",
+    ]);
+  });
+
   it("quy trình lạ hoặc danh mục chưa tải thì trả key, không lỗi", () => {
     const empty = createProcessLabels([]);
     expect(empty.processName("new-process")).toBe("new-process");
     expect(empty.taskName("new-process", "review", "Review")).toBe("Review");
     expect(empty.outcomes("new-process", "review")).toEqual([]);
     expect(empty.outcomeLabel("new-process", "approved")).toBe("approved");
+    expect(empty.startFields("new-process")).toEqual([]);
   });
 });

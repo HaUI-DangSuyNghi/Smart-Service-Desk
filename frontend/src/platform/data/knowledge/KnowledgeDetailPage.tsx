@@ -1,6 +1,5 @@
 import { Link, useParams } from "react-router";
 import { IconArrowLeft, IconDownload, IconFileText } from "@tabler/icons-react";
-import { useMemberNames } from "@/platform/human/workspace";
 import { ApiError } from "@/platform/shared/api";
 import { formatDateTime } from "@/platform/shared/lib/format";
 import { Button } from "@/platform/shared/ui/button";
@@ -18,7 +17,6 @@ const KnowledgeDetailPage = () => {
   const fileId = record.data?.fileId ?? null;
   const content = useKnowledgeContent(id, fileId !== null);
   const download = useDownloadKnowledgeFile();
-  const memberNames = useMemberNames();
 
   // Backend trả 400 khi file không phải văn bản: không phải lỗi, chỉ là không xem trước được
   const notPreviewable = content.error instanceof ApiError && content.error.status === 400;
@@ -64,7 +62,7 @@ const KnowledgeDetailPage = () => {
               <FieldRow label="Nguồn">{record.data.source}</FieldRow>
               <FieldRow label="Phiên bản">{record.data.version}</FieldRow>
               <FieldRow label="Quyền sử dụng">{record.data.usageRights}</FieldRow>
-              <FieldRow label="Người tạo">{memberNames.get(record.data.owner) ?? "—"}</FieldRow>
+              <FieldRow label="Người tạo">{record.data.ownerName ?? "—"}</FieldRow>
               <FieldRow label="Ngày tạo">{formatDateTime(record.data.createdAt)}</FieldRow>
               <FieldRow label="Checksum SHA-256">
                 <span className="font-mono text-crm-sm">{record.data.checksum}</span>

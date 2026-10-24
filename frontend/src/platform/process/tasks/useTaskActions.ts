@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useCurrentWorkspace } from "@/platform/human/workspace";
-import { claimTask, completeTask, type WorkItem } from "@/platform/services";
+import { assignTask, claimTask, completeTask, type WorkItem } from "@/platform/services";
 import { processKeys } from "../common/queryKeys";
 
 export interface CompleteTaskInput {
@@ -40,6 +40,25 @@ export const useCompleteTask = () => {
         outcome,
         comment: comment.trim() || undefined,
       });
+    },
+    onSettled: refresh,
+  });
+};
+
+export interface AssignTaskInput {
+  task: WorkItem;
+  /** Subject người được giao. */
+  assignee: string;
+}
+
+/** Giao (lại) việc cho một người trong nhóm xử lý của bước (điều phối viên). */
+export const useAssignTask = () => {
+  const { current } = useCurrentWorkspace();
+  const refresh = useRefreshProcesses();
+  return useMutation({
+    mutationFn: ({ task, assignee }: AssignTaskInput) => {
+      if (!current) throw new Error("Chưa chọn workspace");
+      return assignTask(current, task.id, assignee);
     },
     onSettled: refresh,
   });
