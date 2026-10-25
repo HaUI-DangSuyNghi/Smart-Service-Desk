@@ -54,3 +54,55 @@ Local XML/log receipts are retained under `.local/ai07`: `python-source-final.xm
 `python-installed.xml`, `surefire-linux-default`, `surefire-linux-core-only`,
 `surefire-linux-second-domain`, and `metrics-final.json`. These are local test
 receipts, not human approvals or hosted CI attestations.
+
+## v1.5 diagnostics and classification-only iteration — 2026-10-25
+
+Scope: [implementation, historical replay and operator runbook](DEEP_IMPROVEMENT_V1_5.md).
+Base remains `d383cb249f46459856a1560019a677c6cce33ce8`; earlier verification
+counts above describe their original change and are not overwritten.
+
+| Check | Result |
+| --- | --- |
+| Full pinned Python source regression | 1,256 passed; 7 optional tests skipped |
+| Final AI07 installed-wheel suite in isolated Python | 311 passed; 1 Linux-only symlink test skipped on Windows |
+| Final receipt/paired-serving integrity controls in isolated Python | 32 passed, including refusal of context/runtime drift |
+| Neutral G1 source/Windows wheel/Linux container wheel | Identical conformance receipts: 3 accepted controls, 7 rejected mutations, independent room-availability taxonomy |
+| Strict source boundary gate | PASS; no debt or allowlist changes |
+| Hostile boundary mutations | 39 passed |
+| Ruff lint and formatting on changed Python paths | PASS |
+| Compose base and GPU configuration | PASS; no image pull or native inference is added to hosted CI |
+| Historical v1.4 diagnostic replay | All 288 measured attempts and 40 warmups accounted for; 71 unknown historical Gemma reasons remain unknown |
+| Fresh native seven-candidate DEV study | All 1,008 measured attempts and 38 warmups accounted for; 87 bounded model-output rejections; COMPLETE_WITH_FAILURES |
+| Paired policy comparison | PASS frozen model, serving and input identities; T1 changed 6/48 cases and T2 permutations changed 7–10/48 cases versus T0 |
+| Native isolation and production refusal | Anonymous bridge denied, outbound unreachable, models read-only; `--require-production` exited 2, NO_GO |
+| G0 Gemma adapter and T0/G0 policy files | Unchanged |
+| Java/backend/frontend changes | None; Java acceptance was not rerun for this Python experiment iteration |
+| Hosted CI, reviewed gold, independent HOLDOUT and release approvals | Not certified by these local tests; production NO_GO |
+
+The first full-suite run had 1,249 passes, 7 skips and one Windows socket reset
+in the existing cloud private-HTTP unauthorized-response test. Both private-HTTP
+cases passed in isolation, and the subsequent complete source run passed. Final
+telemetry/filter controls and two additional tests were then verified in the
+311-case installed AI07 suite; counts across suites overlap and must not be added.
+
+Pinned environment: the existing `.local/ai07/venv`, CPython 3.12.7, pytest 8.3.5,
+scikit-learn 1.6.1. The final bridge code revision is
+`b6c0b7614f36e2b11e69769984d8cb826d901b822d9cdd716421d29de454fe80`;
+the Docker image is
+`sha256:e713934166aa52b65e772ec12301a3aa785151553976f937f5c0c243898105a7`.
+Linux conformance imports the installed generic wheel from `site-packages` inside
+this isolated bridge; it is a bounded contract proof, not a Linux full-suite run
+or a second-machine GPU acceptance.
+
+Local receipts are under `.local/ai07/v15`: `source-final.xml`,
+`wheel-final-tests.xml`, `cloud-http-recheck.xml`, `boundary-mutations.log`,
+`paired-integrity-tests.xml`,
+`contracts-source.json`, `contracts-wheel.json`, `contracts-linux-wheel.json`,
+`historical-diagnostics-final.json`, `bridge-final.json` and the private
+`runtime-final` configuration. Secrets, model files and raw experiment inputs
+are not committed. Verified native DEV results and failure buckets are recorded
+in the implementation document. `local-dev.json`, `diagnostics.json`,
+`choice-stability.json`, `release-validation.json` and `improvement-evidence.json`
+remain local. They cannot establish five-class accuracy without authentic labels.
+The isolated v1.5 containers/network were stopped and removed; the model volume
+and frozen receipts were retained.

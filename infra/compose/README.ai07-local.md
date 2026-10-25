@@ -126,3 +126,11 @@ Do not add `--volumes`: retain model artifacts and all receipts. Stopping this
 profile leaves the Java rule-first assistant and existing AI02/AI06 configuration
 unchanged. Docker volumes do not transfer automatically to another machine;
 reprovision verified artifacts or use an independently reviewed offline mirror.
+
+## AI07 v1.5 experiments
+
+The [v1.5 implementation and runbook](../../intelligence/docs/task/AI07/DEEP_IMPROVEMENT_V1_5.md)
+adds content-free failure diagnostics, a separate Gemma classification-only G1
+lane and controlled Tev T1/T2 policies. Build a new bridge and runtime directory;
+keep v1.4 receipts and G0 policies frozen. These are synthetic DEV experiments
+with no operational authority or production approval.

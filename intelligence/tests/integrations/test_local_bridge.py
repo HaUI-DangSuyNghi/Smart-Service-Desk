@@ -115,6 +115,33 @@ def test_bridge_passes_only_bounded_trusted_identity_and_input(bridge):
     assert len(bridge[1].calls) == 1
 
 
+def test_bounded_diagnostic_survives_bridge_without_exception_content(
+    bridge, monkeypatch
+):
+    from local_classification.diagnostics import ObservationRejected
+
+    def reject(*args, **kwargs):
+        raise ObservationRejected("INVALID_STATE_PAIR")
+
+    monkeypatch.setattr(bridge[1], "infer", reject)
+    payload = json.dumps(
+        {
+            "candidateId": "candidate",
+            "runtimeDigest": "a" * 64,
+            "policyDigest": "b" * 64,
+            "dataScope": "SYNTHETIC_DEV_ONLY",
+            "input": {"input": "PRIVATE_INPUT"},
+        }
+    )
+    status, body, _ = call(bridge, "/v1/observe", payload=payload)
+    assert status == 502
+    assert body == {
+        "code": "LOCAL_OBSERVATION_REJECTED",
+        "reasonCode": "INVALID_STATE_PAIR",
+        "diagnostics": {},
+    }
+
+
 def test_artifact_lease_hashes_at_startup_and_detects_mutation_without_rehash(
     tmp_path, monkeypatch
 ):

@@ -10,6 +10,8 @@ import statistics
 
 from _bootstrap import ROOT
 from local_runtime_support import rule_baseline, strict_json
+from local_classification.diagnostics import REASON_CODES
+from experiment_policies import POLICIES
 from servicedesk.intelligence.triage_ai07.datasets import SOURCE_FILES, inventory
 
 
@@ -31,7 +33,8 @@ def verify_report(report, runtime_path):
     runtime = strict_json(runtime_raw, 262144)
     identity = report["runtimeIdentity"]
     if (
-        report["contractVersion"] != "local-model-engineering@0.1.0"
+        report["contractVersion"]
+        not in ("local-model-engineering@0.1.0", "local-model-engineering@0.2.0")
         or report["scope"] != "SYNTHETIC_DRAFT_NO_QUALITY_CLAIM"
         or report["split"] != "DEV"
         or report["officialQualityClaim"] is not False
@@ -74,7 +77,8 @@ def verify_report(report, runtime_path):
 
     candidates = tuple(report["summaries"])
     if not candidates or any(
-        candidate not in ("tev1", "gemma3") for candidate in candidates
+        candidate not in POLICIES or candidate not in runtime["candidates"]
+        for candidate in candidates
     ):
         raise ValueError("Unexpected comparison candidate")
 
@@ -139,8 +143,17 @@ def verify_report(report, runtime_path):
         ):
             raise ValueError("Invalid attempt receipt")
 
+        if item["state"] not in ("PROPOSE", "ABSTAIN") and (
+            report["contractVersion"] == "local-model-engineering@0.2.0"
+            or "reasonCode" in item
+        ):
+            reason = item.get("reasonCode")
+            if type(reason) is not str or reason not in REASON_CODES:
+                raise ValueError("Failure receipt requires a bounded reason code")
+
         if "nativeElapsedMs" in item and (
-            item["state"] not in ("PROPOSE", "ABSTAIN")
+            report["contractVersion"] == "local-model-engineering@0.1.0"
+            and item["state"] not in ("PROPOSE", "ABSTAIN")
             or type(item["nativeElapsedMs"]) not in (int, float)
             or not math.isfinite(item["nativeElapsedMs"])
             or item["nativeElapsedMs"] < 0
@@ -148,11 +161,7 @@ def verify_report(report, runtime_path):
             raise ValueError("Invalid native latency receipt")
 
         if item["state"] in ("PROPOSE", "ABSTAIN"):
-            filename = (
-                "tev1-policy-v0.1.json"
-                if item["candidate"] == "tev1"
-                else "gemma-policy-v0.1.json"
-            )
+            filename, adapter = POLICIES[item["candidate"]]
             policy_file = (
                 ROOT
                 / "intelligence/src/apps/servicedesk/intelligence/triage_ai07/experiments"
@@ -162,6 +171,8 @@ def verify_report(report, runtime_path):
             if (
                 sha256(policy_file.read_bytes()).hexdigest()
                 != candidate["policyDigest"]
+                or candidate.get("adapter", adapter) != adapter
+                or candidate.get("policyFile", filename) != filename
             ):
                 raise ValueError("Application policy identity changed")
             allowed = json.loads(policy_file.read_bytes())["allowedClasses"]
@@ -172,6 +183,14 @@ def verify_report(report, runtime_path):
                 and item["classId"] is not None
             ):
                 raise ValueError("Invalid candidate class receipt")
+            if item["candidate"] == "gemma3-g1" and (
+                item.get("evidenceStatus") != "UNVERIFIED_BY_MODEL"
+                or item.get("scoreSemantics") != "NOT_AVAILABLE"
+                or item.get("spanCount") != 0
+            ):
+                raise ValueError(
+                    "Classification-only receipt cannot claim evidence or scores"
+                )
             if item["placement"]["context_length"] != 2048:
                 raise ValueError("Actual context differs")
             if identity["gpuRequired"] and item["placement"]["size_vram"] <= 0:
@@ -196,6 +215,7 @@ def verify_report(report, runtime_path):
                     item["nativeElapsedMs"]
                     for item in attempts
                     if "nativeElapsedMs" in item
+                    and item["state"] in ("PROPOSE", "ABSTAIN")
                 ]
             )
         ):

@@ -10,11 +10,14 @@ from _bootstrap import ROOT
 sys.path.insert(0, str(ROOT / "intelligence/integrations"))
 
 from local_classification.ollama_transport import strict_json  # noqa: E402
+from local_classification.diagnostics import safe_reason, safe_telemetry  # noqa: E402
 
 
 class WorkerRejected(ValueError):
-    def __init__(self, status):
+    def __init__(self, status, reason_code=None, telemetry=None):
         self.status = status
+        self.reason_code = safe_reason(reason_code, "TRANSPORT")
+        self.telemetry = safe_telemetry(telemetry)
         super().__init__("Local inference attempt rejected")
 
 
@@ -48,11 +51,16 @@ def worker(container, *, candidate=None, fields=None):
 
     if result.returncode:
         status = 0
+        reason = None
+        telemetry = None
         try:
-            status = strict_json(result.stderr.strip())["status"]
+            failure = strict_json(result.stderr.strip())
+            status = failure["status"]
+            reason = failure.get("reasonCode")
+            telemetry = failure.get("diagnostics")
         except (ValueError, KeyError):
             pass
-        raise WorkerRejected(status)
+        raise WorkerRejected(status, reason, telemetry)
 
     return strict_json(result.stdout.strip())
 

@@ -9,6 +9,7 @@ import secrets
 import subprocess
 
 from _bootstrap import ROOT, write_new
+from experiment_policies import POLICIES
 
 
 def main():
@@ -17,6 +18,8 @@ def main():
     parser.add_argument("--bridge", type=Path, required=True)
     parser.add_argument("--directory", type=Path, required=True)
     parser.add_argument("--enable-synthetic-lab", action="store_true")
+    parser.add_argument("--gemma-lane", choices=("G0", "G1"), default="G0")
+    parser.add_argument("--tev-study", choices=("T0", "T1", "T2", "all"), default="T0")
     args = parser.parse_args()
     directory = args.directory.resolve()
 
@@ -65,6 +68,30 @@ def main():
             "modelArtifactDigest": weight_digest,
             "quantization": tags[alias]["details"]["quantization_level"],
             "licenseStatus": "PENDING_OWNER_REVIEW_LAB_ONLY",
+        }
+
+    if args.gemma_lane == "G1":
+        filename, adapter = POLICIES["gemma3-g1"]
+        candidates["gemma3-g1"] = {
+            **candidates["gemma3"],
+            "adapter": adapter,
+            "policyFile": filename,
+            "policyDigest": sha256((policies / filename).read_bytes()).hexdigest(),
+        }
+
+    study_candidates = {
+        "T0": (),
+        "T1": ("tev1-t1",),
+        "T2": ("tev1-t2-rotate", "tev1-t2-reverse", "tev1-t2-interleave"),
+        "all": ("tev1-t1", "tev1-t2-rotate", "tev1-t2-reverse", "tev1-t2-interleave"),
+    }
+    for name in study_candidates[args.tev_study]:
+        filename, adapter = POLICIES[name]
+        candidates[name] = {
+            **candidates["tev1"],
+            "adapter": adapter,
+            "policyFile": filename,
+            "policyDigest": sha256((policies / filename).read_bytes()).hexdigest(),
         }
 
     runtime = {
