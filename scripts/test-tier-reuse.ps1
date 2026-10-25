@@ -31,7 +31,7 @@ try {
     $env:INTELLIGENCE_REQUIRED_PROFILES = 'room-request@0.3.0'
     $override = Join-Path $PWD ".local/$Project-images.yaml"
     [IO.File]::WriteAllText($override, "services:`n  platform:`n    image: ${Project}-platform:local`n  intelligence:`n    image: ${Project}-intelligence:local`n")
-    $composeArguments = @('-p', $Project, '-f', 'compose.yaml', '-f', 'compose.triage.yaml', '-f', 'scripts/acceptance/intelligence-compose.yaml', '-f', $override, '--profile', 'intelligence')
+    $composeArguments = @('-p', $Project, '-f', 'compose.yaml', '-f', 'infra/compose/compose.triage.yaml', '-f', 'scripts/acceptance/intelligence-compose.yaml', '-f', $override, '--profile', 'intelligence')
     Run-Docker compose @composeArguments up -d --build --wait --wait-timeout 300
     $output = ".local/$Project.json"
     Run-Python scripts/acceptance/tier-reuse.py --output $output

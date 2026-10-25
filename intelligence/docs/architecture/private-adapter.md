@@ -17,7 +17,7 @@ Set a private `INTELLIGENCE_TRIAGE_TOKEN` of at least 32 random characters and
 `INTELLIGENCE_TRIAGE_BASE_URL=http://intelligence:8000`, then run:
 
 ```powershell
-docker compose -f compose.yaml -f compose.triage.yaml --profile intelligence up -d --build --wait
+docker compose -f compose.yaml -f infra/compose/compose.triage.yaml --profile intelligence up -d --build --wait
 ```
 
 `INTELLIGENCE_PROFILE_ROOT` selects the external host profile root. The default

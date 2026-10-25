@@ -1,0 +1,52 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "caseIds": {
+      "items": {
+        "pattern": "^GEN-SD-[0-9]{4}$",
+        "type": "string"
+      },
+      "maxItems": 30,
+      "minItems": 30,
+      "type": "array",
+      "uniqueItems": true
+    },
+    "categoryCoverage": {
+      "additionalProperties": {
+        "pattern": "^GEN-SD-[0-9]{4}$",
+        "type": "string"
+      },
+      "maxProperties": 30,
+      "minProperties": 30,
+      "type": "object"
+    },
+    "datasetDigest": {
+      "pattern": "^[a-f0-9]{64}$",
+      "type": "string"
+    },
+    "schemaVersion": {
+      "enum": [
+        "0.2.0"
+      ]
+    },
+    "selectionAlgorithm": {
+      "enum": [
+        "seeded-hash-unused-template-first@1"
+      ]
+    },
+    "selectionSeed": {
+      "enum": [
+        20261024
+      ]
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "datasetDigest",
+    "selectionAlgorithm",
+    "selectionSeed",
+    "caseIds",
+    "categoryCoverage"
+  ],
+  "type": "object"
+}

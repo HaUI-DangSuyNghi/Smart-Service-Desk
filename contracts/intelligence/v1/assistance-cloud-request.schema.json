@@ -1,0 +1,194 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:dx:intelligence:assistance-cloud-request:0.2.0",
+  "description": "Private snapshot: SERVER-INJECTED / TRUSTED ADAPTER CONTEXT. Only the authenticated adapter supplies workspace and source bytes after authorization; never deserialize public caller authority here.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contractVersion",
+    "requestId",
+    "workspaceId",
+    "profileId",
+    "profileVersion",
+    "policyIdentity",
+    "question",
+    "documents",
+    "routeBinding"
+  ],
+  "properties": {
+    "contractVersion": {
+      "const": "0.2.0"
+    },
+    "requestId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "workspaceId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100,
+      "pattern": "^[a-zA-Z0-9_-]+$"
+    },
+    "profileId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "profileVersion": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "policyIdentity": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "question": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 2000,
+      "pattern": "\\S"
+    },
+    "documents": {
+      "type": "array",
+      "maxItems": 10,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "metadataId",
+          "version",
+          "checksum",
+          "content",
+          "mediaType"
+        ],
+        "properties": {
+          "metadataId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "version": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 100
+          },
+          "checksum": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{64}$"
+          },
+          "content": {
+            "type": "string",
+            "maxLength": 16000
+          },
+          "mediaType": {
+            "enum": [
+              "text/plain",
+              "text/markdown"
+            ]
+          }
+        }
+      }
+    },
+    "routeBinding": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "routeId",
+        "policyId",
+        "dataClass",
+        "catalogDigest",
+        "routeDigest",
+        "approvalDigest",
+        "attemptId",
+        "expectedRuntime"
+      ],
+      "properties": {
+        "routeId": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9-]{0,63}$"
+        },
+        "policyId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "dataClass": {
+          "const": "synthetic-public-evaluation"
+        },
+        "catalogDigest": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "routeDigest": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "approvalDigest": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "attemptId": {
+          "type": "string",
+          "format": "uuid"
+        },
+        "expectedRuntime": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "provider",
+            "provider_version",
+            "model",
+            "model_revision",
+            "config_version",
+            "prompt_envelope_version",
+            "app_prompt_version",
+            "output_schema_version"
+          ],
+          "properties": {
+            "provider": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "provider_version": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "model": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "model_revision": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "config_version": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "prompt_envelope_version": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "app_prompt_version": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "output_schema_version": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            }
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,420 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "axes": {
+      "additionalProperties": false,
+      "properties": {
+        "CONFLICT": {
+          "enum": [
+            60
+          ]
+        },
+        "GROUNDING": {
+          "enum": [
+            100
+          ]
+        },
+        "REFUSAL": {
+          "enum": [
+            60
+          ]
+        },
+        "ROBUSTNESS": {
+          "enum": [
+            40
+          ]
+        },
+        "SECURITY": {
+          "enum": [
+            80
+          ]
+        },
+        "VIETNAMESE": {
+          "enum": [
+            60
+          ]
+        }
+      },
+      "required": [
+        "GROUNDING",
+        "REFUSAL",
+        "SECURITY",
+        "CONFLICT",
+        "VIETNAMESE",
+        "ROBUSTNESS"
+      ],
+      "type": "object"
+    },
+    "baselineCount": {
+      "enum": [
+        52
+      ]
+    },
+    "baselineDigest": {
+      "enum": [
+        "f3ba65dd318b2e06cce0e450faf7f2978916e8a6001c94270de38cb23fcb0c2e"
+      ]
+    },
+    "baselineRevision": {
+      "enum": [
+        "1940b6eca68eca2509bef43280065412e33de42a"
+      ]
+    },
+    "categories": {
+      "items": false,
+      "maxItems": 30,
+      "minItems": 30,
+      "prefixItems": [
+        {
+          "const": {
+            "axis": "GROUNDING",
+            "baselineCount": 4,
+            "id": "relevant",
+            "newCount": 24,
+            "total": 28
+          }
+        },
+        {
+          "const": {
+            "axis": "GROUNDING",
+            "baselineCount": 4,
+            "id": "typo",
+            "newCount": 14,
+            "total": 18
+          }
+        },
+        {
+          "const": {
+            "axis": "GROUNDING",
+            "baselineCount": 4,
+            "id": "multiple_sources",
+            "newCount": 16,
+            "total": 20
+          }
+        },
+        {
+          "const": {
+            "axis": "GROUNDING",
+            "baselineCount": 4,
+            "id": "uncertain",
+            "newCount": 10,
+            "total": 14
+          }
+        },
+        {
+          "const": {
+            "axis": "GROUNDING",
+            "baselineCount": 0,
+            "id": "paraphrase",
+            "newCount": 20,
+            "total": 20
+          }
+        },
+        {
+          "const": {
+            "axis": "REFUSAL",
+            "baselineCount": 4,
+            "id": "no_evidence",
+            "newCount": 8,
+            "total": 12
+          }
+        },
+        {
+          "const": {
+            "axis": "REFUSAL",
+            "baselineCount": 4,
+            "id": "no_match",
+            "newCount": 10,
+            "total": 14
+          }
+        },
+        {
+          "const": {
+            "axis": "REFUSAL",
+            "baselineCount": 4,
+            "id": "false_premise",
+            "newCount": 12,
+            "total": 16
+          }
+        },
+        {
+          "const": {
+            "axis": "REFUSAL",
+            "baselineCount": 0,
+            "id": "unsupported_detail",
+            "newCount": 10,
+            "total": 10
+          }
+        },
+        {
+          "const": {
+            "axis": "REFUSAL",
+            "baselineCount": 0,
+            "id": "ambiguous_answerability",
+            "newCount": 8,
+            "total": 8
+          }
+        },
+        {
+          "const": {
+            "axis": "SECURITY",
+            "baselineCount": 4,
+            "id": "question_injection",
+            "newCount": 12,
+            "total": 16
+          }
+        },
+        {
+          "const": {
+            "axis": "SECURITY",
+            "baselineCount": 4,
+            "id": "source_injection",
+            "newCount": 16,
+            "total": 20
+          }
+        },
+        {
+          "const": {
+            "axis": "SECURITY",
+            "baselineCount": 4,
+            "id": "hostile_markup",
+            "newCount": 12,
+            "total": 16
+          }
+        },
+        {
+          "const": {
+            "axis": "SECURITY",
+            "baselineCount": 0,
+            "id": "role_spoofing",
+            "newCount": 10,
+            "total": 10
+          }
+        },
+        {
+          "const": {
+            "axis": "SECURITY",
+            "baselineCount": 0,
+            "id": "data_exfiltration_canary",
+            "newCount": 10,
+            "total": 10
+          }
+        },
+        {
+          "const": {
+            "axis": "SECURITY",
+            "baselineCount": 0,
+            "id": "unsafe_quote_boundary",
+            "newCount": 8,
+            "total": 8
+          }
+        },
+        {
+          "const": {
+            "axis": "CONFLICT",
+            "baselineCount": 4,
+            "id": "conflicting_guidance",
+            "newCount": 16,
+            "total": 20
+          }
+        },
+        {
+          "const": {
+            "axis": "CONFLICT",
+            "baselineCount": 0,
+            "id": "recency_ambiguous",
+            "newCount": 12,
+            "total": 12
+          }
+        },
+        {
+          "const": {
+            "axis": "CONFLICT",
+            "baselineCount": 0,
+            "id": "multi_hop_disjoint",
+            "newCount": 12,
+            "total": 12
+          }
+        },
+        {
+          "const": {
+            "axis": "CONFLICT",
+            "baselineCount": 0,
+            "id": "same_topic_distractors",
+            "newCount": 8,
+            "total": 8
+          }
+        },
+        {
+          "const": {
+            "axis": "CONFLICT",
+            "baselineCount": 0,
+            "id": "source_order_variant",
+            "newCount": 8,
+            "total": 8
+          }
+        },
+        {
+          "const": {
+            "axis": "VIETNAMESE",
+            "baselineCount": 4,
+            "id": "vietnamese",
+            "newCount": 20,
+            "total": 24
+          }
+        },
+        {
+          "const": {
+            "axis": "VIETNAMESE",
+            "baselineCount": 0,
+            "id": "vi_en_code_switch",
+            "newCount": 14,
+            "total": 14
+          }
+        },
+        {
+          "const": {
+            "axis": "VIETNAMESE",
+            "baselineCount": 0,
+            "id": "vietnamese_diacritics",
+            "newCount": 12,
+            "total": 12
+          }
+        },
+        {
+          "const": {
+            "axis": "VIETNAMESE",
+            "baselineCount": 0,
+            "id": "vietnamese_no_diacritics",
+            "newCount": 10,
+            "total": 10
+          }
+        },
+        {
+          "const": {
+            "axis": "ROBUSTNESS",
+            "baselineCount": 4,
+            "id": "long_question",
+            "newCount": 10,
+            "total": 14
+          }
+        },
+        {
+          "const": {
+            "axis": "ROBUSTNESS",
+            "baselineCount": 0,
+            "id": "unicode_boundary",
+            "newCount": 8,
+            "total": 8
+          }
+        },
+        {
+          "const": {
+            "axis": "ROBUSTNESS",
+            "baselineCount": 0,
+            "id": "near_limit_payload",
+            "newCount": 8,
+            "total": 8
+          }
+        },
+        {
+          "const": {
+            "axis": "ROBUSTNESS",
+            "baselineCount": 0,
+            "id": "short_input",
+            "newCount": 6,
+            "total": 6
+          }
+        },
+        {
+          "const": {
+            "axis": "ROBUSTNESS",
+            "baselineCount": 0,
+            "id": "markdown_noise",
+            "newCount": 4,
+            "total": 4
+          }
+        }
+      ],
+      "type": "array"
+    },
+    "datasetRevision": {
+      "enum": [
+        "0.2.0"
+      ]
+    },
+    "factsDigest": {
+      "pattern": "^[a-f0-9]{64}$",
+      "type": "string"
+    },
+    "maxAttemptsPerCase": {
+      "maximum": 1000000,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "minimumFactFamilies": {
+      "enum": [
+        12
+      ]
+    },
+    "minimumFactsPerFamily": {
+      "enum": [
+        3
+      ]
+    },
+    "nearDuplicateThresholdPpm": {
+      "maximum": 1000000,
+      "minimum": 0,
+      "type": "integer"
+    },
+    "newCount": {
+      "enum": [
+        348
+      ]
+    },
+    "owner": {
+      "enum": [
+        "servicedesk"
+      ]
+    },
+    "schemaVersion": {
+      "enum": [
+        "0.2.0"
+      ]
+    },
+    "seed": {
+      "enum": [
+        20261024
+      ]
+    },
+    "targetCount": {
+      "enum": [
+        400
+      ]
+    },
+    "templatesDigest": {
+      "pattern": "^[a-f0-9]{64}$",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "datasetRevision",
+    "owner",
+    "seed",
+    "baselineRevision",
+    "baselineDigest",
+    "factsDigest",
+    "templatesDigest",
+    "baselineCount",
+    "newCount",
+    "targetCount",
+    "minimumFactFamilies",
+    "minimumFactsPerFamily",
+    "maxAttemptsPerCase",
+    "nearDuplicateThresholdPpm",
+    "axes",
+    "categories"
+  ],
+  "type": "object"
+}

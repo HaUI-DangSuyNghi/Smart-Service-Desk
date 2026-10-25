@@ -1,0 +1,120 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "families": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "facts": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "alternativeEn": {
+                  "maxLength": 200,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "alternativeVi": {
+                  "maxLength": 200,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "id": {
+                  "maxLength": 200,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "questionEn": {
+                  "maxLength": 200,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "questionVi": {
+                  "maxLength": 200,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "relation": {
+                  "maxLength": 200,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "statementEn": {
+                  "maxLength": 200,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "statementVi": {
+                  "maxLength": 200,
+                  "minLength": 1,
+                  "type": "string"
+                }
+              },
+              "required": [
+                "id",
+                "relation",
+                "questionEn",
+                "questionVi",
+                "statementEn",
+                "statementVi",
+                "alternativeEn",
+                "alternativeVi"
+              ],
+              "type": "object"
+            },
+            "maxItems": 20,
+            "minItems": 3,
+            "type": "array"
+          },
+          "id": {
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "subjectEn": {
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "subjectVi": {
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "subjectEn",
+          "subjectVi",
+          "facts"
+        ],
+        "type": "object"
+      },
+      "maxItems": 100,
+      "minItems": 12,
+      "type": "array"
+    },
+    "owner": {
+      "enum": [
+        "servicedesk"
+      ]
+    },
+    "provenance": {
+      "enum": [
+        "AUTHORED_FICTIONAL_ONLY"
+      ]
+    },
+    "schemaVersion": {
+      "enum": [
+        "0.2.0"
+      ]
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "owner",
+    "provenance",
+    "families"
+  ],
+  "type": "object"
+}

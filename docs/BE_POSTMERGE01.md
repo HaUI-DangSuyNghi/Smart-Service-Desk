@@ -60,7 +60,7 @@ $env:INT01_PROJECT = 'int01-demo-' + [guid]::NewGuid().ToString('N').Substring(0
 $env:INT01_SOURCE_SHA = git rev-parse HEAD
 $env:INT01_KEYCLOAK_PORT = '8081'
 $env:INT01_GATEWAY_PORT = '9080'
-docker compose -p $env:INT01_PROJECT -f compose.yaml -f compose.triage.yaml -f scripts/acceptance/integration-compose.yaml --profile intelligence up -d --build --wait --wait-timeout 300
+docker compose -p $env:INT01_PROJECT -f compose.yaml -f infra/compose/compose.triage.yaml -f scripts/acceptance/integration-compose.yaml --profile intelligence up -d --build --wait --wait-timeout 300
 if ($LASTEXITCODE -ne 0) { throw 'Demo startup failed' }
 ```
 
@@ -95,7 +95,7 @@ Stop after the demo in the SAME shell, preserving the project/port variables:
 
 ```powershell
 if (!$env:INT01_PROJECT) { throw 'Set the existing demo project name; do not create a new project' }
-docker compose -p $env:INT01_PROJECT -f compose.yaml -f compose.triage.yaml -f scripts/acceptance/integration-compose.yaml --profile intelligence stop
+docker compose -p $env:INT01_PROJECT -f compose.yaml -f infra/compose/compose.triage.yaml -f scripts/acceptance/integration-compose.yaml --profile intelligence stop
 if ($LASTEXITCODE -ne 0) { throw 'Demo stop failed' }
 ```
 

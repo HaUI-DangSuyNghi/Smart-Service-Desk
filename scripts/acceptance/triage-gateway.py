@@ -56,7 +56,7 @@ def main():
     settings = dict(line.split('=', 1) for line in args.env_file.read_text().splitlines()
                     if '=' in line and not line.startswith('#'))
     compose = ['docker', 'compose', '--env-file', str(args.env_file), '-p', args.project,
-               '-f', 'compose.yaml', '-f', 'compose.triage.yaml',
+               '-f', 'compose.yaml', '-f', 'infra/compose/compose.triage.yaml',
                '-f', 'scripts/acceptance/integration-compose.yaml', '--profile', 'intelligence']
     container = subprocess.check_output(compose + ['ps', '-q', 'intelligence'], text=True).strip()
     assert container, 'Disposable Python service must already be running'

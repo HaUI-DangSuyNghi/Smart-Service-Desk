@@ -114,7 +114,7 @@ docker run -d --name "$INT01_PROJECT-python" -e INTELLIGENCE_TRIAGE_TOKEN -p 127
 # Wait for a 401 response from the private endpoint with no service credential.
 .local/int01-venv/bin/python scripts/intelligence/run-real-triage-e2e.py --java-root .
 pwsh -File scripts/setup.ps1
-docker compose -p "$INT01_PROJECT" -f compose.yaml -f compose.triage.yaml -f scripts/acceptance/integration-compose.yaml --profile intelligence up -d --build --wait --wait-timeout 300
+docker compose -p "$INT01_PROJECT" -f compose.yaml -f infra/compose/compose.triage.yaml -f scripts/acceptance/integration-compose.yaml --profile intelligence up -d --build --wait --wait-timeout 300
 .local/int01-venv/bin/python -I scripts/acceptance/triage-gateway.py --project "$INT01_PROJECT" --output .local/int01/gateway-triage.json
 .local/int01-venv/bin/python -I scripts/acceptance/intelligence-retrieval.py --output .local/int01/authorized-retrieval.json
 ```

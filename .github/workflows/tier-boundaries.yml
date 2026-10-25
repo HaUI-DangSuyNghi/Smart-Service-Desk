@@ -39,6 +39,10 @@ jobs:
           npm test
           npm run build
           npm run build:platform
+      - name: Install pinned Chromium for browser contract controls
+        run: npx playwright install --with-deps chromium
+      - name: Verify assistance UX with stub public API (not gateway acceptance)
+        run: npm run test:e2e
   architecture-java:
     runs-on: ubuntu-24.04
     timeout-minutes: 15

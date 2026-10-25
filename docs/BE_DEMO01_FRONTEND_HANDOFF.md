@@ -498,6 +498,6 @@ Dung terminal chay:
 ./scripts/setup.ps1
 
 # 2. Khoi dong toan bo he thong gom Database, Keycloak, Backend Core, Gateway va AI
-docker compose -f compose.yaml -f compose.triage.yaml --profile intelligence up -d --build
+docker compose -f compose.yaml -f infra/compose/compose.triage.yaml --profile intelligence up -d --build
 ```
 Kiem tra tat ca container deu o trang thai `healthy` qua lenh: `docker ps`.

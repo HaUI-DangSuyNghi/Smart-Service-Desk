@@ -87,10 +87,12 @@ class GroundedAssistanceService:
                 runtime.config_version,
             )
         except Exception:
-            raise GenerationConfigurationError('Invalid provider runtime identity') from None
+            raise GenerationConfigurationError(
+                "Invalid provider runtime identity"
+            ) from None
 
         if not valid:
-            raise GenerationConfigurationError('Provider runtime identity mismatch')
+            raise GenerationConfigurationError("Provider runtime identity mismatch")
 
         return runtime
 
@@ -102,8 +104,11 @@ class GroundedAssistanceService:
         policy: GenerationPolicy,
     ) -> AssistanceRun:
         check.text(question, maximum=check.MAX_QUESTION_CHARS)
-        check.require(type(bundle) is AuthorizedKnowledgeBundle, 'Invalid authorized knowledge bundle')
-        check.require(type(policy) is GenerationPolicy, 'Invalid generation policy')
+        check.require(
+            type(bundle) is AuthorizedKnowledgeBundle,
+            "Invalid authorized knowledge bundle",
+        )
+        check.require(type(policy) is GenerationPolicy, "Invalid generation policy")
 
         started = perf_counter()
         generation_ms = 0.0
@@ -112,13 +117,17 @@ class GroundedAssistanceService:
 
         try:
             if self._provider_identity() != self.runtime:
-                raise GenerationConfigurationError('Provider runtime changed during service lifetime')
+                raise GenerationConfigurationError(
+                    "Provider runtime changed during service lifetime"
+                )
 
             if policy.identity != self.runtime.app_prompt_version:
-                raise GenerationConfigurationError('Application policy identity mismatch')
+                raise GenerationConfigurationError(
+                    "Application policy identity mismatch"
+                )
 
             if not bundle.citations:
-                response = self._refusal('INSUFFICIENT_EVIDENCE')
+                response = self._refusal("INSUFFICIENT_EVIDENCE")
             else:
                 request = GenerationRequest(
                     question=question,
@@ -126,8 +135,12 @@ class GroundedAssistanceService:
                     policy_instructions=policy.instructions,
                     output_schema_version=self.runtime.output_schema_version,
                     evidence=tuple(
-                        EvidenceExcerpt(citation_id=item.local_citation_id, excerpt=item.excerpt)
-                        for item in bundle.citations[:policy.max_claims]
+                        EvidenceExcerpt(
+                            citation_id=item.local_citation_id, excerpt=item.excerpt
+                        )
+                        for item in bundle.citations[
+                            : policy.max_evidence or policy.max_claims
+                        ]
                     ),
                 )
 
@@ -136,25 +149,31 @@ class GroundedAssistanceService:
                 try:
                     draft = self.provider.generate(request)
                 except GenerationTimeout:
-                    error_type = 'GenerationTimeout'
-                    response = self._degraded('GENERATION_TIMEOUT')
+                    error_type = "GenerationTimeout"
+                    response = self._degraded("GENERATION_TIMEOUT")
                 except GenerationUnavailable:
-                    error_type = 'GenerationUnavailable'
-                    response = self._degraded('GENERATION_UNAVAILABLE')
+                    error_type = "GenerationUnavailable"
+                    response = self._degraded("GENERATION_UNAVAILABLE")
                 except GenerationConfigurationError:
-                    raise GenerationConfigurationError('Provider configuration failed') from None
+                    raise GenerationConfigurationError(
+                        "Provider configuration failed"
+                    ) from None
                 except Exception:
-                    raise GenerationContractError('Provider execution failed') from None
+                    raise GenerationContractError("Provider execution failed") from None
                 finally:
-                    generation_ms = round((perf_counter() - generation_started) * 1000, 3)
+                    generation_ms = round(
+                        (perf_counter() - generation_started) * 1000, 3
+                    )
 
                 if response is None:
                     # The response uses only claims accepted by this gate. No raw
                     # provider prose can bypass citation or grounding validation.
-                    check.validate_grounded_draft(draft, request, max_claims=policy.max_claims)
+                    check.validate_grounded_draft(
+                        draft, request, max_claims=policy.max_claims
+                    )
 
                     if not draft.claims:
-                        response = self._refusal('INSUFFICIENT_EVIDENCE')
+                        response = self._refusal("INSUFFICIENT_EVIDENCE")
                     else:
                         response = self._success(draft, bundle, policy)
         except Exception as error:
@@ -173,10 +192,14 @@ class GroundedAssistanceService:
                 runtime=self.runtime,
                 knowledge_bundle_digest=bundle.digest,
                 evidence_count=len(bundle.citations),
-                claim_count=len(response.answer.claims) if response and response.answer else 0,
+                claim_count=(
+                    len(response.answer.claims) if response and response.answer else 0
+                ),
                 citation_count=len(response.citations) if response else 0,
-                status=response.status if response else 'ERROR',
-                reason_code=response.reason_code if response else 'GENERATION_CONTRACT_FAILED',
+                status=response.status if response else "ERROR",
+                reason_code=(
+                    response.reason_code if response else "GENERATION_CONTRACT_FAILED"
+                ),
                 needs_review=response.needs_review if response else True,
                 generation_duration_ms=generation_ms,
                 total_duration_ms=round((perf_counter() - started) * 1000, 3),
@@ -184,13 +207,18 @@ class GroundedAssistanceService:
             )
 
             if self.trace_sink is not None:
-                self.trace_sink(trace)
+                try:
+                    self.trace_sink(trace)
+                except Exception:
+                    # Diagnostic delivery is best effort. Do not log sink error
+                    # content or replace the response/original safety failure.
+                    pass
 
         return AssistanceRun(response=response, trace=trace)
 
     def _refusal(self, reason):
         return GroundedAssistance(
-            status='INSUFFICIENT_EVIDENCE',
+            status="INSUFFICIENT_EVIDENCE",
             answer=None,
             citations=(),
             needs_review=True,
@@ -200,7 +228,7 @@ class GroundedAssistanceService:
 
     def _degraded(self, reason):
         return GroundedAssistance(
-            status='DEGRADED',
+            status="DEGRADED",
             answer=None,
             citations=(),
             needs_review=True,
@@ -218,17 +246,17 @@ class GroundedAssistanceService:
         citations = tuple(
             item for item in bundle.citations if item.local_citation_id in used_aliases
         )
-        rendered = '\n'.join(
+        rendered = "\n".join(
             f'{claim.text} [{", ".join(ref.citation_id for ref in claim.citations)}]'
             for claim in draft.claims
         )
         check.text(rendered, maximum=check.MAX_ANSWER_CHARS)
 
         return GroundedAssistance(
-            status='SUCCESS',
+            status="SUCCESS",
             answer=GroundedAnswer(text=rendered, claims=draft.claims),
             citations=citations,
             needs_review=policy.needs_review or bundle.needs_review,
-            reason_code='GROUNDED',
+            reason_code="GROUNDED",
             runtime=self.runtime,
         )

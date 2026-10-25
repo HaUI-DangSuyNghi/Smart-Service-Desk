@@ -1,0 +1,152 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "owner": {
+      "enum": [
+        "servicedesk"
+      ]
+    },
+    "schemaVersion": {
+      "enum": [
+        "0.2.0"
+      ]
+    },
+    "templates": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "attackPattern": {
+            "enum": [
+              "none",
+              "question-command",
+              "source-command",
+              "inert-script",
+              "spoofed-role",
+              "reserved-canary",
+              "unsafe-quotation"
+            ]
+          },
+          "category": {
+            "enum": [
+              "relevant",
+              "typo",
+              "multiple_sources",
+              "uncertain",
+              "paraphrase",
+              "no_evidence",
+              "no_match",
+              "false_premise",
+              "unsupported_detail",
+              "ambiguous_answerability",
+              "question_injection",
+              "source_injection",
+              "hostile_markup",
+              "role_spoofing",
+              "data_exfiltration_canary",
+              "unsafe_quote_boundary",
+              "conflicting_guidance",
+              "recency_ambiguous",
+              "multi_hop_disjoint",
+              "same_topic_distractors",
+              "source_order_variant",
+              "vietnamese",
+              "vi_en_code_switch",
+              "vietnamese_diacritics",
+              "vietnamese_no_diacritics",
+              "long_question",
+              "unicode_boundary",
+              "near_limit_payload",
+              "short_input",
+              "markdown_noise"
+            ]
+          },
+          "expectedStatus": {
+            "enum": [
+              "SUCCESS",
+              "INSUFFICIENT_EVIDENCE"
+            ]
+          },
+          "id": {
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "kind": {
+            "enum": [
+              "support",
+              "typo",
+              "multi",
+              "ambiguous",
+              "none",
+              "unrelated",
+              "unsupported",
+              "question_attack",
+              "source_attack",
+              "conflict",
+              "distractor",
+              "order",
+              "no_diacritics",
+              "long",
+              "unicode",
+              "near_limit",
+              "short",
+              "markdown"
+            ]
+          },
+          "language": {
+            "enum": [
+              "en",
+              "vi",
+              "vi-en"
+            ]
+          },
+          "oracleType": {
+            "enum": [
+              "none",
+              "symbolic_fact"
+            ]
+          },
+          "questionPattern": {
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "questionSuffix": {
+            "maxLength": 500,
+            "type": "string"
+          },
+          "sourceSuffix": {
+            "maxLength": 500,
+            "type": "string"
+          },
+          "version": {
+            "const": "0.2.0"
+          }
+        },
+        "required": [
+          "id",
+          "version",
+          "category",
+          "kind",
+          "language",
+          "questionPattern",
+          "questionSuffix",
+          "sourceSuffix",
+          "attackPattern",
+          "expectedStatus",
+          "oracleType"
+        ],
+        "type": "object"
+      },
+      "maxItems": 120,
+      "minItems": 60,
+      "type": "array"
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "owner",
+    "templates"
+  ],
+  "type": "object"
+}

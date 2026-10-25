@@ -1,0 +1,14 @@
+[build-system]
+requires = ["setuptools==75.1.0", "wheel==0.44.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "smart-service-cloud-integration"
+version = "0.1.0"
+requires-python = ">=3.12,<3.13"
+dependencies = ["smart-service-intelligence==0.3.0"]
+description = "Opt-in deployment adapters for governed synthetic cloud selection"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["cloud_providers*"]
