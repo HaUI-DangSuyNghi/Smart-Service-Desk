@@ -20,6 +20,7 @@ from local_runtime_support import (
     rule_baseline,
 )
 from servicedesk.intelligence.triage_ai07.datasets import SOURCE_FILES, inventory
+from local_classification.diagnostics import safe_telemetry
 
 
 class GpuSampler:
@@ -67,7 +68,7 @@ def latency(values):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--split", choices=("DEV",), required=True)
-    parser.add_argument("--candidate", choices=("tev1", "gemma3", "all"), required=True)
+    parser.add_argument("--candidate", required=True)
     parser.add_argument("--container", required=True)
     parser.add_argument("--allow-draft-synthetic", action="store_true")
     parser.add_argument("--warmups", type=int, default=10)
@@ -104,7 +105,11 @@ def main():
     baseline = rule_baseline(cases)
     deployment = deployment_evidence(args.container)
     identity = worker(args.container)
-    candidates = ("tev1", "gemma3") if args.candidate == "all" else (args.candidate,)
+    candidates = (
+        tuple(identity["candidates"]) if args.candidate == "all" else (args.candidate,)
+    )
+    if any(candidate not in identity["candidates"] for candidate in candidates):
+        raise ValueError("Candidate is not bound to this runtime")
     receipts, warmups = [], []
     sampler = GpuSampler()
     sampler.thread.start()
@@ -117,6 +122,7 @@ def main():
             "caseId": case["caseId"],
             "repeat": repeat,
             "phase": phase,
+            "inputLengths": {key: len(text) for key, text in fields.items()},
             "authoritativeRuleDigest": baseline[case["caseId"]]["responseDigest"],
             "inputDigest": sha256(
                 json.dumps(
@@ -144,19 +150,28 @@ def main():
                     "placement": result["placement"],
                     "loadedBefore": result["loadedBefore"],
                     "nativeElapsedMs": result["nativeElapsedMs"],
+                    "evidenceStatus": value.get(
+                        "evidence_status", "LITERAL_INPUT_SUPPORTED"
+                    ),
+                    "scoreSemantics": value.get("score_semantics"),
                     "disagreesWithRules": value["class_id"] != rule_result["category"]
                     if value["class_id"] is not None and rule_result is not None
                     else None,
                 }
             )
+            receipt.update(safe_telemetry(result.get("nativeTelemetry")))
         except WorkerRejected as error:
             receipt["state"] = {504: "TIMEOUT", 503: "UNAVAILABLE", 502: "INVALID"}.get(
                 error.status, "REJECTED"
             )
+            receipt["reasonCode"] = error.reason_code
+            receipt.update(error.telemetry)
         except subprocess.TimeoutExpired:
             receipt["state"] = "TIMEOUT"
+            receipt["reasonCode"] = "TIMEOUT"
         except Exception:
             receipt["state"] = "REJECTED"
+            receipt["reasonCode"] = "SCHEMA_MISMATCH"
         receipt["wallMs"] = round((perf_counter() - started) * 1000, 3)
         return receipt
 
@@ -194,6 +209,7 @@ def main():
                     item["nativeElapsedMs"]
                     for item in attempts
                     if "nativeElapsedMs" in item
+                    and item["state"] in ("PROPOSE", "ABSTAIN")
                 ]
             ),
             "macroF1": None,
@@ -201,7 +217,7 @@ def main():
         }
 
     report = {
-        "contractVersion": "local-model-engineering@0.1.0",
+        "contractVersion": "local-model-engineering@0.2.0",
         "split": "DEV",
         "scope": "SYNTHETIC_DRAFT_NO_QUALITY_CLAIM",
         "runtimeIdentity": identity,

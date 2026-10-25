@@ -1,9 +1,10 @@
 """An ungrounded decision vote is separate from a literal-evidence proposal."""
 
 from dataclasses import dataclass
+import json
 import math
 
-from .protocols import ClassificationRequest, require
+from .protocols import ClassificationError, ClassificationRequest, require
 
 
 CONTRACT = "decision-observation@0.1.0"
@@ -64,3 +65,41 @@ def validate_observation(value, request, *, abstain_id):
         require(0 <= value.concentration <= 1)
 
     return value
+
+
+def decode_decision(raw, request, *, abstain_id):
+    """Decode a classification-only vote without inventing evidence or scores."""
+
+    def unique_object(pairs):
+        result = {}
+
+        for key, value in pairs:
+            require(key not in result)
+            result[key] = value
+
+        return result
+
+    def reject_constant(_value):
+        raise ClassificationError("Non-finite decision rejected")
+
+    try:
+        require(type(raw) is bytes and 0 < len(raw) <= 8192)
+        value = json.loads(
+            raw.decode("utf-8"),
+            object_pairs_hook=unique_object,
+            parse_constant=reject_constant,
+        )
+        require(type(value) is dict and set(value) == {"decision", "classId"})
+        require(type(value["decision"]) is str)
+        require(value["classId"] is None or type(value["classId"]) is str)
+        observation = DecisionObservation(
+            contract_version=CONTRACT,
+            decision=value["decision"],
+            class_id=value["classId"],
+            option_order=(*request.allowed_classes, abstain_id),
+            model_scores=None,
+            score_semantics="NOT_AVAILABLE",
+        )
+        return validate_observation(observation, request, abstain_id=abstain_id)
+    except (ValueError, TypeError, KeyError, RecursionError):
+        raise ClassificationError("Decision response rejected") from None

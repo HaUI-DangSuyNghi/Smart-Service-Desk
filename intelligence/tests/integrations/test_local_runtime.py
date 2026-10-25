@@ -223,3 +223,83 @@ def test_foreign_fields_wrong_policy_and_capacity_do_not_call_model(setup_runtim
     finally:
         runtime._slot.release()
     assert not any(path == "/v1/systemone" for path, _ in native.calls)
+
+
+@pytest.mark.parametrize("invalid", [False, True])
+def test_g1_runtime_routes_by_pinned_adapter_and_never_calls_g0(setup_runtime, invalid):
+    from local_classification.adapters.gemma_classify_only import output_schema
+    from local_classification.diagnostics import ObservationRejected
+
+    arguments, native, _, _ = setup_runtime
+    policy_path = arguments["policy_directory"] / "vote.json"
+    policy = json.loads(policy_path.read_bytes())
+    policy["policy"] = {
+        "instructions": "Trusted synthetic policy",
+        "abstainId": "UNKNOWN",
+        "outputSchema": output_schema(("A", "B")),
+    }
+    policy_path.write_bytes(json.dumps(policy).encode())
+    digest = sha256(policy_path.read_bytes()).hexdigest()
+    config_path = arguments["config_path"]
+    config = json.loads(config_path.read_bytes())
+    config["candidates"]["vote"].update(
+        adapter="gemma-classify-only@0.2.0",
+        policyDigest=digest,
+    )
+    config_path.write_bytes(json.dumps(config).encode())
+    original_exchange = native.exchange
+
+    def exchange(method, path, payload=None):
+        if path == "/api/show":
+            return {
+                "details": {"quantization_level": "Q8_0"},
+                "capabilities": ["completion"],
+            }
+        if path == "/api/chat":
+            native.active = True
+            native.calls.append((path, payload))
+            return {
+                "model": "pinned:vote",
+                "created_at": "fixture",
+                "done": True,
+                "done_reason": "stop",
+                "total_duration": 1,
+                "load_duration": 0,
+                "prompt_eval_count": 10,
+                "eval_count": 20,
+                "message": {
+                    "role": "assistant",
+                    "content": json.dumps(
+                        {
+                            "decision": "ABSTAIN" if invalid else "PROPOSE",
+                            "classId": "A",
+                        }
+                    ),
+                },
+            }
+        return original_exchange(method, path, payload)
+
+    native.exchange = exchange
+    runtime = LocalClassificationRuntime(**arguments, enabled=True)
+    if invalid:
+        with pytest.raises(ObservationRejected) as failure:
+            runtime.infer(
+                "vote",
+                {"input": "alpha"},
+                runtime_digest=runtime.digest,
+                policy_digest=digest,
+            )
+        assert failure.value.reason_code == "INVALID_STATE_PAIR"
+    else:
+        result = runtime.infer(
+            "vote",
+            {"input": "alpha"},
+            runtime_digest=runtime.digest,
+            policy_digest=digest,
+        )
+        assert result["observation"]["class_id"] == "A"
+        assert result["observation"]["evidence_status"] == "UNVERIFIED_BY_MODEL"
+        assert result["observation"]["model_scores"] is None
+    assert not any(path == "/v1/systemone" for path, _ in native.calls)
+    assert runtime._slot.acquire(blocking=False)
+    runtime._slot.release()

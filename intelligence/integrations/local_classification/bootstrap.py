@@ -147,7 +147,12 @@ def load_configuration(path):
             }
         )
         require(
-            candidate["adapter"] in ("tev1-systemone@0.1.0", "gemma-chat-schema@0.1.0")
+            candidate["adapter"]
+            in (
+                "tev1-systemone@0.1.0",
+                "gemma-chat-schema@0.1.0",
+                "gemma-classify-only@0.2.0",
+            )
         )
         require(
             type(candidate["model"]) is str

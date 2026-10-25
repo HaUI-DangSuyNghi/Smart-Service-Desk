@@ -13,6 +13,7 @@ from hdpi.classification.protocols import ClassificationError, require
 from hdpi.generation.errors import GenerationTimeout, GenerationUnavailable
 from local_classification.ollama_transport import OllamaTransport, strict_json
 from local_classification.runtime import LocalClassificationRuntime
+from local_classification.diagnostics import ObservationRejected, safe_telemetry
 
 
 class BridgeServer(HTTPServer):
@@ -168,13 +169,41 @@ class BridgeHandler(BaseHTTPRequestHandler):
                 policy_digest=value["policyDigest"],
             )
             self._reply(200, result)
-        except GenerationTimeout:
-            self._reply(504, {"code": "LOCAL_INFERENCE_TIMEOUT"})
-        except GenerationUnavailable:
-            self._reply(503, {"code": "LOCAL_INFERENCE_UNAVAILABLE"})
-        except ClassificationError:
+        except GenerationTimeout as error:
             self._reply(
-                502 if validated else 400, {"code": "LOCAL_OBSERVATION_REJECTED"}
+                504,
+                {
+                    "code": "LOCAL_INFERENCE_TIMEOUT",
+                    "reasonCode": "TIMEOUT",
+                    "diagnostics": safe_telemetry(getattr(error, "telemetry", {})),
+                },
+            )
+        except GenerationUnavailable as error:
+            self._reply(
+                503,
+                {
+                    "code": "LOCAL_INFERENCE_UNAVAILABLE",
+                    "reasonCode": "UNAVAILABLE",
+                    "diagnostics": safe_telemetry(getattr(error, "telemetry", {})),
+                },
+            )
+        except ObservationRejected as error:
+            self._reply(
+                502 if validated else 400,
+                {
+                    "code": "LOCAL_OBSERVATION_REJECTED",
+                    "reasonCode": error.reason_code,
+                    "diagnostics": safe_telemetry(error.telemetry),
+                },
+            )
+        except ClassificationError as error:
+            self._reply(
+                502 if validated else 400,
+                {
+                    "code": "LOCAL_OBSERVATION_REJECTED",
+                    "reasonCode": "SCHEMA_MISMATCH",
+                    "diagnostics": safe_telemetry(getattr(error, "telemetry", {})),
+                },
             )
         except (ValueError, TypeError, KeyError, OSError):
             self._reply(400, {"code": "LOCAL_OBSERVATION_REJECTED"})

@@ -13,7 +13,17 @@ from hdpi.classification.protocols import (
     require,
 )
 from hdpi.generation.errors import GenerationTimeout, GenerationUnavailable
-from local_classification.adapters import gemma_chat_json, tev1_systemone
+from local_classification.adapters import (
+    gemma_chat_json,
+    gemma_classify_only,
+    tev1_systemone,
+)
+from local_classification.diagnostics import (
+    ObservationRejected,
+    chat_rejection,
+    native_telemetry,
+    safe_telemetry,
+)
 from local_classification.bootstrap import (
     ArtifactLease,
     canonical_digest,
@@ -97,7 +107,7 @@ class LocalClassificationRuntime:
                 require(actual.get(candidate["model"]) == candidate["apiDigest"])
         except Exception:
             self._revoked = True
-            raise ClassificationError("Local deployment identity rejected") from None
+            raise ObservationRejected("RUNTIME_IDENTITY") from None
 
     def identity(self):
         self._check_identity()
@@ -166,6 +176,10 @@ class LocalClassificationRuntime:
             raise GenerationUnavailable("Local inference capacity unavailable")
 
         started = monotonic()
+        native_started = None
+        native_elapsed_ms = None
+        loaded_before = None
+        telemetry = {}
 
         try:
             now = monotonic()
@@ -189,11 +203,11 @@ class LocalClassificationRuntime:
                         {"model": item["name"], "keep_alive": 0},
                     )
 
-            adapter = (
-                tev1_systemone
-                if candidate["adapter"] == tev1_systemone.VERSION
-                else gemma_chat_json
-            )
+            adapters = {
+                module.VERSION: module
+                for module in (tev1_systemone, gemma_chat_json, gemma_classify_only)
+            }
+            adapter = adapters[candidate["adapter"]]
             payload = adapter.request_payload(
                 request,
                 model=candidate["model"],
@@ -203,13 +217,24 @@ class LocalClassificationRuntime:
             path = "/v1/systemone" if adapter is tev1_systemone else "/api/chat"
             native_started = monotonic()
             value = self.transport.exchange("POST", path, payload)
+            telemetry = native_telemetry(value)
             native_elapsed_ms = round((monotonic() - native_started) * 1000, 3)
             options = {"model": candidate["model"]}
 
-            if adapter is tev1_systemone:
+            if adapter in (tev1_systemone, gemma_classify_only):
                 options["abstain_id"] = policy["policy"]["abstainId"]
 
-            observation, usage = adapter.decode_response(value, request, **options)
+            try:
+                observation, usage = adapter.decode_response(value, request, **options)
+            except ObservationRejected:
+                raise
+            except ClassificationError:
+                reason = (
+                    chat_rejection(value, request, model=candidate["model"])
+                    if adapter is gemma_chat_json
+                    else "SCHEMA_MISMATCH"
+                )
+                raise ObservationRejected(reason) from None
             running = self.transport.exchange("GET", "/api/ps")["models"]
             require(len(running) == 1 and running[0]["name"] == candidate["model"])
             placement = running[0]
@@ -236,9 +261,19 @@ class LocalClassificationRuntime:
                 },
                 "loadedBefore": loaded_before,
                 "nativeElapsedMs": native_elapsed_ms,
+                "nativeTelemetry": telemetry,
                 "elapsedMs": round((monotonic() - started) * 1000, 3),
             }
-        except (ClassificationError, GenerationTimeout, GenerationUnavailable):
+        except (ClassificationError, GenerationTimeout, GenerationUnavailable) as error:
+            if native_elapsed_ms is None and native_started is not None:
+                native_elapsed_ms = round((monotonic() - native_started) * 1000, 3)
+            error.telemetry = safe_telemetry(
+                {
+                    **telemetry,
+                    "nativeElapsedMs": native_elapsed_ms,
+                    "loadedBefore": loaded_before,
+                }
+            )
             raise
         except Exception:
             raise ClassificationError("Local inference rejected") from None

@@ -14,7 +14,10 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", required=True)
     args = parser.parse_args()
-    context = ROOT / ".local/ai07/v14" / ("bridge-build-" + Path(args.output).stem)
+    output = Path(args.output).resolve()
+    if not output.is_relative_to((ROOT / ".local/ai07").resolve()) or output.exists():
+        raise ValueError("Build evidence must be new and inside .local/ai07")
+    context = output.parent / ("bridge-build-" + output.stem)
 
     if context.exists():
         raise ValueError("Bridge build context already exists; preserve prior attempt")

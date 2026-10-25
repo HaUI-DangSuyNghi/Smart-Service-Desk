@@ -163,3 +163,210 @@ def test_tampered_ledgers_cannot_hide_failures_or_claim_quality(
         )
     with pytest.raises(ValueError):
         release.verify_report(report, runtime_file)
+
+
+def test_diagnostics_count_cases_and_preserve_missing_historical_reasons(
+    report_fixture,
+):
+    from local_error_analysis import analyze_report
+
+    original, _ = report_fixture
+    report = deepcopy(original)
+    report["repeats"] = 3
+    report["attempts"] = [
+        {**item, "repeat": repeat}
+        for repeat in range(3)
+        for item in original["attempts"]
+    ]
+    report["attempts"][0] = {
+        **report["attempts"][0],
+        "state": "INVALID",
+        "rawCompletion": "PRIVATE_COMPLETION",
+        "title": "PRIVATE_TITLE",
+    }
+    result = analyze_report(report)
+    value = result["candidates"]["tev1"]
+    assert value["attempts"] == 144
+    assert value["uniqueCases"] == 48
+    assert value["repeatDisagreementCases"] == 1
+    assert value["stableAllAbstainCases"] == 47
+    assert value["failureBuckets"] == {"MISSING_LEGACY_DIAGNOSTIC": 1}
+    assert result["quality"]["macroF1"] is None
+    assert result["release"] == "NO_GO"
+    assert "PRIVATE_" not in json.dumps(result)
+    assert result == analyze_report(report)
+
+
+@pytest.mark.parametrize(
+    "mutation",
+    [
+        "missing",
+        "duplicate",
+        "unknown_id",
+        "missing_reason",
+        "unsafe_reason",
+        "class",
+        "abstain_class",
+        "latency",
+        "authority",
+        "holdout",
+    ],
+)
+def test_diagnostics_reject_incomplete_or_unsafe_new_ledgers(report_fixture, mutation):
+    from local_error_analysis import analyze_report
+
+    original, _ = report_fixture
+    report = deepcopy(original)
+    report["contractVersion"] = "local-model-engineering@0.2.0"
+    item = report["attempts"][0]
+    if mutation == "missing":
+        report["attempts"].pop()
+    elif mutation == "duplicate":
+        report["attempts"].append(deepcopy(item))
+    elif mutation == "unknown_id":
+        item["caseId"] = "PRODUCTION_CUSTOMER_ID"
+    elif mutation == "missing_reason":
+        item["state"] = "INVALID"
+    elif mutation == "unsafe_reason":
+        item.update(state="INVALID", reasonCode="PRIVATE_RAW_OUTPUT")
+    elif mutation == "class":
+        item.update(state="PROPOSE", classId="FOREIGN")
+    elif mutation == "abstain_class":
+        item["classId"] = "ACCOUNT"
+    elif mutation == "latency":
+        item["wallMs"] = float("nan")
+    elif mutation == "authority":
+        report["operationalAuthority"] = True
+    elif mutation == "holdout":
+        report["split"] = "HOLDOUT"
+    with pytest.raises(ValueError):
+        analyze_report(report)
+
+
+def test_new_release_ledger_requires_failure_reason_including_warmups(report_fixture):
+    original, runtime_file = report_fixture
+    report = deepcopy(original)
+    report["contractVersion"] = "local-model-engineering@0.2.0"
+    report["warmupAttempts"][0]["state"] = "INVALID"
+    report["warmupAttempts"][0].pop("nativeElapsedMs")
+    with pytest.raises(ValueError, match="reason code"):
+        release.verify_report(report, runtime_file)
+    report["warmupAttempts"][0]["reasonCode"] = "INVALID_JSON"
+    assert release.verify_report(report, runtime_file)["production"] == "NO_GO"
+
+
+def test_t2_policy_changes_only_class_order_and_has_distinct_identity():
+    from experiment_policies import POLICIES
+    from local_error_analysis import EXPERIMENTS
+
+    baseline = json.loads((EXPERIMENTS / POLICIES["tev1"][0]).read_bytes())
+    digests = set()
+    for name in ("tev1-t2-rotate", "tev1-t2-reverse", "tev1-t2-interleave"):
+        raw = (EXPERIMENTS / POLICIES[name][0]).read_bytes()
+        value = json.loads(raw)
+        assert set(value["allowedClasses"]) == set(baseline["allowedClasses"])
+        assert value["allowedClasses"] != baseline["allowedClasses"]
+        assert value["policy"]["instructions"] == baseline["policy"]["instructions"]
+        assert value["policy"]["criteria"] == baseline["policy"]["criteria"]
+        assert tuple(value["policy"]["criteria"]) == (
+            *value["allowedClasses"],
+            "UNDETERMINED",
+        )
+        digests.add(sha256(raw).hexdigest())
+    assert len(digests) == 3
+
+
+def test_worker_failure_keeps_only_bounded_reason_and_telemetry(monkeypatch):
+    from types import SimpleNamespace
+    import local_runtime_support as support
+
+    failure = {
+        "status": 502,
+        "reasonCode": "INVALID_STATE_PAIR",
+        "diagnostics": {"nativeElapsedMs": 12.5, "completion": "PRIVATE_COMPLETION"},
+        "prompt": "PRIVATE_PROMPT",
+    }
+    monkeypatch.setattr(
+        support.subprocess,
+        "run",
+        lambda *args, **kwargs: SimpleNamespace(
+            returncode=2,
+            stderr=json.dumps(failure).encode(),
+            stdout=b"",
+        ),
+    )
+    with pytest.raises(support.WorkerRejected) as error:
+        support.worker(
+            "synthetic-container",
+            candidate="gemma3-g1",
+            fields={"input": "PRIVATE_INPUT"},
+        )
+    assert error.value.status == 502
+    assert error.value.reason_code == "INVALID_STATE_PAIR"
+    assert error.value.telemetry == {"nativeElapsedMs": 12.5}
+    assert "PRIVATE_" not in str(error.value)
+
+
+def _choice_report(original, candidate):
+    from experiment_policies import POLICIES
+    from local_error_analysis import EXPERIMENTS
+
+    report = deepcopy(original)
+    filename, adapter = POLICIES[candidate]
+    report["summaries"] = {candidate: report["summaries"]["tev1"]}
+    report["runtimeIdentity"]["candidates"] = {
+        candidate: {
+            "policyFile": filename,
+            "policyDigest": sha256((EXPERIMENTS / filename).read_bytes()).hexdigest(),
+            "adapter": adapter,
+            "modelArtifactDigest": "a" * 64,
+            "tokenizerDigest": "a" * 64,
+            "apiDigest": "b" * 64,
+        }
+    }
+    for item in (*report["attempts"], *report["warmupAttempts"]):
+        item["candidate"] = candidate
+    return report
+
+
+@pytest.mark.parametrize(
+    "mutation", [None, "input", "model", "policy", "missing", "duplicate", "serving"]
+)
+def test_choice_stability_is_paired_and_identity_bound(report_fixture, mutation):
+    spec = importlib.util.spec_from_file_location(
+        "ai07_choice_stability", SCRIPTS / "evaluate-choice-stability.py"
+    )
+    choice = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(choice)
+    original, _ = report_fixture
+    control = _choice_report(original, "tev1")
+    challenger = _choice_report(original, "tev1-t2-rotate")
+    challenger["attempts"][0].update(state="PROPOSE", classId="ACCOUNT")
+    if mutation == "input":
+        challenger["attempts"][0]["inputDigest"] = "f" * 64
+    elif mutation == "model":
+        challenger["runtimeIdentity"]["candidates"]["tev1-t2-rotate"]["apiDigest"] = (
+            "f" * 64
+        )
+    elif mutation == "policy":
+        challenger["runtimeIdentity"]["candidates"]["tev1-t2-rotate"][
+            "policyDigest"
+        ] = "f" * 64
+    elif mutation == "missing":
+        challenger["attempts"].pop()
+    elif mutation == "serving":
+        challenger["runtimeIdentity"]["contextTokens"] = 8192
+    reports = [control, challenger]
+    if mutation == "duplicate":
+        reports.append(deepcopy(challenger))
+    if mutation:
+        with pytest.raises(ValueError):
+            choice.compare_reports(reports)
+    else:
+        result = choice.compare_reports(reports)
+        comparison = result["comparisons"]["tev1-t2-rotate"]
+        assert comparison["uniqueCases"] == 48
+        assert comparison["pairedAttempts"] == 48
+        assert comparison["changedCases"] == 1
+        assert result["quality"]["macroF1"] is None
+        assert result["release"] == "NO_GO"

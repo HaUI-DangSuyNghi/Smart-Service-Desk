@@ -9,11 +9,14 @@ import sys
 
 from hdpi.classification.protocols import require
 from local_classification.ollama_transport import strict_json
+from local_classification.diagnostics import safe_reason, safe_telemetry
 
 
 class WorkerFailure(ValueError):
-    def __init__(self, status):
+    def __init__(self, status, reason_code=None, telemetry=None):
         self.status = status
+        self.reason_code = safe_reason(reason_code, "TRANSPORT")
+        self.telemetry = safe_telemetry(telemetry)
         super().__init__("Local bridge rejected the request")
 
 
@@ -42,7 +45,9 @@ def exchange(path, value=None):
         value = strict_json(raw)
 
         if response.status != 200:
-            raise WorkerFailure(response.status)
+            reason = value.get("reasonCode") if type(value) is dict else None
+            telemetry = value.get("diagnostics") if type(value) is dict else None
+            raise WorkerFailure(response.status, reason, telemetry)
 
         return value
     finally:
@@ -87,7 +92,14 @@ if __name__ == "__main__":
         main()
     except WorkerFailure as error:
         print(
-            json.dumps({"code": "LOCAL_WORKER_FAILED", "status": error.status}),
+            json.dumps(
+                {
+                    "code": "LOCAL_WORKER_FAILED",
+                    "status": error.status,
+                    "reasonCode": error.reason_code,
+                    "diagnostics": error.telemetry,
+                }
+            ),
             file=sys.stderr,
         )
         raise SystemExit(2) from None
