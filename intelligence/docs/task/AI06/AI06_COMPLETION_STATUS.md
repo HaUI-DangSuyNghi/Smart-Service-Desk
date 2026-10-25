@@ -1,6 +1,6 @@
 # AI06 API-first completion status
 
-Date: 2026-10-24. Branch: `feature/ai06-02-governed-real-model-provider`.
+Date: 2026-10-25. Branch: `feature/ai06-02-governed-real-model-provider`.
 Existing PR: [#37](https://github.com/HaUI-DangSuyNghi/Smart-Service-Desk/pull/37).
 FE #38/#39 from `develop@8137a4a` was already merged in `0316cd3`.
 The follow-up conflict resolution integrates FE #40 at `develop@c61cdf9`.
@@ -102,3 +102,58 @@ See [ADR-006](../../decisions/ADR-006-api-first-multi-provider.md),
 [processing policy](../../governance/ai06-cloud-processing-policy.md),
 [operator runbook](AI06_API_FIRST_OPERATIONS.md) and
 [evaluation design](AI06_03_EVALUATION_DESIGN.md).
+
+## Synthetic DEV v0.2 dataset expansion (2026-10-25)
+
+The application-owned extension contains 400 cases across 30 categories and six
+fixed axes: the 52 immutable v0.1 controls plus 348 new cases. Twelve invented
+families, 36 facts and 60 templates drive deterministic generation with seed
+20261024. Dataset SHA-256:
+`cec8c8832183234996cad0654d256055cd4e624fbe9a3a0042f6ba176088f78a`.
+The historical v0.1 raw SHA remains
+`f3ba65dd318b2e06cce0e450faf7f2978916e8a6001c94270de38cb23fcb0c2e`.
+
+New tooling and tests are app-owned. Shape/provenance/graph checks, content risk
+linting, deduplication, current-byte replay, release immutability, actual generic
+wheel inspection and hostile ownership mutations enforce the expansion boundary.
+Generic hdpi and shared contracts are unchanged. No FE or Core source changed
+in this expansion. Approved question/source digest inventory capacity increases
+to 1,024 in the optional Python integration and Java catalog; actor/resource and
+per-request bounds remain unchanged.
+
+Observed offline reference result: **400 cases, 0 technical failures, 156
+provisional behavior mismatches, 64 unsafe exact selections**. Source and
+installed-wheel reports are byte-equivalent. The first 52 preserve 13 categories and eight unsafe
+selections. Safety decision is **FAIL**, all 400 human reviews remain **PENDING**,
+and provisional behavior mismatches remain visible. This is engineering evidence,
+not a gold benchmark or proof of safe real-model behavior. All content rights and
+official/HOLDOUT gates remain pending.
+
+The stable cloud smoke selects 30 cases without using model scores. Optional
+cloud orchestration requires exact external dataset/provider/model/scope approval,
+existing route approval, keys and explicit budgets. Offline fake controls cover
+quota/timeout, revocation, denied egress and partial denominators. No real Gemini
+or Groq request was executed; both remain **NOT_VERIFIED**. The added CI workflow
+requires ownership, Windows/Linux source/wheel checks and cross-OS replay.
+Hosted execution on the eventual pushed HEAD is **NOT_VERIFIED**; local results
+must not be represented as a hosted CI pass.
+
+Local backend regression: **245 tests passed**, including two new inventory-bound
+controls and actual private Python HTTP integration with disposable PostgreSQL.
+Full Python regression passed in both source and installed-wheel modes:
+**1,019 passed, 6 optional model tests skipped** in each mode. After isolating the
+app fixture name from historical generation fixtures, the focused source suite
+passed **104 tests** and the installed suite with historical quality controls
+passed **111 tests**. Existing boundary scanner and 39 hostile boundary controls
+passed, as did the actual generic-wheel ownership check and double regeneration.
+The same **111 focused tests passed on Linux** with the fresh installed generic
+and optional integration wheels; regeneration matched the committed canonical
+bytes. Linux source/wheel reports and Windows reports are independently replayed
+before accepting the final HEAD-bound receipts.
+The receipt identifies a dirty working tree at the pre-commit revision; it is
+test-run evidence, not a clean final-HEAD release attestation. Final dataset
+receipts must be regenerated after commits under `.local/ai06-synthetic-v02/`.
+
+See [dataset design](AI06_03_SYNTHETIC_V02_DATASET_DESIGN.md),
+[handover and commands](AI06_03_SYNTHETIC_V02_HANDOVER.md) and
+[ADR-007](../../decisions/ADR-007-app-owned-synthetic-dataset.md).

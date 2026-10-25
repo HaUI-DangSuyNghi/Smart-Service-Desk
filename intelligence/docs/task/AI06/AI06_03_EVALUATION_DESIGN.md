@@ -68,3 +68,11 @@ python -I scripts/intelligence/verify-generation-evidence.py --installed .local/
 
 G3 stays BLOCKED until genuine reviews, rights, locked HOLDOUT, real-model
 security/quality/resource evidence and an independent GO/NO-GO exist.
+
+## Synthetic v0.2 extension
+
+The immutable 52-case fixture remains the historical regression. The separate
+400-case application-owned extension is described in
+[dataset design](AI06_03_SYNTHETIC_V02_DATASET_DESIGN.md) and
+[reproduction handover](AI06_03_SYNTHETIC_V02_HANDOVER.md).
+Its provisional labels and additional unsafe findings do not change G3.

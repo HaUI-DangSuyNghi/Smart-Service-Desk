@@ -11,6 +11,7 @@ on:
       - 'contracts/apps/servicedesk/intelligence/**'
       - 'fixtures/intelligence/**'
       - 'scripts/intelligence/**'
+      - 'scripts/apps/servicedesk/ai06/**'
       - 'scripts/check-tier-boundaries.py'
       - 'scripts/test-tier-boundaries.py'
       - 'scripts/acceptance/intelligence-*'
