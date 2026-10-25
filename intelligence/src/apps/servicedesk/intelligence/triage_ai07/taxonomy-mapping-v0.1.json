@@ -1,0 +1,13 @@
+{
+  "status": "REVIEW_REQUIRED",
+  "artifactDecision": "NO_DIRECT_PORT",
+  "sourceCommit": "247cd167b6c7890a3aa89700334e077a9be2fad8",
+  "sourceVerification": "NOT_FETCHED_IN_IMPLEMENTATION",
+  "targetClasses": ["NETWORK", "ACCOUNT", "SOFTWARE", "HARDWARE", "OTHER"],
+  "approvedMappings": [],
+  "missingSourceClass": "ACCOUNT",
+  "holdoutCountInPlan": 40,
+  "historicalDocumentationCountInPlan": 30,
+  "countReconciliation": "PENDING_SOURCE_REPRODUCTION",
+  "trainingDataReproduction": "PENDING_RIGHTS_AND_SOURCE_REPRODUCTION"
+}

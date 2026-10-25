@@ -1,0 +1,220 @@
+{
+  "schemaVersion": "0.1.0",
+  "sourceCommit": "f94f0ef102cbc7d5737ca05270b0affab1fde1a6",
+  "files": [
+    {
+      "path": "fixtures/intelligence/service-desk/tickets/tickets-v0.1.jsonl",
+      "sha256": "317a844338ae12e6c0cde109f8d7cc15879f8bf4c5d2f1a02e71a4e0cbf692f5",
+      "bytes": 16124,
+      "topLevelCount": 12
+    },
+    {
+      "path": "fixtures/intelligence/service-desk/tickets/tickets-v0.2.jsonl",
+      "sha256": "9a4d0b026b17357e53072c91bdadf291c2e48d003ec95410bbca79cc434ad060",
+      "bytes": 40290,
+      "topLevelCount": 72
+    },
+    {
+      "path": "fixtures/intelligence/service-desk/knowledge/manifest.json",
+      "sha256": "115d078dc2ac4264108968fc064e5894674ee26fc0cc92e15a1bff0eb01683a9",
+      "bytes": 3448,
+      "topLevelCount": 5
+    },
+    {
+      "path": "fixtures/intelligence/service-desk/knowledge/manifest-v0.2.json",
+      "sha256": "abead38e858653a027050a329345acbc11b99a83c7371fcbe286cfdc2ae86194",
+      "bytes": 20735,
+      "topLevelCount": 10
+    },
+    {
+      "path": "fixtures/intelligence/service-desk/retrieval/gold-v0.1.json",
+      "sha256": "2a6879067b04e7b3e9fffd869916a6c71fb5105c097f8e523d1688a51080767a",
+      "bytes": 2123,
+      "topLevelCount": 12
+    },
+    {
+      "path": "fixtures/intelligence/service-desk/retrieval/qrels-v0.2.json",
+      "sha256": "52595bd71203e53903e48a3285c15945112804a143ecd73bf6e65b82582b62f0",
+      "bytes": 163117,
+      "topLevelCount": 72
+    },
+    {
+      "path": "fixtures/intelligence/service-desk/generation/dev-v0.1.json",
+      "sha256": "f3ba65dd318b2e06cce0e450faf7f2978916e8a6001c94270de38cb23fcb0c2e",
+      "bytes": 40302,
+      "topLevelCount": 52
+    },
+    {
+      "path": "fixtures/intelligence/service-desk/generation/dev-v0.2.json",
+      "sha256": "cec8c8832183234996cad0654d256055cd4e624fbe9a3a0042f6ba176088f78a",
+      "bytes": 615238,
+      "topLevelCount": 400
+    },
+    {
+      "path": "fixtures/intelligence/service-desk/knowledge/curated/account-authentication.md",
+      "sha256": "d8fcd51779eedf541efcb3a4608295f8f83f6e20906ff92fb9ca2aba3e311ad9",
+      "bytes": 1719,
+      "topLevelCount": null
+    },
+    {
+      "path": "fixtures/intelligence/service-desk/knowledge/curated/credential-security-handling.md",
+      "sha256": "e3e3755b62f42d262974b3331626b902fdf3bad8c0b39dab4f417566561553a6",
+      "bytes": 1497,
+      "topLevelCount": null
+    },
+    {
+      "path": "fixtures/intelligence/service-desk/knowledge/curated/escalation-human-review.md",
+      "sha256": "542cb92f3a070867d3b5ad2d1af485e7b75694a7e8c6d602dab1d91da883e5ec",
+      "bytes": 1548,
+      "topLevelCount": null
+    },
+    {
+      "path": "fixtures/intelligence/service-desk/knowledge/curated/hardware-display-peripheral.md",
+      "sha256": "42830dfa484470a16ba25038abacbed9d025c9f471d4294ed2f005235d92f706",
+      "bytes": 1458,
+      "topLevelCount": null
+    },
+    {
+      "path": "fixtures/intelligence/service-desk/knowledge/curated/hardware-power.md",
+      "sha256": "bd9f5d40fbf051e13752cbfbc542432e65ba41b348a4b550b4b8a82ef2e72946",
+      "bytes": 1531,
+      "topLevelCount": null
+    },
+    {
+      "path": "fixtures/intelligence/service-desk/knowledge/curated/intake-evidence-quality.md",
+      "sha256": "f9b5f828a24df1337a5437119c5bcd765ba76d360cc2aefb3078cd81eb12baca",
+      "bytes": 1626,
+      "topLevelCount": null
+    },
+    {
+      "path": "fixtures/intelligence/service-desk/knowledge/curated/network-connectivity.md",
+      "sha256": "339f5bfa3f68c94807c9f4ae737864bc970892b19577ef39c34cd03ce1a66eed",
+      "bytes": 1717,
+      "topLevelCount": null
+    },
+    {
+      "path": "fixtures/intelligence/service-desk/knowledge/curated/non-it-facilities-routing.md",
+      "sha256": "4e3ad52440047e829e24e4bbd9a4fa9899bce26017770a422fa2586f37fadf3f",
+      "bytes": 1482,
+      "topLevelCount": null
+    },
+    {
+      "path": "fixtures/intelligence/service-desk/knowledge/curated/priority-impact-urgency.md",
+      "sha256": "4ce73b2b33688e59bdd3767ef45b500c60c6081fbeb73a8ced513d8607883410",
+      "bytes": 1633,
+      "topLevelCount": null
+    },
+    {
+      "path": "fixtures/intelligence/service-desk/knowledge/curated/software-application.md",
+      "sha256": "556de1a5dd9c62353989a7db5124d7e5f1bfca6e9620bbb43bf9a89541153eac",
+      "bytes": 1684,
+      "topLevelCount": null
+    },
+    {
+      "path": "fixtures/intelligence/service-desk/knowledge/sources/account-access-guide.md",
+      "sha256": "04f92c09efa6637a86ef9214d73e046f1c51e62ef8294f238158ca6b911d5585",
+      "bytes": 1759,
+      "topLevelCount": null
+    },
+    {
+      "path": "fixtures/intelligence/service-desk/knowledge/sources/priority-policy.md",
+      "sha256": "6982ce09a24e4b9c42c0c485229b549cde03c05b23290f55a7016c3484eba787",
+      "bytes": 1780,
+      "topLevelCount": null
+    },
+    {
+      "path": "fixtures/intelligence/service-desk/knowledge/sources/service-desk-escalation.md",
+      "sha256": "f5e0558d843a0a7e2fe346dd97548eacdbad18a97378b0c250e666f64b8d3d32",
+      "bytes": 1674,
+      "topLevelCount": null
+    },
+    {
+      "path": "fixtures/intelligence/service-desk/knowledge/sources/software-hardware-first-check.md",
+      "sha256": "7829c4def0cc2c3e0a713c9b2a7c56b359156c198082469a42eec180d4af47ef",
+      "bytes": 1561,
+      "topLevelCount": null
+    },
+    {
+      "path": "fixtures/intelligence/service-desk/knowledge/sources/wifi-troubleshooting.md",
+      "sha256": "5a98bcfae95775ac519004ae2d019f517474ad186626959b124adb94ae0985bc",
+      "bytes": 1885,
+      "topLevelCount": null
+    },
+    {
+      "path": "intelligence/src/apps/servicedesk/intelligence/profiles/immutable-artifacts.json",
+      "sha256": "420e70bdd7379280bc6fa44348eeb5faaa597e7d4a1e65801a6ecb174e1b60e8",
+      "bytes": 1079,
+      "topLevelCount": null
+    },
+    {
+      "path": "intelligence/src/apps/servicedesk/intelligence/profiles/registry.yaml",
+      "sha256": "3d859b8f047fe879d8eba0cde81a84dd97c04c64ccc68e8f27edb47a0ae0788a",
+      "bytes": 300,
+      "topLevelCount": null
+    },
+    {
+      "path": "intelligence/src/apps/servicedesk/intelligence/profiles/service-desk/normalization.md",
+      "sha256": "25237b112bb211ae559d056306d352b33296048d0a8507f5b59c600fcaa6e4f0",
+      "bytes": 1855,
+      "topLevelCount": null
+    },
+    {
+      "path": "intelligence/src/apps/servicedesk/intelligence/profiles/service-desk/priority-policy.yaml",
+      "sha256": "d7cf23af881c221b03069d65f0206ce1c010be9b0bd07d0afb7ae882375f0601",
+      "bytes": 993,
+      "topLevelCount": null
+    },
+    {
+      "path": "intelligence/src/apps/servicedesk/intelligence/profiles/service-desk/profile.yaml",
+      "sha256": "e320507c8ddf12117c0228fea6e6bf5b5de3133e57b774f71e215999b8206c43",
+      "bytes": 359,
+      "topLevelCount": null
+    },
+    {
+      "path": "intelligence/src/apps/servicedesk/intelligence/profiles/service-desk/rules.yaml",
+      "sha256": "c8cf4e5f91fb4202329c7ea59187e3f7722fb9e982c601b130875ab6ddad3787",
+      "bytes": 1643,
+      "topLevelCount": null
+    },
+    {
+      "path": "intelligence/src/apps/servicedesk/intelligence/profiles/service-desk/taxonomy.yaml",
+      "sha256": "dce86b7bfb09bb0828c5ad7e84013ea895796d82295788629ec998850bbef2b3",
+      "bytes": 1557,
+      "topLevelCount": null
+    },
+    {
+      "path": "intelligence/src/apps/servicedesk/intelligence/profiles/service-desk/versions/0.2.0/profile.yaml",
+      "sha256": "ba9f321b2b779c4a0a0fa30bd627d796922d63c8f667160e041c9c1d42373088",
+      "bytes": 377,
+      "topLevelCount": null
+    },
+    {
+      "path": "intelligence/src/apps/servicedesk/intelligence/profiles/service-desk/versions/0.2.0/rules.yaml",
+      "sha256": "0cdb1fec0757b9215920516dbb9355dde21c72a2e5e5bc59e7f1a9f632eadbba",
+      "bytes": 3757,
+      "topLevelCount": null
+    },
+    {
+      "path": "intelligence/src/apps/servicedesk/intelligence/profiles/service-desk/versions/0.3.0/normalization.md",
+      "sha256": "2cbff193f250721d16375054fa20c2dd32facff5dd9cd55122fb6b49eee6776c",
+      "bytes": 828,
+      "topLevelCount": null
+    },
+    {
+      "path": "intelligence/src/apps/servicedesk/intelligence/profiles/service-desk/versions/0.3.0/profile.yaml",
+      "sha256": "8525c26cef3ffe1f8cd668f5fdef20370674abd820b6b7e6436c13afac3c1c4a",
+      "bytes": 371,
+      "topLevelCount": null
+    },
+    {
+      "path": "intelligence/src/apps/servicedesk/intelligence/profiles/service-desk/versions/0.3.0/rules.yaml",
+      "sha256": "362c8f8791879eafdb28957a77e2b52b38002bdb83404aad2fe5307e841fb7c9",
+      "bytes": 3989,
+      "topLevelCount": null
+    }
+  ],
+  "labels": "DRAFT_NOT_GOLD",
+  "rights": "PENDING",
+  "labops": "NOT_IMPORTED_PENDING_RIGHTS",
+  "promotion": "BLOCKED_PENDING_REVIEW"
+}

@@ -10,6 +10,7 @@ fixtures/intelligence/**/*.jsonl text eol=lf
 fixtures/intelligence/**/*.yaml text eol=lf
 scripts/intelligence/*.py text eol=lf
 scripts/apps/servicedesk/ai06/** text eol=lf
+scripts/apps/servicedesk/ai07/** text eol=lf
 intelligence/** text eol=lf
 scripts/acceptance/core/*.ps1 text eol=lf
 scripts/acceptance/core/*.sql text eol=lf
