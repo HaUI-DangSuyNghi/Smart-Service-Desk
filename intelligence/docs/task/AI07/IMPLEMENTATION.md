@@ -8,6 +8,14 @@ Decision: **CHOSEN**. Backend rules-only MVP and offline challenger contracts:
 Read [ADR-009](../../../../docs/architecture/ADR-009-ticket-intelligence-orchestration.md)
 and the versioned OpenAPI in `contracts/openapi/servicedesk.yaml`.
 
+The v1.4 local-model extension is implemented and exercised on the local RTX 3050
+4GB. Read [the measured results and release limits](LOCAL_MODELS_V1_4.md),
+[ADR-010](../../../../docs/architecture/ADR-010-pinned-local-decision-classifiers.md)
+and [the Docker runbook](../../../../infra/compose/README.ai07-local.md).
+Tev1 decision observations and Gemma quote proposals remain separate offline
+challengers. The measured DEV ledger contains 71 rejected Gemma responses;
+classification quality is not evaluated and production remains **NO_GO**.
+
 ## Work-package status
 
 | v1.3 package | Delivered | Remaining external gate |
@@ -16,7 +24,7 @@ and the versioned OpenAPI in `contracts/openapi/servicedesk.yaml`.
 | T01R | 35-file immutable SSD inventory, blank DEV worksheets | LabOps rights/import/reproduction and 40-vs-30 reconciliation |
 | T02R | Generic CPU estimator, feature/learned-state manifest, split checks | Reviewed five-class SSD training data and DEV quality |
 | T03R | Authorized immutable orchestration, rule projection, isolated offline shadow seam | Production candidate execution intentionally disabled |
-| T04R | Separate versioned, pinned loopback classifier client | Real Gemma/Q4 artifacts, Ollama serving wrapper, tokenizer and measured GPU profile |
+| T04R | Separate pinned bridge, native Tev1/Gemma adapters, verified model artifacts and measured Docker GPU profile | Reviewed labels, acceptable model conformance and independent release approval |
 | T05R | Recomputed full-denominator DEV engineering receipts, tamper/promotion rejection | Independent labels/HOLDOUT, comparative macro-F1 and promotion decision |
 | T06R | Additive typed API, deterministic reasons, risk-not-assessed, exact-quote guidance | Semantic synthesis remains disabled |
 | T07R | Default-off flag, rollback and CI hooks | Hosted CI, independent release/security GO/NO-GO |

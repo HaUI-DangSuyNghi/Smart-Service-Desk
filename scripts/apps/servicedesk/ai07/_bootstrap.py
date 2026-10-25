@@ -5,7 +5,8 @@ import sys
 
 
 ROOT = Path(__file__).resolve().parents[4]
-sys.path.insert(0, str(ROOT / "intelligence/src"))
+if not sys.flags.isolated:
+    sys.path.insert(0, str(ROOT / "intelligence/src"))
 sys.path.insert(0, str(ROOT / "intelligence/src/apps"))
 
 
