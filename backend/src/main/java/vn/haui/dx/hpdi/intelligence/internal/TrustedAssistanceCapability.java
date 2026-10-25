@@ -91,6 +91,12 @@ public class TrustedAssistanceCapability implements GroundedAssistanceCapability
         Actor actor = actor(workspace);
         validate(input);
         boolean cloud = input.route() != null;
+        String evidenceMode = cloud ? routing.evidenceMode(input.route()) : "ranked";
+
+        if (evidenceMode == null
+                || !Set.of("ranked", "source-balanced@0.1.0").contains(evidenceMode))
+            throw IntelligenceFailure.configuration();
+
         String version = cloud ? "0.2.0" : "0.1.0";
         if (cloud && !input.route().expectedRuntime().equals(input.generationRuntime()))
             throw IntelligenceFailure.configuration();
@@ -173,7 +179,7 @@ public class TrustedAssistanceCapability implements GroundedAssistanceCapability
 
         if (cloud) validateCloudFeedback(input, response);
 
-        validateRetrieval(response.get("retrievalRuntime"));
+        validateRetrieval(response.get("retrievalRuntime"), evidenceMode);
 
         var sourceState =
                 snapshot.values().stream()
@@ -416,7 +422,7 @@ public class TrustedAssistanceCapability implements GroundedAssistanceCapability
         }
     }
 
-    private static void validateRetrieval(JsonNode runtime) {
+    private static void validateRetrieval(JsonNode runtime, String evidenceMode) {
         fields(
                 runtime,
                 Set.of(
@@ -426,12 +432,17 @@ public class TrustedAssistanceCapability implements GroundedAssistanceCapability
                         "corpus_version",
                         "index_version"));
 
-        if (!"tfidf".equals(text(runtime, "engine", 100))
+        boolean balanced = "source-balanced@0.1.0".equals(evidenceMode);
+        String expectedEngine = balanced ? "snapshot" : "tfidf";
+        String expectedConfig = balanced ? evidenceMode : "tfidf-config@0.1.0";
+        String indexPattern = balanced ? "snapshot@0.1.0:[a-f0-9]{64}" : "[a-f0-9]{64}";
+
+        if (!expectedEngine.equals(text(runtime, "engine", 100))
                 || !"0.1.0".equals(text(runtime, "engine_version", 100))
-                || !"tfidf-config@0.1.0".equals(text(runtime, "config_version", 100))
+                || !expectedConfig.equals(text(runtime, "config_version", 100))
                 || !text(runtime, "corpus_version", 100)
                         .matches("adapter-snapshot@0.1.0:[a-f0-9]{64}")
-                || !text(runtime, "index_version", 64).matches("[a-f0-9]{64}")) {
+                || !text(runtime, "index_version", 100).matches(indexPattern)) {
             throw IntelligenceFailure.invalid();
         }
     }

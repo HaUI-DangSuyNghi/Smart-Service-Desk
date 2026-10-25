@@ -5,9 +5,10 @@ does not turn a serialized snapshot into proof of permission. No snapshot is
 cached or reused across callers, and the generation provider sees aliases only.
 """
 
-from dataclasses import asdict
+from dataclasses import asdict, replace
+from itertools import zip_longest
 from jsonschema import FormatChecker
-from ..citations.base import VerifiedCitation
+from ..citations.base import CitationCandidate, VerifiedCitation
 from ..citations.verifier import CoreCitationVerifier
 from ..contracts.loader import load_validator
 from ..contracts.validator import ContractValidator
@@ -16,6 +17,7 @@ from ..domain.models import TrustedContext
 from ..generation.errors import GenerationConfigurationError, GenerationContractError
 from ..generation.models import AuthorizedKnowledgeBundle, RetrievalRuntimeIdentity
 from ..profiles.registry import ProfileRegistry
+from ..retrieval.chunking import chunk_document
 from ..retrieval.index import build_index
 from ..retrieval.models import AuthorizedDocument, PartitionKey, digest, scope_hash
 from ..retrieval.registry import IndexRegistry
@@ -114,52 +116,18 @@ class AssistanceRuntime:
         )
 
         source = SnapshotSource(context, partition, documents)
-        indexes = IndexRegistry()
-        index = build_index(documents, partition)
-        indexes.register(index)
+        if self.policy.evidence_mode == "source-balanced@0.1.0":
+            bundle = self._source_balanced_bundle(
+                payload, context, partition, source, documents
+            )
+        else:
+            bundle = self._ranked_bundle(payload, context, partition, source, documents)
 
-        search = SearchService(
-            corpus_source=source,
-            indexes=indexes,
-            citation_verifier=CoreCitationVerifier(source),
-            profiles=self.profiles,
-        ).search(
-            {
-                "contractVersion": "0.1.0",
-                "requestId": payload["requestId"],
-                "profile": self.profile_id,
-                "context": {"workspaceId": context.workspace_id},
-                "query": payload["question"],
-                "topK": self.policy.max_claims,
-            },
-            trusted_context=context,
-            profile_version=self.profile_version,
-        )
+        if any(self.policy.blocks_source(document.text) for document in documents):
+            # Withhold the whole candidate set. Dropping only the flagged source
+            # could hide a contradiction or let a partial safe fragment escape.
+            bundle = replace(bundle, citations=())
 
-        bundle = AuthorizedKnowledgeBundle.from_verified_citations(
-            request_id=payload["requestId"],
-            profile_id=self.profile_id,
-            profile_version=self.profile_version,
-            retrieval=RetrievalRuntimeIdentity(
-                engine=search.trace.engine,
-                engine_version=search.trace.engine_version,
-                config_version=search.trace.engine_config_version,
-                corpus_version=search.trace.corpus_version,
-                index_version=search.trace.index_version,
-            ),
-            citations=tuple(
-                VerifiedCitation(
-                    workspace_id=item["workspaceId"],
-                    metadata_id=item["metadataId"],
-                    source_version=item["sourceVersion"],
-                    source_checksum=item["sourceChecksum"],
-                    chunk_id=item["chunkId"],
-                    excerpt=item["excerpt"],
-                )
-                for item in search.response["results"]
-            ),
-            needs_review=True,
-        )
         result = self.generation.assist(
             payload["question"],
             bundle=bundle,
@@ -201,3 +169,114 @@ class AssistanceRuntime:
 
         ContractValidator._validate(self.response_contract, response)
         return response
+
+    def _ranked_bundle(self, payload, context, partition, source, documents):
+        indexes = IndexRegistry()
+        index = build_index(documents, partition)
+        indexes.register(index)
+
+        search = SearchService(
+            corpus_source=source,
+            indexes=indexes,
+            citation_verifier=CoreCitationVerifier(source),
+            profiles=self.profiles,
+        ).search(
+            {
+                "contractVersion": "0.1.0",
+                "requestId": payload["requestId"],
+                "profile": self.profile_id,
+                "context": {"workspaceId": context.workspace_id},
+                "query": payload["question"],
+                "topK": self.policy.max_evidence or self.policy.max_claims,
+            },
+            trusted_context=context,
+            profile_version=self.profile_version,
+        )
+
+        return AuthorizedKnowledgeBundle.from_verified_citations(
+            request_id=payload["requestId"],
+            profile_id=self.profile_id,
+            profile_version=self.profile_version,
+            retrieval=RetrievalRuntimeIdentity(
+                engine=search.trace.engine,
+                engine_version=search.trace.engine_version,
+                config_version=search.trace.engine_config_version,
+                corpus_version=search.trace.corpus_version,
+                index_version=search.trace.index_version,
+            ),
+            citations=tuple(
+                VerifiedCitation(
+                    workspace_id=item["workspaceId"],
+                    metadata_id=item["metadataId"],
+                    source_version=item["sourceVersion"],
+                    source_checksum=item["sourceChecksum"],
+                    chunk_id=item["chunkId"],
+                    excerpt=item["excerpt"],
+                )
+                for item in search.response["results"]
+            ),
+            needs_review=True,
+        )
+
+    def _source_balanced_bundle(self, payload, context, partition, source, documents):
+        """Offer bounded chunks from every authorized source to the selector.
+
+        No keyword match is required. A model must decide answerability; inclusion
+        is not a claim of relevance. The partition scopes the resolver only; this
+        path builds no lexical index and reports its own retrieval identity.
+        """
+        partition.authorize(context)
+        verifier = CoreCitationVerifier(source)
+        groups = [
+            tuple(
+                CitationCandidate(document, chunk) for chunk in chunk_document(document)
+            )
+            for document in sorted(documents, key=lambda item: item.metadata_id)
+        ]
+        citations = []
+
+        for row in zip_longest(*groups):
+            for candidate in row:
+                if candidate is None:
+                    continue
+
+                citation = verifier.verify(context, candidate)
+
+                if citation is None:
+                    raise GenerationContractError(
+                        "Snapshot source changed during selection"
+                    )
+
+                citations.append(citation)
+
+                if len(citations) == 10:
+                    break
+
+            if len(citations) == 10:
+                break
+
+        identity = digest(
+            [
+                self.policy.evidence_mode,
+                partition.corpus_version,
+                [
+                    (item.metadata_id, item.source_checksum, item.chunk_id)
+                    for item in citations
+                ],
+            ]
+        )
+
+        return AuthorizedKnowledgeBundle.from_verified_citations(
+            request_id=payload["requestId"],
+            profile_id=self.profile_id,
+            profile_version=self.profile_version,
+            retrieval=RetrievalRuntimeIdentity(
+                engine="snapshot",
+                engine_version="0.1.0",
+                config_version=self.policy.evidence_mode,
+                corpus_version=partition.corpus_version,
+                index_version="snapshot@0.1.0:" + identity,
+            ),
+            citations=tuple(citations),
+            needs_review=True,
+        )

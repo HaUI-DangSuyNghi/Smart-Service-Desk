@@ -29,6 +29,8 @@ class CloudSelectionProvider:
         self.observed_model_digest = None
         self.input_tokens = None
         self.output_tokens = None
+        self.http_status = None
+        self.stage = "NOT_STARTED"
 
     @property
     def runtime_identity(self):
@@ -91,10 +93,27 @@ class CloudSelectionProvider:
                 },
             }
 
-        raw = self.client.post(self.route, encode_json(body), self.credential.read())
+        if self.route.vendor == "groq" and self.route.model.startswith(
+            "openai/gpt-oss-"
+        ):
+            body["include_reasoning"] = False
+
+        self.stage = "HTTP_REQUEST"
+
         try:
+            raw = self.client.post(
+                self.route, encode_json(body), self.credential.read()
+            )
+        finally:
+            self.http_status = getattr(
+                getattr(self.client, "telemetry", None), "http_status", None
+            )
+
+        try:
+            self.stage = "ENVELOPE_DECODING"
             outer = decode_json(raw)
             text, observed = self.decode(outer)
+            self.stage = "MODEL_IDENTITY"
             if observed not in self.route.observed_models:
                 raise CloudFailure("GENERATION_IDENTITY_MISMATCH", "DISABLED", 0)
 
@@ -119,9 +138,12 @@ class CloudSelectionProvider:
                     )
                 )
 
-            return selection_draft(
+            self.stage = "SELECTION_DECODING"
+            draft = selection_draft(
                 strict_json(text.encode("utf-8"), maximum=16384), request
             )
+            self.stage = "COMPLETED"
+            return draft
         except CloudFailure:
             raise
         except (
@@ -180,7 +202,18 @@ class GeminiSelectionProvider(CloudSelectionProvider):
         if set(content) != {"role", "parts"} or content["role"] != "model":
             raise ValueError()
         parts = content["parts"]
-        if type(parts) is not list or len(parts) != 1 or set(parts[0]) != {"text"}:
+        if (
+            type(parts) is not list
+            or len(parts) != 1
+            or not set(parts[0]) <= {"text", "thoughtSignature"}
+            or "text" not in parts[0]
+        ):
+            raise ValueError()
+
+        if "thoughtSignature" in parts[0] and (
+            type(parts[0]["thoughtSignature"]) is not str
+            or len(parts[0]["thoughtSignature"]) > 16384
+        ):
             raise ValueError()
         if type(parts[0]["text"]) is not str or type(value["modelVersion"]) is not str:
             raise ValueError()
@@ -200,6 +233,7 @@ class GroqSelectionProvider(CloudSelectionProvider):
             "system_fingerprint",
             "x_groq",
             "service_tier",
+            "usage_breakdown",
         }:
             raise ValueError()
         if value["object"] != "chat.completion":

@@ -64,6 +64,7 @@ class TrustedAssistanceCapabilityTest {
     private final AssistanceRouting routing = mock(AssistanceRouting.class);
 
     private void configureCloud() {
+        when(routing.evidenceMode(any())).thenReturn("ranked");
         var route =
                 new AssistanceRoute(
                         "fixture-route",
@@ -105,6 +106,64 @@ class TrustedAssistanceCapabilityTest {
                                                     1,
                                                     "latencyBucket",
                                                     "LT_1S")));
+                            return response;
+                        })
+                .when(transport)
+                .assist(any());
+    }
+
+    @Test
+    void snapshotRetrievalRequiresThePinnedCloudEvidenceMode() throws Exception {
+        configureCloud();
+        when(routing.evidenceMode(any())).thenReturn("source-balanced@0.1.0");
+        configureSnapshotResponse();
+
+        assertEquals("SUCCESS", capability.assist("scope-a", input).status());
+        verify(knowledge, times(2)).resolve("scope-a", id);
+    }
+
+    @Test
+    void unapprovedSnapshotEngineCannotReplaceRankedRetrieval() throws Exception {
+        configureCloud();
+        configureSnapshotResponse();
+
+        assertThrows(IntelligenceFailure.class, () -> capability.assist("scope-a", input));
+    }
+
+    @Test
+    void unknownEvidenceModeIsRejectedBeforeKnowledgeOrTransport() {
+        configureCloud();
+        when(routing.evidenceMode(any())).thenReturn("unapproved-mode");
+
+        assertThrows(IntelligenceFailure.class, () -> capability.assist("scope-a", input));
+        verifyNoInteractions(knowledge, transport);
+    }
+
+    private void configureSnapshotResponse() throws Exception {
+        doAnswer(
+                        call -> {
+                            JsonNode request = call.getArgument(0);
+                            var response = success(request);
+                            response.put("contractVersion", "0.2.0");
+                            response.set("routeBinding", request.get("routeBinding"));
+                            response.set(
+                                    "routeFeedback",
+                                    json.valueToTree(
+                                            Map.of(
+                                                    "state",
+                                                    "READY",
+                                                    "code",
+                                                    "OK",
+                                                    "cooldownSeconds",
+                                                    0,
+                                                    "providerCalls",
+                                                    1,
+                                                    "latencyBucket",
+                                                    "LT_1S")));
+                            var retrieval = (ObjectNode) response.get("retrievalRuntime");
+                            retrieval.put("engine", "snapshot");
+                            retrieval.put("config_version", "source-balanced@0.1.0");
+                            retrieval.put("index_version", "snapshot@0.1.0:" + "b".repeat(64));
                             return response;
                         })
                 .when(transport)

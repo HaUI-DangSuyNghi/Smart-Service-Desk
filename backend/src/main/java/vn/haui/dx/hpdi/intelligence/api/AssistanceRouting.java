@@ -16,6 +16,11 @@ public interface AssistanceRouting {
 
     void validate(AssistanceRoute route);
 
+    default String evidenceMode(AssistanceRoute route) {
+        validate(route);
+        return "ranked";
+    }
+
     void feedback(AssistanceRoute route, String state, String code, int cooldownSeconds);
 
     void release(AssistanceRoute route);

@@ -147,6 +147,12 @@ public class GovernedAssistanceRouting implements AssistanceRouting {
     }
 
     @Override
+    public synchronized String evidenceMode(AssistanceRoute route) {
+        validate(route);
+        return catalog.evidenceMode;
+    }
+
+    @Override
     public synchronized void release(AssistanceRoute route) {
         if (route != null) attempts.remove(route.attemptId());
     }

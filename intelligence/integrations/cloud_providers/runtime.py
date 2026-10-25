@@ -157,6 +157,8 @@ class CloudAssistanceRuntime:
                 "attemptSlotsReserved": attempt.calls,
                 "latencyBucket": bucket,
                 "observedModelDigest": provider.observed_model_digest,
+                "httpStatus": provider.http_status,
+                "providerStage": provider.stage,
                 "inputTokens": provider.input_tokens,
                 "outputTokens": provider.output_tokens,
                 "usageCost": "NOT_VERIFIED",

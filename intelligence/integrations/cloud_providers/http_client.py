@@ -8,7 +8,7 @@ from queue import Queue, Empty
 import re
 import socket
 import ssl
-from threading import BoundedSemaphore, Event, Thread, Timer
+from threading import BoundedSemaphore, Event, Thread, Timer, local
 from time import monotonic
 from urllib.parse import urlsplit
 
@@ -110,8 +110,11 @@ class BoundedHTTPSClient:
     def __init__(self, *, proxy=None):
         self.proxy = proxy
         self.slots = BoundedSemaphore(2)
+        self.telemetry = local()
 
     def post(self, route, body, credential):
+        self.telemetry.http_status = None
+
         if len(body) > route.max_input_bytes:
             raise CloudFailure("PROVIDER_BUDGET_EXCEEDED", "RATE_LIMITED", 60)
         if not self.slots.acquire(blocking=False):
@@ -177,6 +180,7 @@ class BoundedHTTPSClient:
             ] = (credential if route.vendor == "gemini" else "Bearer " + credential)
             connection.request("POST", path, body, headers)
             response = connection.getresponse()
+            self.telemetry.http_status = response.status
 
             if response.status == 429:
                 raise CloudFailure(

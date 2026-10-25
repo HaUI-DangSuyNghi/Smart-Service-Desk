@@ -46,6 +46,7 @@ public class CloudRouteCatalog {
     public final String isolationDigest;
     public final String policyId;
     public final String promptVersion;
+    public final String evidenceMode;
     public final JsonNode approval;
     public final List<Route> routes;
 
@@ -107,6 +108,13 @@ public class CloudRouteCatalog {
 
             policyId = text(config, "policyId");
             promptVersion = text(config.get("policy"), "identity");
+            evidenceMode =
+                    config.path("policy").has("evidence_mode")
+                            ? text(config.get("policy"), "evidence_mode")
+                            : "ranked";
+
+            if (!Set.of("ranked", "source-balanced@0.1.0").contains(evidenceMode))
+                throw new IllegalArgumentException();
             fields(
                     approval,
                     Set.of(
