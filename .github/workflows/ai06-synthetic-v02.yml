@@ -101,6 +101,8 @@ jobs:
       - name: Source app and generic contracts with unchanged historical controls
         run: >-
           python -m pytest intelligence/tests/apps/servicedesk/generation
+          intelligence/tests/cloud_integration
+          intelligence/tests/generation/test_snapshot_evidence.py
           intelligence/tests/generation/test_generic_dataset_evaluation_contract.py
           intelligence/tests/generation/test_generation_quality_evidence.py
           -q --tb=short --junitxml=.local/ai06-synthetic-v02/source-tests.xml
@@ -127,6 +129,8 @@ jobs:
         run: >-
           python -I -m pytest -c scripts/intelligence/installed-pytest.ini
           intelligence/tests/apps/servicedesk/generation
+          intelligence/tests/cloud_integration
+          intelligence/tests/generation/test_snapshot_evidence.py
           intelligence/tests/generation/test_generic_dataset_evaluation_contract.py
           intelligence/tests/generation/test_generation_quality_evidence.py
           -q --tb=short --junitxml=.local/ai06-synthetic-v02/wheel-tests.xml

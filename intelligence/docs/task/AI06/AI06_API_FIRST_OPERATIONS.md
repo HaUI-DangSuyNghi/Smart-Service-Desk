@@ -1,7 +1,14 @@
 # API-first assistance: isolated synthetic DEV
 
-Default: OFF. Real Gemini/Groq smoke and full cloud acceptance are NOT_VERIFIED.
+Default: OFF. Full cloud acceptance remains NOT_VERIFIED; bounded direct API
+measurements are recorded below.
 Use this on the existing AI06-02 branch/PR #37. No GPU or local weights required.
+
+The 2026-10-25 direct two-case smoke verified real SUCCESS and REFUSE for both
+vendors after adapter fixes. The subsequent approved 30-case runs stopped at HTTP
+429 and still found unsafe quotations. See
+[measured results and v0.3 guard limitations](AI06_CLOUD_BEHAVIOR_VERIFICATION.md).
+Full cloud acceptance and official release remain NOT_VERIFIED/BLOCKED.
 
 ## Configure server-only variables
 

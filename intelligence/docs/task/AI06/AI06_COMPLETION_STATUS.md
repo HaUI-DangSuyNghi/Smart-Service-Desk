@@ -6,8 +6,22 @@ FE #38/#39 from `develop@8137a4a` was already merged in `0316cd3`.
 The follow-up conflict resolution integrates FE #40 at `develop@c61cdf9`.
 
 Decision: **API-first engineering implemented; CLOUD DEV READY NOT_VERIFIED;
-official release BLOCKED**. No Gemini/Groq keys or genuine cloud approvals were
-provided. Mock responses never count as real API or quality evidence.
+official release BLOCKED**. Keys and approvals were initially missing; the
+subsequent bounded real API results are recorded below. Mock responses never
+count as real API or quality evidence.
+
+Update 2026-10-25: the user subsequently supplied local keys and explicitly approved
+bounded real synthetic API batches. The final two-case batch verified actual
+SUCCESS and model REFUSE on both vendors. The 30-case/provider runs hit HTTP 429
+and retained unsafe selections; full cloud DEV readiness remains NOT_VERIFIED.
+See [real API measurements and behavior follow-up](AI06_CLOUD_BEHAVIOR_VERIFICATION.md)
+for the exact denominators and the additional v0.3 guard, which is verified offline
+only. Historical no-key status and dataset reference findings below are preserved.
+
+Current implementation regression passed: 1,060 Python tests in each of source
+and wheel modes (six optional model skips), 206 Linux focused tests and 248
+Java/integration tests. The reference's 156/400 mismatches are preserved; cloud
+quality on the full 400 and real execution of the new v0.3 guard remain unverified.
 
 ## Delivered
 
@@ -133,7 +147,8 @@ The stable cloud smoke selects 30 cases without using model scores. Optional
 cloud orchestration requires exact external dataset/provider/model/scope approval,
 existing route approval, keys and explicit budgets. Offline fake controls cover
 quota/timeout, revocation, denied egress and partial denominators. No real Gemini
-or Groq request was executed; both remain **NOT_VERIFIED**. The added CI workflow
+or Groq request was executed at that dataset-expansion checkpoint; the subsequent
+bounded real runs are documented in the behavior follow-up. The added CI workflow
 requires ownership, Windows/Linux source/wheel checks and cross-OS replay.
 Hosted execution on the eventual pushed HEAD is **NOT_VERIFIED**; local results
 must not be represented as a hosted CI pass.

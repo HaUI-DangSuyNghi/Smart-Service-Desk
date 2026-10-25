@@ -51,6 +51,51 @@ def receipt_for(bundle):
     }
 
 
+@pytest.mark.parametrize("interval", [-1, 61, False])
+def test_invalid_pacing_cannot_create_a_provider(
+    pristine_bundle, approved_scope, interval
+):
+    args, _, environment = approved_scope
+    args.minimum_interval_seconds = interval
+    created = []
+
+    with pytest.raises(DatasetError, match="INVALID_REQUEST_INTERVAL"):
+        run_cloud(
+            args,
+            pristine_bundle,
+            runtime_factory=lambda *a, **k: created.append(True),
+            environment=environment,
+        )
+
+    assert not created
+
+
+def test_approval_is_rechecked_after_pacing_before_the_next_provider_call(
+    pristine_bundle, approved_scope, monkeypatch
+):
+    args, _, environment = approved_scope
+    args.minimum_interval_seconds = 60
+    runtime = FakeRuntime()
+    waits = []
+
+    def revoke_during_wait(seconds):
+        waits.append(seconds)
+        args.approval_file.write_text("{}", encoding="utf-8")
+
+    monkeypatch.setattr("_cloud.sleep", revoke_during_wait)
+    report = run_cloud(
+        args,
+        pristine_bundle,
+        runtime_factory=lambda *a, **k: (runtime, runtime.route),
+        environment=environment,
+    )
+
+    assert len(waits) == 1
+    assert len(runtime.calls) == 1
+    assert report["result"] == "PARTIAL_AUTHORIZATION_REVOKED"
+    assert report["notExecutedCases"] == 29
+
+
 @pytest.fixture
 def approved_scope(pristine_bundle, tmp_path):
     path = tmp_path / "dataset-approval.json"

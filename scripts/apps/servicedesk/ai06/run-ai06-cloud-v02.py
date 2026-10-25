@@ -23,6 +23,7 @@ def main():
     parser.add_argument("--max-input-tokens", type=int, default=0)
     parser.add_argument("--max-output-tokens", type=int, default=0)
     parser.add_argument("--max-cost", default="0")
+    parser.add_argument("--minimum-interval-seconds", type=int, default=0)
     args = parser.parse_args()
     report = {
         "result": "BLOCKED",

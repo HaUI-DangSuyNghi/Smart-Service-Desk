@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 import os
 from pathlib import Path
 from math import ceil
-from time import perf_counter
+from time import perf_counter, sleep
 from uuid import uuid4
 
 from _contracts import ROOT, DatasetError, digest, read_json, require, schema_check
@@ -196,6 +196,8 @@ def build_cloud_runtime(args, *, installed):
 def run_cloud(args, bundle, inputs=None, *, runtime_factory=None, environment=None):
     validate_bundle(bundle, inputs)
     approval = authorize_dataset(args, bundle, environment=environment)
+    interval = getattr(args, "minimum_interval_seconds", 0)
+    require(type(interval) is int and 0 <= interval <= 60, "INVALID_REQUEST_INTERVAL")
     factory = runtime_factory or build_cloud_runtime
 
     if runtime_factory is None:
@@ -236,13 +238,22 @@ def run_cloud(args, bundle, inputs=None, *, runtime_factory=None, environment=No
     stop = None
     feedback_codes = {}
     latencies = []
+    previous_started = None
 
     def execute(case):
-        nonlocal stop
+        nonlocal stop, previous_started
 
         if stop:
             counters["notExecutedCases"] += 1
             raise DatasetError("CASE_NOT_EXECUTED")
+
+        # Pace distinct planned cases only. A failed call is never retried, and
+        # approval is rechecked after waiting, immediately before the next case.
+        if interval and previous_started is not None:
+            remaining = interval - (perf_counter() - previous_started)
+
+            if remaining > 0:
+                sleep(remaining)
 
         # Recheck the external receipt on every case; changed/expired approvals
         # suppress later egress instead of reusing a startup-only decision.
@@ -272,6 +283,7 @@ def run_cloud(args, bundle, inputs=None, *, runtime_factory=None, environment=No
         counters["executedCases"] += 1
 
         started = perf_counter()
+        previous_started = started
 
         try:
             response = runtime.assist(request_payload(runtime, route, case))
@@ -373,6 +385,7 @@ def run_cloud(args, bundle, inputs=None, *, runtime_factory=None, environment=No
             "configurationDigest": route.catalog_digest,
             "approvalDigest": args.approval_sha256,
             "scope": args.scope,
+            "minimumIntervalSeconds": interval,
             "totalPlannedCases": len(selected["dataset"]["cases"]),
             "result": (
                 (
