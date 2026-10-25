@@ -12,6 +12,7 @@ on:
       - 'fixtures/intelligence/**'
       - 'scripts/intelligence/**'
       - 'scripts/apps/servicedesk/ai06/**'
+      - 'scripts/apps/servicedesk/ai07/**'
       - 'scripts/check-tier-boundaries.py'
       - 'scripts/test-tier-boundaries.py'
       - 'scripts/acceptance/intelligence-*'
@@ -22,8 +23,10 @@ on:
       - 'backend/src/main/java/vn/haui/dx/hpdi/data/**'
       - 'backend/src/main/java/vn/haui/dx/hpdi/human/**'
       - 'backend/src/main/java/vn/haui/dx/apps/servicedesk/assistance/**'
+      - 'backend/src/main/java/vn/haui/dx/apps/servicedesk/intelligence/**'
       - 'backend/src/main/java/vn/haui/dx/apps/servicedesk/TicketService.java'
       - 'backend/src/test/java/vn/haui/dx/apps/servicedesk/assistance/**'
+      - 'backend/src/test/java/vn/haui/dx/apps/servicedesk/intelligence/**'
       - 'backend/src/main/resources/**'
       - 'infra/**'
       - 'compose.yaml'
@@ -77,6 +80,12 @@ jobs:
           --checks fixtures/intelligence/service-desk/evaluation/security-checks.json
           --conformance-config fixtures/intelligence/service-desk/evaluation/conformance-config-v0.3.json
           --junit .local/ai04/source-tests.xml --output .local/ai04/source
+      - name: AI07 immutable data audit and DEV engineering controls (no model promotion)
+        run: |
+          python scripts/apps/servicedesk/ai07/audit-datasets.py --output .local/ai07/audit.json
+          python scripts/apps/servicedesk/ai07/prepare-triage-worksheets.py --dataset ssd-v0.2 --split DEV --output .local/ai07/dev-worksheets.json
+          python scripts/apps/servicedesk/ai07/evaluate-triage-candidates.py --mode shadow --split DEV --output .local/ai07/metrics.json
+          python scripts/apps/servicedesk/ai07/verify-triage-acceptance.py --report .local/ai07/metrics.json
       - name: Source knowledge enrichment controls
         run: python scripts/intelligence/knowledge-data.py compare --output .local/ai045/source
       - name: Source grounded assistance foundation evidence

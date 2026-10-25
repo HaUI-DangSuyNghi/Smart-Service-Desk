@@ -10,8 +10,10 @@ import zipfile
 
 def verify_wheel_ownership(archive):
     for name in archive.namelist():
-        if name.startswith('cloud_providers/'):
+        if name.startswith(('cloud_providers/', 'local_classification/')):
             raise ValueError('Vendor integration bundled in generic wheel')
+        if Path(name).suffix.lower() in ('.joblib', '.pkl', '.pickle', '.gguf', '.safetensors', '.onnx'):
+            raise ValueError('Model artifact bundled in generic wheel')
         parts = Path(name).parts
         if ('apps' in parts or 'fixtures' in parts or
                 name.startswith('hdpi/_resources/') and not name.startswith('hdpi/_resources/contracts/') or

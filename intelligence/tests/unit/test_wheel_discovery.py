@@ -43,3 +43,21 @@ def test_wheel_rejects_bundled_application_evidence(tmp_path, path):
         archive.writestr(path, 'synthetic mutation')
     with pytest.raises(ValueError, match='bundled'):
         installer.discover_wheel(tmp_path, '0.3.0')
+
+
+@pytest.mark.parametrize('path', [
+    'local_classification/sidecar_protocol.py',
+    'cloud_providers/vendor.py',
+    'hdpi/classification/model.joblib',
+    'hdpi/classification/weights.gguf',
+    'hdpi/classification/model.safetensors',
+])
+def test_wheel_rejects_classification_integrations_and_weights(tmp_path, path):
+    artifact = tmp_path / 'one.whl'
+    wheel(artifact)
+
+    with zipfile.ZipFile(artifact, 'a') as archive:
+        archive.writestr(path, 'synthetic mutation')
+
+    with pytest.raises(ValueError, match='bundled'):
+        installer.discover_wheel(tmp_path, '0.3.0')

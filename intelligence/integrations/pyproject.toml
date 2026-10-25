@@ -11,4 +11,4 @@ description = "Opt-in deployment adapters for governed synthetic cloud selection
 
 [tool.setuptools.packages.find]
 where = ["."]
-include = ["cloud_providers*"]
+include = ["cloud_providers*", "local_classification*"]
