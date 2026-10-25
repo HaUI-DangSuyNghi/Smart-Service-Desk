@@ -144,9 +144,12 @@ public class CloudRouteCatalog {
                     || isolation.path("production").booleanValue())
                 throw new IllegalArgumentException();
             for (String key : List.of("actors", "resources", "questionDigests", "sourceDigests")) {
+                int maximum = Set.of("questionDigests", "sourceDigests").contains(key) ? 1024 : 256;
+
                 if (!approval.path(key).isArray()
                         || approval.path(key).isEmpty()
-                        || approval.path(key).size() > 256) throw new IllegalArgumentException();
+                        || approval.path(key).size() > maximum)
+                    throw new IllegalArgumentException();
             }
 
             for (String key : List.of("questionDigests", "sourceDigests")) {

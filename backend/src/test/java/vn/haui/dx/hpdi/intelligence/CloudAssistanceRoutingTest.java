@@ -3,6 +3,7 @@ package vn.haui.dx.hpdi.intelligence;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -240,5 +241,46 @@ class CloudAssistanceRoutingTest {
                                 "isolated-synthetic",
                                 json,
                                 tomorrow));
+    }
+
+    @Test
+    void approvedDigestInventorySupportsLargeReviewedScopeWithoutChangingRequestBudgets()
+            throws Exception {
+        writeQuestionInventory(328);
+
+        assertDoesNotThrow(this::reloadCatalog);
+    }
+
+    @Test
+    void oversizedApprovedDigestInventoryRemainsRejected() throws Exception {
+        writeQuestionInventory(1025);
+
+        assertThrows(IntelligenceFailure.class, this::reloadCatalog);
+    }
+
+    private void writeQuestionInventory(int count) throws Exception {
+        var approval = (ObjectNode) catalog.approval.deepCopy();
+        var questions = approval.putArray("questionDigests");
+
+        for (int index = 0; index < count; index++) {
+            questions.add(
+                    CloudRouteCatalog.hash(
+                            ("approved-question-" + index)
+                                    .getBytes(java.nio.charset.StandardCharsets.UTF_8)));
+        }
+
+        Files.write(directory.resolve("approval.json"), json.writeValueAsBytes(approval));
+    }
+
+    private CloudRouteCatalog reloadCatalog() throws Exception {
+        return new CloudRouteCatalog(
+                directory.resolve("catalog.json").toString(),
+                catalog.digest,
+                directory.resolve("approval.json").toString(),
+                CloudRouteCatalog.hash(Files.readAllBytes(directory.resolve("approval.json"))),
+                directory.resolve("isolation.json").toString(),
+                "isolated-synthetic",
+                json,
+                clock);
     }
 }

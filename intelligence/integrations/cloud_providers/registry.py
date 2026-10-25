@@ -14,7 +14,8 @@ def text(value, maximum=200):
 
 
 def checksums(values):
-    require(type(values) is list and 1 <= len(values) <= 256)
+    # Approved inventory size is separate from the unchanged request budgets.
+    require(type(values) is list and 1 <= len(values) <= 1024)
     require(
         all(
             type(item) is str and re.fullmatch(r"[a-f0-9]{64}", item) for item in values
