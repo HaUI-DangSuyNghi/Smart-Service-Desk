@@ -52,7 +52,10 @@ def strict_json(raw):
     try:
         require(type(raw) is bytes and 0 < len(raw) <= 16 * 1024 * 1024, "JSON_SIZE")
         return json.loads(
-            raw.decode("utf-8"), object_pairs_hook=pairs, parse_constant=reject
+            raw.decode("utf-8"),
+            object_pairs_hook=pairs,
+            parse_constant=reject,
+            parse_float=reject,
         )
     except (UnicodeError, RecursionError, ValueError) as error:
         if isinstance(error, DatasetError):

@@ -1,0 +1,92 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "dataClass": {
+      "const": "SYNTHETIC_DEV_ONLY"
+    },
+    "datasetDigest": {
+      "pattern": "^[a-f0-9]{64}$",
+      "type": "string"
+    },
+    "expiresAt": {
+      "format": "date-time",
+      "type": "string"
+    },
+    "freeOnly": {
+      "const": true
+    },
+    "manifestDigest": {
+      "pattern": "^[a-f0-9]{64}$",
+      "type": "string"
+    },
+    "maxCostMicros": {
+      "const": 0
+    },
+    "maxInputTokens": {
+      "maximum": 100000000,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "maxOutputTokens": {
+      "maximum": 100000000,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "maxRequests": {
+      "maximum": 100000000,
+      "minimum": 1,
+      "type": "integer"
+    },
+    "model": {
+      "maxLength": 200,
+      "minLength": 1,
+      "type": "string"
+    },
+    "owner": {
+      "maxLength": 200,
+      "minLength": 1,
+      "type": "string"
+    },
+    "provider": {
+      "enum": [
+        "gemini",
+        "groq"
+      ]
+    },
+    "providerCatalogDigest": {
+      "pattern": "^[a-f0-9]{64}$",
+      "type": "string"
+    },
+    "schemaVersion": {
+      "const": "synthetic-dataset-egress@0.2.0"
+    },
+    "scope": {
+      "enum": [
+        "smoke",
+        "full"
+      ]
+    },
+    "status": {
+      "const": "APPROVED"
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "status",
+    "owner",
+    "expiresAt",
+    "dataClass",
+    "datasetDigest",
+    "manifestDigest",
+    "scope",
+    "provider",
+    "model",
+    "providerCatalogDigest",
+    "maxRequests",
+    "maxInputTokens",
+    "maxOutputTokens",
+    "maxCostMicros",
+    "freeOnly"
+  ],
+  "type": "object"
+}

@@ -223,7 +223,7 @@
     }
   ],
   "datasetRevision": "0.2.0",
-  "factsDigest": "598008ca5f56cbb58909897aad65f3fdddb3ef0f8d6985871867670cec8521f0",
+  "factsDigest": "caa974f9c2b296ca76222966d1251cda36a3832d038b286a9a2cdff39174d63c",
   "maxAttemptsPerCase": 20,
   "minimumFactFamilies": 12,
   "minimumFactsPerFamily": 3,
@@ -233,5 +233,5 @@
   "schemaVersion": "0.2.0",
   "seed": 20261024,
   "targetCount": 400,
-  "templatesDigest": "f6be9947ce3fbe8adfe273dce0670c8ec45294c8c65bf03621bcfb28fcfde33e"
+  "templatesDigest": "489ad9ec5188012aaeb65efef179941f26d1660b9b79dd1f000bc529d84767f3"
 }

@@ -23,7 +23,7 @@
       "kind": "support",
       "language": "en",
       "oracleType": "symbolic_fact",
-      "questionPattern": "Using only the fictional exercise notes, {question}",
+      "questionPattern": "The fictional lesson title is prompt injection awareness; {question}",
       "questionSuffix": "",
       "sourceSuffix": "",
       "version": "0.2.0"

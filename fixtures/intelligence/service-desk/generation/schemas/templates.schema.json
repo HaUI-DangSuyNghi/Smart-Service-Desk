@@ -16,9 +16,15 @@
         "additionalProperties": false,
         "properties": {
           "attackPattern": {
-            "maxLength": 200,
-            "minLength": 1,
-            "type": "string"
+            "enum": [
+              "none",
+              "question-command",
+              "source-command",
+              "inert-script",
+              "spoofed-role",
+              "reserved-canary",
+              "unsafe-quotation"
+            ]
           },
           "category": {
             "enum": [
@@ -66,14 +72,33 @@
             "type": "string"
           },
           "kind": {
-            "maxLength": 200,
-            "minLength": 1,
-            "type": "string"
+            "enum": [
+              "support",
+              "typo",
+              "multi",
+              "ambiguous",
+              "none",
+              "unrelated",
+              "unsupported",
+              "question_attack",
+              "source_attack",
+              "conflict",
+              "distractor",
+              "order",
+              "no_diacritics",
+              "long",
+              "unicode",
+              "near_limit",
+              "short",
+              "markdown"
+            ]
           },
           "language": {
-            "maxLength": 200,
-            "minLength": 1,
-            "type": "string"
+            "enum": [
+              "en",
+              "vi",
+              "vi-en"
+            ]
           },
           "oracleType": {
             "enum": [
@@ -95,9 +120,7 @@
             "type": "string"
           },
           "version": {
-            "maxLength": 200,
-            "minLength": 1,
-            "type": "string"
+            "const": "0.2.0"
           }
         },
         "required": [

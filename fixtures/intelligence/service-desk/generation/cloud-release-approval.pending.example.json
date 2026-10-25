@@ -1,0 +1,18 @@
+{
+  "dataClass": "SYNTHETIC_DEV_ONLY",
+  "datasetDigest": "REQUIRED_DATASET_BYTE_SHA256",
+  "expiresAt": "REQUIRED_UTC_EXPIRY",
+  "freeOnly": true,
+  "manifestDigest": "REQUIRED_MANIFEST_BYTE_SHA256",
+  "maxCostMicros": 0,
+  "maxInputTokens": 600000,
+  "maxOutputTokens": 10000,
+  "maxRequests": 30,
+  "model": "REQUIRED_APPROVED_EXACT_MODEL",
+  "owner": "REQUIRED_OWNER",
+  "provider": "gemini",
+  "providerCatalogDigest": "REQUIRED_PROVIDER_CATALOG_SHA256",
+  "schemaVersion": "synthetic-dataset-egress@0.2.0",
+  "scope": "smoke",
+  "status": "PENDING"
+}
