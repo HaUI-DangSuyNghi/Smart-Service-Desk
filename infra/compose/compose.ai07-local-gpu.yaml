@@ -1,0 +1,12 @@
+services:
+  ai07-ollama:
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+  ai07-classification-bridge:
+    environment:
+      AI07_GPU_REQUIRED: '1'

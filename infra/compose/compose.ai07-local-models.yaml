@@ -1,0 +1,76 @@
+name: ai07-local
+
+services:
+  ai07-ollama:
+    profiles: [ai07-local]
+    image: ollama/ollama:0.40.8@sha256:242721b8a8dbb71c38fdc0a07ed60ca78363f278d33fdf171a48728abf40743a
+    pull_policy: never
+    environment:
+      OLLAMA_HOST: 127.0.0.1:11434
+      OLLAMA_MODELS: /models
+      HOME: /tmp/ollama
+      OLLAMA_NO_CLOUD: '1'
+      OLLAMA_CONTEXT_LENGTH: '2048'
+      OLLAMA_NUM_PARALLEL: '1'
+      OLLAMA_MAX_LOADED_MODELS: '1'
+      OLLAMA_KEEP_ALIVE: '30s'
+      OLLAMA_MAX_QUEUE: '1'
+    volumes:
+      - ai07-ollama-models:/models:ro
+    networks: [ai07-inference-private]
+    read_only: true
+    tmpfs: ["/tmp:rw,noexec,nosuid,size=512m"]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 256
+    logging: {driver: none}
+    healthcheck:
+      test: [CMD, ollama, list]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+      start_period: 5s
+    restart: 'no'
+
+  ai07-classification-bridge:
+    profiles: [ai07-local]
+    image: ${AI07_BRIDGE_IMAGE:?Build and verify the bridge image first}
+    pull_policy: never
+    network_mode: service:ai07-ollama
+    depends_on:
+      ai07-ollama: {condition: service_healthy}
+    environment:
+      AI07_LOCAL_ENABLED: ${AI07_LOCAL_ENABLED:-0}
+      AI07_GPU_REQUIRED: '0'
+      AI07_RUNTIME_CONFIG: /run/config/runtime.json
+      AI07_POLICY_DIRECTORY: /run/policies
+      AI07_MODEL_DIRECTORY: /models
+      AI07_AUTH_TOKEN_FILE: /run/secrets/ai07-token
+    volumes:
+      - ai07-ollama-models:/models:ro
+      - ${AI07_RUNTIME_CONFIG:?Specify the verified runtime manifest}:/run/config/runtime.json:ro
+      - ${AI07_POLICY_DIRECTORY:?Specify the application experiment policies}:/run/policies:ro
+      - ${AI07_AUTH_TOKEN_FILE:?Generate a dedicated bridge secret file}:/run/secrets/ai07-token:ro
+    user: '10001:10001'
+    read_only: true
+    tmpfs: ["/tmp:rw,noexec,nosuid,size=32m"]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 64
+    logging: {driver: none}
+    healthcheck:
+      test: [CMD, python, -m, local_classification.worker, --health]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    restart: 'no'
+
+networks:
+  ai07-inference-private:
+    internal: true
+
+volumes:
+  ai07-ollama-models:
+    external: true
+    name: ${AI07_MODEL_VOLUME:?Provision a dedicated persistent model volume}
