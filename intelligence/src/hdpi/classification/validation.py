@@ -89,3 +89,46 @@ def decode_proposal(raw, request):
         return proposal
     except (ValueError, TypeError, KeyError, RecursionError):
         raise ClassificationError("Classification response rejected") from None
+
+
+def quotes_to_proposal(value, request):
+    """Resolve only unique, unchanged Unicode substrings; never infer missing spans."""
+    require(
+        type(value) is dict and set(value) == {"decision", "classId", "evidenceQuotes"}
+    )
+    quotes = value["evidenceQuotes"]
+    require(type(quotes) is list and len(quotes) <= 4)
+    require(all(type(quote) is str and 0 < len(quote) <= 200 for quote in quotes))
+    require(len(set(quotes)) == len(quotes))
+    spans = []
+
+    for quote in quotes:
+        matches = []
+
+        for field_name, original in request.fields:
+            offset = original.find(quote)
+
+            while offset != -1:
+                matches.append(
+                    InputSpan(
+                        field=field_name,
+                        start=offset,
+                        end=offset + len(quote),
+                        text=quote,
+                    )
+                )
+                require(len(matches) <= 1)
+                offset = original.find(quote, offset + 1)
+
+        require(len(matches) == 1)
+        spans.append(matches[0])
+
+    proposal = ClassificationProposal(
+        contract_version="0.1.0",
+        decision=value["decision"],
+        class_id=value["classId"],
+        spans=tuple(spans),
+    )
+    validate_proposal(proposal, request)
+    require(proposal.decision == "ABSTAIN" or bool(proposal.spans))
+    return proposal
