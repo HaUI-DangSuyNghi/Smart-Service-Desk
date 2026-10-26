@@ -1,5 +1,8 @@
 # AI07 backend handoff
 
+Theo dõi xử lý review mới tại [AI07 v1.10](QUALITY_REVIEW_V1_10.md), gồm facts định
+lượng/thời gian, multi-symptom, rubric risk dự thảo và benchmark tải riêng tư.
+
 Bản bổ sung v1.9: xem [đánh giá phân cấp](HIERARCHICAL_ASSESSMENT.md),
 [quy trình Gold](HIERARCHICAL_GOLD_EVAL.md) và [kiểm chứng](VERIFICATION_V1_9.md).
 Route `assistant/assessment` là hợp đồng mới, không thay thế các luồng bên dưới.

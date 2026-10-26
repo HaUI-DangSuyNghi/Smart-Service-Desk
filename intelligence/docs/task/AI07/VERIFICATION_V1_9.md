@@ -1,5 +1,8 @@
 # Kiểm chứng AI07 v1.9 — phân cấp và đánh giá vấn đề
 
+Đây là receipt lịch sử của v1.9. Thay đổi sau review và số đo mới được ghi riêng
+tại [AI07 v1.10](QUALITY_REVIEW_V1_10.md); không dùng hash/latency cũ để ký bộ policy mới.
+
 Ngày chạy local: **26/10/2026**, Windows và Docker Linux, Java 17/Python 3.12.7.
 Nhánh: `feature/ai07-hierarchical-assessment`. Không push, merge hoặc phát hành.
 

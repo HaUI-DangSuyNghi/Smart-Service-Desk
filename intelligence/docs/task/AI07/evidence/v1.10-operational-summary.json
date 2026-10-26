@@ -1,0 +1,194 @@
+{
+  "sourceFingerprint": "c21fa22fd46904cf1a891c90096be277c5ba877b2964d9d99c57d6435801a886",
+  "runId": "400088ea662f4ea6aff612516f4dfbe7",
+  "builderImage": "sha256:98e7e3df9a29b78014d646bef634a3eaac6e438835d7ce2c28a81ca1647c4118",
+  "modelDigest": "a40d655f95f8ed6b6dfa89262b9bc1c99c014233e8ca7b23fe29c4f4dee9576d",
+  "modelImage": "sha256:7ad420520547ab2a345bfdc355db709ef4513ac7480fac8faece1c966e3cce96",
+  "productionDecision": "NO_GO",
+  "coldCycles": [
+    {
+      "purpose": "OWNED_SYNTHETIC_ASSESSMENT_LOAD_NOT_GOLD",
+      "scope": "MockMvc + PostgreSQL + private HTTP + real Qwen; no gateway/OIDC latency",
+      "firstInferenceMs": 1071.708051,
+      "providerReadinessObservedMs": "71934.4824",
+      "provenance": {
+        "modelDigest": "a40d655f95f8ed6b6dfa89262b9bc1c99c014233e8ca7b23fe29c4f4dee9576d",
+        "modelPolicyDigest": "ac07759e7e3cfdcddd5e1259fea78564b270aa46e8a680dc9d0df5ce7b661753",
+        "taxonomyVersion": "servicedesk-taxonomy@0.1.0",
+        "taxonomyDigest": "1adcd04d37be5b733a4881cddfcd56af3c5d3a3b86f5881942bda3eb6eba4f76",
+        "assessmentPolicyVersion": "servicedesk-assessment@0.1.1",
+        "assessmentPolicyDigest": "ed6b1ebfa821a8f417e9e2d3278057651b485ca869458aacef9e067a6d61a958",
+        "priorityPolicyDigest": "1b782b7c9388b145f1a8ad1c713eda8e42aea39bc1baadfde2b7845aff99a275",
+        "policyApprovalStatus": "DRAFT",
+        "contractVersion": "ticket-intelligence-assessment@0.2.0"
+      },
+      "sourceFingerprint": "c21fa22fd46904cf1a891c90096be277c5ba877b2964d9d99c57d6435801a886",
+      "phases": [
+        {
+          "concurrency": 1,
+          "attempts": 100,
+          "accepted": 100,
+          "degradedOrRejectedRate": 0.0,
+          "elapsedSeconds": 45.243412462,
+          "acceptedPerSecond": 2.210266524082155,
+          "allAttemptLatency": {
+            "p50Ms": 451.346399,
+            "p95Ms": 500.800603,
+            "p99Ms": 524.689107
+          },
+          "acceptedLatency": {
+            "p50Ms": 451.346399,
+            "p95Ms": 500.800603,
+            "p99Ms": 524.689107
+          },
+          "outcomes": {
+            "200:REVIEW_REQUIRED": 100
+          }
+        },
+        {
+          "concurrency": 2,
+          "attempts": 100,
+          "accepted": 50,
+          "degradedOrRejectedRate": 0.5,
+          "elapsedSeconds": 21.815892746,
+          "acceptedPerSecond": 2.2919071239552014,
+          "allAttemptLatency": {
+            "p50Ms": 10.130959,
+            "p95Ms": 475.800429,
+            "p99Ms": 483.857854
+          },
+          "acceptedLatency": {
+            "p50Ms": 431.059669,
+            "p95Ms": 482.25436,
+            "p99Ms": 489.041199
+          },
+          "outcomes": {
+            "200:DEGRADED:INTELLIGENCE_UNAVAILABLE": 50,
+            "200:REVIEW_REQUIRED": 50
+          }
+        },
+        {
+          "concurrency": 4,
+          "attempts": 100,
+          "accepted": 25,
+          "degradedOrRejectedRate": 0.75,
+          "elapsedSeconds": 12.067312285,
+          "acceptedPerSecond": 2.0717123589380946,
+          "allAttemptLatency": {
+            "p50Ms": 5.754411,
+            "p95Ms": 505.690159,
+            "p99Ms": 539.164336
+          },
+          "acceptedLatency": {
+            "p50Ms": 470.864895,
+            "p95Ms": 539.164336,
+            "p99Ms": 616.817649
+          },
+          "outcomes": {
+            "200:DEGRADED:INTELLIGENCE_UNAVAILABLE": 75,
+            "200:REVIEW_REQUIRED": 25
+          }
+        }
+      ],
+      "businessWrites": 0,
+      "sloDecision": "NOT_EVALUATED_NO_APPROVED_SLO",
+      "productionDecision": "NO_GO",
+      "runId": "400088ea662f4ea6aff612516f4dfbe7",
+      "coldCycle": "1"
+    },
+    {
+      "purpose": "OWNED_SYNTHETIC_ASSESSMENT_LOAD_NOT_GOLD",
+      "scope": "MockMvc + PostgreSQL + private HTTP + real Qwen; no gateway/OIDC latency",
+      "firstInferenceMs": 1021.263284,
+      "providerReadinessObservedMs": "71351.462",
+      "provenance": {
+        "modelDigest": "a40d655f95f8ed6b6dfa89262b9bc1c99c014233e8ca7b23fe29c4f4dee9576d",
+        "modelPolicyDigest": "ac07759e7e3cfdcddd5e1259fea78564b270aa46e8a680dc9d0df5ce7b661753",
+        "taxonomyVersion": "servicedesk-taxonomy@0.1.0",
+        "taxonomyDigest": "1adcd04d37be5b733a4881cddfcd56af3c5d3a3b86f5881942bda3eb6eba4f76",
+        "assessmentPolicyVersion": "servicedesk-assessment@0.1.1",
+        "assessmentPolicyDigest": "ed6b1ebfa821a8f417e9e2d3278057651b485ca869458aacef9e067a6d61a958",
+        "priorityPolicyDigest": "1b782b7c9388b145f1a8ad1c713eda8e42aea39bc1baadfde2b7845aff99a275",
+        "policyApprovalStatus": "DRAFT",
+        "contractVersion": "ticket-intelligence-assessment@0.2.0"
+      },
+      "sourceFingerprint": "c21fa22fd46904cf1a891c90096be277c5ba877b2964d9d99c57d6435801a886",
+      "phases": [
+        {
+          "concurrency": 1,
+          "attempts": 100,
+          "accepted": 100,
+          "degradedOrRejectedRate": 0.0,
+          "elapsedSeconds": 44.236309994,
+          "acceptedPerSecond": 2.2605863828507284,
+          "allAttemptLatency": {
+            "p50Ms": 435.541568,
+            "p95Ms": 487.897163,
+            "p99Ms": 518.918869
+          },
+          "acceptedLatency": {
+            "p50Ms": 435.541568,
+            "p95Ms": 487.897163,
+            "p99Ms": 518.918869
+          },
+          "outcomes": {
+            "200:REVIEW_REQUIRED": 100
+          }
+        },
+        {
+          "concurrency": 2,
+          "attempts": 100,
+          "accepted": 50,
+          "degradedOrRejectedRate": 0.5,
+          "elapsedSeconds": 21.873303125,
+          "acceptedPerSecond": 2.285891605591691,
+          "allAttemptLatency": {
+            "p50Ms": 12.69281,
+            "p95Ms": 474.628731,
+            "p99Ms": 500.509456
+          },
+          "acceptedLatency": {
+            "p50Ms": 433.194128,
+            "p95Ms": 482.835649,
+            "p99Ms": 504.012807
+          },
+          "outcomes": {
+            "200:DEGRADED:INTELLIGENCE_UNAVAILABLE": 50,
+            "200:REVIEW_REQUIRED": 50
+          }
+        },
+        {
+          "concurrency": 4,
+          "attempts": 100,
+          "accepted": 25,
+          "degradedOrRejectedRate": 0.75,
+          "elapsedSeconds": 11.323035715,
+          "acceptedPerSecond": 2.2078884699517176,
+          "allAttemptLatency": {
+            "p50Ms": 4.96985,
+            "p95Ms": 476.348805,
+            "p99Ms": 498.963759
+          },
+          "acceptedLatency": {
+            "p50Ms": 459.033674,
+            "p95Ms": 498.963759,
+            "p99Ms": 499.469356
+          },
+          "outcomes": {
+            "200:DEGRADED:INTELLIGENCE_UNAVAILABLE": 75,
+            "200:REVIEW_REQUIRED": 25
+          }
+        }
+      ],
+      "businessWrites": 0,
+      "sloDecision": "NOT_EVALUATED_NO_APPROVED_SLO",
+      "productionDecision": "NO_GO",
+      "runId": "400088ea662f4ea6aff612516f4dfbe7",
+      "coldCycle": "2"
+    }
+  ],
+  "measuredAt": "2026-10-26T17:05:00.3937211Z",
+  "sloDecision": "NOT_EVALUATED_NO_APPROVED_SLO",
+  "samplesPerPhase": 100,
+  "schemaVersion": "ai07-assessment-load@0.1.0"
+}
