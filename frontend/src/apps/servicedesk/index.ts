@@ -12,11 +12,17 @@ export const registerServiceDesk = (registry: AppRegistry) => {
     id: "servicedesk",
     routes: [
       { path: "servicedesk/tickets", component: TicketListPage },
+      // Không có workspace trong đường dẫn: dùng workspace đang chọn (link từ inbox, danh sách)
+      { path: "servicedesk/tickets/:ticketId", component: TicketDetailPage },
       { path: "servicedesk/workspaces/:workspace/tickets/:ticketId", component: TicketDetailPage },
     ],
     menu: [
       { label: "Service Desk", path: "/servicedesk/tickets", icon: IconTicket, tone: "orange" },
     ],
+    // businessKey của quy trình service-desk là id ticket
+    processLinks: {
+      "service-desk": (businessKey) => `/servicedesk/tickets/${encodeURIComponent(businessKey)}`,
+    },
     // Thống kê ticket hiện trên dashboard chung của điều phối viên
     dashboardWidgets: [
       { id: "servicedesk-tickets", title: "Service Desk – ticket", component: TicketStatsWidget },
