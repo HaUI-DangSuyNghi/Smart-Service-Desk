@@ -16,6 +16,7 @@ from .generation.deterministic import CitationBoundTemplateProvider
 from .generation.errors import GenerationConfigurationError
 from .generation.policy import GenerationPolicy
 from .http_service import PrivateServer, reject_constant, unique_object
+from .http_rejection import finish_rejection
 from .services.assistance_runtime import AssistanceRuntime
 
 
@@ -80,6 +81,7 @@ def make_server(address, *, service_token, runtime, request_timeout=15):
 
                 if self.command != "HEAD":
                     self.wfile.write(body)
+                finish_rejection(self, status)
             except OSError:
                 pass
 
@@ -121,6 +123,7 @@ def make_server(address, *, service_token, runtime, request_timeout=15):
 
             try:
                 raw = self.rfile.read(length)
+                self._received_body = len(raw)
 
                 if len(raw) != length:
                     raise ValueError("Truncated body")
