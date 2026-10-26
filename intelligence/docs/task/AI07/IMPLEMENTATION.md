@@ -1,5 +1,9 @@
 # AI07 backend handoff
 
+Bản bổ sung v1.9: xem [đánh giá phân cấp](HIERARCHICAL_ASSESSMENT.md),
+[quy trình Gold](HIERARCHICAL_GOLD_EVAL.md) và [kiểm chứng](VERIFICATION_V1_9.md).
+Route `assistant/assessment` là hợp đồng mới, không thay thế các luồng bên dưới.
+
 The current v1.6 implementation adds the model-primary, rule-guarded category
 flow and private LabOps v4 research pipeline. Read the
 [closure report](CLOSURE_REPORT.md) and

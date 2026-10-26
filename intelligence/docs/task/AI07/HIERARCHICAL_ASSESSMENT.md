@@ -40,6 +40,12 @@ Hash bundle được tính từ UTF-8 của chuỗi
 Byte JSON được ghim LF để hash ổn định trên Windows/Linux. API công bố cả hash
 từng artifact; kiểm tra lại byte trước khi trả kết quả.
 
+In hash để bên cấp grant đối chiếu, không tạo hoặc ký grant:
+
+```powershell
+python scripts/apps/servicedesk/ai07/assessment-policy-identity.py
+```
+
 Cấu hình mặc định tắt:
 
 ```properties
@@ -59,6 +65,10 @@ SHADOW không xuất nhãn chính/con, assessment, attributes, evidence hay câu
 suy ra từ model. DISABLED và PROMOTED từ chối suy luận. Timeout/invalid/unavailable
 trong ASSISTED trả DEGRADED và các đề xuất null, không fallback sang classifier cũ.
 Một lần suy luận có timeout transport 4 giây; toàn luồng có hạn 5 giây, không retry.
+
+Kiểm tra thời gian trước/sau composition và trước khi công bố; composition có
+ngân sách một giây. Kết quả quá hạn bị từ chối. Kiểm tra này không hủy một truy
+vấn JDBC đang chạy; timeout kết nối/query của DB cần được vận hành quản lý riêng.
 
 Phân quyền ticket/workspace trước khi suy luận; kiểm tra actor, snapshot và grant
 sau khi dựng toàn bộ kết quả. Không giữ transaction DB qua lời gọi model.

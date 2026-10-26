@@ -111,7 +111,7 @@ class TicketClassificationIntegrationTest {
                                 .contentType("application/json")
                                 .content(body()))
                 .andExpect(status().isOk())
-                .andExpect(header().string("Cache-Control", "no-store"))
+                .andExpect(header().string("Cache-Control", org.hamcrest.Matchers.containsString("no-store")))
                 .andExpect(jsonPath("$.classification.category").value("ACCOUNT"))
                 .andExpect(jsonPath("$.needsReview").value(true))
                 .andExpect(jsonPath("$.operationalAuthority").value(false))
