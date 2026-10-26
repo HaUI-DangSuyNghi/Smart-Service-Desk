@@ -1,0 +1,11 @@
+{
+  "repository": "unsloth/Qwen3.5-0.8B",
+  "revision": "23c69c53358a07516b5827588b3fdb12ae78fd65",
+  "licenseFile": "LICENSE",
+  "licenseSha256": "bbedc3fda3305820b977265f01b8619d87570a6739de3a5582c3464840f1e57a",
+  "source": "https://huggingface.co/unsloth/Qwen3.5-0.8B/blob/23c69c53358a07516b5827588b3fdb12ae78fd65/LICENSE",
+  "declaredLicense": "Apache-2.0",
+  "scope": "BASE_MODEL_ONLY",
+  "adapterLicense": "NOT_DECLARED_IN_SUPPLIED_MODEL_CARD",
+  "datasetRights": "PENDING_OWNER_CONFIRMATION"
+}

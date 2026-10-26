@@ -1,0 +1,19 @@
+{
+  "schemaVersion": "ai07-qwen-kaggle-artifact@0.1.0",
+  "baseRepository": "unsloth/Qwen3.5-0.8B",
+  "files": {
+    "adapter/README.md": "bb95b836c972b77f95e40bf8bfa7cb5eea0dd31ae724705de895ede85e525df6",
+    "adapter/adapter_config.json": "143d1c01084dd6ac04e60078b34d11295cac4b82e4b97dac2aeb96855c25f863",
+    "adapter/adapter_model.safetensors": "895b4732e67b8a03fb7ccc2121f6ac87431af0530caf04129a83d492ec5f0c59",
+    "adapter/chat_template.jinja": "ea210e5b4997b7b1d3af5ee3ad34e7677ffe38df7469e8d88089789b5a27fae5",
+    "adapter/processor_config.json": "3814737f2d4bfdd153a82364b3850f1be5dbc6f074a55c8d5fbf4d40127c3e87",
+    "adapter/tokenizer.json": "06b9509352d2af50381ab2247e083b80d32d5c0aba91c272ca9ff729b6a0e523",
+    "adapter/tokenizer_config.json": "51eea912b782f08df350bde676d84c75c556758619e442fa2e5783d551fbc215"
+  },
+  "trainingManifestSha256": "dd961ac2774900059afb5875a2e11112bbaef7571774734c257e7fc23849bbd9",
+  "trainingSourceManifestSha256": "257feb21ac5e6e6f9c4cc243b5bae7163462c2ac2b6d487c23cf2a10e827abcf",
+  "trainingDevReferenceSha256": "b7a3e756c8f835c2f93705c8c958f767b9ce22085c9abc7fe6bff274462385fa",
+  "predictionsSha256": "ce108ba238d522dcd3e7972d7af2a0ff081d392b8352199b0767313ea24d15ed",
+  "trainingBaseRevision": "UNRECORDED",
+  "release": "NO_GO"
+}

@@ -28,11 +28,22 @@ def main():
 
         if any(
             not name.startswith(
-                ("cloud_providers/", "smart_service_cloud_integration-")
+                (
+                    "cloud_providers/",
+                    "local_classification/",
+                    "smart_service_cloud_integration-",
+                )
             )
             for name in names
         ):
             raise ValueError("Unexpected cloud wheel ownership")
+
+        if any(
+            name.startswith(("cloud_providers/", "local_classification/"))
+            and not name.endswith(".py")
+            for name in names
+        ):
+            raise ValueError("Integration wheels must contain code only")
 
         metadata_names = [
             name for name in names if name.endswith(".dist-info/METADATA")
@@ -62,7 +73,7 @@ def main():
         check=True,
     )
 
-    result = subprocess.run(
+    subprocess.run(
         [
             sys.executable,
             "-I",
