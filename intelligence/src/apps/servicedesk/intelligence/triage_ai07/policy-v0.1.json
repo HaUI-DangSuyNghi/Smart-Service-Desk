@@ -1,0 +1,16 @@
+{
+  "contractVersion": "0.1.0",
+  "decision": "RULE_PRIMARY_CPU_ML_SHADOW_GEMMA_SHADOW",
+  "authoritativeProfile": "service-desk@0.3.0",
+  "allowedClasses": ["NETWORK", "ACCOUNT", "SOFTWARE", "HARDWARE", "OTHER"],
+  "mode": "rules_only",
+  "candidatesEnabled": false,
+  "candidateRole": "SHADOW",
+  "risk": "NOT_ASSESSED",
+  "modelPromotion": "BLOCKED_PENDING_REVIEW",
+  "semanticSynthesis": "DISABLED",
+  "labopsArtifact": "NO_DIRECT_PORT",
+  "labopsSourceCommit": "247cd167b6c7890a3aa89700334e077a9be2fad8",
+  "labelRights": "PENDING",
+  "reviewedHoldout": "PENDING"
+}

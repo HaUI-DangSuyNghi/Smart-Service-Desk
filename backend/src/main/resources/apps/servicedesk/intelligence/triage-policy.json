@@ -1,0 +1,83 @@
+{
+  "policyVersion": "ticket-assistant@0.1.0",
+  "sourceProfile": "service-desk@0.3.0",
+  "groups": {
+    "NETWORK": "IT-NETWORK",
+    "ACCOUNT": "IT-ACCOUNT",
+    "SOFTWARE": "IT-SOFTWARE",
+    "HARDWARE": "IT-HARDWARE",
+    "OTHER": "GENERAL-SUPPORT"
+  },
+  "matrix": {
+    "I1": {
+      "U1": "LOW",
+      "U2": "LOW",
+      "U3": "MEDIUM",
+      "U4": "HIGH"
+    },
+    "I2": {
+      "U1": "LOW",
+      "U2": "MEDIUM",
+      "U3": "HIGH",
+      "U4": "HIGH"
+    },
+    "I3": {
+      "U1": "MEDIUM",
+      "U2": "HIGH",
+      "U3": "HIGH",
+      "U4": "CRITICAL"
+    },
+    "I4": {
+      "U1": "HIGH",
+      "U2": "HIGH",
+      "U3": "CRITICAL",
+      "U4": "CRITICAL"
+    }
+  },
+  "categoryRules": {
+    "NETWORK": "CAT-NET-001",
+    "ACCOUNT": "CAT-ACC-001",
+    "SOFTWARE": "CAT-SW-001",
+    "HARDWARE": "CAT-HW-001",
+    "OTHER": "CAT-OTHER-001"
+  },
+  "impactRules": {
+    "I1": "IMPACT-USER-001",
+    "I2": "IMPACT-GROUP-001",
+    "I3": "IMPACT-ROOM-001",
+    "I4": "IMPACT-WIDE-001"
+  },
+  "urgencyRules": {
+    "U1": "URGENCY-WORKAROUND-001",
+    "U2": "URGENCY-DEFERRED-001",
+    "U3": "URGENCY-BLOCKING-001",
+    "U4": "URGENCY-CRITICAL-001"
+  },
+  "priorityRules": {
+    "LOW": "PRI-001",
+    "MEDIUM": "PRI-002",
+    "HIGH": "PRI-003",
+    "CRITICAL": "PRI-004"
+  },
+  "knownRules": {
+    "CAT-NET-001": true,
+    "CAT-ACC-001": true,
+    "CAT-SW-001": true,
+    "CAT-HW-001": true,
+    "CAT-OTHER-001": true,
+    "CONFLICT-ROOT-001": true,
+    "REVIEW-INSUFFICIENT-001": true,
+    "IMPACT-USER-001": true,
+    "IMPACT-GROUP-001": true,
+    "IMPACT-ROOM-001": true,
+    "IMPACT-WIDE-001": true,
+    "URGENCY-WORKAROUND-001": true,
+    "URGENCY-DEFERRED-001": true,
+    "URGENCY-BLOCKING-001": true,
+    "URGENCY-CRITICAL-001": true,
+    "PRI-001": true,
+    "PRI-002": true,
+    "PRI-003": true,
+    "PRI-004": true
+  }
+}

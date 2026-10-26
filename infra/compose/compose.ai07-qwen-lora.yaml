@@ -1,0 +1,62 @@
+name: ai07-qwen
+
+services:
+  ai07-qwen:
+    profiles: [ai07-qwen]
+    image: ${AI07_QWEN_IMAGE:?Specify the inspected code-only image digest}
+    pull_policy: never
+    entrypoint: [python, -m, local_classification.qwen_lora_server]
+    command:
+      - --bundle
+      - /run/model
+      - --model-digest
+      - ${AI07_QWEN_MODEL_DIGEST:?Freeze and verify the serving bundle first}
+      - --runtime-identity
+      - ${AI07_QWEN_IMAGE:?Specify the inspected code-only image digest}
+      - --token-file
+      - /run/secrets/classification-token
+      - --bind
+      - 0.0.0.0
+    environment:
+      AI07_QWEN_ENABLED: ${AI07_QWEN_ENABLED:-0}
+      AI07_QWEN_TOKEN_FILE: /run/secrets/classification-token
+      HF_HUB_OFFLINE: '1'
+      TRANSFORMERS_OFFLINE: '1'
+      HF_HUB_DISABLE_TELEMETRY: '1'
+      DO_NOT_TRACK: '1'
+      PYTHONPATH: /run/apps
+      HOME: /tmp/qwen
+    volumes:
+      - ${AI07_QWEN_BUNDLE:?Mount a verified private serving bundle}:/run/model:ro
+      - ${AI07_QWEN_APP_ROOT:?Mount the application policy package}:/run/apps:ro
+      - ${AI07_QWEN_TOKEN_FILE:?Use a dedicated secret file}:/run/secrets/classification-token:ro
+    networks: [ai07-qwen-private]
+    # No host port. Attach the authorized backend to this isolated network explicitly.
+    user: '10001:10001'
+    read_only: true
+    tmpfs: ['/tmp:rw,noexec,nosuid,size=256m']
+    shm_size: 256m
+    mem_limit: 6g
+    cpus: 4
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 96
+    logging: {driver: none}
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    healthcheck:
+      test: [CMD, python, -m, local_classification.qwen_lora_health]
+      interval: 15s
+      timeout: 3s
+      retries: 5
+      start_period: 180s
+    restart: 'no'
+
+networks:
+  ai07-qwen-private:
+    internal: true

@@ -3,7 +3,7 @@ on:
   pull_request:
     branches: [develop]
   push:
-    branches: [develop]
+    branches: [develop, feature/ai07-ticket-intelligence, feature/ai07-qwen-lora-provider]
   workflow_dispatch:
 permissions:
   contents: read
@@ -93,7 +93,7 @@ jobs:
         run: mvn -B -f backend/pom.xml -Pcore-only clean verify
       - name: Second application without Service Desk
         if: matrix.profile == 'second-domain'
-        run: mvn -B -f backend/pom.xml -Psecond-domain -Dtest=RoomRequestIntegrationTest,TierBoundaryTest,CoreKnowledgeCatalogTest,CoreProcessCapabilitiesTest,WorkspaceActivityJournalTest,TrustedIntelligenceCapabilityTest clean verify
+        run: mvn -B -f backend/pom.xml -Psecond-domain -Dtest=RoomRequestIntegrationTest,TierBoundaryTest,CoreKnowledgeCatalogTest,CoreProcessCapabilitiesTest,WorkspaceActivityJournalTest,TrustedIntelligenceCapabilityTest,HttpClassificationTransportTest clean verify
       - name: Reject skipped or failed proof tests
         run: |
           python3 - <<'PY'

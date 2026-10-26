@@ -71,6 +71,15 @@ def test_authentication_route_and_method_precede_runtime(endpoint):
     endpoint[1].assist.assert_not_called()
 
 
+def test_early_rejections_with_bodies_reliably_deliver_status_without_inference(
+    endpoint,
+):
+    for _ in range(10):
+        assert send(endpoint, b"untrusted body", method="GET")[0] == 405
+        assert send(endpoint, b"untrusted body", token="wrong")[0] == 401
+    endpoint[1].assist.assert_not_called()
+
+
 def test_safe_response_headers_and_fixed_contract_failure(endpoint):
     status, headers, body = send(endpoint)
     assert status == 200

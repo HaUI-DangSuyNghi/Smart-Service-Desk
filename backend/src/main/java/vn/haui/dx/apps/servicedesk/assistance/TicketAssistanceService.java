@@ -105,6 +105,11 @@ public class TicketAssistanceService {
         return result;
     }
 
+    /** Configuration availability only; callers must still authorize ticket and sources. */
+    public boolean availableFor(String workspace) {
+        return settings.enabled() && settings.catalogs().containsKey(workspace);
+    }
+
     private static String digest(String value) {
         try {
             return java.util.HexFormat.of()
