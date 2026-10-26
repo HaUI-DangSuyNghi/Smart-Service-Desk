@@ -6,6 +6,7 @@ import json
 import os
 from pathlib import Path
 import sys
+from time import perf_counter
 
 from hdpi.classification.protocols import require
 from local_classification.ollama_transport import strict_json
@@ -59,6 +60,8 @@ def main():
     parser.add_argument("--health", action="store_true")
     parser.add_argument("--identity", action="store_true")
     parser.add_argument("--candidate")
+    parser.add_argument("--dataset-digest")
+    parser.add_argument("--stream", action="store_true")
     args = parser.parse_args()
 
     if args.health:
@@ -70,6 +73,52 @@ def main():
             result = identity
         else:
             require(args.candidate in identity["candidates"])
+            engineering = identity["mode"] == "ENGINEERING_LAB_ONLY"
+            require(
+                not engineering
+                or args.dataset_digest == identity["engineeringDatasetDigest"]
+            )
+            require(engineering or args.dataset_digest is None)
+            if args.stream:
+                for raw in iter(lambda: sys.stdin.buffer.readline(16385), b""):
+                    require(len(raw) <= 16384)
+                    started = perf_counter()
+                    try:
+                        fields = strict_json(raw, 16384)
+                        result = exchange(
+                            "/v1/observe",
+                            {
+                                "candidateId": args.candidate,
+                                "runtimeDigest": identity["runtimeDigest"],
+                                "policyDigest": identity["candidates"][args.candidate][
+                                    "policyDigest"
+                                ],
+                                "dataScope": "ENGINEERING_SILVER"
+                                if engineering
+                                else "SYNTHETIC_DEV_ONLY",
+                                **(
+                                    {"datasetDigest": args.dataset_digest}
+                                    if engineering
+                                    else {}
+                                ),
+                                "input": fields,
+                            },
+                        )
+                        frame = {"result": result}
+                    except WorkerFailure as failure:
+                        frame = {
+                            "failure": {
+                                "status": failure.status,
+                                "reasonCode": failure.reason_code,
+                                "diagnostics": failure.telemetry,
+                            }
+                        }
+                    frame["wallLatencyMs"] = round((perf_counter() - started) * 1000, 3)
+                    print(
+                        json.dumps(frame, ensure_ascii=True, allow_nan=False),
+                        flush=True,
+                    )
+                return
             fields = strict_json(sys.stdin.buffer.read(16385), 16384)
             result = exchange(
                 "/v1/observe",
@@ -79,7 +128,10 @@ def main():
                     "policyDigest": identity["candidates"][args.candidate][
                         "policyDigest"
                     ],
-                    "dataScope": "SYNTHETIC_DEV_ONLY",
+                    "dataScope": "ENGINEERING_SILVER"
+                    if engineering
+                    else "SYNTHETIC_DEV_ONLY",
+                    **({"datasetDigest": args.dataset_digest} if engineering else {}),
                     "input": fields,
                 },
             )

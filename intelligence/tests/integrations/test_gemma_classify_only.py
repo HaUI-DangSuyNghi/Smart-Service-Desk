@@ -39,6 +39,35 @@ def test_diagnostic_telemetry_drops_content_nonfinite_numbers_and_unknown_values
     assert safe_reason("PRIVATE_REASON") == "SCHEMA_MISMATCH"
 
 
+def test_utf8_lane_preserves_natural_unicode_and_frozen_g1_decoder(
+    classification_request,
+):
+    from local_classification.adapters import gemma_classify_only_utf8
+
+    policy = {
+        "instructions": "Trusted instructions",
+        "abstainId": "UNKNOWN",
+        "outputSchema": gemma_classify_only.output_schema(
+            classification_request.allowed_classes
+        ),
+    }
+    old = gemma_classify_only.request_payload(
+        classification_request, model="pinned:chat", policy=policy
+    )
+    new = gemma_classify_only_utf8.request_payload(
+        classification_request, model="pinned:chat", policy=policy
+    )
+    assert "\\u00e9" in old["messages"][1]["content"]
+    assert "café" in new["messages"][1]["content"]
+    assert json.loads(old["messages"][1]["content"]) == json.loads(
+        new["messages"][1]["content"]
+    )
+    assert old["format"] == new["format"] and old["options"] == new["options"]
+    assert (
+        gemma_classify_only_utf8.decode_response is gemma_classify_only.decode_response
+    )
+
+
 @pytest.fixture
 def classification_request():
     return ClassificationRequest(

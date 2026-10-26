@@ -183,7 +183,7 @@ def verify_report(report, runtime_path):
                 and item["classId"] is not None
             ):
                 raise ValueError("Invalid candidate class receipt")
-            if item["candidate"] == "gemma3-g1" and (
+            if item["candidate"] in ("gemma3-g1", "gemma3-g1-utf8") and (
                 item.get("evidenceStatus") != "UNVERIFIED_BY_MODEL"
                 or item.get("scoreSemantics") != "NOT_AVAILABLE"
                 or item.get("spanCount") != 0

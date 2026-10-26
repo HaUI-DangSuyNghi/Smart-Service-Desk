@@ -13,3 +13,5 @@ intelligence/build/
 intelligence/dist/
 intelligence/integrations/build/
 intelligence/integrations/dist/
+# Private user-supplied research data; only its content-free profile is versioned.
+intelligence/src/apps/servicedesk/dataset/
