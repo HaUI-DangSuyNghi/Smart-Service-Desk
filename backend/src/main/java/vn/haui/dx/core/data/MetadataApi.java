@@ -15,6 +15,7 @@ import vn.haui.dx.core.data.api.MetadataQuery;
 import vn.haui.dx.core.data.api.MetadataRecord;
 import vn.haui.dx.core.data.api.MetadataService;
 import vn.haui.dx.core.data.api.NewMetadata;
+import vn.haui.dx.core.identity.api.RequirePermission;
 
 @RestController
 @RequestMapping("/api/core/v1/workspaces/{workspace}/metadata")
@@ -43,17 +44,20 @@ public class MetadataApi {
     }
 
     @PostMapping
+    @RequirePermission("document:upload")
     @ResponseStatus(org.springframework.http.HttpStatus.CREATED)
     public View create(@PathVariable String workspace, @RequestBody NewMetadata input) {
         return View.of(metadata.create(workspace, input));
     }
 
     @GetMapping("/{id}")
+    @RequirePermission("document:view")
     public View get(@PathVariable String workspace, @PathVariable UUID id) {
         return View.of(metadata.get(workspace, id));
     }
 
     @GetMapping
+    @RequirePermission("document:view")
     public Page<View> search(@PathVariable String workspace, @RequestParam(required = false) String q,
             @RequestParam(required = false) String source, @RequestParam(defaultValue = "createdAt,desc") String sort,
             @RequestParam(required = false) Integer page, @RequestParam(required = false) Integer size) {

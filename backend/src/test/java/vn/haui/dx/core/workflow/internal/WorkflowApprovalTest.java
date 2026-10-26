@@ -83,8 +83,26 @@ class WorkflowApprovalTest {
 
     private FlowableWorkflowService service(User user) { return service(user, audit(user)); }
     private FlowableWorkflowService service(User user, AuditService audit) {
-        return new FlowableWorkflowService(engine, jdbc, user, audit, registry, manager);
+        return new FlowableWorkflowService(engine, jdbc, user, audit, registry, manager,
+            vn.haui.dx.core.identity.PermissionTestDirectory.allowed());
     }
+    @Test void revokedTaskPermissionBlocksAlreadyAssignedCompletionWithoutChangingEngineOrAudit() {
+        var process = start("document-review");
+        var review = task(process);
+        service(reviewer).claim("lab-a", review.id());
+        var directory = vn.haui.dx.core.identity.PermissionTestDirectory.allowed();
+        var assigned = new FlowableWorkflowService(engine, jdbc, reviewer, audit(reviewer), registry, manager, directory);
+        when(directory.rolePermissions("lab-a")).thenReturn(Map.of());
+        long audits = jdbc.queryForObject("select count(*) from test_audit", Long.class);
+        denied(ErrorCode.FORBIDDEN, () -> assigned.complete("lab-a", review.id(), review.key(), "approved", null));
+        assertNotNull(engine.getTaskService().createTaskQuery().taskId(review.id()).singleResult());
+        assertEquals(audits, jdbc.queryForObject("select count(*) from test_audit", Long.class));
+        when(directory.rolePermissions("lab-a")).thenThrow(CoreException.unavailable("down"));
+        denied(ErrorCode.SERVICE_UNAVAILABLE, () -> assigned.complete("lab-a", review.id(), review.key(), "approved", null));
+        assertNotNull(engine.getTaskService().createTaskQuery().taskId(review.id()).singleResult());
+        service(reviewer).complete("lab-a", review.id(), review.key(), "approved", null);
+    }
+
     private ProcessRef start(String key) { return service(requester).start("lab-a", key, UUID.randomUUID().toString(), Map.of("title", "Example")); }
     private TaskView task(ProcessRef process) { return service(requester).tasksOf("lab-a", process.processInstanceId()).get(0); }
     private void denied(ErrorCode code, org.junit.jupiter.api.function.Executable action) {
@@ -317,14 +335,16 @@ class WorkflowApprovalTest {
         String processId = null;
         try {
             var before = new ProcessRegistry(List.of(registration), repository);
-            var oldService = new FlowableWorkflowService(engine, jdbc, requester, audit(requester), before, manager);
+            var oldService = new FlowableWorkflowService(engine, jdbc, requester, audit(requester), before, manager,
+                vn.haui.dx.core.identity.PermissionTestDirectory.allowed());
             var process = oldService.start("lab-a", "document-review", UUID.randomUUID().toString(), Map.of());
             processId = process.processInstanceId();
             new ContentAwareDeploymentStrategy().deployResources("ownership-migration-probe", moved, engine);
             var restarted = new ProcessRegistry(List.of(registration), repository);
             assertEquals(before.definitionId("document-review"), restarted.definitionId("document-review"));
             assertEquals(1, repository.createDeploymentQuery().deploymentName("ownership-migration-probe").count());
-            var newService = new FlowableWorkflowService(engine, jdbc, reviewer, audit(reviewer), restarted, manager);
+            var newService = new FlowableWorkflowService(engine, jdbc, reviewer, audit(reviewer), restarted, manager,
+                vn.haui.dx.core.identity.PermissionTestDirectory.allowed());
             var task = oldService.tasksOf("lab-a", processId).get(0);
             newService.claim("lab-a", task.id());
             newService.complete("lab-a", task.id(), "review", "approved", null);
@@ -346,8 +366,10 @@ class WorkflowApprovalTest {
             var existing = start("document-review");
             assertEquals(pinned, engine.getRuntimeService().createProcessInstanceQuery()
                 .processInstanceId(existing.processInstanceId()).singleResult().getProcessDefinitionId());
-            var refreshedRequester = new FlowableWorkflowService(engine, jdbc, requester, audit(requester), refreshed, manager);
-            var refreshedReviewer = new FlowableWorkflowService(engine, jdbc, reviewer, audit(reviewer), refreshed, manager);
+            var refreshedRequester = new FlowableWorkflowService(engine, jdbc, requester, audit(requester), refreshed, manager,
+                vn.haui.dx.core.identity.PermissionTestDirectory.allowed());
+            var refreshedReviewer = new FlowableWorkflowService(engine, jdbc, reviewer, audit(reviewer), refreshed, manager,
+                vn.haui.dx.core.identity.PermissionTestDirectory.allowed());
             var newer = refreshedRequester.start("lab-a", "document-review", UUID.randomUUID().toString(), Map.of());
             newProcessId = newer.processInstanceId();
             var newerTask = refreshedRequester.tasksOf("lab-a", newProcessId).get(0);
@@ -423,7 +445,8 @@ class WorkflowApprovalTest {
             ProcessRegistration confirm = () -> List.of(new ProcessPolicy("initiator-confirm", Set.of(REQUESTER), Set.of("title"),
                 Map.of("review", Set.of("approved"), "confirm", Set.of("done"))));
             var both = new ProcessRegistry(List.of(registration, confirm), repository);
-            java.util.function.Function<User, FlowableWorkflowService> as = user -> new FlowableWorkflowService(engine, jdbc, user, audit(user), both, manager);
+            java.util.function.Function<User, FlowableWorkflowService> as = user -> new FlowableWorkflowService(engine, jdbc, user, audit(user), both, manager,
+                vn.haui.dx.core.identity.PermissionTestDirectory.allowed());
             var process = as.apply(requester).start("lab-a", "initiator-confirm", UUID.randomUUID().toString(), Map.of("title", "Example"));
             var review = as.apply(requester).tasksOf("lab-a", process.processInstanceId()).get(0);
             as.apply(reviewer).claim("lab-a", review.id());

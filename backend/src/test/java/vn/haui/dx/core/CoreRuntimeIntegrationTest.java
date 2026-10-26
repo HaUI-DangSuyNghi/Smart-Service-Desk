@@ -73,14 +73,47 @@ class CoreRuntimeIntegrationTest {
 
     private String signedToken(String issuer, String audience, java.time.Instant expires,
                                com.nimbusds.jose.jwk.RSAKey key) {
+        return signedToken(issuer, audience, expires, key, List.of("/workspaces/lab-a/requester"));
+    }
+
+    private String signedToken(String issuer, String audience, java.time.Instant expires,
+                               com.nimbusds.jose.jwk.RSAKey key, List<String> groups) {
         var claims = org.springframework.security.oauth2.jwt.JwtClaimsSet.builder().issuer(issuer).subject("signed-runtime")
             .audience(List.of(audience)).issuedAt(java.time.Instant.now().minusSeconds(300)).expiresAt(expires)
-            .claim("groups", List.of("/workspaces/lab-a/requester")).build();
+            .claim("groups", groups).build();
         var encoder = new org.springframework.security.oauth2.jwt.NimbusJwtEncoder(
             new com.nimbusds.jose.jwk.source.ImmutableJWKSet<>(new com.nimbusds.jose.jwk.JWKSet(key)));
         var header = org.springframework.security.oauth2.jwt.JwsHeader.with(org.springframework.security.oauth2.jose.jws.SignatureAlgorithm.RS256)
             .keyId("runtime-test").build();
         return encoder.encode(org.springframework.security.oauth2.jwt.JwtEncoderParameters.from(header, claims)).getTokenValue();
+    }
+
+    @Autowired vn.haui.dx.core.identity.api.WorkspaceDirectory directory;
+
+    @Test void realSignedUserCannotRetainDocumentAccessAfterPolicyRefresh() throws Exception {
+        var original = directory.rolePermissions("lab-a");
+        String token = signedToken(ISSUER, "dx-core", java.time.Instant.now().plusSeconds(300), KEY);
+        try {
+            org.mockito.Mockito.doReturn(java.util.Map.of("requester", List.of(
+                new vn.haui.dx.core.identity.api.DirectoryPermission("document:view", null))))
+                .when(directory).rolePermissions("lab-a");
+            mvc.perform(get("/api/core/v1/workspaces/lab-a/metadata").header("Authorization", "Bearer " + token))
+                .andExpect(status().isOk());
+            org.mockito.Mockito.doReturn(java.util.Map.of()).when(directory).rolePermissions("lab-a");
+            for (String path : List.of("metadata", "metadata/00000000-0000-0000-0000-000000000001",
+                    "files/00000000-0000-0000-0000-000000000001", "files/00000000-0000-0000-0000-000000000001/content")) {
+                mvc.perform(get("/api/core/v1/workspaces/lab-a/" + path).header("Authorization", "Bearer " + token))
+                    .andExpect(status().isForbidden()).andExpect(jsonPath("$.code").value("FORBIDDEN"));
+            }
+        } finally { org.mockito.Mockito.doReturn(original).when(directory).rolePermissions("lab-a"); }
+    }
+
+    @Test void signedServiceIdentityWithoutWorkspaceAndPrivateIntelligenceTokenCannotReadCore() throws Exception {
+        String token = signedToken(ISSUER, "dx-core", java.time.Instant.now().plusSeconds(300), KEY, List.of());
+        mvc.perform(get("/api/core/v1/workspaces/lab-a/metadata").header("Authorization", "Bearer " + token))
+            .andExpect(status().isForbidden());
+        mvc.perform(get("/api/core/v1/workspaces/lab-a/metadata")
+            .header("Authorization", "Bearer " + "a".repeat(64))).andExpect(status().isUnauthorized());
     }
 
     @Test void realJwtDecoderRejectsWrongIssuerAudienceExpiryAndSignature() throws Exception {
@@ -168,8 +201,9 @@ class CoreRuntimeIntegrationTest {
         var file = body(mvc.perform(multipart(base + "/files").file(new MockMultipartFile("file", "runtime.txt", "text/plain", content))
             .with(agent())).andExpect(status().isCreated()));
         String fileId = file.get("id").asText();
-        mvc.perform(get(base + "/files/" + fileId).with(requester())).andExpect(status().isOk());
-        mvc.perform(get(base + "/files/" + fileId + "/content").with(requester()))
+        mvc.perform(get(base + "/files/" + fileId).with(requester())).andExpect(status().isForbidden());
+        mvc.perform(get(base + "/files/" + fileId + "/content").with(requester())).andExpect(status().isForbidden());
+        mvc.perform(get(base + "/files/" + fileId + "/content").with(agent()))
             .andExpect(status().isOk()).andExpect(header().string("X-Content-Type-Options", "nosniff"))
             .andExpect(header().string("Content-Disposition", org.hamcrest.Matchers.startsWith("attachment;")))
             .andExpect(content().bytes(content));
@@ -179,7 +213,8 @@ class CoreRuntimeIntegrationTest {
             .andExpect(status().isCreated()).andExpect(jsonPath("$.fileId").value(fileId))
             .andExpect(jsonPath("$.file_id").doesNotExist()));
         assertEquals(file.get("checksum"), metadata.get("checksum"));
-        mvc.perform(get(base + "/files/" + fileId + "/content").with(requester())).andExpect(status().isOk());
+        mvc.perform(get(base + "/files/" + fileId + "/content").with(requester())).andExpect(status().isForbidden());
+        mvc.perform(get(base + "/files/" + fileId + "/content").with(agent())).andExpect(status().isOk());
         mvc.perform(get("/api/core/v1/workspaces/lab-b/files/" + fileId).with(actor("foreign", "lab-b", "agent")))
             .andExpect(status().isNotFound());
         mvc.perform(get(base + "/audit?action=metadata.create").with(reviewer()))

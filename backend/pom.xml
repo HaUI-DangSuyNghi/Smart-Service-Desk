@@ -6,6 +6,7 @@
     <java.version>17</java.version>
     <tomcat.version>10.1.61</tomcat.version>
     <postgresql.version>42.7.12</postgresql.version>
+    <jackson-bom.version>2.18.11</jackson-bom.version>
     <dx.resource.app1>__none__</dx.resource.app1><dx.resource.app2>__none__</dx.resource.app2>
     <dx.resource.migration1>__none__</dx.resource.migration1><dx.resource.migration2>__none__</dx.resource.migration2><dx.resource.migration3>__none__</dx.resource.migration3>
   </properties>

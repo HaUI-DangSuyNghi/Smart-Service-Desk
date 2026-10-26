@@ -88,7 +88,7 @@ if args.mode == "seed":
     call("GET", base + "/metadata", "user7", 403)
     call("GET", base + "/audit", "user2", 403)
     call("GET", base + "/audit", "user6", 403)
-    call("GET", base + "/audit", "user7", 200)
+    call("GET", base + "/audit", "user7", 403)
     for reserved in [{"workspace": "lab-b"}, {"initiator": subjects["user3"]}, {"outcome_approve": "approved"}, {"title": {"expression": "evil"}}]:
         call("POST", base + "/processes/equipment-approval/instances", "user1", 400,
              dict(businessKey=uuid.uuid4().hex, variables=reserved))
@@ -129,11 +129,14 @@ else:
     if args.mode == "upload-disabled":
         upload(403)
     else:
-        metadata, _ = call("GET", base + "/metadata/" + state["metadata"]["id"], "user1", 200)
+        call("GET", base + "/metadata/" + state["metadata"]["id"], "user1", 403)
+        metadata, _ = call("GET", base + "/metadata/" + state["metadata"]["id"], "user2", 200)
         assert metadata == state["metadata"], "Metadata/provenance changed"
-        file, _ = call("GET", base + "/files/" + state["file"]["id"], "user1", 200)
+        call("GET", base + "/files/" + state["file"]["id"], "user1", 403)
+        file, _ = call("GET", base + "/files/" + state["file"]["id"], "user2", 200)
         assert file == state["file"], "File description changed"
-        content, headers = call("GET", base + "/files/" + file["id"] + "/content", "user1", 200)
+        call("GET", base + "/files/" + file["id"] + "/content", "user1", 403)
+        content, headers = call("GET", base + "/files/" + file["id"] + "/content", "user2", 200)
         assert hashlib.sha256(content).hexdigest() == file["checksum"]
         assert headers["X-Content-Type-Options"] == "nosniff" and headers["Content-Disposition"].startswith("attachment;")
         process_path = base + "/instances/" + state["process"]["id"]

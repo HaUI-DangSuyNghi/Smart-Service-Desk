@@ -5,7 +5,8 @@ import java.util.Map;
 
 /**
  * Danh bạ workspace lấy từ Keycloak (đọc qua Admin API, không đọc DB Keycloak).
- * Chỉ để hiển thị: quyền vẫn lấy từ token ({@link WorkspaceAccess}), không lấy từ danh bạ.
+ * Membership and workspace roles come from the signed token ({@link WorkspaceAccess}).
+ * Current group permission mappings also feed {@link WorkspacePermissions}; directory members never grant roles.
  * Người gọi phải là thành viên workspace; Keycloak không phản hồi → {@code SERVICE_UNAVAILABLE}.
  */
 public interface WorkspaceDirectory {
@@ -17,7 +18,7 @@ public interface WorkspaceDirectory {
 
     /**
      * Vai trò → quyền nhỏ (role của client {@code dx-permissions}) gán cho group {@code /workspaces/{workspace}/{role}}.
-     * Chỉ để hiển thị cho người dùng biết mình có quyền gì.
+     * Used for display and permission enforcement, intersected with the caller's signed workspace roles.
      */
     Map<String, List<DirectoryPermission>> rolePermissions(String workspace);
 }

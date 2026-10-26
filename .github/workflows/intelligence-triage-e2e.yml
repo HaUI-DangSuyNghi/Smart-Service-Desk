@@ -35,6 +35,7 @@ jobs:
         run: |
           test -z "$(git status --porcelain)"
           python scripts/security/export-inventory.py --self-test
+          python scripts/acceptance/test-integration-config.py
           mkdir -p .local/int01
           git rev-parse HEAD | tee .local/int01/source-commit.txt
           echo "INT01_SOURCE_SHA=$(git rev-parse HEAD)" >> "$GITHUB_ENV"

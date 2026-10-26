@@ -32,6 +32,14 @@ class SecurityConfig {
         AccessDeniedHandler forbidden = (request, response, error) ->
             write(json, request, response, ErrorCode.FORBIDDEN, "Access denied");
         return http.csrf(csrf -> csrf.disable())
+            .headers(headers -> headers.addObjectPostProcessor(
+                new org.springframework.security.config.annotation.ObjectPostProcessor<org.springframework.security.web.header.HeaderWriterFilter>() {
+                    @Override
+                    public <Filter extends org.springframework.security.web.header.HeaderWriterFilter> Filter postProcess(Filter filter) {
+                        filter.setShouldWriteHeadersEagerly(true);
+                        return filter;
+                    }
+                }))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth.requestMatchers("/actuator/health").permitAll().anyRequest().authenticated())
             .oauth2ResourceServer(resource -> resource.jwt(Customizer.withDefaults())

@@ -16,7 +16,11 @@ import vn.haui.dx.core.identity.api.WorkspaceRole;
  */
 public record ProcessPolicy(String processKey, Set<WorkspaceRole> starterRoles, Set<String> allowedStartVariables,
                             Map<String, Set<String>> outcomesByTask, Set<WorkspaceRole> observerRoles,
-                            Set<WorkspaceRole> readerRoles) {
+                            Set<WorkspaceRole> readerRoles, boolean selfService) {
+    public ProcessPolicy(String key, Set<WorkspaceRole> starters, Set<String> variables,
+                         Map<String, Set<String>> outcomes, Set<WorkspaceRole> observers, Set<WorkspaceRole> readers) {
+        this(key, starters, variables, outcomes, observers, readers, false);
+    }
     public ProcessPolicy(String key, Set<WorkspaceRole> starters, Set<String> variables,
                          Map<String, Set<String>> outcomes) {
         this(key, starters, variables, outcomes, Set.of(), Set.of());
