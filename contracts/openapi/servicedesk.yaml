@@ -8,6 +8,43 @@ servers:
 security:
   - bearer: []
 paths:
+  /workspaces/{workspace}/tickets/{id}/assistant/assessment:
+    parameters:
+      - {$ref: 'core.yaml#/components/parameters/Workspace'}
+      - {$ref: '#/components/parameters/TicketId'}
+    post:
+      operationId: assessTicketHierarchy
+      description: 'Đánh giá phân cấp chỉ đọc, mặc định tắt. Chỉ nhận title/description đã lưu và được phân quyền. Một lần phân loại model, nhãn con có bằng chứng, impact/urgency độc lập và ma trận priority hiện có. Grant độc lập phải ký model/policy và assessmentPolicyBundleDigest. Confidence và risk level null, luôn cần người duyệt; không sửa ticket, workflow, SLA hay phân công. SHADOW che toàn bộ nhãn, thuộc tính và bằng chứng; PROMOTED bị chặn. Kiểm tra lại actor/snapshot/grant/chính sách trước khi trả kết quả.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [contractVersion]
+              properties:
+                contractVersion: {type: string, enum: ['ticket-intelligence-assessment@0.2.0']}
+      responses:
+        '200':
+          description: 'Đề xuất cần duyệt hoặc DEGRADED với kết quả null. Cache-Control chứa no-store. Schema JSON 2020-12 được công bố riêng.'
+          headers:
+            Cache-Control:
+              schema: {type: string}
+          content:
+            application/json:
+              schema:
+                type: object
+                description: 'Hợp đồng đầy đủ tại contracts/apps/servicedesk/intelligence/ticket-assessment-v0.2.schema.json; kiểm thử Java/Python xác minh cùng fixture.'
+                externalDocs:
+                  url: '../apps/servicedesk/intelligence/ticket-assessment-v0.2.schema.json'
+        '400': {$ref: 'core.yaml#/components/responses/BadRequest'}
+        '401': {$ref: 'core.yaml#/components/responses/Unauthorized'}
+        '403': {$ref: 'core.yaml#/components/responses/Forbidden'}
+        '404': {$ref: 'core.yaml#/components/responses/NotFound'}
+        '409': {description: 'Snapshot, actor hoặc grant đã đổi; không công bố kết quả.'}
+        '502': {description: 'Cấu hình hoặc dữ liệu transport không hợp lệ.'}
+        '504': {description: 'Vượt hạn thời gian toàn luồng; không công bố kết quả.'}
   /workspaces/{workspace}/tickets/{id}/assistant/classify:
     parameters:
       - {$ref: 'core.yaml#/components/parameters/Workspace'}

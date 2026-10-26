@@ -64,6 +64,32 @@ public class TicketClassificationOrchestrator {
     }
 
     public TicketClassificationView classify(String workspace, UUID id) {
+        return withSnapshot(workspace, id, (snapshot, view) -> view);
+    }
+
+    String modelDigest() {
+        return settings.modelDigest();
+    }
+
+    String modelPolicyDigest() {
+        return settings.policyDigest();
+    }
+
+    /**
+     * Compose from the same authorized snapshot, then recheck the entire result before publication.
+     */
+    <T> T withSnapshot(
+            String workspace,
+            UUID id,
+            java.util.function.BiFunction<Ticket, TicketClassificationView, T> compose) {
+        return withSnapshot(workspace, id, compose, () -> {});
+    }
+
+    <T> T withSnapshot(
+            String workspace,
+            UUID id,
+            java.util.function.BiFunction<Ticket, TicketClassificationView, T> compose,
+            Runnable verifyAdditionalPermission) {
         Ticket snapshot = tickets.get(workspace, id);
         requireIdentity(snapshot, workspace, id);
         var actor = human.currentActor(workspace);
@@ -86,6 +112,7 @@ public class TicketClassificationOrchestrator {
             throw IntelligenceFailure.configuration();
         }
         String grantDigest = processing.verify(workspace);
+        verifyAdditionalPermission.run();
         var fields = new LinkedHashMap<String, String>();
         fields.put("title", snapshot.title());
         fields.put("description", snapshot.description());
@@ -103,16 +130,6 @@ public class TicketClassificationOrchestrator {
             validate(observation);
         } catch (IntelligenceFailure failure) {
             failureReason = failure.code();
-        }
-
-        Ticket current = tickets.get(workspace, id);
-        requireIdentity(current, workspace, id);
-        if (!actor.equals(human.currentActor(workspace))) {
-            throw CapabilityException.forbidden("Actor changed during classification");
-        }
-        if (!snapshot.equals(current) || !grantDigest.equals(processing.verify(workspace))) {
-            throw CapabilityException.conflict(
-                    "Ticket or processing permission changed during classification");
         }
 
         var reasons = new TreeSet<String>();
@@ -166,16 +183,30 @@ public class TicketClassificationOrchestrator {
                         null,
                         "NOT_AVAILABLE",
                         "UNVERIFIED_BY_MODEL");
-        return new TicketClassificationView(
-                "model-primary-assessment@0.1.0",
-                settings.mode().name(),
-                shadow || failureReason == null ? "REVIEW_REQUIRED" : "DEGRADED",
-                shadow ? null : category,
-                new TicketClassificationView.Disposition(
-                        "REVIEW_REQUIRED", List.copyOf(reasons), matches, false),
-                new TicketClassificationView.IndependentTriage(null, null, null, "NOT_ASSESSED"),
-                true,
-                false);
+        var view =
+                new TicketClassificationView(
+                        "model-primary-assessment@0.1.0",
+                        settings.mode().name(),
+                        shadow || failureReason == null ? "REVIEW_REQUIRED" : "DEGRADED",
+                        shadow ? null : category,
+                        new TicketClassificationView.Disposition(
+                                "REVIEW_REQUIRED", List.copyOf(reasons), matches, false),
+                        new TicketClassificationView.IndependentTriage(
+                                null, null, null, "NOT_ASSESSED"),
+                        true,
+                        false);
+        T result = compose.apply(snapshot, view);
+        Ticket current = tickets.get(workspace, id);
+        requireIdentity(current, workspace, id);
+        if (!actor.equals(human.currentActor(workspace))) {
+            throw CapabilityException.forbidden("Actor changed during classification");
+        }
+        if (!snapshot.equals(current) || !grantDigest.equals(processing.verify(workspace))) {
+            throw CapabilityException.conflict(
+                    "Ticket or processing permission changed during classification");
+        }
+        verifyAdditionalPermission.run();
+        return result;
     }
 
     private void validate(ClassificationObservation value) {

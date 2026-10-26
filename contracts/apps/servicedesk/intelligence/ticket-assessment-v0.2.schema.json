@@ -1027,6 +1027,15 @@
                 }
               }
             }
+          },
+          "status": {
+            "const": "REVIEW_REQUIRED"
+          },
+          "missingInfo": {
+            "maxItems": 0
+          },
+          "questions": {
+            "maxItems": 0
           }
         }
       }
@@ -1060,6 +1069,22 @@
                 "type": "null"
               }
             }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "mode": {
+            "const": "ASSISTED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "classification": {
+            "type": "object"
           }
         }
       }
