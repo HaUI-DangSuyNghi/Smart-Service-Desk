@@ -1,5 +1,13 @@
 # AI07 backend handoff
 
+The current v1.6 implementation adds the model-primary, rule-guarded category
+flow and private LabOps v4 research pipeline. Read the
+[closure report](CLOSURE_REPORT.md) and
+[ADR-011](../../../../docs/architecture/ADR-011-ai07-model-primary-rule-guarded.md).
+The earlier rules-only records below describe the preserved legacy API. New
+classification defaults to DISABLED; independent quality and release approval
+remain pending.
+
 Decision: **CHOSEN**. Backend rules-only MVP and offline challenger contracts:
 **IMPLEMENTED**. Model empirical winner: **NOT_SELECTED**. Labels/rights:
 **PENDING**. Model promotion: **BLOCKED_PENDING_REVIEW**. AI06 official release:

@@ -45,6 +45,18 @@ management:
   endpoint:
     health:
       show-details: never
+serviceDesk:
+  classifier:
+    mode: ${SERVICE_DESK_CLASSIFIER_MODE:DISABLED}
+    provider: ${SERVICE_DESK_CLASSIFIER_PROVIDER:}
+    model-digest: ${SERVICE_DESK_CLASSIFIER_MODEL_DIGEST:}
+    policy-digest: ${SERVICE_DESK_CLASSIFIER_POLICY_DIGEST:}
+    processing-receipt: ${SERVICE_DESK_CLASSIFIER_PROCESSING_RECEIPT:}
+    processing-verification-key: ${SERVICE_DESK_CLASSIFIER_PROCESSING_VERIFICATION_KEY:}
+intelligence:
+  classification:
+    base-url: ${INTELLIGENCE_CLASSIFICATION_BASE_URL:}
+    token: ${INTELLIGENCE_CLASSIFICATION_TOKEN:}
 server:
   error:
     include-message: never

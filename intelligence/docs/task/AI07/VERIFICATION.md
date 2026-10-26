@@ -1,5 +1,9 @@
 # AI07 local engineering verification — 2026-10-25
 
+Latest v1.6 verification and measured limits are in the
+[closure report](CLOSURE_REPORT.md). Historical checks below retain their
+original dates, scopes and counts.
+
 Base: `origin/develop` at `f94f0ef102cbc7d5737ca05270b0affab1fde1a6`.
 Branch: `feature/ai07-ticket-intelligence`.
 Scope and remaining gates: [implementation handoff](IMPLEMENTATION.md).

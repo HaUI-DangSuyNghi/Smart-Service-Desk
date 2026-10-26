@@ -8,6 +8,34 @@ servers:
 security:
   - bearer: []
 paths:
+  /workspaces/{workspace}/tickets/{id}/assistant/classify:
+    parameters:
+      - {$ref: 'core.yaml#/components/parameters/Workspace'}
+      - {$ref: '#/components/parameters/TicketId'}
+    post:
+      operationId: classifyTicketWithModel
+      description: 'Additive model-primary category suggestion. DISABLED by default. SHADOW conceals the model observation; ASSISTED requires a separately signed workspace/model/policy processing grant. PROMOTED is refused pending independent Gold and release approval. Uses only persisted title/description; rule guards request review and never replace a class on a soft keyword. Actor, ticket snapshot and processing grant are checked again after inference. No routing, priority, workflow or ticket mutation; no calibrated confidence or semantic evidence claim. Existing assess/triage APIs are unchanged.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [contractVersion]
+              properties:
+                contractVersion: {type: string, enum: ['model-primary-assessment@0.1.0']}
+      responses:
+        '200':
+          description: 'Read-only model proposal or degraded abstention, always needsReview=true and Cache-Control=no-store.'
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ModelPrimaryAssessment'}
+        '400': {$ref: 'core.yaml#/components/responses/BadRequest'}
+        '401': {$ref: 'core.yaml#/components/responses/Unauthorized'}
+        '403': {$ref: 'core.yaml#/components/responses/Forbidden'}
+        '404': {$ref: 'core.yaml#/components/responses/NotFound'}
+        '409': {description: 'Ticket, actor or processing permission changed; no proposal is released.'}
   /workspaces/{workspace}/tickets/{id}/assistant/assess:
     parameters:
       - {$ref: 'core.yaml#/components/parameters/Workspace'}
@@ -217,6 +245,60 @@ components:
       required: true
       schema: {type: string, format: uuid}
   schemas:
+    ModelPrimaryAssessment:
+      type: object
+      additionalProperties: false
+      required: [contractVersion, mode, status, classification, policyDisposition, triage, needsReview, operationalAuthority]
+      properties:
+        contractVersion: {type: string, enum: ['model-primary-assessment@0.1.0']}
+        mode: {type: string, enum: [SHADOW, ASSISTED]}
+        status: {type: string, enum: [REVIEW_REQUIRED, DEGRADED]}
+        needsReview: {type: boolean, enum: [true]}
+        operationalAuthority: {type: boolean, enum: [false]}
+        classification:
+          type: object
+          nullable: true
+          additionalProperties: false
+          required: [decision, category, provider, modelDigest, policyDigest, score, scoreSemantics, evidenceStatus]
+          properties:
+            decision: {type: string, enum: [PROPOSE, ABSTAIN]}
+            category: {type: string, nullable: true, enum: [ACCOUNT, HARDWARE, NETWORK, OTHER, SOFTWARE, null]}
+            provider: {type: string, maxLength: 100}
+            modelDigest: {type: string, pattern: '^[0-9a-f]{64}$'}
+            policyDigest: {type: string, pattern: '^[0-9a-f]{64}$'}
+            score: {type: number, nullable: true, enum: [null]}
+            scoreSemantics: {type: string, enum: [NOT_AVAILABLE]}
+            evidenceStatus: {type: string, enum: [UNVERIFIED_BY_MODEL]}
+        policyDisposition:
+          type: object
+          additionalProperties: false
+          required: [status, reasonCodes, ruleMatches, autoRoutingAllowed]
+          properties:
+            status: {type: string, enum: [REVIEW_REQUIRED]}
+            reasonCodes: {type: array, items: {type: string}}
+            autoRoutingAllowed: {type: boolean, enum: [false]}
+            ruleMatches:
+              type: array
+              items:
+                type: object
+                additionalProperties: false
+                required: [ruleId, kind, field, start, end, text]
+                properties:
+                  ruleId: {type: string}
+                  kind: {type: string, enum: [SOFT_SIGNAL, HARD_EXCLUSION, REVIEW_CONFLICT, TAXONOMY_BOUNDARY, SAFETY_GATE]}
+                  field: {type: string, enum: [title, description]}
+                  start: {type: integer, minimum: 0}
+                  end: {type: integer, minimum: 1}
+                  text: {type: string}
+        triage:
+          type: object
+          additionalProperties: false
+          required: [impact, urgency, priority, riskStatus]
+          properties:
+            impact: {type: string, nullable: true, enum: [null]}
+            urgency: {type: string, nullable: true, enum: [null]}
+            priority: {type: string, nullable: true, enum: [null]}
+            riskStatus: {type: string, enum: [NOT_ASSESSED]}
     TicketAssessmentRequest:
       type: object
       additionalProperties: false
