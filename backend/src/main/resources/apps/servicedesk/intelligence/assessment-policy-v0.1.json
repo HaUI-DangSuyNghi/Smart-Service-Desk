@@ -1,0 +1,109 @@
+{
+  "version": "servicedesk-assessment@0.1.0",
+  "approvalStatus": "DRAFT",
+  "riskRubricStatus": "DRAFT",
+  "prioritySource": "triage-policy.json",
+  "maxEvidence": 64,
+  "signals": {
+    "impact": {
+      "I1": [
+        "một máy bị ảnh hưởng",
+        "một người bị ảnh hưởng",
+        "one device is affected"
+      ],
+      "I2": [
+        "nhiều máy bị ảnh hưởng",
+        "vài người bị ảnh hưởng",
+        "several users are affected"
+      ],
+      "I3": [
+        "cả phòng bị ảnh hưởng",
+        "cả phòng mất mạng",
+        "cả phòng thi mất Wi-Fi",
+        "the whole room is affected"
+      ],
+      "I4": [
+        "nhiều phòng bị ảnh hưởng",
+        "nhiều phòng mất mạng",
+        "multiple rooms are affected"
+      ]
+    },
+    "urgency": {
+      "U1": [
+        "có cách xử lý tạm",
+        "có phương án thay thế",
+        "workaround is available"
+      ],
+      "U2": [
+        "có thể chờ",
+        "can wait"
+      ],
+      "U3": [
+        "không thể làm việc",
+        "công việc bị chặn",
+        "cannot work"
+      ],
+      "U4": [
+        "thi sau 15 phút",
+        "thi sau 10 phút",
+        "exam starts in 15 minutes",
+        "deadline in 15 minutes"
+      ]
+    },
+    "risk": {
+      "SECURITY_EXPOSURE": [
+        "tài khoản bị xâm nhập",
+        "credentials were exposed"
+      ],
+      "DATA_LOSS": [
+        "dữ liệu đã bị mất",
+        "data was lost"
+      ],
+      "SAFETY": [
+        "thiết bị rò điện",
+        "thiết bị bốc cháy",
+        "device is on fire"
+      ],
+      "SERVICE_CONTINUITY": [
+        "dịch vụ ngừng hoạt động",
+        "service is down"
+      ],
+      "WIDESPREAD_INCIDENT_POSSIBLE": [
+        "nhiều phòng mất mạng",
+        "multiple rooms are affected"
+      ]
+    }
+  },
+  "questions": {
+    "impact": "Có bao nhiêu thiết bị/người/phòng bị ảnh hưởng?",
+    "urgency": "Công việc có đang bị chặn không? Có hạn thời gian cụ thể không?",
+    "subCategory": "Triệu chứng cụ thể đang xảy ra là gì?"
+  },
+  "requiredSlots": {
+    "ACCOUNT": [
+      "impact",
+      "urgency",
+      "subCategory"
+    ],
+    "HARDWARE": [
+      "impact",
+      "urgency",
+      "subCategory"
+    ],
+    "NETWORK": [
+      "impact",
+      "urgency",
+      "subCategory"
+    ],
+    "SOFTWARE": [
+      "impact",
+      "urgency",
+      "subCategory"
+    ],
+    "OTHER": [
+      "impact",
+      "urgency",
+      "subCategory"
+    ]
+  }
+}

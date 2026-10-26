@@ -13,6 +13,9 @@ scripts/apps/servicedesk/ai06/** text eol=lf
 scripts/apps/servicedesk/ai07/** text eol=lf
 intelligence/** text eol=lf
 backend/src/main/resources/apps/servicedesk/intelligence/guard-policy-v0.1.json text eol=lf
+backend/src/main/resources/apps/servicedesk/intelligence/taxonomy-v0.1.json text eol=lf
+backend/src/main/resources/apps/servicedesk/intelligence/assessment-policy-v0.1.json text eol=lf
+backend/src/main/resources/apps/servicedesk/intelligence/triage-policy.json text eol=lf
 # Preserve upstream notices verbatim, including their original spacing and CRLF.
 licenses/** -text -whitespace
 scripts/acceptance/core/*.ps1 text eol=lf

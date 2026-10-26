@@ -1,0 +1,1068 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "contractVersion": {
+      "const": "ticket-intelligence-assessment@0.2.0"
+    },
+    "mode": {
+      "enum": [
+        "SHADOW",
+        "ASSISTED"
+      ]
+    },
+    "status": {
+      "enum": [
+        "REVIEW_REQUIRED",
+        "DEGRADED"
+      ]
+    },
+    "classification": {
+      "oneOf": [
+        {
+          "type": "null"
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "decision": {
+              "enum": [
+                "PROPOSE",
+                "ABSTAIN"
+              ]
+            },
+            "mainCategory": {
+              "enum": [
+                null,
+                "ACCOUNT",
+                "HARDWARE",
+                "NETWORK",
+                "SOFTWARE",
+                "OTHER"
+              ]
+            },
+            "subCategory": {
+              "enum": [
+                null,
+                "LOGIN_FAILURE",
+                "PASSWORD_RESET",
+                "ACCOUNT_LOCKED",
+                "ACCESS_PERMISSION",
+                "MFA_ISSUE",
+                "ACCOUNT_OTHER",
+                "POWER_FAILURE",
+                "DISPLAY_FAILURE",
+                "PERIPHERAL_FAILURE",
+                "PRINTER_FAILURE",
+                "PROJECTOR_FAILURE",
+                "HARDWARE_OTHER",
+                "WIFI_CONNECTION",
+                "WIRED_CONNECTION",
+                "INTERNET_ACCESS",
+                "LOCAL_NETWORK",
+                "NETWORK_PERFORMANCE",
+                "NETWORK_OTHER",
+                "INSTALLATION",
+                "APPLICATION_ERROR",
+                "UPDATE_FAILURE",
+                "LICENSE_ACTIVATION",
+                "OS_ERROR",
+                "SOFTWARE_OTHER",
+                "UNCLEAR_REQUEST",
+                "MULTI_DOMAIN",
+                "OUT_OF_SCOPE",
+                "OTHER_UNSPECIFIED"
+              ]
+            },
+            "subCategoryStatus": {
+              "enum": [
+                "SUPPORTED_BY_RULE",
+                "AMBIGUOUS",
+                "INSUFFICIENT_EVIDENCE",
+                "TAXONOMY_CONFLICT",
+                "NOT_ASSESSED"
+              ]
+            },
+            "alternatives": {
+              "type": "array",
+              "maxItems": 0
+            },
+            "confidence": {
+              "type": "null"
+            },
+            "confidenceSemantics": {
+              "enum": [
+                "NOT_CALIBRATED"
+              ]
+            }
+          },
+          "required": [
+            "decision",
+            "mainCategory",
+            "subCategory",
+            "subCategoryStatus",
+            "alternatives",
+            "confidence",
+            "confidenceSemantics"
+          ],
+          "allOf": [
+            {
+              "if": {
+                "properties": {
+                  "mainCategory": {
+                    "const": "ACCOUNT"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "subCategory": {
+                    "enum": [
+                      null,
+                      "LOGIN_FAILURE",
+                      "PASSWORD_RESET",
+                      "ACCOUNT_LOCKED",
+                      "ACCESS_PERMISSION",
+                      "MFA_ISSUE",
+                      "ACCOUNT_OTHER"
+                    ]
+                  },
+                  "decision": {
+                    "const": "PROPOSE"
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "mainCategory": {
+                    "const": "HARDWARE"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "subCategory": {
+                    "enum": [
+                      null,
+                      "POWER_FAILURE",
+                      "DISPLAY_FAILURE",
+                      "PERIPHERAL_FAILURE",
+                      "PRINTER_FAILURE",
+                      "PROJECTOR_FAILURE",
+                      "HARDWARE_OTHER"
+                    ]
+                  },
+                  "decision": {
+                    "const": "PROPOSE"
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "mainCategory": {
+                    "const": "NETWORK"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "subCategory": {
+                    "enum": [
+                      null,
+                      "WIFI_CONNECTION",
+                      "WIRED_CONNECTION",
+                      "INTERNET_ACCESS",
+                      "LOCAL_NETWORK",
+                      "NETWORK_PERFORMANCE",
+                      "NETWORK_OTHER"
+                    ]
+                  },
+                  "decision": {
+                    "const": "PROPOSE"
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "mainCategory": {
+                    "const": "SOFTWARE"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "subCategory": {
+                    "enum": [
+                      null,
+                      "INSTALLATION",
+                      "APPLICATION_ERROR",
+                      "UPDATE_FAILURE",
+                      "LICENSE_ACTIVATION",
+                      "OS_ERROR",
+                      "SOFTWARE_OTHER"
+                    ]
+                  },
+                  "decision": {
+                    "const": "PROPOSE"
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "mainCategory": {
+                    "const": "OTHER"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "subCategory": {
+                    "enum": [
+                      null,
+                      "UNCLEAR_REQUEST",
+                      "MULTI_DOMAIN",
+                      "OUT_OF_SCOPE",
+                      "OTHER_UNSPECIFIED"
+                    ]
+                  },
+                  "decision": {
+                    "const": "PROPOSE"
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "decision": {
+                    "const": "ABSTAIN"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "mainCategory": {
+                    "type": "null"
+                  },
+                  "subCategory": {
+                    "type": "null"
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "decision": {
+                    "const": "PROPOSE"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "mainCategory": {
+                    "enum": [
+                      "ACCOUNT",
+                      "HARDWARE",
+                      "NETWORK",
+                      "SOFTWARE",
+                      "OTHER"
+                    ]
+                  }
+                }
+              }
+            },
+            {
+              "if": {
+                "properties": {
+                  "subCategoryStatus": {
+                    "const": "SUPPORTED_BY_RULE"
+                  }
+                }
+              },
+              "then": {
+                "properties": {
+                  "subCategory": {
+                    "type": "string"
+                  }
+                }
+              },
+              "else": {
+                "properties": {
+                  "subCategory": {
+                    "type": "null"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "assessment": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "impact": {
+          "enum": [
+            null,
+            "I1",
+            "I2",
+            "I3",
+            "I4"
+          ]
+        },
+        "urgency": {
+          "enum": [
+            null,
+            "U1",
+            "U2",
+            "U3",
+            "U4"
+          ]
+        },
+        "priority": {
+          "enum": [
+            null,
+            "LOW",
+            "MEDIUM",
+            "HIGH",
+            "CRITICAL"
+          ]
+        },
+        "risk": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "status": {
+              "enum": [
+                "NOT_ASSESSED",
+                "ASSESSED",
+                "INSUFFICIENT_EVIDENCE",
+                "CONFLICT"
+              ]
+            },
+            "level": {
+              "type": "null"
+            },
+            "flags": {
+              "type": "array",
+              "items": {
+                "enum": [
+                  "SECURITY_EXPOSURE",
+                  "DATA_LOSS",
+                  "SAFETY",
+                  "SERVICE_CONTINUITY",
+                  "WIDESPREAD_INCIDENT_POSSIBLE"
+                ]
+              },
+              "maxItems": 5,
+              "uniqueItems": true
+            },
+            "reviewRequired": {
+              "const": true
+            }
+          },
+          "required": [
+            "status",
+            "level",
+            "flags",
+            "reviewRequired"
+          ]
+        }
+      },
+      "required": [
+        "impact",
+        "urgency",
+        "priority",
+        "risk"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "impact": {
+                "const": "I1"
+              },
+              "urgency": {
+                "const": "U1"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "priority": {
+                "const": "LOW"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "impact": {
+                "const": "I1"
+              },
+              "urgency": {
+                "const": "U2"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "priority": {
+                "const": "LOW"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "impact": {
+                "const": "I1"
+              },
+              "urgency": {
+                "const": "U3"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "priority": {
+                "const": "MEDIUM"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "impact": {
+                "const": "I1"
+              },
+              "urgency": {
+                "const": "U4"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "priority": {
+                "const": "HIGH"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "impact": {
+                "const": "I2"
+              },
+              "urgency": {
+                "const": "U1"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "priority": {
+                "const": "LOW"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "impact": {
+                "const": "I2"
+              },
+              "urgency": {
+                "const": "U2"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "priority": {
+                "const": "MEDIUM"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "impact": {
+                "const": "I2"
+              },
+              "urgency": {
+                "const": "U3"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "priority": {
+                "const": "HIGH"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "impact": {
+                "const": "I2"
+              },
+              "urgency": {
+                "const": "U4"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "priority": {
+                "const": "HIGH"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "impact": {
+                "const": "I3"
+              },
+              "urgency": {
+                "const": "U1"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "priority": {
+                "const": "MEDIUM"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "impact": {
+                "const": "I3"
+              },
+              "urgency": {
+                "const": "U2"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "priority": {
+                "const": "HIGH"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "impact": {
+                "const": "I3"
+              },
+              "urgency": {
+                "const": "U3"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "priority": {
+                "const": "HIGH"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "impact": {
+                "const": "I3"
+              },
+              "urgency": {
+                "const": "U4"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "priority": {
+                "const": "CRITICAL"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "impact": {
+                "const": "I4"
+              },
+              "urgency": {
+                "const": "U1"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "priority": {
+                "const": "HIGH"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "impact": {
+                "const": "I4"
+              },
+              "urgency": {
+                "const": "U2"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "priority": {
+                "const": "HIGH"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "impact": {
+                "const": "I4"
+              },
+              "urgency": {
+                "const": "U3"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "priority": {
+                "const": "CRITICAL"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "impact": {
+                "const": "I4"
+              },
+              "urgency": {
+                "const": "U4"
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "priority": {
+                "const": "CRITICAL"
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "anyOf": [
+              {
+                "properties": {
+                  "impact": {
+                    "type": "null"
+                  }
+                }
+              },
+              {
+                "properties": {
+                  "urgency": {
+                    "type": "null"
+                  }
+                }
+              }
+            ]
+          },
+          "then": {
+            "properties": {
+              "priority": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      ]
+    },
+    "attributes": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "slot": {
+            "enum": [
+              "affectedScope",
+              "timeEvidence",
+              "securitySignals",
+              "workBlocked",
+              "workaroundAvailable"
+            ]
+          },
+          "value": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          },
+          "evidence": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "field": {
+                "enum": [
+                  "title",
+                  "description"
+                ]
+              },
+              "quote": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 8192
+              },
+              "start": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 8192
+              },
+              "end": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 8192
+              },
+              "supports": {
+                "type": "array",
+                "items": {
+                  "enum": [
+                    "subCategory",
+                    "impact",
+                    "urgency",
+                    "risk"
+                  ]
+                },
+                "maxItems": 4,
+                "uniqueItems": true
+              },
+              "verification": {
+                "const": "LITERAL_SPAN"
+              },
+              "ruleId": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 120
+              }
+            },
+            "required": [
+              "field",
+              "quote",
+              "start",
+              "end",
+              "supports",
+              "verification",
+              "ruleId"
+            ]
+          }
+        },
+        "required": [
+          "slot",
+          "value",
+          "evidence"
+        ]
+      },
+      "maxItems": 64,
+      "uniqueItems": true
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "field": {
+            "enum": [
+              "title",
+              "description"
+            ]
+          },
+          "quote": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 8192
+          },
+          "start": {
+            "type": "integer",
+            "minimum": 0,
+            "maximum": 8192
+          },
+          "end": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 8192
+          },
+          "supports": {
+            "type": "array",
+            "items": {
+              "enum": [
+                "subCategory",
+                "impact",
+                "urgency",
+                "risk"
+              ]
+            },
+            "maxItems": 4,
+            "uniqueItems": true
+          },
+          "verification": {
+            "const": "LITERAL_SPAN"
+          },
+          "ruleId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 120
+          }
+        },
+        "required": [
+          "field",
+          "quote",
+          "start",
+          "end",
+          "supports",
+          "verification",
+          "ruleId"
+        ]
+      },
+      "maxItems": 64,
+      "uniqueItems": true
+    },
+    "missingInfo": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "impact",
+          "urgency",
+          "subCategory"
+        ]
+      },
+      "maxItems": 3,
+      "uniqueItems": true
+    },
+    "questions": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 250
+      },
+      "maxItems": 3,
+      "uniqueItems": true
+    },
+    "disposition": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "needsReview": {
+          "const": true
+        },
+        "operationalAuthority": {
+          "const": false
+        },
+        "autoRoutingAllowed": {
+          "const": false
+        },
+        "reasons": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 120
+          },
+          "maxItems": 64,
+          "uniqueItems": true
+        }
+      },
+      "required": [
+        "needsReview",
+        "operationalAuthority",
+        "autoRoutingAllowed",
+        "reasons"
+      ]
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "modelDigest": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "modelPolicyDigest": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "taxonomyVersion": {
+          "const": "servicedesk-taxonomy@0.1.0"
+        },
+        "taxonomyDigest": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "assessmentPolicyVersion": {
+          "const": "servicedesk-assessment@0.1.0"
+        },
+        "assessmentPolicyDigest": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "priorityPolicyDigest": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "policyApprovalStatus": {
+          "const": "DRAFT"
+        },
+        "contractVersion": {
+          "const": "ticket-intelligence-assessment@0.2.0"
+        }
+      },
+      "required": [
+        "modelDigest",
+        "modelPolicyDigest",
+        "taxonomyVersion",
+        "taxonomyDigest",
+        "assessmentPolicyVersion",
+        "assessmentPolicyDigest",
+        "priorityPolicyDigest",
+        "policyApprovalStatus",
+        "contractVersion"
+      ]
+    }
+  },
+  "required": [
+    "contractVersion",
+    "mode",
+    "status",
+    "classification",
+    "assessment",
+    "attributes",
+    "evidence",
+    "missingInfo",
+    "questions",
+    "disposition",
+    "provenance"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "mode": {
+            "const": "SHADOW"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "classification": {
+            "type": "null"
+          },
+          "evidence": {
+            "maxItems": 0
+          },
+          "attributes": {
+            "maxItems": 0
+          },
+          "assessment": {
+            "properties": {
+              "impact": {
+                "type": "null"
+              },
+              "urgency": {
+                "type": "null"
+              },
+              "priority": {
+                "type": "null"
+              },
+              "risk": {
+                "properties": {
+                  "status": {
+                    "const": "NOT_ASSESSED"
+                  },
+                  "flags": {
+                    "maxItems": 0
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "status": {
+            "const": "DEGRADED"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "classification": {
+            "properties": {
+              "decision": {
+                "const": "ABSTAIN"
+              }
+            }
+          },
+          "assessment": {
+            "properties": {
+              "impact": {
+                "type": "null"
+              },
+              "urgency": {
+                "type": "null"
+              },
+              "priority": {
+                "type": "null"
+              }
+            }
+          }
+        }
+      }
+    }
+  ]
+}
