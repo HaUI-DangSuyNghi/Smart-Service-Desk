@@ -1,5 +1,8 @@
 name: Service Desk triage bridge
 on:
+  push:
+    branches: [feature/ai07-ticket-intelligence]
+    paths: ['backend/**', 'contracts/**', '.github/workflows/servicedesk-triage.yml']
   pull_request:
     branches: [develop]
     paths: ['backend/**', 'contracts/**', 'compose.yaml', '.dockerignore', 'scripts/test-*.ps1', '.github/workflows/servicedesk-triage.yml']
