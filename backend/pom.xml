@@ -32,6 +32,10 @@
       </excludes></resource>
       <resource><directory>../contracts/intelligence/v1</directory><targetPath>intelligence-contract</targetPath><includes><include>triage-*.schema.json</include></includes></resource>
     </resources>
+    <testResources>
+      <testResource><directory>src/test/resources</directory></testResource>
+      <testResource><directory>../contracts/apps/servicedesk/intelligence</directory><targetPath>servicedesk-contract</targetPath><includes><include>ticket-assessment-v0.2.schema.json</include><include>examples/ticket-assessment-v0.2.fixture.json</include></includes></testResource>
+    </testResources>
     <plugins><plugin><groupId>org.springframework.boot</groupId><artifactId>spring-boot-maven-plugin</artifactId><configuration><mainClass>vn.haui.dx.assembly.DxOsApplication</mainClass></configuration></plugin></plugins>
   </build>
   <profiles>

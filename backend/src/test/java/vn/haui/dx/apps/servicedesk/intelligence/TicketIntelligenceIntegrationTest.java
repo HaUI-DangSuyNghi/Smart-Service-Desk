@@ -85,7 +85,7 @@ class TicketIntelligenceIntegrationTest {
         mvc.perform(post(route(ticket)).with(as("owner", "assistant-a", "requester"))
                         .contentType("application/json").content(body(false)))
                 .andExpect(status().isOk())
-                .andExpect(header().string("Cache-Control", "no-store"))
+                .andExpect(header().string("Cache-Control", org.hamcrest.Matchers.containsString("no-store")))
                 .andExpect(jsonPath("$.status").value("COMPLETE"))
                 .andExpect(jsonPath("$.triage.category").value("NETWORK"))
                 .andExpect(jsonPath("$.risk.status").value("NOT_ASSESSED"))

@@ -46,6 +46,9 @@ management:
     health:
       show-details: never
 serviceDesk:
+  assessment:
+    enabled: ${SERVICE_DESK_ASSESSMENT_ENABLED:false}
+    policy-bundle-digest: ${SERVICE_DESK_ASSESSMENT_POLICY_BUNDLE_DIGEST:}
   classifier:
     mode: ${SERVICE_DESK_CLASSIFIER_MODE:DISABLED}
     provider: ${SERVICE_DESK_CLASSIFIER_PROVIDER:}

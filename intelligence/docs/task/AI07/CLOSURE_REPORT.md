@@ -260,3 +260,10 @@ Rollback is DISABLED and application restart, or immediate grant revocation,
 with the existing rule API available. Stop the isolated AI07 Compose profile
 without `--volumes`. Keep model volumes, imported data and all receipts. No
 frontend, public model port, Core network connection or cloud fallback is added.
+
+## Bổ sung AI07 v1.9 — đánh giá phân cấp
+
+Xem [phạm vi, cấu hình và rollback](HIERARCHICAL_ASSESSMENT.md),
+[đánh giá Gold](HIERARCHICAL_GOLD_EVAL.md) và [kết quả kiểm chứng](VERIFICATION_V1_9.md).
+Taxonomy/risk còn DRAFT; Gold độc lập, hosted CI, hiệu năng phục vụ thật và ký duyệt
+production vẫn là gate riêng. `selectedModel=null`, production `NO_GO`.

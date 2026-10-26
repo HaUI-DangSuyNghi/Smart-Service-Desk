@@ -36,6 +36,17 @@ public class ClassifierProcessingGate {
     }
 
     public String verify(String workspace) {
+        return verify(workspace, null);
+    }
+
+    public String verifyAssessment(String workspace, String policyBundleDigest) {
+        if (policyBundleDigest == null || !policyBundleDigest.matches("[0-9a-f]{64}")) {
+            throw CapabilityException.forbidden("A pinned assessment policy is required");
+        }
+        return verify(workspace, policyBundleDigest);
+    }
+
+    private String verify(String workspace, String policyBundleDigest) {
         try {
             if (settings.processingVerificationKey().length() < 32) {
                 throw new IllegalArgumentException();
@@ -64,15 +75,28 @@ public class ClassifierProcessingGate {
                 throw new IllegalArgumentException();
             }
             var grant = json.readTree(payload);
-            if (!keys(grant)
-                            .equals(
-                                    Set.of(
-                                            "purpose",
-                                            "workspace",
-                                            "modelDigest",
-                                            "policyDigest",
-                                            "expiresEpochSecond",
-                                            "issuer"))
+            var expected =
+                    new HashSet<>(
+                            Set.of(
+                                    "purpose",
+                                    "workspace",
+                                    "modelDigest",
+                                    "policyDigest",
+                                    "expiresEpochSecond",
+                                    "issuer"));
+            if (grant.has("assessmentPolicyBundleDigest")) {
+                expected.add("assessmentPolicyBundleDigest");
+                if (!grant.path("assessmentPolicyBundleDigest").isTextual()
+                        || !grant.path("assessmentPolicyBundleDigest")
+                                .textValue()
+                                .matches("[0-9a-f]{64}")) {
+                    throw new IllegalArgumentException();
+                }
+            }
+            if (!keys(grant).equals(expected)
+                    || policyBundleDigest != null
+                            && !policyBundleDigest.equals(
+                                    grant.path("assessmentPolicyBundleDigest").textValue())
                     || !"AI07_ASSISTED_PROCESSING".equals(grant.path("purpose").textValue())
                     || !workspace.equals(grant.path("workspace").textValue())
                     || !settings.modelDigest().equals(grant.path("modelDigest").textValue())
