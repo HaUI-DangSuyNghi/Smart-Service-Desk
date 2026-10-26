@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { parseAssistance } from "../../../src/apps/servicedesk/api/assistance";
+import { parseAssistance } from "../../../src/platform/intelligence/assistanceSchema";
 
 const response = {
   contractVersion: "0.1.0",

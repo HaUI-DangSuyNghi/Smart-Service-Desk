@@ -3,7 +3,8 @@ Set-Location (Split-Path $PSScriptRoot -Parent)
 
 # Moi bi mat sinh ngau nhien vao .env (Git bo qua). May da co .env thi chi bo sung bien con thieu,
 # khong doi bien da co (doi mat khau Postgres sau khi tao DB se lam backend mat ket noi).
-$secretKeys = @('POSTGRES_PASSWORD', 'KC_ADMIN_PASSWORD', 'DEMO_PASSWORD', 'DIRECTORY_CLIENT_SECRET')
+# INTELLIGENCE_TRIAGE_TOKEN: backend dung de goi service AI noi bo (start.ps1 chay kem AI)
+$secretKeys = @('POSTGRES_PASSWORD', 'KC_ADMIN_PASSWORD', 'DEMO_PASSWORD', 'DIRECTORY_CLIENT_SECRET', 'INTELLIGENCE_TRIAGE_TOKEN')
 $existing = if (Test-Path .env) { @(Get-Content .env) } else { @() }
 $present = @{}
 foreach ($line in $existing) {

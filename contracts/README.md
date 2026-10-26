@@ -19,14 +19,19 @@ API và sở hữu REST projection; không import Core DTO hoặc adapter nội 
 |---|---|
 | `core.yaml` | **Chỉ endpoint đã chạy thật.** Kèm schema dùng chung: `Problem`, `PageMeta`, tham số `Page`/`Size`. |
 | `core-target.yaml` | **Bản đích, chưa cài đặt.** Toàn bộ endpoint theo thiết kế, để FE và BE làm song song. Không gọi thử được. |
+| `servicedesk-target.yaml` | **Bản đích Service Desk** theo plan nghiệp vụ ticket: duyệt, sửa phân loại, trạng thái, SLA, thống kê mở rộng, cấu hình riêng. |
 
-Quy trình: cài xong endpoint nào → **chuyển** endpoint đó từ `core-target.yaml` sang `core.yaml` trong cùng PR. Khi `core-target.yaml` hết `paths` thì xóa file.
+Bản đích Tầng 2 theo cùng plan (hàng đợi, Bắt đầu/Tạm dừng, đề xuất người, ca trực, ET, cảnh báo, cấu hình chung) nằm ở [hpdi/openapi-target.yaml](hpdi/openapi-target.yaml).
+
+Quy trình: cài xong endpoint nào → **chuyển** endpoint đó từ file `*-target.yaml` sang file đang chạy tương ứng trong cùng PR. Khi file đích hết `paths` thì xóa file.
 
 Kiểm tra cú pháp trước khi mở PR:
 
 ```bash
 python -m openapi_spec_validator contracts/openapi/core.yaml
 python -m openapi_spec_validator contracts/openapi/core-target.yaml
+python -m openapi_spec_validator contracts/openapi/servicedesk-target.yaml
+python -m openapi_spec_validator contracts/hpdi/openapi-target.yaml
 ```
 
 ## Quy ước REST

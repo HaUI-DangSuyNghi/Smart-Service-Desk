@@ -29,6 +29,7 @@ import { ViewTabs } from "@/platform/shared/ui/ViewTabs";
 import type { ProcessLabels } from "../catalog/processLabels";
 import { useProcessLabels } from "../catalog/useProcessCatalog";
 import { BusinessKeyLink } from "../common/BusinessKeyLink";
+import { processLink } from "../common/processLinks";
 import { StartProcessDialog } from "../start/StartProcessDialog";
 import { REQUESTS_PAGE_SIZE, useRequests } from "./useMyRequests";
 
@@ -103,7 +104,7 @@ const requestColumns = (
   return columns;
 };
 
-/** Yêu cầu: của tôi (mọi quy trình), và với điều phối viên là tất cả yêu cầu; bấm dòng để xem tiến độ. */
+/** Yêu cầu: của tôi (mọi quy trình), và với điều phối viên là tất cả yêu cầu; bấm dòng để xem chi tiết (trang của app nếu có, không thì tiến độ chung). */
 const MyRequestsPage = () => {
   const navigate = useNavigate();
   const { current } = useCurrentWorkspace();
@@ -180,7 +181,12 @@ const MyRequestsPage = () => {
             columns={requestColumns(labels, names, scope === "all")}
             rows={items}
             getRowKey={(request) => request.id}
-            onRowClick={(request) => navigate(`/processes/${request.id}`)}
+            // App có trang chi tiết (nội dung + AI) thì mở trang đó; quy trình không có app mở tiến độ chung
+            onRowClick={(request) =>
+              navigate(
+                processLink(request.processKey, request.businessKey) ?? `/processes/${request.id}`,
+              )
+            }
           />
         )}
       </PageBody>

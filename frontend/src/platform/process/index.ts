@@ -8,3 +8,4 @@ export { default as InboxPage } from "./inbox/InboxPage";
 export { default as MyRequestsPage } from "./requests/MyRequestsPage";
 export { ProcessTimeline } from "./timeline/ProcessTimeline";
 export { default as ProcessTimelinePage } from "./timeline/ProcessTimelinePage";
+export { useTimeline } from "./timeline/useTimeline";

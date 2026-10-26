@@ -1,6 +1,7 @@
 import { z } from "zod";
-import { ApiError, apiClient } from "../../../platform/shared/api";
+import { ApiError } from "@/platform/shared/api";
 
+// Khớp AssistanceResponse (contracts/intelligence/v1/assistance-result.schema.json); field lạ là lỗi hợp đồng
 const citation = z
   .object({
     citationId: z.string().regex(/^C[1-3]$/),
@@ -36,31 +37,13 @@ const envelope = z
     }
   });
 
+/** Câu trả lời của trợ lý tri thức: trích dẫn nguyên văn hoặc báo thiếu bằng chứng. */
 export type Assistance = z.infer<typeof envelope>;
 
-export function parseAssistance(value: unknown): Assistance {
+/** Kiểm tra phản hồi trợ lý; sai hợp đồng thì coi như 502, không hiện gì. */
+export const parseAssistance = (value: unknown): Assistance => {
   const parsed = envelope.safeParse(value);
   if (!parsed.success) throw new ApiError(502, { title: "ASSISTANCE_CONTRACT_FAILED" }, null);
 
   return parsed.data;
-}
-
-export async function askAssistance(
-  workspace: string,
-  ticketId: string,
-  question: string,
-  signal: AbortSignal,
-): Promise<Assistance> {
-  const path = `/apps/servicedesk/v1/workspaces/${encodeURIComponent(workspace)}/tickets/${encodeURIComponent(ticketId)}/assistance`;
-  const { data } = await apiClient.post<unknown>(
-    path,
-    { question },
-    {
-      signal,
-      timeout: 18000,
-      headers: { "Cache-Control": "no-store" },
-    },
-  );
-
-  return parseAssistance(data);
-}
+};
