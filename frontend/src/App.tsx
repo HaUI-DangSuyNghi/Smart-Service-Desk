@@ -1,5 +1,6 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import { createBrowserRouter, RouterProvider } from "react-router";
+import { registerRoomRequest } from "./apps/roomrequest";
 import { registerServiceDesk } from "./apps/servicedesk";
 import { configureDashboardWidgets } from "./platform/data/dashboard";
 import { AuthProvider, httpAuth } from "./platform/human/auth";
@@ -11,6 +12,7 @@ import { createAppRegistry } from "./platform/shell/router/registry";
 // Điểm ghép duy nhất giữa platform (Tầng 2) và các app (Tầng 3)
 const registry = createAppRegistry();
 registerServiceDesk(registry);
+registerRoomRequest(registry);
 
 const router = createBrowserRouter(createAppRoutes(registry));
 
