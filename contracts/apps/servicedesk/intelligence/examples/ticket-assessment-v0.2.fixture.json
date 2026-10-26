@@ -41,7 +41,7 @@
             "impact"
           ],
           "verification": "LITERAL_SPAN",
-          "ruleId": "IMPACT-I3"
+          "ruleId": "FACT-WHOLE-ROOM"
         }
       },
       {
@@ -56,7 +56,22 @@
             "urgency"
           ],
           "verification": "LITERAL_SPAN",
-          "ruleId": "URGENCY-U4"
+          "ruleId": "FACT-IMMINENT-EVENT"
+        }
+      },
+      {
+        "slot": "deadlineMinutes",
+        "value": "15",
+        "evidence": {
+          "field": "description",
+          "quote": "thi sau 15 phút",
+          "start": 0,
+          "end": 15,
+          "supports": [
+            "urgency"
+          ],
+          "verification": "LITERAL_SPAN",
+          "ruleId": "FACT-IMMINENT-EVENT"
         }
       }
     ],
@@ -81,7 +96,7 @@
           "impact"
         ],
         "verification": "LITERAL_SPAN",
-        "ruleId": "IMPACT-I3"
+        "ruleId": "FACT-WHOLE-ROOM"
       },
       {
         "field": "description",
@@ -92,7 +107,7 @@
           "urgency"
         ],
         "verification": "LITERAL_SPAN",
-        "ruleId": "URGENCY-U4"
+        "ruleId": "FACT-IMMINENT-EVENT"
       }
     ],
     "missingInfo": [],
@@ -111,8 +126,8 @@
       "modelPolicyDigest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
       "taxonomyVersion": "servicedesk-taxonomy@0.1.0",
       "taxonomyDigest": "1adcd04d37be5b733a4881cddfcd56af3c5d3a3b86f5881942bda3eb6eba4f76",
-      "assessmentPolicyVersion": "servicedesk-assessment@0.1.0",
-      "assessmentPolicyDigest": "f5f639e5b628a178fedca3652825b461a73caad5e7753e10bfd23334beed3c14",
+      "assessmentPolicyVersion": "servicedesk-assessment@0.1.1",
+      "assessmentPolicyDigest": "ed6b1ebfa821a8f417e9e2d3278057651b485ca869458aacef9e067a6d61a958",
       "priorityPolicyDigest": "1b782b7c9388b145f1a8ad1c713eda8e42aea39bc1baadfde2b7845aff99a275",
       "policyApprovalStatus": "DRAFT",
       "contractVersion": "ticket-intelligence-assessment@0.2.0"

@@ -28,7 +28,8 @@ public final class LiteralSignals {
                             text.substring(Math.max(0, matcher.start() - 40), matcher.start())
                                     .toLowerCase(Locale.ROOT);
                     if (prefix.matches(
-                            "(?s).*(không phải|không có|not|no|ví dụ|example|giả sử)\\s*$")) {
+                            "(?s).*(không phải|không có|not|no|ví dụ|example|giả"
+                                + " sử|nếu|if)\\s*$")) {
                         continue;
                     }
                     var span =

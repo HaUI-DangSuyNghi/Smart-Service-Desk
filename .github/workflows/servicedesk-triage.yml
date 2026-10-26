@@ -24,7 +24,7 @@ jobs:
       - name: Hierarchy, literal evidence, grants and compatible contracts
         run: >-
           mvn -B -f backend/pom.xml
-          "-Dtest=HierarchicalPolicyTest,TicketAssessmentControllerTest,TicketAssessmentOrchestratorTest,ClassifierProcessingGateTest,TicketClassificationControllerTest,TicketClassificationOrchestratorTest,TrustedClassificationCapabilityTest"
+          "-Dtest=FactualAssessmentTest,SubcategoryBenchmarkTest,HierarchicalPolicyTest,TicketAssessmentControllerTest,TicketAssessmentOrchestratorTest,ClassifierProcessingGateTest,TicketClassificationControllerTest,TicketClassificationOrchestratorTest,TrustedClassificationCapabilityTest"
           test
   postgresql-regression:
     runs-on: ubuntu-24.04

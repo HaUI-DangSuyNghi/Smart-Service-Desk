@@ -11,9 +11,14 @@ import java.util.Map;
 
 @Component
 public final class SubcategoryResolver {
-    public record Resolution(String child, String status, List<AssessmentEvidence> evidence) {
+    public record Resolution(
+            String child,
+            String status,
+            List<AssessmentEvidence> evidence,
+            List<String> relatedParents) {
         public Resolution {
             evidence = List.copyOf(evidence);
+            relatedParents = List.copyOf(relatedParents);
         }
     }
 
@@ -25,11 +30,12 @@ public final class SubcategoryResolver {
 
     public Resolution resolve(String parent, Map<String, String> fields) {
         if (parent == null || !TaxonomyCatalog.PARENTS.contains(parent)) {
-            return new Resolution(null, "NOT_ASSESSED", List.of());
+            return new Resolution(null, "NOT_ASSESSED", List.of(), List.of());
         }
         var candidates = new ArrayList<String>();
         var evidence = new ArrayList<AssessmentEvidence>();
-        boolean conflict = false;
+        var relatedParents = new java.util.TreeSet<String>();
+        var foreignEvidence = new ArrayList<AssessmentEvidence>();
         for (var child : taxonomy.children()) {
             if (!child.active()) {
                 continue;
@@ -40,21 +46,27 @@ public final class SubcategoryResolver {
             if (spans.isEmpty()) {
                 continue;
             }
-            evidence.addAll(spans);
             if (parent.equals(child.parent())) {
+                evidence.addAll(spans);
                 candidates.add(child.id());
             } else {
-                conflict = true;
+                relatedParents.add(child.parent());
+                foreignEvidence.addAll(spans);
             }
         }
-        if (conflict) {
-            return new Resolution(null, "TAXONOMY_CONFLICT", evidence);
+        if (candidates.isEmpty() && !relatedParents.isEmpty()) {
+            return new Resolution(
+                    null, "TAXONOMY_CONFLICT", foreignEvidence, List.copyOf(relatedParents));
         }
         if (candidates.size() > 1) {
-            return new Resolution(null, "AMBIGUOUS", evidence);
+            return new Resolution(null, "AMBIGUOUS", evidence, List.copyOf(relatedParents));
         }
         return candidates.isEmpty()
-                ? new Resolution(null, "INSUFFICIENT_EVIDENCE", evidence)
-                : new Resolution(candidates.get(0), "SUPPORTED_BY_RULE", evidence);
+                ? new Resolution(null, "INSUFFICIENT_EVIDENCE", evidence, List.of())
+                : new Resolution(
+                        candidates.get(0),
+                        "SUPPORTED_BY_RULE",
+                        evidence,
+                        List.copyOf(relatedParents));
     }
 }

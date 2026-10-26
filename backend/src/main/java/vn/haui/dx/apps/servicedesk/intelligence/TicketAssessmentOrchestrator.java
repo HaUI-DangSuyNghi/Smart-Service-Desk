@@ -123,9 +123,12 @@ public final class TicketAssessmentOrchestrator {
                         new ProblemAssessor.Risk("NOT_ASSESSED", null, List.of(), true));
         if (!shadow) {
             String parent = model.classification().category();
-            // Instructions/conflicting narrative are review-only, not factual extraction sources.
-            boolean unsafe = reasons.contains("SAFETY_GATE") || reasons.contains("REVIEW_CONFLICT");
+            // Injection blocks extraction; each independent task resolves domain ambiguity itself.
+            boolean unsafe = reasons.contains("SAFETY_GATE");
             var child = subcategories.resolve(degraded || unsafe ? null : parent, fields);
+            if (!child.relatedParents().isEmpty()) {
+                reasons.add("CROSS_CATEGORY_SYMPTOMS_REQUIRE_REVIEW");
+            }
             classification =
                     new TicketAssessmentView.Classification(
                             model.classification().decision(),
@@ -161,6 +164,14 @@ public final class TicketAssessmentOrchestrator {
                         facts.urgency().value(),
                         facts.urgency().evidence(),
                         urgencySlot);
+                facts.facts()
+                        .forEach(
+                                fact ->
+                                        attributes.add(
+                                                new TicketAssessmentView.Attribute(
+                                                        fact.slot(),
+                                                        fact.value(),
+                                                        fact.evidence())));
                 for (var span : facts.evidence()) {
                     if (span.supports().contains("risk")) {
                         attributes.add(
@@ -222,7 +233,7 @@ public final class TicketAssessmentOrchestrator {
                         classifier.modelPolicyDigest(),
                         "servicedesk-taxonomy@0.1.0",
                         identities.get("taxonomy"),
-                        "servicedesk-assessment@0.1.0",
+                        policy.version(),
                         identities.get("assessment"),
                         identities.get("priority"),
                         "DRAFT",

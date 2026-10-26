@@ -314,6 +314,31 @@ class TicketAssessmentOrchestratorTest {
         assertTrue(result.questions().size() <= 3);
     }
 
+    @Test
+    void multipleSymptomsRequestReviewWithoutBlanketAbstention() {
+        snapshot =
+                new Ticket(
+                        id,
+                        "lab-a",
+                        "owner",
+                        UUID.randomUUID(),
+                        "Nhiều sự cố: mất Wi-Fi; ứng dụng bị treo",
+                        "14 máy trong phòng B305 bị lỗi; tiết học bắt đầu sau 8 phút",
+                        Instant.now(),
+                        null);
+        var result = assess("ASSISTED");
+        assertEquals("NETWORK", result.classification().mainCategory());
+        assertEquals("WIFI_CONNECTION", result.classification().subCategory());
+        assertEquals("I2", result.assessment().impact());
+        assertEquals("U4", result.assessment().urgency());
+        assertEquals("HIGH", result.assessment().priority());
+        assertTrue(result.disposition().reasons().contains("REVIEW_CONFLICT"));
+        assertTrue(
+                result.disposition().reasons().contains("CROSS_CATEGORY_SYMPTOMS_REQUIRE_REVIEW"));
+        assertTrue(result.disposition().needsReview());
+        assertFalse(result.disposition().operationalAuthority());
+    }
+
     @ParameterizedTest
     @ValueSource(
             strings = {"parent", "category", "confidence", "priority", "risk", "evidence", "extra"})

@@ -733,7 +733,9 @@
               "timeEvidence",
               "securitySignals",
               "workBlocked",
-              "workaroundAvailable"
+              "workaroundAvailable",
+              "affectedCount",
+              "deadlineMinutes"
             ]
           },
           "value": {
@@ -942,7 +944,10 @@
           "pattern": "^[0-9a-f]{64}$"
         },
         "assessmentPolicyVersion": {
-          "const": "servicedesk-assessment@0.1.0"
+          "enum": [
+            "servicedesk-assessment@0.1.0",
+            "servicedesk-assessment@0.1.1"
+          ]
         },
         "assessmentPolicyDigest": {
           "type": "string",

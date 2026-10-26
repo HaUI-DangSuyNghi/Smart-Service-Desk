@@ -38,7 +38,7 @@ public final class AssessmentPolicy {
             identities.put("taxonomy", sha256(read("taxonomy-v0.1.json")));
             policy = json.readTree(assessment);
             priority = json.readTree(matrix).path("matrix");
-            if (!"servicedesk-assessment@0.1.0".equals(policy.path("version").asText())
+            if (!"servicedesk-assessment@0.1.1".equals(policy.path("version").asText())
                     || !"DRAFT".equals(policy.path("riskRubricStatus").asText())
                     || !"DRAFT".equals(policy.path("approvalStatus").asText())
                     || !"triage-policy.json".equals(policy.path("prioritySource").asText())
@@ -111,6 +111,14 @@ public final class AssessmentPolicy {
                             result.put(entry.getKey(), List.copyOf(phrases));
                         });
         return java.util.Collections.unmodifiableMap(result);
+    }
+
+    public JsonNode structuredExtraction() {
+        return policy.path("structuredExtraction").deepCopy();
+    }
+
+    public String version() {
+        return policy.path("version").asText();
     }
 
     public String priority(String impact, String urgency) {
