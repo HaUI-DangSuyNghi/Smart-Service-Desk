@@ -26,7 +26,7 @@ def docker_json(*arguments):
     return strict_json(result.stdout.strip(), 262144)
 
 
-def worker(container, *, candidate=None, fields=None):
+def worker(container, *, candidate=None, fields=None, dataset_digest=None):
     command = [
         "docker",
         "exec",
@@ -41,6 +41,8 @@ def worker(container, *, candidate=None, fields=None):
         command.append("--identity")
     else:
         command += ["--candidate", candidate]
+        if dataset_digest is not None:
+            command += ["--dataset-digest", dataset_digest]
 
     raw = (
         None

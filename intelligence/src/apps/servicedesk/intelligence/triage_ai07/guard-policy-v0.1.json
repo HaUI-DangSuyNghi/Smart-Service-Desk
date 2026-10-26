@@ -1,0 +1,18 @@
+{
+  "version": "model-primary-rule-guard@0.1.0",
+  "objective": "initial_receiving_team_by_observed_symptom",
+  "ownerReview": "PENDING",
+  "allowedClasses": ["ACCOUNT", "HARDWARE", "NETWORK", "OTHER", "SOFTWARE"],
+  "abstainId": "UNDETERMINED",
+  "guards": [
+    {"id": "GUARD-ACCOUNT-SOFT", "kind": "SOFT_SIGNAL", "pattern": "tài khoản|mật khẩu|đăng nhập|authentication|password"},
+    {"id": "GUARD-NETWORK-SOFT", "kind": "SOFT_SIGNAL", "pattern": "wi[ -]?fi|mạng|internet|dns|ethernet"},
+    {"id": "GUARD-HARDWARE-SOFT", "kind": "SOFT_SIGNAL", "pattern": "màn hình|thiết bị|bàn phím|hardware"},
+    {"id": "GUARD-SOFTWARE-SOFT", "kind": "SOFT_SIGNAL", "pattern": "driver|ứng dụng|phần mềm|software|cập nhật"},
+    {"id": "GUARD-AV-BOUNDARY", "kind": "TAXONOMY_BOUNDARY", "pattern": "máy chiếu|projector|hdmi"},
+    {"id": "GUARD-MIXED-REVIEW", "kind": "REVIEW_CONFLICT", "pattern": "nhiều sự cố|mất điện|cmos|ssl|nhiều nguyên nhân"},
+    {"id": "GUARD-INJECTION", "kind": "SAFETY_GATE", "pattern": "ignore previous|bỏ qua (mọi |các )?chỉ dẫn|print secret|autoRoute|operationalAuthority"},
+    {"id": "GUARD-SAFETY", "kind": "HARD_EXCLUSION", "pattern": "rò điện|điện giật|bốc cháy|phishing|ransomware"}
+  ],
+  "automaticUse": "DISALLOWED_PENDING_GOLD_AND_OWNER_APPROVAL"
+}

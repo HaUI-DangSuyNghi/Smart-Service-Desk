@@ -145,7 +145,7 @@ class BridgeHandler(BaseHTTPRequestHandler):
             value = strict_json(raw, 16384)
             require(
                 type(value) is dict
-                and set(value)
+                and set(value) - {"datasetDigest"}
                 == {
                     "candidateId",
                     "runtimeDigest",
@@ -154,7 +154,17 @@ class BridgeHandler(BaseHTTPRequestHandler):
                     "input",
                 }
             )
-            require(value["dataScope"] == "SYNTHETIC_DEV_ONLY")
+            config = getattr(self.server.runtime, "config", {})
+            if config.get("mode") == "ENGINEERING_LAB_ONLY":
+                require(value["dataScope"] == "ENGINEERING_SILVER")
+                require(
+                    value.get("datasetDigest") == config["engineeringDatasetDigest"]
+                )
+            else:
+                require(
+                    value["dataScope"] == "SYNTHETIC_DEV_ONLY"
+                    and "datasetDigest" not in value
+                )
             require(
                 all(
                     type(value[key]) is str

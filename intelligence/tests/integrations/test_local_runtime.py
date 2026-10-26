@@ -225,8 +225,13 @@ def test_foreign_fields_wrong_policy_and_capacity_do_not_call_model(setup_runtim
     assert not any(path == "/v1/systemone" for path, _ in native.calls)
 
 
+@pytest.mark.parametrize(
+    "adapter_version", ["gemma-classify-only@0.2.0", "gemma-classify-only@0.3.0"]
+)
 @pytest.mark.parametrize("invalid", [False, True])
-def test_g1_runtime_routes_by_pinned_adapter_and_never_calls_g0(setup_runtime, invalid):
+def test_g1_runtime_routes_by_pinned_adapter_and_never_calls_g0(
+    setup_runtime, invalid, adapter_version
+):
     from local_classification.adapters.gemma_classify_only import output_schema
     from local_classification.diagnostics import ObservationRejected
 
@@ -243,7 +248,7 @@ def test_g1_runtime_routes_by_pinned_adapter_and_never_calls_g0(setup_runtime, i
     config_path = arguments["config_path"]
     config = json.loads(config_path.read_bytes())
     config["candidates"]["vote"].update(
-        adapter="gemma-classify-only@0.2.0",
+        adapter=adapter_version,
         policyDigest=digest,
     )
     config_path.write_bytes(json.dumps(config).encode())

@@ -16,6 +16,7 @@ from hdpi.generation.errors import GenerationTimeout, GenerationUnavailable
 from local_classification.adapters import (
     gemma_chat_json,
     gemma_classify_only,
+    gemma_classify_only_utf8,
     tev1_systemone,
 )
 from local_classification.diagnostics import (
@@ -64,7 +65,14 @@ class LocalClassificationRuntime:
             require(candidate["tokenizerDigest"] == candidate["modelArtifactDigest"])
             require(candidate["apiDigest"] in verified_digests)
             require(candidate["sourceModelDigest"] in verified_digests)
-            policy, snapshot = load_policy(policy_directory, candidate)
+            data_scope = (
+                "ENGINEERING_SILVER"
+                if self.config["mode"] == "ENGINEERING_LAB_ONLY"
+                else "SYNTHETIC_DEV_ONLY"
+            )
+            policy, snapshot = load_policy(
+                policy_directory, candidate, data_scope=data_scope
+            )
             self._policies[name] = policy
             snapshots.append(snapshot)
 
@@ -117,7 +125,12 @@ class LocalClassificationRuntime:
             "bridgeRevision": self.config["bridgeRevision"],
             "ollamaVersion": self.config["ollamaVersion"],
             "ollamaImage": self.config["ollamaImage"],
-            "mode": "SYNTHETIC_LAB_ONLY",
+            "mode": self.config["mode"],
+            **(
+                {"engineeringDatasetDigest": self.config["engineeringDatasetDigest"]}
+                if self.config["mode"] == "ENGINEERING_LAB_ONLY"
+                else {}
+            ),
             "contextTokens": 2048,
             "concurrency": 1,
             "operationalAuthority": False,
@@ -205,7 +218,12 @@ class LocalClassificationRuntime:
 
             adapters = {
                 module.VERSION: module
-                for module in (tev1_systemone, gemma_chat_json, gemma_classify_only)
+                for module in (
+                    tev1_systemone,
+                    gemma_chat_json,
+                    gemma_classify_only,
+                    gemma_classify_only_utf8,
+                )
             }
             adapter = adapters[candidate["adapter"]]
             payload = adapter.request_payload(
@@ -221,7 +239,11 @@ class LocalClassificationRuntime:
             native_elapsed_ms = round((monotonic() - native_started) * 1000, 3)
             options = {"model": candidate["model"]}
 
-            if adapter in (tev1_systemone, gemma_classify_only):
+            if adapter in (
+                tev1_systemone,
+                gemma_classify_only,
+                gemma_classify_only_utf8,
+            ):
                 options["abstain_id"] = policy["policy"]["abstainId"]
 
             try:

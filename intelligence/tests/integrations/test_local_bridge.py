@@ -142,6 +142,28 @@ def test_bounded_diagnostic_survives_bridge_without_exception_content(
     }
 
 
+def test_engineering_scope_is_bound_to_server_dataset_and_cannot_be_spoofed(bridge):
+    runtime = bridge[1]
+    runtime.config = {
+        "mode": "ENGINEERING_LAB_ONLY",
+        "engineeringDatasetDigest": "a" * 64,
+    }
+    payload = {
+        "candidateId": "candidate",
+        "runtimeDigest": "b" * 64,
+        "policyDigest": "c" * 64,
+        "dataScope": "ENGINEERING_SILVER",
+        "datasetDigest": "a" * 64,
+        "input": {"input": "owned engineering fixture"},
+    }
+    assert call(bridge, "/v1/observe", payload=json.dumps(payload))[0] == 200
+    payload["datasetDigest"] = "f" * 64
+    assert call(bridge, "/v1/observe", payload=json.dumps(payload))[0] == 400
+    payload["dataScope"] = "SYNTHETIC_DEV_ONLY"
+    assert call(bridge, "/v1/observe", payload=json.dumps(payload))[0] == 400
+    assert len(runtime.calls) == 1
+
+
 def test_artifact_lease_hashes_at_startup_and_detects_mutation_without_rehash(
     tmp_path, monkeypatch
 ):

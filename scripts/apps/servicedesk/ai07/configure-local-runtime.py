@@ -18,8 +18,10 @@ def main():
     parser.add_argument("--bridge", type=Path, required=True)
     parser.add_argument("--directory", type=Path, required=True)
     parser.add_argument("--enable-synthetic-lab", action="store_true")
-    parser.add_argument("--gemma-lane", choices=("G0", "G1"), default="G0")
+    parser.add_argument("--gemma-lane", choices=("G0", "G1", "G1_UTF8"), default="G0")
     parser.add_argument("--tev-study", choices=("T0", "T1", "T2", "all"), default="T0")
+    parser.add_argument("--engineering-dataset-root")
+    parser.add_argument("--allow-pending-rights-engineering", action="store_true")
     args = parser.parse_args()
     directory = args.directory.resolve()
 
@@ -70,10 +72,19 @@ def main():
             "licenseStatus": "PENDING_OWNER_REVIEW_LAB_ONLY",
         }
 
-    if args.gemma_lane == "G1":
+    if args.gemma_lane in ("G1", "G1_UTF8"):
         filename, adapter = POLICIES["gemma3-g1"]
         candidates["gemma3-g1"] = {
             **candidates["gemma3"],
+            "adapter": adapter,
+            "policyFile": filename,
+            "policyDigest": sha256((policies / filename).read_bytes()).hexdigest(),
+        }
+
+    if args.gemma_lane == "G1_UTF8":
+        filename, adapter = POLICIES["gemma3-g1-utf8"]
+        candidates["gemma3-g1-utf8"] = {
+            **candidates["gemma3-g1"],
             "adapter": adapter,
             "policyFile": filename,
             "policyDigest": sha256((policies / filename).read_bytes()).hexdigest(),
@@ -94,9 +105,35 @@ def main():
             "policyDigest": sha256((policies / filename).read_bytes()).hexdigest(),
         }
 
+    dataset_digest = None
+    if args.engineering_dataset_root:
+        from servicedesk.intelligence.triage_ai07.dataset_profiles import (
+            validate_dataset,
+        )
+
+        if not args.allow_pending_rights_engineering:
+            raise ValueError(
+                "Pending-rights private engineering processing requires explicit opt-in"
+            )
+        dataset_digest = validate_dataset(args.engineering_dataset_root).dataset_digest
+        engineering_policies = directory / "policies"
+        engineering_policies.mkdir(parents=True)
+        for candidate in candidates.values():
+            source = json.loads((policies / candidate["policyFile"]).read_bytes())
+            source["dataScope"] = "ENGINEERING_SILVER"
+            source["experimentId"] += "/labops-v4-engineering"
+            raw = (json.dumps(source, ensure_ascii=True, indent=2) + "\n").encode()
+            target = engineering_policies / candidate["policyFile"]
+            target.write_bytes(raw)
+            candidate["policyDigest"] = sha256(raw).hexdigest()
+        policies = engineering_policies
+
     runtime = {
-        "contractVersion": "local-classification-runtime@0.1.0",
-        "mode": "SYNTHETIC_LAB_ONLY",
+        "contractVersion": "local-classification-runtime@0.2.0"
+        if dataset_digest
+        else "local-classification-runtime@0.1.0",
+        "mode": "ENGINEERING_LAB_ONLY" if dataset_digest else "SYNTHETIC_LAB_ONLY",
+        **({"engineeringDatasetDigest": dataset_digest} if dataset_digest else {}),
         "ollamaVersion": "0.40.8",
         "ollamaImage": provision["ollamaImage"],
         "bridgeRevision": bridge["bridgeRevision"],
@@ -104,7 +141,7 @@ def main():
         "modelFiles": provision["files"],
         "candidates": candidates,
     }
-    directory.mkdir(parents=True)
+    directory.mkdir(parents=True, exist_ok=dataset_digest is not None)
     write_new(directory / "runtime.json", runtime)
     token = directory / "bridge-token"
     with token.open("x", encoding="ascii") as stream:

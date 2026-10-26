@@ -106,7 +106,7 @@ def load_configuration(path):
     value = strict_json(raw, 262144)
     require(
         type(value) is dict
-        and set(value)
+        and set(value) - {"engineeringDatasetDigest"}
         == {
             "contractVersion",
             "mode",
@@ -118,8 +118,20 @@ def load_configuration(path):
             "candidates",
         }
     )
-    require(value["contractVersion"] == "local-classification-runtime@0.1.0")
-    require(value["mode"] == "SYNTHETIC_LAB_ONLY" and value["contextTokens"] == 2048)
+    require(
+        value["contractVersion"]
+        in ("local-classification-runtime@0.1.0", "local-classification-runtime@0.2.0")
+    )
+    require(value["contextTokens"] == 2048)
+    if value["mode"] == "ENGINEERING_LAB_ONLY":
+        require(value["contractVersion"] == "local-classification-runtime@0.2.0")
+        require(type(value.get("engineeringDatasetDigest")) is str)
+        require(re.fullmatch(r"[0-9a-f]{64}", value["engineeringDatasetDigest"]))
+    else:
+        require(
+            value["mode"] == "SYNTHETIC_LAB_ONLY"
+            and "engineeringDatasetDigest" not in value
+        )
     require(value["ollamaVersion"] == "0.40.8")
     require(type(value["ollamaImage"]) is str and "@sha256:" in value["ollamaImage"])
     require(
@@ -152,6 +164,7 @@ def load_configuration(path):
                 "tev1-systemone@0.1.0",
                 "gemma-chat-schema@0.1.0",
                 "gemma-classify-only@0.2.0",
+                "gemma-classify-only@0.3.0",
             )
         )
         require(
@@ -183,7 +196,7 @@ def load_configuration(path):
     return value, sha256(raw).hexdigest(), (path, _identity(path))
 
 
-def load_policy(directory, candidate):
+def load_policy(directory, candidate, *, data_scope="SYNTHETIC_DEV_ONLY"):
     root = Path(directory).resolve(strict=True)
     path = root / candidate["policyFile"]
     require(not path.is_symlink() and path.resolve(strict=True).is_relative_to(root))
@@ -194,5 +207,6 @@ def load_policy(directory, candidate):
         set(value)
         == {"experimentId", "allowedClasses", "inputFields", "policy", "dataScope"}
     )
-    require(value["dataScope"] == "SYNTHETIC_DEV_ONLY")
+    require(data_scope in ("SYNTHETIC_DEV_ONLY", "ENGINEERING_SILVER"))
+    require(value["dataScope"] == data_scope)
     return value, (path, _identity(path))
