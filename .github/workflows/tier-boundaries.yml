@@ -3,7 +3,7 @@ on:
   pull_request:
     branches: [develop]
   push:
-    branches: [develop, feature/ai07-ticket-intelligence]
+    branches: [develop, feature/ai07-ticket-intelligence, feature/ai07-qwen-lora-provider]
   workflow_dispatch:
 permissions:
   contents: read

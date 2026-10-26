@@ -1,11 +1,12 @@
 name: Intelligence runtime
 on:
   push:
-    branches: [develop, feature/ai07-ticket-intelligence]
+    branches: [develop, feature/ai07-ticket-intelligence, feature/ai07-qwen-lora-provider]
   pull_request:
     branches: [develop]
     paths:
       - 'intelligence/**'
+      - 'licenses/**'
       - 'contracts/intelligence/**'
       - 'contracts/openapi/servicedesk.yaml'
       - 'contracts/apps/servicedesk/intelligence/**'
@@ -90,6 +91,10 @@ jobs:
         run: python scripts/apps/servicedesk/ai07/local-contract-evidence.py --output .local/ai07/contracts-source.json
       - name: AI07 model-primary guard source controls (owned synthetic inputs only)
         run: python scripts/apps/servicedesk/ai07/model-primary-evidence.py --output .local/ai07/model-primary-source.json
+      - name: Qwen fake provider controls without weights or private data
+        run: |
+          python scripts/apps/servicedesk/ai07/qwen-contract-evidence.py --output .local/ai07/qwen-source.json
+          python scripts/intelligence/qwen-neutral-proof.py
       - name: Validate isolated AI07 Compose base and GPU overlay without pulling images
         if: runner.os == 'Linux'
         env:
@@ -98,9 +103,15 @@ jobs:
           AI07_RUNTIME_CONFIG: /tmp/ai07-config-only/runtime.json
           AI07_POLICY_DIRECTORY: /tmp/ai07-config-only/policies
           AI07_AUTH_TOKEN_FILE: /tmp/ai07-config-only/token
+          AI07_QWEN_IMAGE: 'sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+          AI07_QWEN_MODEL_DIGEST: 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
+          AI07_QWEN_BUNDLE: /tmp/ai07-config-only/model
+          AI07_QWEN_APP_ROOT: /tmp/ai07-config-only/apps
+          AI07_QWEN_TOKEN_FILE: /tmp/ai07-config-only/qwen-token
         run: |
           docker compose -f infra/compose/compose.ai07-local-models.yaml --profile ai07-local config --quiet
           docker compose -f infra/compose/compose.ai07-local-models.yaml -f infra/compose/compose.ai07-local-gpu.yaml --profile ai07-local config --quiet
+          docker compose -f infra/compose/compose.ai07-qwen-lora.yaml --profile ai07-qwen config --quiet
       - name: Source knowledge enrichment controls
         run: python scripts/intelligence/knowledge-data.py compare --output .local/ai045/source
       - name: Source grounded assistance foundation evidence
@@ -138,6 +149,9 @@ jobs:
           python -I scripts/apps/servicedesk/ai07/local-contract-evidence.py --compare .local/ai07/contracts-source.json .local/ai07/contracts-wheel.json
           python -I scripts/apps/servicedesk/ai07/model-primary-evidence.py --output .local/ai07/model-primary-wheel.json
           python -I scripts/apps/servicedesk/ai07/model-primary-evidence.py --compare .local/ai07/model-primary-source.json .local/ai07/model-primary-wheel.json
+          python -I scripts/apps/servicedesk/ai07/qwen-contract-evidence.py --output .local/ai07/qwen-wheel.json
+          python -I scripts/apps/servicedesk/ai07/qwen-contract-evidence.py --compare .local/ai07/qwen-source.json .local/ai07/qwen-wheel.json
+          python -I scripts/intelligence/qwen-neutral-proof.py
       - name: Retain safe AI07 audit and conformance evidence
         if: always()
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
@@ -150,6 +164,8 @@ jobs:
             .local/ai07/contracts-wheel.json
             .local/ai07/model-primary-source.json
             .local/ai07/model-primary-wheel.json
+            .local/ai07/qwen-source.json
+            .local/ai07/qwen-wheel.json
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 7

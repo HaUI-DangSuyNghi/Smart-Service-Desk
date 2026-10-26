@@ -1,0 +1,11 @@
+# Optional isolated GPU service; never a dependency of the generic HDPI wheel.
+torch==2.11.0
+transformers==5.17.0
+peft==0.21.2
+scikit-learn==1.6.1
+numpy==2.2.6
+scipy==1.15.3
+joblib==1.4.2
+threadpoolctl==3.6.0
+PyYAML==6.0.2
+jsonschema==4.23.0
