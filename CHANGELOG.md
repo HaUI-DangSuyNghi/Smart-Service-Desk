@@ -1,5 +1,11 @@
 # Changelog
 
+## Backend release readiness (unreleased, 2026-10-26)
+
+- Align Jackson modules on BOM 2.18.11; add a red/green malformed DataInput token regression and remove eight HIGH source-scan findings.
+- Preserve the PostgreSQL 16.6 demo baseline; track single-worker APISIX and the hdpi entrypoint with a native Compose merge guard.
+- Record remaining findings, dependency provenance, owner handoffs and FOSS gates in `docs/BACKEND_RELEASE_READINESS.md`. The patched candidate passes real PostgreSQL 16.6 regression, live integration and restart acceptance; security/release remains NO-GO, with no release or license grant.
+
 ## Backend post-merge stabilization (unreleased)
 
 - Verify develop after PR #22/#24 and document safe PR #23 retarget prerequisites.

@@ -11,6 +11,7 @@ import vn.haui.dx.core.audit.api.AuditQuery;
 import vn.haui.dx.core.audit.api.AuditService;
 import vn.haui.dx.core.common.Page;
 import vn.haui.dx.core.common.PageRequest;
+import vn.haui.dx.core.identity.api.RequirePermission;
 
 @RestController
 @RequestMapping("/api/core/v1/workspaces/{workspace}/audit")
@@ -20,6 +21,7 @@ public class AuditController {
 
     /** Mới nhất trước; quyền kiểm trong AuditService. */
     @GetMapping
+    @RequirePermission("audit:view")
     public Page<AuditEntry> search(@PathVariable String workspace,
         @RequestParam(required = false) Instant from, @RequestParam(required = false) Instant to,
         @RequestParam(required = false) String action, @RequestParam(required = false) String actor,

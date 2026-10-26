@@ -1,5 +1,13 @@
 # Dependency, provenance and license inventory
 
+Release-readiness update (2026-10-26): current resolved Java coordinates are in
+`security/release-readiness-20261026-dependencies.txt`; Jackson is BOM-aligned at
+2.18.11 while Boot 3.3.13/Java 17/Flowable 7.1.0 remain unchanged. See
+`BACKEND_RELEASE_READINESS.md` and `security/release-readiness-20261026.csv` for
+fresh source scans, historical image limitations and open release gates. This
+provenance update is not a full transitive/image/model license audit or grant;
+the older version tables below remain historical, not current build evidence.
+
 Cập nhật Intelligence AI-03 (17/10/2026): dependency TF-IDF và closure được pin,
 kèm nguồn license và notices trong [danh mục AI-03](../intelligence/docs/governance/ai03-dependencies.md)
 và [resolution thực tế](../intelligence/docs/governance/ai03-dependency-resolution.json).

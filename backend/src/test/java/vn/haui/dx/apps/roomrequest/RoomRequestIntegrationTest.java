@@ -33,6 +33,15 @@ class RoomRequestIntegrationTest {
         p.add("spring.security.oauth2.resourceserver.jwt.jwk-set-uri",()->"http://127.0.0.1:9/no-jwks");
     }
     @Autowired MockMvc mvc; @Autowired ObjectMapper json; @Autowired JdbcTemplate jdbc;
+    @Test void genericStartCannotBypassRoomInitialization() throws Exception {
+        var tables = List.of("roomrequest_request", "process_scope", "act_hi_procinst", "act_ru_task", "audit_event");
+        long[] before = tables.stream().mapToLong(table -> jdbc.queryForObject("select count(*) from " + table, Long.class)).toArray();
+        mvc.perform(post("/api/core/v1/workspaces/lab-a/processes/room-request/instances")
+            .with(as("room-owner", "lab-a", "requester")).contentType("application/json")
+            .content(json.writeValueAsString(Map.of("businessKey", UUID.randomUUID().toString(), "variables", Map.of("room", "A-101")))))
+            .andExpect(status().isForbidden());
+        assertArrayEquals(before, tables.stream().mapToLong(table -> jdbc.queryForObject("select count(*) from " + table, Long.class)).toArray());
+    }
     // Test không có Keycloak nên không đọc được quyền nhỏ; luồng app ở đây không kiểm quyền, kiểm riêng ở KeycloakPermissionGuardTest
     @org.springframework.boot.test.mock.mockito.MockBean vn.haui.dx.hpdi.human.api.PermissionGuard permissions;
     private RequestPostProcessor as(String subject,String workspace,String role) {

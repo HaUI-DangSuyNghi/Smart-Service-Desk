@@ -2,10 +2,20 @@ param(
     [ValidatePattern('^scan-[a-z0-9-]{1,45}$')][string]$Run = "scan-$([guid]::NewGuid().ToString('N').Substring(0,12))",
     [ValidateNotNullOrEmpty()][string[]]$Images = @('dx-platform:0.1.0', 'postgres:16.15-bookworm@sha256:0ea6700a3b4f0ae6ce746519073558aed4d88a79d8d07622a9a644946c7319c4', 'quay.io/keycloak/keycloak:26.0.8@sha256:09a381c715ab0b111835b70f2905955274843a219c6f27efb348e4d9f4086858', 'dx-apisix:3.11.0-sec01', 'dx-platform-build:0.1.0'),
     [switch]$ReportOnly,
+    [switch]$FromCompose,
+    [string[]]$ComposeFiles = @('compose.yaml'),
+    [string[]]$Profiles = @(),
     [ValidatePattern('^[a-zA-Z0-9][a-zA-Z0-9_.-]{0,80}$')][string]$CacheVolume = 'dx-core-trivy-cache'
 )
 $ErrorActionPreference = 'Stop'
 Set-Location (Split-Path $PSScriptRoot -Parent)
+if ($FromCompose) {
+    $compose = @('compose')
+    foreach ($file in $ComposeFiles) { $compose += @('-f', $file) }
+    foreach ($profile in $Profiles) { $compose += @('--profile', $profile) }
+    $Images = @(docker @compose config --images | Sort-Object -Unique)
+    if ($LASTEXITCODE -ne 0 -or $Images.Count -eq 0) { throw 'Cannot resolve Compose image inventory' }
+}
 $scanner = 'aquasec/trivy@sha256:2416d1f74045b57274df1a340eee6b510cacd73c66a6ccb8da092b117eb7d222'
 $directory = Join-Path $PWD ".local/$Run"
 if (Test-Path -LiteralPath $directory) { throw 'Scan output directory already exists' }

@@ -13,6 +13,7 @@ import vn.haui.dx.core.common.Page;
 import vn.haui.dx.core.common.PageRequest;
 import vn.haui.dx.core.workflow.api.*;
 import vn.haui.dx.core.workflow.internal.ProcessRegistry;
+import vn.haui.dx.core.identity.api.RequirePermission;
 import static org.springframework.http.HttpStatus.*;
 
 @RestController
@@ -33,15 +34,19 @@ public class WorkflowApi {
     public Collection<ProcessPolicy> definitions() { return registry.policies(); }
 
     @PostMapping("/workspaces/{workspace}/processes/{processKey}/instances")
+    @RequirePermission("request:create")
     @ResponseStatus(CREATED)
     public ProcessRef start(@PathVariable String workspace, @PathVariable String processKey,
                             @Valid @RequestBody Start input) {
+        if (!registry.require(processKey).selfService())
+            throw CoreException.forbidden("Process must be started from its app");
         var variables = new HashMap<String, Object>(input.variables() == null ? Map.of() : input.variables());
         if (input.title() != null && variables.putIfAbsent("title", input.title()) != null)
             throw CoreException.validation("Supply title once");
         return workflow.start(workspace, processKey, input.businessKey(), variables);
     }
     @GetMapping("/workspaces/{workspace}/tasks")
+    @RequirePermission("task:handle")
     public Page<TaskView> inbox(@PathVariable String workspace, @RequestParam(defaultValue="assigned") String scope,
                                 @RequestParam(required=false) Integer page, @RequestParam(required=false) Integer size) {
         var filter = switch (scope) {
@@ -56,6 +61,7 @@ public class WorkflowApi {
         return workflow.tasksOf(workspace, id);
     }
     @PostMapping("/workspaces/{workspace}/instances/{id}/tasks/{taskId}/claim")
+    @RequirePermission("task:handle")
     public TaskView claim(@PathVariable String workspace, @PathVariable String id, @PathVariable String taskId) {
         requireTask(workspace, id, taskId);
         return workflow.claim(workspace, taskId);

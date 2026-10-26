@@ -16,6 +16,14 @@ import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
 class ContributedProcessCatalogTest {
+    @Test void registrationPreservesGenericStartExposure() {
+        ProcessContribution contribution = () -> List.of(selfService, appOwned);
+        var policies = new vn.haui.dx.hpdi.process.internal.ContributionRegistry(List.of(contribution)).policies();
+        assertTrue(policies.stream().filter(policy -> policy.processKey().equals(selfService.processKey()))
+            .findFirst().orElseThrow().selfService());
+        assertFalse(policies.stream().filter(policy -> policy.processKey().equals(appOwned.processKey()))
+            .findFirst().orElseThrow().selfService());
+    }
     private final HumanContext human = mock(HumanContext.class);
     private final ProcessCapability processes = mock(ProcessCapability.class);
 

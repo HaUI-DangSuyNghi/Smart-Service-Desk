@@ -29,6 +29,7 @@ import vn.haui.dx.core.identity.api.CurrentUser;
 import vn.haui.dx.core.identity.api.WorkspaceAccess;
 import vn.haui.dx.core.identity.api.WorkspaceDirectory;
 import vn.haui.dx.core.identity.api.WorkspaceRole;
+import vn.haui.dx.core.identity.api.WorkspacePermissions;
 import vn.haui.dx.core.workflow.api.*;
 
 @Service
@@ -39,18 +40,13 @@ public final class FlowableWorkflowService implements WorkflowService {
     private final AuditService audit;
     private final ProcessRegistry registry;
     private final TransactionTemplate transaction;
-    /** Danh bạ Keycloak, để kiểm người được giao việc; null trong test không cần giao việc. */
+    /** Current permission mappings and directory used to validate task assignment. */
     private final WorkspaceDirectory directory;
     static final int MAX_COMMENT = 1000;
     /** Độ dài tối đa một biến khởi tạo; ô một dòng (200) do form của Tầng 2 tự giới hạn. */
     static final int MAX_VARIABLE = 2000;
     /** Số quy trình tối đa đọc cho một lần thống kê; khoảng dài hơn nên chia nhỏ. */
     static final int MAX_STATISTICS_PROCESSES = 10_000;
-
-    public FlowableWorkflowService(ProcessEngine engine, JdbcTemplate jdbc, CurrentUser user,
-            AuditService audit, ProcessRegistry registry, PlatformTransactionManager manager) {
-        this(engine, jdbc, (Supplier<CurrentUser>) () -> user, audit, registry, manager, null);
-    }
 
     /** Cho test giao việc: người dùng cố định và danh bạ giả. */
     public FlowableWorkflowService(ProcessEngine engine, JdbcTemplate jdbc, CurrentUser user, AuditService audit,
@@ -73,7 +69,7 @@ public final class FlowableWorkflowService implements WorkflowService {
         this.audit = audit;
         this.registry = registry;
         this.transaction = new TransactionTemplate(manager);
-        this.directory = directory;
+        this.directory = java.util.Objects.requireNonNull(directory, "directory");
     }
 
     @Override
@@ -176,6 +172,7 @@ public final class FlowableWorkflowService implements WorkflowService {
                 // Bước BPMN giao cho người khởi tạo (assignee="${initiator}"), ví dụ xác nhận đã xong
                 if (!user.sub().equals(scope.get("owner"))) throw CoreException.forbidden("Initiator step");
             } else {
+                WorkspacePermissions.require(user, directory, workspace, "task:handle");
                 if (user.sub().equals(scope.get("owner"))) throw CoreException.forbidden("Independent assignee required");
                 candidate(user, workspace, task);
             }
@@ -279,7 +276,6 @@ public final class FlowableWorkflowService implements WorkflowService {
         var user = member(workspace);
         if (!user.hasRole(workspace, WorkspaceRole.COORDINATOR)) throw CoreException.forbidden("Coordinator required");
         text(assignee, 100, "assignee");
-        if (directory == null) throw CoreException.unavailable("Workspace directory is not configured");
         // Vai trò của người được giao lấy từ danh bạ Keycloak (người gọi không có token của họ)
         var target = directory.members(workspace).stream().filter(member -> member.sub().equals(assignee)).findFirst()
             .orElseThrow(() -> CoreException.validation("Assignee is not a workspace member"));

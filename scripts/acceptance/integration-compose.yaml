@@ -17,7 +17,10 @@ services:
       labels:
         org.opencontainers.image.revision: ${INT01_SOURCE_SHA:?Set current commit SHA}
     ports: !override ["127.0.0.1:${INT01_GATEWAY_PORT:-19080}:9080"]
+    volumes:
+      - ./scripts/acceptance/apisix-single-worker.yaml:/usr/local/apisix/conf/config.yaml:ro
   intelligence:
+    entrypoint: [python, -m, hdpi.http_service, --host, 0.0.0.0]
     image: ${INT01_PROJECT:?Use a fresh int01 project}-intelligence:ci
     build:
       labels:

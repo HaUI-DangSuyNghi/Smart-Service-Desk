@@ -26,12 +26,13 @@ class KeycloakWorkspaceDirectoryTest {
     private final WorkspaceAccess access = mock(WorkspaceAccess.class);
     private MockRestServiceServer server;
     private KeycloakWorkspaceDirectory directory;
+    private final Clock clock = mock(Clock.class);
 
     @BeforeEach void setUp() {
         var builder = RestClient.builder().baseUrl(KC);
         server = MockRestServiceServer.bindTo(builder).build();
-        directory = new KeycloakWorkspaceDirectory(access, builder.build(), "dx-lab", "dx-directory", "secret",
-            Clock.fixed(Instant.parse("2026-10-24T00:00:00Z"), ZoneOffset.UTC));
+        when(clock.instant()).thenReturn(Instant.parse("2026-10-24T00:00:00Z"));
+        directory = new KeycloakWorkspaceDirectory(access, builder.build(), "dx-lab", "dx-directory", "secret", clock);
     }
 
     private void expectToken() {
@@ -107,6 +108,34 @@ class KeycloakWorkspaceDirectoryTest {
             Clock.systemUTC());
         var error = assertThrows(CoreException.class, () -> unconfigured.members("lab-a"));
         assertEquals(ErrorCode.SERVICE_UNAVAILABLE, error.code());
+    }
+
+    @Test void permissionRevocationIsEffectiveAtCacheExpiryAndOutageNeverRestoresStaleGrant() {
+        expectToken();
+        expectPermissionSnapshot("{\"name\":\"task:handle\"}");
+        expectPermissionSnapshot("");
+        server.expect(requestTo(KC + "/admin/realms/dx-lab/group-by-path/workspaces/lab-a"))
+            .andRespond(withServerError());
+        var user = mock(vn.haui.dx.core.identity.api.CurrentUser.class);
+        when(access.current()).thenReturn(user);
+        when(user.isMember("lab-a")).thenReturn(true);
+        when(user.memberships()).thenReturn(Set.of(new vn.haui.dx.core.identity.api.Membership("lab-a", WorkspaceRole.AGENT)));
+        var policy = new vn.haui.dx.core.identity.api.WorkspacePermissions(access, directory);
+        assertDoesNotThrow(() -> policy.require("lab-a", "task:handle"));
+        when(clock.instant()).thenReturn(Instant.parse("2026-10-24T00:00:59Z"));
+        assertDoesNotThrow(() -> policy.require("lab-a", "task:handle"));
+        when(clock.instant()).thenReturn(Instant.parse("2026-10-24T00:01:00Z"));
+        assertEquals(ErrorCode.FORBIDDEN, assertThrows(CoreException.class, () -> policy.require("lab-a", "task:handle")).code());
+        when(clock.instant()).thenReturn(Instant.parse("2026-10-24T00:02:00Z"));
+        assertEquals(ErrorCode.SERVICE_UNAVAILABLE, assertThrows(CoreException.class, () -> policy.require("lab-a", "task:handle")).code());
+        server.verify();
+    }
+
+    private void expectPermissionSnapshot(String permissions) {
+        expectGet("/admin/realms/dx-lab/group-by-path/workspaces/lab-a", "{\"id\":\"g\"}");
+        expectGet("/admin/realms/dx-lab/groups/g/children?briefRepresentation=true&max=100", "[{\"id\":\"r\",\"name\":\"agent\"}]");
+        expectGet("/admin/realms/dx-lab/groups/r/members?briefRepresentation=true&max=1000", "[]");
+        expectGet("/admin/realms/dx-lab/groups/r/role-mappings", "{\"clientMappings\":{\"dx-permissions\":{\"mappings\":[" + permissions + "]}}}");
     }
 
     @Test void membershipIsCheckedBeforeAnyLookup() {

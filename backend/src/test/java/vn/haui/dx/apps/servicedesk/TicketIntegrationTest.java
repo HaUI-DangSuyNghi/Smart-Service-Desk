@@ -17,6 +17,9 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.SpyBean;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.oauth2.jwt.Jwt;
+import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
@@ -187,9 +190,15 @@ class TicketIntegrationTest {
 
     @Test void statisticsIgnoreStandaloneCoreProcessesAndDetectScopeMismatch() throws Exception {
         String marker = "scope-" + UUID.randomUUID();
-        mvc.perform(post("/api/core/v1/workspaces/lab-a/processes/service-desk/instances")
-            .with(as("standalone-stats", "lab-a", "requester")).contentType("application/json")
-            .content(json.writeValueAsString(Map.of("businessKey", marker)))).andExpect(status().isCreated());
+        var previous = SecurityContextHolder.getContext();
+        var context = SecurityContextHolder.createEmptyContext();
+        context.setAuthentication(new JwtAuthenticationToken(Jwt.withTokenValue("statistics-fixture")
+            .header("alg", "none").subject("standalone-stats")
+            .claim("groups", List.of("/workspaces/lab-a/requester")).build()));
+        SecurityContextHolder.setContext(context);
+        try {
+            workflow.start("lab-a", ServiceDeskProcess.KEY, marker, Map.of());
+        } finally { SecurityContextHolder.setContext(previous); }
         metrics(statistics("lab-a", "standalone-stats", null, "requester"), 0, 0, 0, 0);
         var ticket = create("scope-stats", marker, "requester");
         String process = ticket.path("process").path("processInstanceId").asText();

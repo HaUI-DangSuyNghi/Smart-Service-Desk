@@ -13,7 +13,8 @@ public class ContributionRegistry implements ProcessRegistration {
             new ProcessPolicy(d.processKey(), d.starterRoles().stream().map(WorkspaceRole::new)
                 .collect(java.util.stream.Collectors.toUnmodifiableSet()), d.allowedStartVariables(), d.outcomesByTask(),
                 d.observerRoles().stream().map(WorkspaceRole::new).collect(java.util.stream.Collectors.toUnmodifiableSet()),
-                d.readerRoles().stream().map(WorkspaceRole::new).collect(java.util.stream.Collectors.toUnmodifiableSet()))).toList();
+                d.readerRoles().stream().map(WorkspaceRole::new).collect(java.util.stream.Collectors.toUnmodifiableSet()),
+                d.selfService())).toList();
     }
     public List<ProcessPolicy> policies() { return policies; }
 }

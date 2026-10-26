@@ -15,6 +15,7 @@ import org.springframework.web.multipart.MultipartFile;
 import vn.haui.dx.core.data.api.FileService;
 import vn.haui.dx.core.data.api.StoredFile;
 import vn.haui.dx.core.common.CoreException;
+import vn.haui.dx.core.identity.api.RequirePermission;
 import static org.springframework.http.HttpStatus.CREATED;
 
 @RestController
@@ -28,6 +29,7 @@ public class FileApi {
     }
 
     @PostMapping(consumes=MediaType.MULTIPART_FORM_DATA_VALUE)
+    @RequirePermission("document:upload")
     @ResponseStatus(CREATED)
     public StoredFile upload(@PathVariable String workspace, @RequestParam MultipartFile file) throws IOException {
         if (!allowUnscannedUpload) throw CoreException.forbidden("Uploads disabled pending content-scanning approval");
@@ -36,10 +38,12 @@ public class FileApi {
         }
     }
     @GetMapping("/{fileId}")
+    @RequirePermission("document:view")
     public StoredFile describe(@PathVariable String workspace, @PathVariable UUID fileId) {
         return files.describe(workspace, fileId);
     }
     @GetMapping("/{fileId}/content")
+    @RequirePermission("document:view")
     public ResponseEntity<Resource> download(@PathVariable String workspace, @PathVariable UUID fileId) {
         var file = files.describe(workspace, fileId);
         return ResponseEntity.ok()

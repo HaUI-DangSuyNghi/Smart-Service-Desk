@@ -13,8 +13,8 @@ public final class ApprovalProcesses implements ProcessRegistration {
     public List<ProcessPolicy> policies() {
         return List.of(
             new ProcessPolicy("document-review", Set.of(REQUESTER, AGENT, COORDINATOR), Set.of("title"),
-                Map.of("review", Set.of("approved", "rejected")), Set.of(), Set.of(COORDINATOR)),
+                Map.of("review", Set.of("approved", "rejected")), Set.of(), Set.of(COORDINATOR), true),
             new ProcessPolicy("equipment-approval", Set.of(REQUESTER, AGENT, COORDINATOR), Set.of("title"),
-                Map.of("approve", Set.of("approved", "rejected"), "handover", Set.of("delivered")), Set.of(), Set.of(COORDINATOR)));
+                Map.of("approve", Set.of("approved", "rejected"), "handover", Set.of("delivered")), Set.of(), Set.of(COORDINATOR), true));
     }
 }
