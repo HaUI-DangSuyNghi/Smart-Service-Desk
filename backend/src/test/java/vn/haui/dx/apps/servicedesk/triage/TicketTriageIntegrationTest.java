@@ -50,6 +50,7 @@ class TicketTriageIntegrationTest {
     @Autowired MockMvc mvc;
     @Autowired ObjectMapper json;
     @Autowired JdbcTemplate jdbc;
+    @Autowired vn.haui.dx.core.identity.api.WorkspaceDirectory directory;
     @Autowired vn.haui.dx.core.workflow.internal.WorkflowStateFixture engineState;
     @MockBean IntelligenceTransport intelligence;
 
@@ -137,6 +138,10 @@ class TicketTriageIntegrationTest {
             .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
         String task = progress.path("currentTasks").get(0).path("id").asText();
         String taskRoute = "/api/core/v1/workspaces/triage-a/instances/" + ticket.path("process").path("processInstanceId").asText() + "/tasks/" + task;
+        when(directory.members("triage-a")).thenReturn(List.of(new vn.haui.dx.core.identity.api.DirectoryMember(
+            "triage-handler", "triage-handler", null, java.util.Set.of(vn.haui.dx.core.identity.api.WorkspaceRole.AGENT))));
+        jdbc.update("insert into servicedesk_agent_duty(workspace,subject,on_duty) values('triage-a','triage-handler',true)"
+            + " on conflict(workspace,subject) do update set on_duty=true");
         mvc.perform(post(taskRoute + "/claim").with(as("triage-handler", "triage-a", "agent"))).andExpect(status().isOk());
         mvc.perform(post("/api/hpdi/v1/workspaces/triage-a/tasks/"+task+"/start").with(as("triage-handler","triage-a","agent")))
             .andExpect(status().isOk());

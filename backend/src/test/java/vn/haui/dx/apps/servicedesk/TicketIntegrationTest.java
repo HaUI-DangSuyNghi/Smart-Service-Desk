@@ -60,6 +60,15 @@ class TicketIntegrationTest {
     @SpyBean TicketReviewService reviewViews;
     @SpyBean vn.haui.dx.hpdi.process.api.ProcessCapability processViews;
     @Autowired vn.haui.dx.core.identity.api.WorkspaceDirectory directory;
+    @SpyBean AgentDutyService duty;
+
+    @org.junit.jupiter.api.BeforeEach
+    void availableRegressionAgents() {
+        doReturn(true).when(duty).onDuty(anyString(), anyString());
+        doAnswer(invocation ->
+            directory.members(invocation.getArgument(0)).stream().map(vn.haui.dx.core.identity.api.DirectoryMember::sub)
+                .collect(java.util.stream.Collectors.toSet())).when(directory).supportGroupMembers(anyString(), anyString());
+    }
 
     private ResultActions review(JsonNode ticket, String reviewer, String assignee, Integer minutes) throws Exception {
         when(directory.members("lab-a")).thenReturn("unknown-agent".equals(assignee) ? List.of() : List.of(new vn.haui.dx.core.identity.api.DirectoryMember(
@@ -69,6 +78,32 @@ class TicketIntegrationTest {
         if (minutes != null) input.put("estimateMinutes",minutes);
         return mvc.perform(post(BASE+"/"+ticket.path("id").asText()+"/review").with(as(reviewer,"lab-a","coordinator"))
             .contentType("application/json").content(input.toString()));
+    }
+
+    @Test void dutyIsRecheckedAtReviewClaimAndAssignmentWithoutInterruptingActiveWork() throws Exception {
+        doCallRealMethod().when(duty).onDuty(anyString(), anyString());
+        String worker = "duty-worker-" + UUID.randomUUID();
+        var ticket = create("duty-owner-" + UUID.randomUUID(), "Duty assignment", "requester");
+        review(ticket, "duty-reviewer", worker, null).andExpect(status().isConflict());
+        String dutyRoute = "/api/hpdi/v1/workspaces/lab-a/duty/me";
+        mvc.perform(put(dutyRoute).with(as(worker,"lab-a","agent")).contentType("application/json").content("{\"onDuty\":true}"))
+            .andExpect(status().isOk());
+        String task = body(review(ticket, "duty-reviewer", worker, null).andExpect(status().isOk())).path("taskId").asText();
+        String tasks = "/api/hpdi/v1/workspaces/lab-a/tasks/";
+        mvc.perform(post(tasks+task+"/start").with(as(worker,"lab-a","agent"))).andExpect(status().isOk());
+        mvc.perform(put(dutyRoute).with(as(worker,"lab-a","agent")).contentType("application/json").content("{\"onDuty\":false}"))
+            .andExpect(status().isOk());
+        mvc.perform(get("/api/hpdi/v1/workspaces/lab-a/queue").with(as(worker,"lab-a","agent"))).andExpect(status().isOk())
+            .andExpect(jsonPath("$.items[0].workState").value("IN_PROGRESS"));
+        mvc.perform(post(tasks+task+"/pause").with(as(worker,"lab-a","agent")).contentType("application/json").content("{\"reason\":\"WAITING_EXTERNAL\"}"))
+            .andExpect(status().isOk());
+        mvc.perform(post(tasks+task+"/assign").with(as("duty-reviewer","lab-a","coordinator")).contentType("application/json")
+            .content(json.writeValueAsString(Map.of("assignee",worker)))).andExpect(status().isConflict());
+        var unassigned = create("unassigned-owner-"+UUID.randomUUID(), "Off duty claim", "requester");
+        String unassignedTask = body(review(unassigned,"duty-reviewer",null,null).andExpect(status().isOk())).path("taskId").asText();
+        when(directory.members("lab-a")).thenReturn(List.of(new vn.haui.dx.core.identity.api.DirectoryMember(
+            worker,worker,null,java.util.Set.of(vn.haui.dx.core.identity.api.WorkspaceRole.AGENT))));
+        mvc.perform(post(tasks+unassignedTask+"/claim").with(as(worker,"lab-a","agent"))).andExpect(status().isConflict());
     }
 
     private String currentTask(JsonNode ticket, String owner) throws Exception {

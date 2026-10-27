@@ -22,6 +22,22 @@ import static org.springframework.test.web.client.match.MockRestRequestMatchers.
 import static org.springframework.test.web.client.response.MockRestResponseCreators.*;
 
 class KeycloakWorkspaceDirectoryTest {
+    @Test void supportGroupsUseSeparateNamespaceAndIgnoreDisabledMembers() {
+        expectToken();
+        expectGet("/admin/realms/dx-lab/group-by-path/support-groups/lab-a/hardware", "{\"id\":\"support\"}");
+        expectGet("/admin/realms/dx-lab/groups/support/members?briefRepresentation=true&first=0&max=1000",
+            "[{\"id\":\"agent\"},{\"id\":\"disabled\",\"enabled\":false}]");
+        assertEquals(java.util.Set.of("agent"), directory.supportGroupMembers("lab-a", "hardware"));
+        verify(access).requireMember("lab-a");
+        server.verify();
+    }
+
+    @Test void supportGroupLookupFailsClosedAndRequiresWorkspaceMembership() {
+        doThrow(CoreException.forbidden("Workspace required")).when(access).requireMember("lab-b");
+        assertThrows(CoreException.class, () -> directory.supportGroupMembers("lab-b", "hardware"));
+        assertThrows(CoreException.class, () -> directory.supportGroupMembers("lab-a", "coordinator"));
+        server.verify();
+    }
     private static final String KC = "http://kc";
     private final WorkspaceAccess access = mock(WorkspaceAccess.class);
     private MockRestServiceServer server;

@@ -117,6 +117,8 @@ def violations(root=ROOT):
             if re.search(r'\bfor\s+(?:no\s+key\s+)?$', sql[:match.start()], re.I):
                 continue
             table = re.sub(r'["\s]', '', match.group(1)).lower()
+            if table == 'set' and re.search(r'\bon\s+conflict\b[^;]*\bdo\s*$', sql[:match.start()], re.I):
+                continue
             if table != 'lateral' and table not in ctes and (private_platform_table(table) or '.' in table or not table.startswith(app + '_')):
                 report(path, 'app-private-sql', table)
 

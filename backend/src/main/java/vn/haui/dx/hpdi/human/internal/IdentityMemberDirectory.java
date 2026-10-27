@@ -20,6 +20,16 @@ import vn.haui.dx.hpdi.human.api.WorkspacePermission;
  */
 @Service
 public class IdentityMemberDirectory implements MemberDirectory {
+    public List<WorkspaceMember> currentAgents(String workspace, String supportGroup) {
+        directory.refresh(workspace);
+        var permissions = directory.rolePermissions(workspace);
+        var supported = supportGroup == null ? null : directory.supportGroupMembers(workspace, supportGroup);
+        boolean canHandle = permissions.getOrDefault("agent", List.of()).stream()
+            .anyMatch(permission -> "task:handle".equals(permission.name()));
+        if (!canHandle) return List.of();
+        return members(workspace).stream().filter(member -> member.roles().contains("agent"))
+            .filter(member -> supported == null || supported.contains(member.subject())).toList();
+    }
     private final WorkspaceAccess access;
     private final WorkspaceDirectory directory;
     public IdentityMemberDirectory(WorkspaceAccess access, WorkspaceDirectory directory) {

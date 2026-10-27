@@ -14,9 +14,20 @@ public class ServiceDeskProcess implements ProcessContribution {
     public static final String REVIEWED_KEY = "service-desk-reviewed";
     private final org.springframework.jdbc.core.JdbcTemplate jdbc;
     private final org.springframework.beans.factory.ObjectProvider<vn.haui.dx.hpdi.process.api.WorkExecution> execution;
+    private final org.springframework.beans.factory.ObjectProvider<TicketAssignmentEligibility> eligibility;
     public ServiceDeskProcess(org.springframework.jdbc.core.JdbcTemplate jdbc,
-            org.springframework.beans.factory.ObjectProvider<vn.haui.dx.hpdi.process.api.WorkExecution> execution) {
-        this.jdbc = jdbc; this.execution = execution;
+            org.springframework.beans.factory.ObjectProvider<vn.haui.dx.hpdi.process.api.WorkExecution> execution,
+            org.springframework.beans.factory.ObjectProvider<TicketAssignmentEligibility> eligibility) {
+        this.jdbc = jdbc; this.execution = execution; this.eligibility = eligibility;
+    }
+
+    @Override public void beforeAssign(String workspace, String processKey, String processId, String taskKey, String subject) {
+        if (!REVIEWED_KEY.equals(processKey) || !"handle".equals(taskKey)) return;
+        var rows = jdbc.queryForList("select t.creator,r.category from servicedesk_ticket t join servicedesk_review r on r.ticket_id=t.id"
+            + " where t.workspace=? and t.process_instance_id=?", workspace, processId);
+        if (rows.isEmpty()) throw vn.haui.dx.hpdi.common.api.CapabilityException.conflict("Ticket review required");
+        var row = rows.get(0);
+        eligibility.getObject().require(workspace, TicketReview.Category.valueOf((String) row.get("category")), (String) row.get("creator"), subject);
     }
 
     @Override public Map<String, Set<String>> executionTasks() { return Map.of(REVIEWED_KEY, Set.of("handle")); }

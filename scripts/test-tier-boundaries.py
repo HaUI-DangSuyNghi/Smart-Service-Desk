@@ -13,6 +13,11 @@ JAVA = 'backend/src/main/java/vn/haui/dx/'
 
 
 class BoundaryGuardTest(unittest.TestCase):
+    def test_app_upsert_does_not_treat_set_as_a_table(self):
+        path = JAVA + 'apps/example/Duty.java'
+        self.write(path, 'String sql = "insert into example_duty(id) values(?) on conflict(id) do update set id=excluded.id";')
+        self.assertFalse(guard.violations(self.root))
+        self.mutation(path, 'String sql = "insert into example_duty(id) values(?) on conflict(id) do update set id=excluded.id; update act_ru_task set name_=null";', 'app-private-sql')
     def setUp(self):
         self.directory = tempfile.TemporaryDirectory()
         self.addCleanup(self.directory.cleanup)

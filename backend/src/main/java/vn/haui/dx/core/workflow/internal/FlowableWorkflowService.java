@@ -329,6 +329,7 @@ public final class FlowableWorkflowService implements WorkflowService {
             if (user.sub().equals(scope.get("owner"))) throw CoreException.forbidden("Independent approver required");
             if (task.getAssignee() != null) throw CoreException.conflict("Task already claimed");
             candidate(user, workspace, task);
+            registry.beforeAssign(workspace, (String) scope.get("process_key"), task.getProcessInstanceId(), task.getTaskDefinitionKey(), user.sub());
             engine.getTaskService().claim(taskId, user.sub());
             // Ghi kèm processKey để nhật ký hiện được tên quy trình mà không phải tra lại
             audit.record("task.claim", "task", taskId, workspace,
@@ -474,6 +475,7 @@ public final class FlowableWorkflowService implements WorkflowService {
             if (target.roles().stream().noneMatch(role -> groups.contains(workspace + ":" + role.value())))
                 throw CoreException.validation("Assignee is not in the task's candidate group");
             String previous = task.getAssignee();
+            registry.beforeAssign(workspace, (String) scope.get("process_key"), task.getProcessInstanceId(), task.getTaskDefinitionKey(), assignee);
             if (previous != null && !previous.equals(assignee)
                     && registry.executionTask((String) scope.get("process_key"), task.getTaskDefinitionKey())) {
                 if (executionState(taskId) == TaskExecution.State.IN_PROGRESS)

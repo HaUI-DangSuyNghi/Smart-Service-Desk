@@ -84,6 +84,32 @@ class KeycloakWorkspaceDirectory implements WorkspaceDirectory {
     }
 
     @Override
+    public Set<String> supportGroupMembers(String workspace, String group) {
+        access.requireMember(workspace);
+        if (!Set.of("hardware", "network", "software", "sysadmin").contains(group))
+            throw CoreException.validation("Unknown support group");
+        if (http == null || clientSecret == null || clientSecret.isBlank())
+            throw CoreException.unavailable("Workspace directory is not configured");
+        try {
+            JsonNode support = get("/admin/realms/{realm}/group-by-path/support-groups/{workspace}/{group}", realm, workspace, group);
+            if (support == null) return Set.of();
+            Set<String> subjects = new HashSet<>();
+            int first = 0;
+            while (true) {
+                JsonNode page = get("/admin/realms/{realm}/groups/{id}/members?briefRepresentation=true&first={first}&max=1000",
+                    realm, support.path("id").asText(), first);
+                for (JsonNode user : iterable(page)) {
+                    if (user.path("enabled").asBoolean(true)) subjects.add(user.path("id").asText());
+                }
+                if (page == null || page.size() < 1000) return Set.copyOf(subjects);
+                first += 1000;
+            }
+        } catch (RestClientException error) {
+            throw CoreException.unavailable("Workspace directory unavailable");
+        }
+    }
+
+    @Override
     public List<DirectoryMember> members(String workspace) {
         access.requireMember(workspace);
         return snapshot(workspace).members();

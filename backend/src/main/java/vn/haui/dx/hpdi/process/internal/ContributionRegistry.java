@@ -32,6 +32,11 @@ public class ContributionRegistry implements ProcessRegistration {
                 d.selfService())).toList();
     }
     public List<ProcessPolicy> policies() { return policies; }
+    public void beforeAssign(String workspace, String processKey, String processId, String taskKey, String subject) {
+        contributions.stream().filter(contribution -> contribution.definitions().stream()
+            .anyMatch(definition -> definition.processKey().equals(processKey))).findFirst().orElseThrow()
+            .beforeAssign(workspace, processKey, processId, taskKey, subject);
+    }
     public void beforeComplete(String workspace, String processKey, String processId, String taskKey, String taskId, String outcome) {
         contributions.stream().filter(contribution -> contribution.definitions().stream()
             .anyMatch(definition -> definition.processKey().equals(processKey))).findFirst().orElseThrow()

@@ -52,6 +52,7 @@ try {
     $env:WORKFLOW_TEST_DB_PASSWORD = $password
     $arguments = @('-B', '-o', '-f', (Join-Path $root 'backend/pom.xml'), 'clean', 'test')
     $arguments += '-Dservice-desk.background.scheduled=false'
+    $arguments += '-Dspring.datasource.hikari.maximum-pool-size=3'
     if ($Test) { $arguments += "-Dtest=$Test" }
     if ($Profile -eq 'execution') { $arguments += '-Dtest=WorkflowApprovalTest,WorkflowExecutionCompatibilityTest,WorkExecutionTest' }
     elseif ($Profile -ne 'full') { $arguments += "-P$Profile" }

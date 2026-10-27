@@ -19,6 +19,20 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 class IdentityMemberDirectoryTest {
+    @Test void supportMembershipCannotGrantAgentRoleOrRestoreRevokedPermission() {
+        var access = mock(WorkspaceAccess.class);
+        var directory = mock(WorkspaceDirectory.class);
+        var members = new IdentityMemberDirectory(access, directory);
+        when(directory.members("lab-a")).thenReturn(List.of(
+            new DirectoryMember("coordinator", "coordinator", null, Set.of(WorkspaceRole.COORDINATOR)),
+            new DirectoryMember("agent", "agent", null, Set.of(WorkspaceRole.AGENT))));
+        when(directory.supportGroupMembers("lab-a", "hardware")).thenReturn(Set.of("coordinator", "agent", "outsider"));
+        when(directory.rolePermissions("lab-a")).thenReturn(Map.of("agent", List.of(new DirectoryPermission("task:handle", null))));
+        assertEquals(List.of("agent"), members.currentAgents("lab-a", "hardware").stream().map(member -> member.subject()).toList());
+        when(directory.rolePermissions("lab-a")).thenReturn(Map.of());
+        assertTrue(members.currentAgents("lab-a", "hardware").isEmpty());
+        verify(directory, times(2)).refresh("lab-a");
+    }
     private final WorkspaceAccess access = mock(WorkspaceAccess.class);
     private final WorkspaceDirectory directory = mock(WorkspaceDirectory.class);
     private final IdentityMemberDirectory members = new IdentityMemberDirectory(access, directory);

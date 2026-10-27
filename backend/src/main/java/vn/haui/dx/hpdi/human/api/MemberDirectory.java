@@ -4,6 +4,7 @@ import java.util.Map;
 import java.util.Set;
 /** Người dùng / nhóm của chữ H: workspace của tôi và thành viên từng workspace. */
 public interface MemberDirectory {
+    List<WorkspaceMember> currentAgents(String workspace, String supportGroup);
     /** Workspace của người gọi (theo token) kèm tên hiển thị; danh bạ lỗi thì tên = mã workspace. */
     List<WorkspaceContext> myWorkspaces();
     /** Thành viên workspace; người gọi phải là thành viên. Danh bạ lỗi → SERVICE_UNAVAILABLE. */
