@@ -315,17 +315,7 @@ components:
         sampleSize: {type: integer, minimum: 1, nullable: true, description: Số việc đã xong dùng tính trung vị; null khi basis là COORDINATOR hoặc DEFAULT}
         effortSize: {allOf: [{$ref: '#/components/schemas/EffortSize'}], nullable: true}
     Sla:
-      type: object
-      additionalProperties: false
-      description: R5. Hạn tính theo mức ưu tiên hiệu lực tại lúc duyệt.
-      required: [startBy, resolveBy, startBreached, resolveBreached, warning, clockPaused]
-      properties:
-        startBy: {type: string, format: date-time, description: Phải bắt đầu trước}
-        resolveBy: {type: string, format: date-time, description: Phải xong trước; dời theo thời gian dừng đồng hồ}
-        startBreached: {type: boolean}
-        resolveBreached: {type: boolean}
-        warning: {type: boolean, description: Còn dưới ngưỡng cảnh báo (mặc định 20%) thời gian SLA}
-        clockPaused: {type: boolean, description: Đang chờ người dùng hoặc ngoài ca trực}
+      $ref: 'openapi.yaml#/components/schemas/Sla'
     QueueItem:
       description: WorkItem kèm thông tin hàng đợi
       allOf:

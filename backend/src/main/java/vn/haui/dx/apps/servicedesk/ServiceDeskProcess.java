@@ -19,12 +19,19 @@ public class ServiceDeskProcess implements ProcessContribution {
     private final org.springframework.beans.factory.ObjectProvider<vn.haui.dx.apps.servicedesk.intake.IntakeAdmission> intake;
     private final org.springframework.beans.factory.ObjectProvider<vn.haui.dx.apps.servicedesk.intake.CanonicalTicketService> canonical;
     private final org.springframework.beans.factory.ObjectProvider<TicketAssignmentEligibility> eligibility;
+    private final org.springframework.beans.factory.ObjectProvider<TicketSlaService> sla;
     public ServiceDeskProcess(org.springframework.jdbc.core.JdbcTemplate jdbc,
             org.springframework.beans.factory.ObjectProvider<vn.haui.dx.hpdi.process.api.WorkExecution> execution,
             org.springframework.beans.factory.ObjectProvider<vn.haui.dx.apps.servicedesk.intake.IntakeAdmission> intake,
             org.springframework.beans.factory.ObjectProvider<vn.haui.dx.apps.servicedesk.intake.CanonicalTicketService> canonical,
-            org.springframework.beans.factory.ObjectProvider<TicketAssignmentEligibility> eligibility) {
-        this.jdbc = jdbc; this.execution = execution; this.intake = intake; this.canonical = canonical; this.eligibility = eligibility;
+            org.springframework.beans.factory.ObjectProvider<TicketAssignmentEligibility> eligibility,
+            org.springframework.beans.factory.ObjectProvider<TicketSlaService> sla) {
+        this.jdbc = jdbc; this.execution = execution; this.intake = intake; this.canonical = canonical; this.eligibility = eligibility; this.sla = sla;
+    }
+
+    @Override public void afterExecution(String workspace, String processKey, String processId, String taskId,
+            vn.haui.dx.hpdi.process.api.WorkExecution.Action action, String reason, java.time.Instant at) {
+        if (reviewed(processKey)) sla.getObject().transition(workspace, processId, taskId, action, reason, at);
     }
 
     @Override public void beforeAssign(String workspace, String processKey, String processId, String taskKey, String subject) {
@@ -51,6 +58,7 @@ public class ServiceDeskProcess implements ProcessContribution {
     }
 
     @Override public void beforeComplete(String workspace, String processKey, String processId, String taskKey, String taskId, String outcome) {
+        if (reviewed(processKey) && "handle".equals(taskKey)) sla.getObject().resolved(workspace, taskId);
         if (INTAKE_KEY.equals(processKey) && "intake".equals(taskKey)) {
             if ("duplicate".equals(outcome)) canonical.getObject().beforeLinkComplete(workspace, processId);
             else intake.getObject().beforeIntakeComplete(workspace, processId, taskId, outcome);

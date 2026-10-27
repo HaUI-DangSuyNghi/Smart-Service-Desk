@@ -103,6 +103,8 @@ class CanonicalTicketIntegrationTest {
         var result = link(root, follower, 200);
         assertEquals("ACTIVE", result.path("status").asText());
         assertEquals("FOLLOWING", getTicket(follower).path("state").asText());
+        assertTrue(getTicket(follower).path("sla").isNull());
+        assertEquals(0L, jdbc.queryForObject("select count(*) from servicedesk_sla where ticket_id=?", Long.class, id(follower)));
         assertEquals(follower.path("process"), getTicket(follower).path("process"));
         mvc.perform(get(path(follower) + "/canonical").with(as("owner", "requester")))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.rootTicketId").isEmpty());

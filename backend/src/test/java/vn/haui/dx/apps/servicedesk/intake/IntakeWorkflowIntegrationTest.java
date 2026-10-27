@@ -76,6 +76,8 @@ class IntakeWorkflowIntegrationTest {
         mvc.perform(get(BASE).param("state", "AWAITING_REVIEW").param("q", ticket.path("title").asText()).with(as("coordinator", "coordinator")))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.total").value(0));
         assertEquals(0L, jdbc.queryForObject("select count(*) from servicedesk_review where ticket_id=?", Long.class, id(ticket)));
+        assertEquals(0L, slaCount(ticket));
+        assertTrue(getTicket(ticket).path("sla").isNull());
     }
 
     @Test
@@ -110,6 +112,7 @@ class IntakeWorkflowIntegrationTest {
         var ticket = create();
         review(ticket, 0, 409);
         assertEquals("INTAKE", getTicket(ticket).path("state").asText());
+        assertEquals(0L, slaCount(ticket));
     }
 
     @Test
@@ -129,11 +132,20 @@ class IntakeWorkflowIntegrationTest {
     void reviewHandleConfirmReworkReturnsToIntakeWithoutSecondProcess() throws Exception {
         var ticket = create();
         release(ticket, UUID.randomUUID());
+        assertEquals(0L, slaCount(ticket));
         var state = state(ticket);
         review(ticket, state.path("version").asLong(), 200);
+        assertEquals(1L, slaCount(ticket));
+        assertFalse(getTicket(ticket).path("sla").isNull());
         var handle = getTicket(ticket).path("taskId").asText();
         mvc.perform(post(TASKS + handle + "/claim").with(as("agent", "agent"))).andExpect(status().isOk());
         mvc.perform(post(TASKS + handle + "/start").with(as("agent", "agent"))).andExpect(status().isOk());
+        assertNotNull(jdbc.queryForObject("select first_started_at from servicedesk_sla where handle_task_id=?", java.sql.Timestamp.class, handle));
+        mvc.perform(post(TASKS + handle + "/pause").with(as("agent", "agent")).contentType("application/json")
+                .content("{\"reason\":\"WAITING_REQUESTER\"}")).andExpect(status().isOk()).andExpect(jsonPath("$.sla.clockPaused").value(true));
+        mvc.perform(post(TASKS + handle + "/resume").with(as("agent", "agent")))
+                .andExpect(status().isOk());
+        assertNull(jdbc.queryForObject("select paused_at from servicedesk_sla where handle_task_id=?", java.sql.Timestamp.class, handle));
         mvc.perform(post(TASKS + handle + "/complete").with(as("agent", "agent")).contentType("application/json")
                 .content("{\"expectedTaskKey\":\"handle\",\"outcome\":\"resolved\"}")).andExpect(status().isNoContent());
         var confirm = getTicket(ticket).path("taskId").asText();
@@ -144,6 +156,43 @@ class IntakeWorkflowIntegrationTest {
         assertEquals(2, state(ticket).path("reviewRound").asInt());
         assertEquals("NEW", state(ticket).path("status").asText());
         assertFalse(state(ticket).path("reviewTaskMayExist").asBoolean());
+        assertEquals(1L, slaCount(ticket));
+        assertTrue(getTicket(ticket).path("sla").isNull());
+        var previous = jdbc.queryForMap("select * from servicedesk_sla where handle_task_id=?", handle);
+        assertNotNull(previous.get("resolved_at"));
+        release(ticket, UUID.randomUUID(), state(ticket).path("version").asLong());
+        assertTrue(getTicket(ticket).path("sla").isNull());
+        review(ticket, state(ticket).path("version").asLong(), 200);
+        assertEquals(2L, slaCount(ticket));
+        assertEquals(previous, jdbc.queryForMap("select * from servicedesk_sla where handle_task_id=?", handle));
+        assertFalse(getTicket(ticket).path("sla").isNull());
+    }
+
+    @Test
+    void slaFailureRollsBackIntakeApprovalFeedbackAndWorkflow() throws Exception {
+        var ticket = create();
+        release(ticket, UUID.randomUUID());
+        var before = state(ticket);
+        var task = getTicket(ticket).path("taskId");
+        jdbc.execute("create function intake_reject_sla() returns trigger language plpgsql as $$ begin raise exception 'SLA rejected' using errcode='23514'; end $$");
+        jdbc.execute("create trigger intake_reject_sla before insert on servicedesk_sla for each row execute function intake_reject_sla()");
+        try {
+            review(ticket, before.path("version").asLong(), 409);
+            assertEquals(before, state(ticket));
+            assertEquals(task, getTicket(ticket).path("taskId"));
+            assertEquals(0L, slaCount(ticket));
+            for (String table : List.of("servicedesk_review", "servicedesk_estimate_history", "servicedesk_ai_feedback"))
+                assertEquals(0L, jdbc.queryForObject("select count(*) from " + table + " where ticket_id=?", Long.class, id(ticket)));
+        } finally {
+            jdbc.execute("drop trigger intake_reject_sla on servicedesk_sla");
+            jdbc.execute("drop function intake_reject_sla()");
+        }
+        review(ticket, before.path("version").asLong(), 200);
+        assertEquals(1L, slaCount(ticket));
+    }
+
+    private long slaCount(JsonNode ticket) {
+        return jdbc.queryForObject("select count(*) from servicedesk_sla where ticket_id=?", Long.class, id(ticket));
     }
 
     private JsonNode create() throws Exception {
@@ -160,8 +209,11 @@ class IntakeWorkflowIntegrationTest {
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
     }
     private void release(JsonNode ticket, UUID operation) throws Exception {
+        release(ticket, operation, 0);
+    }
+    private void release(JsonNode ticket, UUID operation, long version) throws Exception {
         mvc.perform(post(path(ticket) + "/intake/manual-release").with(as("coordinator", "coordinator")).contentType("application/json")
-                .content(json.writeValueAsString(Map.of("expectedContextRevision", 0, "expectedVersion", 0, "operationId", operation, "reason", "Synthetic human disposition"))))
+                .content(json.writeValueAsString(Map.of("expectedContextRevision", 0, "expectedVersion", version, "operationId", operation, "reason", "Synthetic human disposition"))))
                 .andExpect(status().isOk());
     }
     private void review(JsonNode ticket, long version, int expected) throws Exception {

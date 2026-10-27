@@ -830,6 +830,18 @@ components:
           enum:
           - DEFAULT
           - COORDINATOR
+    Sla:
+      type: object
+      additionalProperties: false
+      description: R5 policy snapshot from coordinator approval. UTC deadlines; CRITICAL is continuous, other priorities use the configured business calendar.
+      required: [startBy, resolveBy, startBreached, resolveBreached, warning, clockPaused]
+      properties:
+        startBy: {type: string, format: date-time}
+        resolveBy: {type: string, format: date-time}
+        startBreached: {type: boolean}
+        resolveBreached: {type: boolean}
+        warning: {type: boolean}
+        clockPaused: {type: boolean}
     QueueItem:
       allOf:
       - $ref: '#/components/schemas/WorkItem'
@@ -871,6 +883,10 @@ components:
           pendingNote:
             type: string
             nullable: true
+          sla:
+            anyOf:
+            - $ref: '#/components/schemas/Sla'
+            - {type: object, nullable: true, enum: [null]}
     QueuePage:
       allOf:
       - $ref: '#/components/schemas/PageMeta'

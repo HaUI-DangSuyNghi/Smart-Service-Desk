@@ -14,6 +14,13 @@ public class WorkspaceActivityJournal implements ActivityJournal {
     @Transactional(propagation=Propagation.MANDATORY)
     public void record(String workspace, BusinessActivity event) {
         human.currentActor(workspace);
+        recordValidated(workspace, event, false);
+    }
+    @Transactional(propagation=Propagation.MANDATORY)
+    public void recordSystem(String workspace, BusinessActivity event) {
+        recordValidated(workspace, event, true);
+    }
+    private void recordValidated(String workspace, BusinessActivity event, boolean system) {
         if (event==null || !name(event.action()) || !name(event.resourceType()) || event.resourceId()==null
                 || !event.resourceId().matches("[a-zA-Z0-9:._/-]{1,200}") || event.references().size()>16)
             throw CapabilityException.validation("Invalid business activity");
@@ -25,7 +32,8 @@ public class WorkspaceActivityJournal implements ActivityJournal {
                 throw CapabilityException.validation("Activity details must contain safe references only");
             references.put(key,value);
         });
-        audit.record(event.action(),event.resourceType(),event.resourceId(),workspace,references);
+        if (system) audit.recordSystem(event.action(),event.resourceType(),event.resourceId(),workspace,references);
+        else audit.record(event.action(),event.resourceType(),event.resourceId(),workspace,references);
     }
     private static boolean name(String value) { return value!=null && value.length()<=100 && value.matches("[a-z][a-z0-9]*([.][a-z][a-z0-9]*)+"); }
 }

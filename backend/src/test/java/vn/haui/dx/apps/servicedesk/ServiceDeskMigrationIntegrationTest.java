@@ -65,7 +65,7 @@ class ServiceDeskMigrationIntegrationTest {
     }
 
     @ParameterizedTest
-    @ValueSource(ints = {9, 10, 11, 12, 13, 14})
+    @ValueSource(ints = {9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19})
     void upgradesDevelopWithoutChangingPersistedWork(int baselineVersion) {
         var source = new DriverManagerDataSource(System.getenv("FILE_TEST_JDBC_URL"),
                 "workflow", System.getenv("FILE_TEST_DB_PASSWORD"));
@@ -88,7 +88,7 @@ class ServiceDeskMigrationIntegrationTest {
                 + " values (?,'existing-review','HARDWARE','HIGH',90,'DEFAULT','coordinator','Synthetic history')", ticket);
         var ai08 = seedAi08(jdbc, schema, ticket, baselineVersion);
         var checksums = jdbc.queryForList("select version,script,checksum from " + schema
-                + ".flyway_schema_history where success and version in ('11','12','13') order by installed_rank");
+                + ".flyway_schema_history where success and version is not null order by installed_rank");
         var before = jdbc.queryForMap("select * from " + schema + ".servicedesk_ticket where id=?", ticket);
         var review = jdbc.queryForMap("select * from " + schema + ".servicedesk_review where ticket_id=?", ticket);
         var history = jdbc.queryForList("select * from " + schema + ".servicedesk_estimate_history where ticket_id=?", ticket);
@@ -104,8 +104,8 @@ class ServiceDeskMigrationIntegrationTest {
                 ? jdbc.queryForList("select * from " + schema + ".servicedesk_assessment_history where ticket_id=?", ticket) : null;
 
         var upgraded = Flyway.configure().dataSource(source).schemas(schema).load();
-        assertEquals(19 - baselineVersion, upgraded.migrate().migrationsExecuted);
-
+        assertEquals(20 - baselineVersion, upgraded.migrate().migrationsExecuted);
+        assertEquals(0L, jdbc.queryForObject("select count(*) from " + schema + ".servicedesk_sla", Long.class));
         assertTrue(upgraded.validateWithResult().validationSuccessful);
         var after = jdbc.queryForMap("select * from " + schema + ".servicedesk_ticket where id=?", ticket);
         if (baselineVersion < 11) assertEquals(0L, after.remove("context_revision"));
@@ -122,7 +122,7 @@ class ServiceDeskMigrationIntegrationTest {
                     jdbc.queryForList("select * from " + schema + "." + table + " where ticket_id=?", ticket));
         }
         assertEquals(checksums, jdbc.queryForList("select version,script,checksum from " + schema
-                + ".flyway_schema_history where success and version in ('11','12','13') and cast(version as integer)<=? order by installed_rank", baselineVersion));
+                + ".flyway_schema_history where success and cast(version as integer)<=? order by installed_rank", baselineVersion));
         assertEquals(0L, jdbc.queryForObject("select count(*) from " + schema + ".hpdi_agent_duty", Long.class));
         assertEquals(0, upgraded.migrate().migrationsExecuted);
     }

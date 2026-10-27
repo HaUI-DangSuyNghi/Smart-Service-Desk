@@ -1,6 +1,7 @@
 package vn.haui.dx.apps.servicedesk;
 
 import java.nio.file.Path;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -61,6 +62,158 @@ class TicketIntegrationTest {
     @SpyBean vn.haui.dx.hpdi.process.api.ProcessCapability processViews;
     @Autowired vn.haui.dx.core.identity.api.WorkspaceDirectory directory;
     @SpyBean vn.haui.dx.hpdi.human.api.AgentDuty duty;
+    @Autowired TicketSlaService slaService;
+
+    @Test void slaApprovalSnapshotsCoordinatorDecisionAndLeavesUnreviewedAndForeignTicketsWithoutSla() throws Exception {
+        var ticket = create("sla-owner", "SLA approval", "requester");
+        assertTrue(ticket.path("sla").isNull());
+        var reviewed = body(review(ticket, "sla-coordinator", null, null).andExpect(status().isOk()));
+        assertEquals("HIGH", reviewed.path("classification").path("basePriority").asText());
+        assertFalse(reviewed.path("sla").path("startBreached").asBoolean());
+        assertFalse(reviewed.path("sla").path("resolveBreached").asBoolean());
+        var id = UUID.fromString(ticket.path("id").asText());
+        var state = slaService.read("lab-a", id);
+        assertEquals("r5-v1", state.policy().version());
+        assertEquals(60, state.policy().targets().get(state.base()).startMinutes());
+        assertNull(slaService.read("lab-b", id));
+        assertTrue(slaService.batch("lab-b", List.of(state.taskId())).isEmpty());
+        var differentPolicy = new vn.haui.dx.hpdi.process.api.SlaPolicy("future-policy", state.policy().calendar(), state.policy().targets(), 1,
+            vn.haui.dx.hpdi.process.api.SlaPolicy.Priority.CRITICAL, false);
+        var restarted = new TicketSlaService(jdbc, json, differentPolicy, java.time.Clock.systemUTC(),
+            mock(vn.haui.dx.hpdi.process.api.WorkScheduling.class), mock(vn.haui.dx.hpdi.human.api.ActivityJournal.class));
+        assertEquals(state, restarted.read("lab-a", id));
+        assertEquals(state.resolveBy().toEpochMilli(), jdbc.queryForObject("select due_date_ from act_ru_task where id_=?", java.sql.Timestamp.class, state.taskId()).getTime());
+        long before = jdbc.queryForObject("select count(*) from audit_event", Long.class);
+        mvc.perform(get(BASE + "/" + id).with(as("sla-owner", "lab-a", "requester"))).andExpect(status().isOk());
+        assertEquals(before, jdbc.queryForObject("select count(*) from audit_event", Long.class));
+    }
+
+    @Test void slaPauseReasonsResumeAndCompletionKeepExecutionAndDeadlineClocksSeparate() throws Exception {
+        var evidence = json.createObjectNode();
+        for (var reason : List.of("WAITING_REQUESTER", "WAITING_PARTS", "WAITING_EXTERNAL", "OTHER")) {
+            String worker = "sla-agent-" + reason;
+            var ticket = create("sla-pause-owner", "SLA " + reason, "requester");
+            var reviewed = body(review(ticket, "sla-coordinator", worker, null).andExpect(status().isOk()));
+            String task = reviewed.path("taskId").asText();
+            String route = "/api/hpdi/v1/workspaces/lab-a/tasks/" + task;
+            evidence.set("review", reviewed);
+            var started = body(mvc.perform(post(route + "/start").with(as(worker, "lab-a", "agent"))).andExpect(status().isOk()));
+            evidence.set("start", started);
+            var state = slaService.read("lab-a", UUID.fromString(ticket.path("id").asText()));
+            assertNotNull(state.firstStarted());
+            var paused = body(mvc.perform(post(route + "/pause").with(as(worker, "lab-a", "agent"))
+                .contentType("application/json").content(json.writeValueAsString(Map.of("reason", reason, "note", "Pending test")))).andExpect(status().isOk()));
+            evidence.set(reason, paused);
+            var pausedState = slaService.read("lab-a", state.ticketId());
+            assertEquals("WAITING_REQUESTER".equals(reason), pausedState.pausedAt() != null);
+            var originalDue = pausedState.resolveBy();
+            var firstRead = slaService.read("lab-a", state.ticketId());
+            var secondRead = slaService.read("lab-a", state.ticketId());
+            assertEquals(firstRead, secondRead);
+            var resumed = body(mvc.perform(post(route + "/resume").with(as(worker, "lab-a", "agent"))).andExpect(status().isOk()));
+            evidence.set("resume", resumed);
+            var resumedState = slaService.read("lab-a", state.ticketId());
+            assertNull(resumedState.pausedAt());
+            assertFalse(resumedState.resolveBy().isBefore(originalDue));
+            if (!"WAITING_REQUESTER".equals(reason)) assertEquals(originalDue, resumedState.resolveBy());
+            mvc.perform(post(route + "/complete").with(as(worker, "lab-a", "agent")).contentType("application/json")
+                .content("{\"expectedTaskKey\":\"handle\",\"outcome\":\"resolved\"}")).andExpect(status().isNoContent());
+            var resolved = slaService.read("lab-a", state.ticketId());
+            assertNotNull(resolved.resolvedAt());
+            var frozen = resolved.project(resolved.resolvedAt().plus(Duration.ofDays(30)));
+            assertEquals(resolved.firstStarted().isAfter(resolved.startBy()), frozen.startBreached());
+            assertEquals(resolved.resolvedAt().isAfter(resolved.resolveBy()), frozen.resolveBreached());
+            assertFalse(frozen.warning());
+            evidence.set("resolved", body(mvc.perform(get(BASE + "/" + state.ticketId()).with(as("sla-pause-owner", "lab-a", "requester"))).andExpect(status().isOk())));
+        }
+        java.nio.file.Files.writeString(Path.of("target/r5-sla-http-evidence.json"), json.writerWithDefaultPrettyPrinter().writeValueAsString(evidence));
+    }
+
+    @Test void slaEscalationIsConcurrentIdempotentTransactionalAndKeepsFrozenDeadlines() throws Exception {
+        var ticket = create("sla-escalation-owner", "Escalation", "requester");
+        var reviewed = body(mvc.perform(post(BASE + "/" + ticket.path("id").asText() + "/review").with(as("sla-coordinator", "lab-a", "coordinator"))
+            .contentType("application/json").content("{\"category\":\"OTHER\",\"priority\":\"LOW\",\"reason\":\"Approved low\",\"assignee\":null}")).andExpect(status().isOk()));
+        String task = reviewed.path("taskId").asText();
+        var id = UUID.fromString(ticket.path("id").asText());
+        jdbc.update("update servicedesk_sla set approved_at=approved_at-interval '10 days',start_by=start_by-interval '10 days',resolve_by=resolve_by-interval '10 days' where ticket_id=?", id);
+        var before = slaService.read("lab-a", id);
+        jdbc.execute("create function sla_reject_escalation() returns trigger language plpgsql as $$ begin if new.action='servicedesk.sla.escalated' then raise exception 'sla escalation rejection' using errcode='23514'; end if; return new; end $$");
+        jdbc.execute("create trigger sla_reject_escalation before insert on audit_event for each row execute function sla_reject_escalation()");
+        try {
+            assertThrows(RuntimeException.class, () -> slaService.reconcile("lab-a", before.processId(), task));
+            assertEquals(before, slaService.read("lab-a", id));
+            assertEquals(25, jdbc.queryForObject("select priority_ from act_ru_task where id_=?", Integer.class, task));
+        } finally { jdbc.execute("drop trigger sla_reject_escalation on audit_event"); jdbc.execute("drop function sla_reject_escalation()"); }
+        var pool = Executors.newFixedThreadPool(2);
+        try {
+            var first = pool.submit(() -> slaService.reconcile("lab-a", before.processId(), task));
+            var second = pool.submit(() -> slaService.reconcile("lab-a", before.processId(), task));
+            first.get(30, TimeUnit.SECONDS); second.get(30, TimeUnit.SECONDS);
+        } finally { pool.shutdownNow(); }
+        slaService.reconcile("lab-a", before.processId(), task);
+        var after = slaService.read("lab-a", id);
+        assertEquals(vn.haui.dx.hpdi.process.api.SlaPolicy.Priority.LOW, after.base());
+        assertEquals(vn.haui.dx.hpdi.process.api.SlaPolicy.Priority.MEDIUM, after.priority());
+        assertEquals(before.startBy(), after.startBy()); assertEquals(before.resolveBy(), after.resolveBy());
+        assertEquals(50, jdbc.queryForObject("select priority_ from act_ru_task where id_=?", Integer.class, task));
+        assertEquals(1, jdbc.queryForObject("select count(*) from audit_event where action='servicedesk.sla.escalated' and resource=?", Integer.class, id.toString()));
+        mvc.perform(get(BASE + "/" + id).with(as("sla-escalation-owner", "lab-a", "requester"))).andExpect(status().isOk())
+            .andExpect(jsonPath("$.classification.priority").value("MEDIUM")).andExpect(jsonPath("$.classification.basePriority").value("LOW"))
+            .andExpect(jsonPath("$.classification.escalated").value(true));
+    }
+
+    @Test void slaStartAuditFailureRollsBackNativeExecutionAndSlaTimestamp() throws Exception {
+        var ticket = create("sla-rollback-owner", "SLA rollback", "requester");
+        String worker = "sla-rollback-agent";
+        var reviewed = body(review(ticket, "sla-coordinator", worker, null).andExpect(status().isOk()));
+        String task = reviewed.path("taskId").asText();
+        jdbc.execute("create function sla_reject_audit() returns trigger language plpgsql as $$ begin if new.action='servicedesk.sla.start' then raise exception 'sla rejection' using errcode='23514'; end if; return new; end $$");
+        jdbc.execute("create trigger sla_reject_audit before insert on audit_event for each row execute function sla_reject_audit()");
+        try {
+            mvc.perform(post("/api/hpdi/v1/workspaces/lab-a/tasks/" + task + "/start").with(as(worker, "lab-a", "agent"))).andExpect(status().isConflict());
+            assertNull(slaService.read("lab-a", UUID.fromString(ticket.path("id").asText())).firstStarted());
+            mvc.perform(get("/api/hpdi/v1/workspaces/lab-a/queue").with(as(worker, "lab-a", "agent"))).andExpect(status().isOk())
+                .andExpect(jsonPath("$.items[0].workState").value("NOT_STARTED"));
+        } finally { jdbc.execute("drop trigger sla_reject_audit on audit_event"); jdbc.execute("drop function sla_reject_audit()"); }
+    }
+
+    @Test void slaLateStartAndResolutionPersistTheirOwnBreachResults() throws Exception {
+        String worker = "sla-late-agent";
+        var ticket = create("sla-late-owner", "Late SLA", "requester");
+        var reviewed = body(review(ticket, "sla-coordinator", worker, null).andExpect(status().isOk()));
+        var id = UUID.fromString(ticket.path("id").asText());
+        String task = reviewed.path("taskId").asText(), route = "/api/hpdi/v1/workspaces/lab-a/tasks/" + task;
+        jdbc.update("update servicedesk_sla set approved_at=approved_at-interval '30 days',start_by=start_by-interval '30 days',resolve_by=resolve_by-interval '30 days' where ticket_id=?", id);
+        mvc.perform(post(route + "/start").with(as(worker, "lab-a", "agent"))).andExpect(status().isOk())
+            .andExpect(jsonPath("$.sla.startBreached").value(true)).andExpect(jsonPath("$.sla.resolveBreached").value(true));
+        mvc.perform(post(route + "/complete").with(as(worker, "lab-a", "agent")).contentType("application/json")
+            .content("{\"expectedTaskKey\":\"handle\",\"outcome\":\"resolved\"}")).andExpect(status().isNoContent());
+        var closed = slaService.read("lab-a", id);
+        assertTrue(closed.project(closed.resolvedAt().plus(Duration.ofDays(60))).startBreached());
+        assertTrue(closed.project(closed.resolvedAt().plus(Duration.ofDays(60))).resolveBreached());
+        assertFalse(closed.project(closed.resolvedAt().plus(Duration.ofDays(60))).warning());
+    }
+
+    @Test void slaConcurrentStartsCommitOneTimestampAndOneAudit() throws Exception {
+        String worker = "sla-concurrent-agent";
+        var ticket = create("sla-concurrent-owner", "Concurrent SLA", "requester");
+        var reviewed = body(review(ticket, "sla-coordinator", worker, null).andExpect(status().isOk()));
+        String task = reviewed.path("taskId").asText();
+        var pool = Executors.newFixedThreadPool(2);
+        var ready = new CountDownLatch(2); var start = new CountDownLatch(1);
+        try {
+            java.util.concurrent.Callable<Integer> action = () -> {
+                ready.countDown(); assertTrue(start.await(15, TimeUnit.SECONDS));
+                return mvc.perform(post("/api/hpdi/v1/workspaces/lab-a/tasks/" + task + "/start")
+                    .with(as(worker, "lab-a", "agent"))).andReturn().getResponse().getStatus();
+            };
+            var first = pool.submit(action); var second = pool.submit(action);
+            assertTrue(ready.await(15, TimeUnit.SECONDS)); start.countDown();
+            assertEquals(List.of(200, 409), List.of(first.get(30, TimeUnit.SECONDS), second.get(30, TimeUnit.SECONDS)).stream().sorted().toList());
+            assertNotNull(slaService.read("lab-a", UUID.fromString(ticket.path("id").asText())).firstStarted());
+            assertEquals(1, jdbc.queryForObject("select count(*) from audit_event where action='servicedesk.sla.start' and resource=?", Integer.class, ticket.path("id").asText()));
+        } finally { start.countDown(); pool.shutdownNow(); }
+    }
 
     @org.junit.jupiter.api.BeforeEach
     void availableRegressionAgents() {
@@ -187,6 +340,8 @@ class TicketIntegrationTest {
         verify(processViews,never()).timeline(anyString(),anyString());
         verify(reviewViews,never()).project(anyString(),any());
         verify(reviewViews,times(2)).projectBatch(eq("lab-a"),anyList());
+        verify(jdbc,times(2)).query(startsWith("select * from servicedesk_sla where workspace=? and handle_task_id in"),
+            any(org.springframework.jdbc.core.RowMapper.class),any(Object[].class));
         verify(jdbc,times(2)).queryForList(startsWith("select t.process_instance_id,t.title"),any(Object[].class));
         verify(jdbc,times(3)).queryForObject(startsWith("select count(*) from act_ru_task"),eq(Long.class),any(Object[].class));
         verify(jdbc,times(3)).query(startsWith("select t.id_, t.proc_inst_id_"),any(org.springframework.jdbc.core.RowMapper.class),any(Object[].class));
@@ -305,6 +460,7 @@ class TicketIntegrationTest {
             assertTrue(ready.await(15,TimeUnit.SECONDS)); start.countDown();
             assertEquals(List.of(200,409),List.of(first.get(30,TimeUnit.SECONDS),second.get(30,TimeUnit.SECONDS)).stream().sorted().toList());
             assertEquals(1,jdbc.queryForObject("select count(*) from servicedesk_estimate_history where ticket_id=?",Integer.class,UUID.fromString(ticket.path("id").asText())));
+            assertEquals(1,jdbc.queryForObject("select count(*) from servicedesk_sla where ticket_id=?",Integer.class,UUID.fromString(ticket.path("id").asText())));
         } finally { start.countDown(); pool.shutdownNow(); }
     }
 
@@ -318,6 +474,7 @@ class TicketIntegrationTest {
             assertEquals(task,currentTask(ticket,"review-rollback-owner"));
             assertEquals(0,jdbc.queryForObject("select count(*) from servicedesk_review where ticket_id=?",Integer.class,UUID.fromString(ticket.path("id").asText())));
             assertEquals(0,jdbc.queryForObject("select count(*) from servicedesk_estimate_history where ticket_id=?",Integer.class,UUID.fromString(ticket.path("id").asText())));
+            assertEquals(0,jdbc.queryForObject("select count(*) from servicedesk_sla where ticket_id=?",Integer.class,UUID.fromString(ticket.path("id").asText())));
         } finally { jdbc.execute("drop trigger review_reject on audit_event"); jdbc.execute("drop function review_reject_audit()"); }
     }
 

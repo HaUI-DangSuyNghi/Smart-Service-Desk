@@ -2,6 +2,9 @@
 import argparse
 import copy
 from pathlib import Path
+import shutil
+import subprocess
+import tempfile
 
 import yaml
 from openapi_schema_validator import OAS30Validator
@@ -20,12 +23,31 @@ def main():
     parser.add_argument("--assessment-evidence", type=Path)
     parser.add_argument("--assessment-lifecycle", type=Path)
     parser.add_argument("--assignment-evidence", type=Path)
+    parser.add_argument("--sla-evidence", type=Path)
+    parser.add_argument("--baseline", help="Git ref for whole-document OpenAPI regression comparison")
     arguments = parser.parse_args()
     import json
     evidence = json.loads(arguments.evidence.read_text(encoding="utf-8-sig"))
     documents = {path.resolve().as_uri(): yaml.safe_load(path.read_text(encoding="utf-8"))
                  for path in (ROOT / "contracts").rglob("*.yaml")}
     hpdi, app = documents[HPDI.as_uri()], documents[APP.as_uri()]
+    if arguments.baseline:
+        paths = ("hpdi/openapi.yaml", "hpdi/openapi-target.yaml", "openapi/servicedesk.yaml", "openapi/servicedesk-target.yaml")
+        def structural_errors(path):
+            document = yaml.safe_load(path.read_text(encoding="utf-8"))
+            return sorted((str(error.json_path), error.message) for error in
+                OpenAPIV30SpecValidator(document, base_uri=path.as_uri()).iter_errors())
+        with tempfile.TemporaryDirectory(prefix="r5-openapi-") as temporary:
+            baseline = Path(temporary) / "contracts"
+            shutil.copytree(ROOT / "contracts", baseline)
+            for relative in paths:
+                (baseline / relative).write_bytes(subprocess.check_output(
+                    ["git", "show", arguments.baseline + ":contracts/" + relative], cwd=ROOT))
+            for relative in paths:
+                before = structural_errors(baseline / relative)
+                after = structural_errors(ROOT / "contracts" / relative)
+                assert before == after, "Whole OpenAPI regression: " + relative
+                print("PASS whole-document baseline comparison:", relative, len(after), "unchanged errors")
     ticket_validator = OAS30Validator({"$ref": APP.as_uri() + "#/components/schemas/Ticket"},
         registry=Registry().with_resources((uri, Resource(document, DRAFT4)) for uri, document in documents.items()))
     examples = app['paths']['/workspaces/{workspace}/tickets/{id}']['get']['responses']['200']['content']['application/json']['examples']
@@ -48,7 +70,7 @@ def main():
     subset = copy.deepcopy(hpdi)
     subset["paths"] = {path: hpdi["paths"][path] for path in paths}
     subset["components"]["schemas"] = {name: hpdi["components"]["schemas"][name] for name in
-        ("QueueItem", "QueuePage", "WorkItem", "PageMeta", "Estimate", "Priority", "WorkState", "PendingReason", "Problem")}
+        ("QueueItem", "QueuePage", "WorkItem", "PageMeta", "Estimate", "Priority", "WorkState", "PendingReason", "Problem", "Sla")}
     subset["components"]["responses"] = {name: hpdi["components"]["responses"][name] for name in
         ("BadRequest", "Unauthorized", "Forbidden", "NotFound", "Conflict")}
     subset["components"]["parameters"] = {name: hpdi["components"]["parameters"][name] for name in ("Workspace", "Page", "Size")}
@@ -65,6 +87,23 @@ def main():
             invalid[field] = value
             assert not validator.is_valid(invalid), "Suggestion schema must reject " + field
         print("PASS assignment suggestion HTTP contract: real response and four negative checks")
+    if arguments.sla_evidence:
+        values = json.loads(arguments.sla_evidence.read_text(encoding="utf-8-sig"))
+        for name, value in values.items():
+            location, schema = (APP, "Ticket") if name in ("review", "resolved") else (HPDI, "QueueItem")
+            OAS30Validator({"$ref": location.as_uri() + "#/components/schemas/" + schema},
+                registry=registry, format_checker=OAS30Validator.FORMAT_CHECKER).validate(value)
+            sla = value["sla"]
+            validator = OAS30Validator(hpdi["components"]["schemas"]["Sla"], format_checker=OAS30Validator.FORMAT_CHECKER)
+            validator.validate(sla)
+            for field in ("startBy", "resolveBy", "startBreached", "resolveBreached", "warning", "clockPaused"):
+                invalid = dict(sla)
+                del invalid[field]
+                assert not validator.is_valid(invalid), "SLA must require " + field
+            assert not validator.is_valid(dict(sla, startBy="not-an-instant"))
+            assert not validator.is_valid(dict(sla, clockPaused="true"))
+            assert not validator.is_valid(dict(sla, invented=True))
+        print("PASS SLA HTTP contracts:", len(values), "real responses, with nine negative checks each")
     count = 0
     for name, value in evidence.items():
         document, location, schema = (app, APP, "Ticket") if name in ("created", "review") else (hpdi, HPDI, "QueuePage" if name == "queue" else "QueueItem")
