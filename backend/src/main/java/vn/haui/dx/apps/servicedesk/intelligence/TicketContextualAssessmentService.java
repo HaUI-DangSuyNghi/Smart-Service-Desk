@@ -43,6 +43,7 @@ public class TicketContextualAssessmentService {
     private final ProcessObservations processes;
     private final boolean enabled;
     private final String approvedPolicyDigest;
+    private final org.springframework.beans.factory.ObjectProvider<vn.haui.dx.apps.servicedesk.intake.IntakeAdmission> intake;
 
     public TicketContextualAssessmentService(
             ContextEvaluationGuard guard, ContextSlotExtractor extractor, ContextReadinessPolicy readiness,
@@ -50,7 +51,8 @@ public class TicketContextualAssessmentService {
             ClassifierConfiguration.Settings settings, ClassifierProcessingGate modelRights, ContextProcessingGate contextRights,
             AssessmentPolicy assessment, ContextualAttemptStore attempts, ProcessObservations processes,
             @Value("${serviceDesk.contextual-assessment.enabled:false}") boolean enabled,
-            @Value("${serviceDesk.contextual-assessment.policy-digest:}") String approvedPolicyDigest) {
+            @Value("${serviceDesk.contextual-assessment.policy-digest:}") String approvedPolicyDigest,
+            org.springframework.beans.factory.ObjectProvider<vn.haui.dx.apps.servicedesk.intake.IntakeAdmission> intake) {
         this.guard = guard;
         this.extractor = extractor;
         this.readiness = readiness;
@@ -65,9 +67,26 @@ public class TicketContextualAssessmentService {
         this.processes = processes;
         this.enabled = enabled;
         this.approvedPolicyDigest = approvedPolicyDigest;
+        this.intake = intake;
     }
 
     public View assess(String workspace, UUID id) {
+        if (intake.getObject().find(workspace, id) != null) {
+            throw CapabilityException.conflict("Intake final assessment is processed only by the sealed background job");
+        }
+        return evaluate(workspace, id);
+    }
+
+    public View assessFinal(String workspace, UUID id, long revision, String digest) {
+        var state = intake.getObject().find(workspace, id);
+        if (state == null || !"ASSESSING".equals(state.status()) || state.sealedRevision() == null
+                || state.sealedRevision() != revision || !java.util.Objects.equals(digest, state.contextDigest())) {
+            throw CapabilityException.conflict("Final assessment requires current sealed intake");
+        }
+        return evaluate(workspace, id);
+    }
+
+    private View evaluate(String workspace, UUID id) {
         return guard.evaluate(workspace, id, session -> {
             if (session.shadow()) {
                 return new View(VERSION, id, session.snapshot().contextRevision(), null, "SHADOW", null,
@@ -133,8 +152,9 @@ public class TicketContextualAssessmentService {
                     "DONE".equals(cached.state()) ? cached.category() : null, settings.modelDigest());
         } else {
             try {
+                // Class order is part of the pinned wire policy (OTHER precedes SOFTWARE).
                 var value = classifier.observe(workspace, new ClassificationInput(input.fields(),
-                        List.of("ACCOUNT", "HARDWARE", "NETWORK", "SOFTWARE", "OTHER"), settings.modelDigest(), settings.policyDigest()));
+                        List.of("ACCOUNT", "HARDWARE", "NETWORK", "OTHER", "SOFTWARE"), settings.modelDigest(), settings.policyDigest()));
                 validate(value);
                 String category = "PROPOSE".equals(value.decision()) ? value.classId() : null;
                 attempts.finish(key, claim.get(), "DONE", category);

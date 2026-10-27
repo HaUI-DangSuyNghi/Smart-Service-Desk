@@ -60,7 +60,7 @@ class ContextEvaluationGuardTest {
     }
 
     private ContextEvaluationGuard prepare(ContextIntelligenceConfiguration.Mode mode) {
-        when(tickets.get("lab", id)).thenReturn(new Ticket(id, "lab", "owner", UUID.randomUUID(),
+        when(tickets.getForIntelligence("lab", id)).thenReturn(new Ticket(id, "lab", "owner", UUID.randomUUID(),
                 "title", "description", Instant.EPOCH, null));
         when(human.currentActor("lab")).thenReturn(owner);
         when(snapshots.read("lab", id)).thenReturn(snapshot("a".repeat(64)));

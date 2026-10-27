@@ -83,7 +83,8 @@ public class TicketSlaService {
     @Transactional(readOnly = true)
     public State read(String workspace, UUID ticketId) {
         var rows = jdbc.query("select s.* from servicedesk_sla s join servicedesk_review r on r.ticket_id=s.ticket_id and r.review_task_id=s.review_task_id"
-            + " join servicedesk_ticket t on t.id=s.ticket_id where s.workspace=? and s.ticket_id=? and not t.awaiting_review", this::map, workspace, ticketId);
+            + " join servicedesk_ticket t on t.id=s.ticket_id where s.workspace=? and s.ticket_id=? and not t.awaiting_review"
+            + " and not exists(select 1 from servicedesk_intake_admission a where a.ticket_id=t.id and a.status<>'REVIEWED')", this::map, workspace, ticketId);
         return rows.isEmpty() ? null : rows.get(0);
     }
 

@@ -1,9 +1,64 @@
 # R5 SLA Engine
 
 Date: 2026-10-27 (Asia/Saigon). Feature branch: `feat/r5-sla-engine`.
-Fetched baseline: `origin/develop` at `abdbac293531e864c03535a126e3ee5e1fb11709`.
-Status: implemented; local acceptance passed. Draft PR publication is pending;
-this is not a release or merge approval.
+Rebaseline: `origin/develop` at `83e19ec312bf4515c89d8f2277545a17269c72db` (AI-D2 PR #54).
+Delivery: existing Draft PR #55 on `feat/r5-sla-engine`; no merge or deployment.
+Current acceptance and tested integration SHA: `evidence/R5_SLA_ENGINE.json`.
+The historical acceptance section below describes pre-AI-D2 source only.
+
+## AI-D2 compatibility
+
+| Workflow | SLA participation | Lifecycle |
+| --- | --- | --- |
+| service-desk | None | Legacy unchanged |
+| service-desk-reviewed | Approved handle only | Existing reviewed lifecycle |
+| service-desk-intake-reviewed | Approved handle only | No intake/release/review/follower SLA |
+| Room Request | None | Second-domain isolation |
+
+Both reviewed keys share transactional execution/resolution hooks. The merge
+retains intake CAS, expectedContextRevision, expectedIntakeVersion, final binding,
+human feedback, canonical/follower guards, root confirmation, eligibility, duty,
+assignment history and all process definitions/grants. R5 does not overwrite
+frontend, model-delivery or Python service changes from upstream.
+
+SLA initializes only after the approved handle exists, in the review transaction.
+A failing insert rolls back admission, feedback, review, estimate and Flowable.
+The existing unique review key prevents duplicate SLA rounds. Worker reconciliation
+retains process-scope-before-SLA lock ordering and only persisted unresolved handles
+participate; intake/follower tasks never receive SLA rows.
+
+True-wait rework returns to intake with awaiting_review=false. SLA reads therefore
+also hide an old round while its admission is not REVIEWED. Old resolved records
+remain immutable; a new valid release/review creates the next round. Batch work
+projection still uses actual handle IDs without adding per-item queries.
+
+Only SLA migration is renamed to V20; upstream V16-V19 remain byte-identical.
+Upgrade fixtures cover V9 through V19 to V20, including V15 through the entire
+AI-D2 chain. They retain all applied checksums and app rows, assert no backfill,
+validate and rerun migrate idempotently. V19-to-V20 executes exactly one migration.
+No Flyway repair/history rewrite is used.
+
+Fresh full/core/second-domain/targeted counts supersede the historical counts.
+Added regressions cover pre-approval/follower null SLA, SLA-insert rollback,
+true-wait START/PAUSE/RESUME/resolution and rework with a preserved historical
+round and exactly one new SLA. A failed targeted run caught a changed test-helper
+replay payload; the helper now preserves replay version and accepts a new version
+only for a new operation. Failed runs are not acceptance evidence.
+The new resume assertion checks persisted paused_at rather than clockPaused,
+which correctly remains true outside business hours. Checksum comparison excludes
+Flyway's versionless schema-creation row while preserving every applied version.
+
+Runtime reproduction additionally supports:
+
+```powershell
+py -3.11 scripts/acceptance/sla-engine.py --intake
+```
+
+Both real JWT probes use direct HTTP, not Gateway E2E. Intake smoke uses human
+release without a real final-assessment model; final-assessment/canonical behavior
+is covered separately by PostgreSQL/Flowable integration, not claimed as one
+combined production-model Gateway E2E. Hosted CI is a separate gate, never inferred
+PASS from local results. Seven existing untracked documents remain excluded.
 
 ## GAP before / after
 
@@ -17,7 +72,7 @@ this is not a release or merge approval.
 | Queue SLA projection | Batched WorkProjection | Existing batching and load calculation | One SLA batch query per projection batch | Nullable Sla and effective/base priorities |
 | Ticket SLA projection | Review view / classification / assessment | Existing authorized detail endpoint | Additive nullable sla property | Current approved round only |
 | Transactional audit | ActivityJournal, Core audit, owner beforeComplete | Existing transaction / safe reference validation | Explicit trusted system activity method | Initialization, START, PAUSE, RESUME, resolution, escalation audits |
-| Migration/upgrade | Flyway V1-V15, workspace composite key from V11 | Existing workspace/ticket constraint | V16 only | Persistent round history; no synthetic backfill |
+| Migration/upgrade | Flyway V1-V19, workspace composite key from V11 | Existing workspace/ticket constraint | V20 only | Persistent round history; no synthetic backfill |
 
 ## Verified rules and design decisions
 
@@ -158,17 +213,17 @@ while SLA continues. SLA processing never changes workedMillis or estimates.
 
 ## Database upgrade / recovery
 
-V16 creates only `servicedesk_sla`, referencing V11's existing composite
+V20 creates only `servicedesk_sla`, referencing V11's existing composite
 workspace/ticket key. The primary key identifies an approval round, the unique
 workspace/handle key prevents duplicate clocks. Constraints check priority names,
 timestamp ordering, pause state and JSON object snapshots. Partial reconciliation
 and workspace/ticket lookup indexes bound the worker/read access paths.
 
-No row is inserted for an existing V15 round: its historical approval timestamp
+No row is inserted for an existing pre-R5 round: its historical approval timestamp
 and policy are not invented. Such a round returns null until a future genuine
-review. V1-V15 are unchanged. Flyway validate and re-running migrate must succeed.
+review. V1-V19 are unchanged. Flyway validate and re-running migrate must succeed.
 Before upgrade, take a PostgreSQL backup. If application rollback is necessary,
-stop all R5 workers and roll back the application while retaining V16/table data;
+stop all R5 workers and roll back the application while retaining V20/table data;
 old code ignores the additive table. Do not delete Flyway history or silently
 discard clocks. A future forward recovery migration must handle any state repair.
 
@@ -204,7 +259,7 @@ settings, auto-close, classification correction, dispatch and frontend remain ou
 of scope. Whole HPDI OpenAPI already has unrelated structural debt; compare
 baseline/current errors separately from validated execution/SLA subsets.
 
-## Regression evidence / merge readiness
+## Historical pre-AI-D2 evidence (not current acceptance)
 
 Executed local gates are recorded in `evidence/R5_SLA_ENGINE.json`. Counts are
 per suite/profile and must **not** be added together: targeted tests overlap the

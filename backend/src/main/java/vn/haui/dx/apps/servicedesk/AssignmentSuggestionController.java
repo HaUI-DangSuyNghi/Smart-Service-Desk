@@ -44,7 +44,7 @@ public class AssignmentSuggestionController {
     public Suggestion task(@PathVariable String workspace, @PathVariable String id) {
         authorize(workspace);
         var item=execution.get(workspace,id);
-        if (!ServiceDeskProcess.REVIEWED_KEY.equals(item.task().processKey()) || !"handle".equals(item.task().key()))
+        if (!ServiceDeskProcess.reviewed(item.task().processKey()) || !"handle".equals(item.task().key()))
             throw CapabilityException.conflict("Reviewed Service Desk handle task required");
         var ticket=tickets.find(workspace,UUID.fromString(item.task().businessKey()),null)
             .orElseThrow(() -> CapabilityException.notFound("Ticket not found"));
@@ -61,7 +61,7 @@ public class AssignmentSuggestionController {
         if (estimateMinutes!=null && (estimateMinutes<1 || estimateMinutes>10080))
             throw CapabilityException.validation("estimateMinutes must be between 1 and 10080");
         var ticket=tickets.find(workspace,id,null).orElseThrow(() -> CapabilityException.notFound("Ticket not found"));
-        if (!ServiceDeskProcess.REVIEWED_KEY.equals(ticket.process().processKey()))
+        if (!ServiceDeskProcess.reviewed(ticket.process().processKey()))
             throw CapabilityException.conflict("Reviewed Service Desk ticket required");
         if (humans.currentActor(workspace).subject().equals(ticket.creator()))
             throw CapabilityException.forbidden("Independent reviewer required");

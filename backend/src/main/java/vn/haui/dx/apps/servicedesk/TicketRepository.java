@@ -19,11 +19,21 @@ class TicketRepository {
 
     TicketRepository(JdbcTemplate jdbc) { this.jdbc = jdbc; }
 
+    boolean hasIntake(String workspace, UUID id) {
+        return Boolean.TRUE.equals(jdbc.queryForObject("select exists(select 1 from servicedesk_intake_admission "
+                + "where workspace=? and ticket_id=?)", Boolean.class, workspace, id));
+    }
+
     Ticket insert(UUID id, String workspace, String creator, NewTicket input, String processId) {
+        return insert(id, workspace, creator, input, processId, ServiceDeskProcess.REVIEWED_KEY);
+    }
+
+    Ticket insert(UUID id, String workspace, String creator, NewTicket input, String processId, String processKey) {
         return jdbc.queryForObject("insert into servicedesk_ticket "
                 + "(id,workspace,creator,client_request_id,title,description,process_instance_id,process_key,awaiting_review) "
-                + "values (?,?,?,?,?,?,?,?,true) returning *", TicketRepository::map,
-            id, workspace, creator, input.clientRequestId(), input.title(), input.description(), processId, ServiceDeskProcess.REVIEWED_KEY);
+                + "values (?,?,?,?,?,?,?,?,?) returning *", TicketRepository::map,
+            id, workspace, creator, input.clientRequestId(), input.title(), input.description(), processId, processKey,
+            !ServiceDeskProcess.INTAKE_KEY.equals(processKey));
     }
 
     Optional<Ticket> find(String workspace, UUID id, String creator) {

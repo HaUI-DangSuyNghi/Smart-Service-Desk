@@ -2,6 +2,7 @@ import base64
 import http.client
 import json
 import subprocess
+import sys
 import tempfile
 import time
 import urllib.error
@@ -11,6 +12,7 @@ import uuid
 from pathlib import Path
 
 root = Path.cwd()
+intake = '--intake' in sys.argv
 jar = root / '.local/r5-runtime.jar'
 suffix = uuid.uuid4().hex[:10]
 network = 'r5-e2e-' + suffix
@@ -89,7 +91,8 @@ try:
             '-e', 'DX_DIRECTORY_CLIENT_SECRET=' + password, '-e', 'JWT_ISSUER=' + keycloak + '/realms/dx-lab',
             '-e', 'JWT_JWKS=http://keycloak:8080/realms/dx-lab/protocol/openid-connect/certs',
             '-e', 'DX_STORAGE_ROOT=/private/files', 'eclipse-temurin:21-jre-alpine', 'java', '-jar', '/app.jar',
-            '--service-desk.background.scheduled=false', '--service-desk.sla.poll-millis=1000')
+            '--service-desk.background.scheduled=false', '--service-desk.sla.poll-millis=1000',
+            '--serviceDesk.intake.new-tickets=' + str(intake).lower(), '--serviceDesk.intake.true-wait=' + str(intake).lower())
         wait(backend + '/actuator/health')
         tokens = {user: request(keycloak + '/realms/dx-lab/protocol/openid-connect/token', 'POST',
             {'grant_type': 'password', 'client_id': 'core-probe', 'username': user, 'password': password}, form=True)['access_token']
@@ -105,7 +108,17 @@ try:
         ticket = call(base, 'user1', 'POST', {'clientRequestId': str(uuid.uuid4()), 'title': 'Real R5 acceptance', 'description': 'Synthetic SLA request'})
         check('unreviewed ticket has no SLA', ticket['sla'] is None)
         path = base + '/' + ticket['id']
-        reviewed = call(path + '/review', method='POST', data={'category': 'HARDWARE', 'priority': 'HIGH', 'assignee': subject, 'reason': 'Coordinator approval'})
+        def approve(priority, assignee):
+            decision = {'category': 'HARDWARE', 'priority': priority, 'assignee': assignee, 'reason': 'Coordinator approval'}
+            if intake:
+                state = call(path + '/intake')
+                call(path + '/intake/manual-release', method='POST', data={'expectedContextRevision': state['contextRevision'],
+                    'expectedVersion': state['version'], 'operationId': str(uuid.uuid4()), 'reason': 'Human release for SLA acceptance'})
+                state = call(path + '/intake')
+                check('human release does not initialize handle SLA', call(path)['sla'] is None)
+                decision.update(expectedContextRevision=state['contextRevision'], expectedIntakeVersion=state['version'])
+            return call(path + '/review', method='POST', data=decision)
+        reviewed = approve('HIGH', subject)
         check('approval initializes authoritative SLA', reviewed['sla'] is not None and reviewed['classification']['basePriority'] == 'HIGH')
         task = hpdi + '/tasks/' + reviewed['taskId']
         started = call(task + '/start', 'user2', 'POST')
@@ -123,7 +136,7 @@ try:
         check('handle resolved stops SLA before requester confirmation', completed['state'] == 'AWAITING_CONFIRMATION' and not completed['sla']['resolveBreached'] and not completed['sla']['clockPaused'])
         call(hpdi + '/tasks/' + completed['taskId'] + '/complete', 'user1', 'POST', {'expectedTaskKey': 'confirm', 'outcome': 'rework'})
         check('rework awaiting approval has no fabricated SLA', call(path, 'user1')['sla'] is None)
-        reviewed = call(path + '/review', method='POST', data={'category': 'HARDWARE', 'priority': 'LOW', 'assignee': None, 'reason': 'New round approval'})
+        reviewed = approve('LOW', None)
         check('new round starts a fresh LOW policy with no assignment', reviewed['classification']['basePriority'] == 'LOW' and reviewed['sla'] is not None and reviewed['assignee'] is None)
         docker('exec', database, 'psql', '-U', 'workflow', '-d', 'core', '-v', 'ON_ERROR_STOP=1', '-c',
             "update servicedesk_sla set approved_at=approved_at-interval '10 days', start_by=start_by-interval '10 days', resolve_by=resolve_by-interval '10 days' where ticket_id='" + str(uuid.UUID(ticket['id'])) + "' and resolved_at is null")
@@ -141,7 +154,7 @@ except Exception as error:
     report.update(status='ERROR', error=type(error).__name__ + ': ' + str(error))
     raise
 finally:
-    (root / '.local/r5-real-runtime.json').write_text(json.dumps(report, indent=2), encoding='utf-8')
+    (root / ('.local/r5-intake-runtime.json' if intake else '.local/r5-real-runtime.json')).write_text(json.dumps(report, indent=2), encoding='utf-8')
     for name in reversed(containers):
         subprocess.run(['docker', 'rm', '-f', '-v', name], capture_output=True)
     subprocess.run(['docker', 'network', 'rm', network], capture_output=True)

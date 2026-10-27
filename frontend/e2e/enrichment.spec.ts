@@ -81,7 +81,7 @@ const session = async (page: Page) => {
       },
     }),
   );
-  await page.route("**/api/apps/servicedesk/v1/workspaces/*/tickets/*", (route) =>
+  await page.route("**/api/apps/servicedesk/v1/workspaces/*/tickets/**", (route) =>
     route.fulfill({ status: 404, json: { title: "Not Found" } }),
   );
 };

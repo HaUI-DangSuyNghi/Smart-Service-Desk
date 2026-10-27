@@ -23,14 +23,16 @@ public class TicketReviewService implements WorkProjection {
     private final TicketAssignmentEligibility eligibility;
     private final TicketSlaService sla;
     private final vn.haui.dx.apps.servicedesk.intelligence.BackgroundTicketAssessment assessments;
+    private final vn.haui.dx.apps.servicedesk.intake.IntakeAdmission intake;
 
     public TicketReviewService(JdbcTemplate jdbc, TicketRepository tickets, HumanContext humans, PermissionGuard permissions,
                               WorkInbox inbox, WorkExecution execution, ProcessCapability processes, ActivityJournal audit, Validator validator,
                               vn.haui.dx.apps.servicedesk.intelligence.BackgroundTicketAssessment assessments,
-                              TicketAssignmentEligibility eligibility, TicketSlaService sla) {
+                              vn.haui.dx.apps.servicedesk.intake.IntakeAdmission intake, TicketAssignmentEligibility eligibility, TicketSlaService sla) {
         this.jdbc=jdbc; this.tickets=tickets; this.humans=humans; this.permissions=permissions;
         this.inbox=inbox; this.execution=execution; this.processes=processes; this.audit=audit; this.validator=validator;
         this.assessments=assessments;
+        this.intake=intake;
         this.eligibility=eligibility;
         this.sla=sla;
     }
@@ -46,7 +48,7 @@ public class TicketReviewService implements WorkProjection {
         var locked = jdbc.queryForList("select id from servicedesk_ticket where workspace=? and id=? for update", workspace, id);
         if (locked.isEmpty()) throw CapabilityException.notFound("Ticket not found");
         var ticket = tickets.find(workspace, id, null).orElseThrow();
-        if (!ServiceDeskProcess.REVIEWED_KEY.equals(ticket.process().processKey()))
+        if (!ServiceDeskProcess.reviewed(ticket.process().processKey()))
             throw CapabilityException.conflict("Legacy ticket keeps its existing workflow");
         if (actor.subject().equals(ticket.creator())) throw CapabilityException.forbidden("Independent reviewer required");
         if (ticket.creator().equals(decision.assignee())) throw CapabilityException.forbidden("Independent agent required");
@@ -54,6 +56,7 @@ public class TicketReviewService implements WorkProjection {
         var timeline = processes.timeline(workspace, ticket.process().processInstanceId());
         var review = timeline.currentTasks().stream().filter(task -> "review".equals(task.key())).findFirst()
             .orElseThrow(() -> CapabilityException.conflict("Ticket is not awaiting review"));
+        intake.approveReview(workspace, id, decision.expectedContextRevision(), decision.expectedIntakeVersion(), review.id());
         int defaults = TicketReview.defaultMinutes(decision.category(), decision.priority());
         int minutes = decision.estimateMinutes() == null ? defaults : decision.estimateMinutes();
         String basis = decision.estimateMinutes() == null ? "DEFAULT" : "COORDINATOR";
@@ -62,6 +65,7 @@ public class TicketReviewService implements WorkProjection {
         jdbc.update("insert into servicedesk_review(ticket_id,category,priority,estimate_minutes,estimate_basis,assignee,review_task_id,reviewed_by,reason,impact,urgency)"
             + " values(?,?,?,?,?,?,?,?,?,?,?)",
             id, decision.category().name(), decision.priority().name(), minutes, basis, decision.assignee(), review.id(), actor.subject(), decision.reason(), decision.impact(), decision.urgency());
+        intake.feedback(workspace, id, review.id(), decision, actor.subject(), decision.reason());
         jdbc.update("insert into servicedesk_estimate_history(ticket_id,review_task_id,category,priority,assignee,minutes,basis,changed_by,reason) values(?,?,?,?,?,?,?,?,?)",
             id, review.id(), decision.category().name(), decision.priority().name(), decision.assignee(), defaults, "DEFAULT", actor.subject(), decision.reason());
         if (decision.estimateMinutes() != null)
@@ -84,12 +88,15 @@ public class TicketReviewService implements WorkProjection {
         var timeline = processes.timeline(workspace, ticket.process().processInstanceId());
         var task = timeline.currentTasks().stream().findFirst().orElse(null);
         int reopened = (int) timeline.steps().stream().filter(step -> "confirm".equals(step.key()) && "rework".equals(step.outcome())).count();
-        String state = timeline.ended() ? (timeline.steps().stream().anyMatch(step -> "confirm".equals(step.key())
+        boolean closedFollower = timeline.ended() && Boolean.TRUE.equals(jdbc.queryForObject("select exists(select 1 from servicedesk_canonical_link "
+                + "where workspace=? and follower_id=? and state='CLOSED')", Boolean.class, workspace, ticket.id()));
+        String state = timeline.ended() ? (closedFollower || timeline.steps().stream().anyMatch(step -> "confirm".equals(step.key())
             && "accepted".equals(step.outcome())) ? "CLOSED" : "UNCLASSIFIED") : task == null ? "UNCLASSIFIED" : switch (task.key()) {
+            case "intake" -> "INTAKE"; case "follower" -> "FOLLOWING";
             case "review" -> reopened > 0 ? "REOPENED" : "AWAITING_REVIEW"; case "confirm" -> "AWAITING_CONFIRMATION"; default -> "ASSIGNED";
         };
         QueueItem item = null;
-        if (task != null && "handle".equals(task.key()) && ServiceDeskProcess.REVIEWED_KEY.equals(task.processKey()))
+        if (task != null && "handle".equals(task.key()) && ServiceDeskProcess.reviewed(task.processKey()))
             item = project(workspace, execution.get(workspace, task.id()));
         var estimates = jdbc.query("select estimate_minutes,estimate_basis from servicedesk_review where ticket_id=?",
             (row,index) -> new QueueItem.Estimate(row.getInt(1),row.getString(2)), ticket.id());
@@ -120,10 +127,11 @@ public class TicketReviewService implements WorkProjection {
         var parameters = new ArrayList<Object>();
         parameters.add(workspace);
         parameters.add(ServiceDeskProcess.REVIEWED_KEY);
+        parameters.add(ServiceDeskProcess.INTAKE_KEY);
         executions.forEach(item -> parameters.add(item.task().processInstanceId()));
         var rows = jdbc.queryForList("select t.process_instance_id,t.title,t.worked_millis,r.priority,r.estimate_minutes,r.estimate_basis,"
             + " (select greatest(count(distinct h.review_task_id)-1,0) from servicedesk_estimate_history h where h.ticket_id=t.id) as reopened"
-            + " from servicedesk_ticket t join servicedesk_review r on r.ticket_id=t.id where t.workspace=? and t.process_key=?"
+            + " from servicedesk_ticket t join servicedesk_review r on r.ticket_id=t.id where t.workspace=? and t.process_key in (?,?)"
             + " and t.process_instance_id in (" + String.join(",", Collections.nCopies(executions.size(), "?")) + ")", parameters.toArray());
         var byProcess = new HashMap<String,Map<String,Object>>();
         rows.forEach(row -> byProcess.put((String)row.get("process_instance_id"),row));

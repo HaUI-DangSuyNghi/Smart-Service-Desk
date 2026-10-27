@@ -64,7 +64,7 @@ const TicketListPage = () => {
         actions={
           roles.includes("coordinator") && (
             <Button variant="outline" asChild>
-              <Link to="/servicedesk/enrichment-pending">Cần xem xét thông tin</Link>
+              <Link to="/servicedesk/intake-pending">Ticket đang tiếp nhận</Link>
             </Button>
           )
         }
