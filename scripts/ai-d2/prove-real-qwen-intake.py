@@ -41,7 +41,7 @@ def main():
                    "--mount", "type=bind,source=" + str(token.resolve()) + ",target=/run/secrets/classification-token,readonly",
                    "-e", "AI07_QWEN_ENABLED=1", "-e", "AI07_QWEN_TOKEN_FILE=/run/secrets/classification-token",
                    receipt["distributionImageId"], "--bundle", "/opt/model", "--model-digest", receipt["modelDigest"],
-                   "--runtime-identity", receipt["codeImageId"], "--token-file", "/run/secrets/classification-token")
+                   "--runtime-identity", receipt["codeImageId"], "--token-file", "/run/secrets/classification-token", "--bind", "0.0.0.0")
             created = True
             deadline = time.monotonic() + 240
             while time.monotonic() < deadline:

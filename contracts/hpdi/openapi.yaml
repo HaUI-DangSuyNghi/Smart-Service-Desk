@@ -7,6 +7,90 @@ info:
 security:
 - bearerAuth: []
 paths:
+  /api/hpdi/v1/workspaces/{workspace}/tasks/{id}/assignment-suggestion:
+    parameters:
+    - $ref: '#/components/parameters/Workspace'
+    - name: id
+      in: path
+      required: true
+      schema: {type: string}
+    get:
+      operationId: assignmentSuggestion
+      description: Read-only Coordinator/task:assign suggestion for an active reviewed Service Desk handle task. Available only in the Service Desk assembly. Does not reserve or assign an agent. Unsupported processes return 409. Review-time preview is an application endpoint.
+      responses:
+        '200':
+          description: Current candidates and recommendation; no eligible agent or OTHER returns null recommended.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AssignmentSuggestion'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '503': {$ref: '#/components/responses/ServiceUnavailable'}
+  /api/hpdi/v1/workspaces/{workspace}/duty:
+    parameters:
+    - $ref: '#/components/parameters/Workspace'
+    get:
+      operationId: listDuty
+      description: Shared HPDI human capability, available without Service Desk. Agents see their own duty; coordinators with task:assign see current workspace agents. Missing duty defaults to off. No schedules.
+      responses:
+        '200':
+          description: Current agent duty states
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DutyStatus'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /api/hpdi/v1/workspaces/{workspace}/duty/{subject}:
+    parameters:
+    - $ref: '#/components/parameters/Workspace'
+    - name: subject
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Own subject or me. Changing another agent is forbidden, including for coordinators.
+    put:
+      operationId: setDuty
+      description: Agent with current membership and task:handle changes only their own persisted duty. Does not interrupt work. Audit and duty commit atomically.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [onDuty]
+              properties:
+                onDuty:
+                  type: boolean
+                note:
+                  type: string
+                  nullable: true
+                  maxLength: 500
+      responses:
+        '200':
+          description: Persisted duty status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DutyStatus'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
   /api/hpdi/v1/workspaces/{workspace}/queue:
     parameters:
     - $ref: '#/components/parameters/Workspace'
@@ -669,6 +753,47 @@ paths:
           $ref: '#/components/responses/NotFound'
 components:
   schemas:
+    AssignmentCandidate:
+      type: object
+      additionalProperties: false
+      required: [subject, displayName, onDuty, loadMinutes, assignedToday, recommended]
+      properties:
+        subject: {type: string}
+        displayName: {type: string}
+        onDuty: {type: boolean}
+        loadMinutes: {type: integer, format: int64, minimum: 0, description: 'Other assigned execution workload, excluding only the task being considered for assignment. Preview excludes no existing handle task.'}
+        assignedToday: {type: integer, format: int64, minimum: 0}
+        shiftRemainingMinutes: {type: integer, minimum: 0, nullable: true, description: Not scheduled in this release; always null.}
+        recommended: {type: boolean}
+        excludedReason: {type: string, nullable: true, enum: [OFF_DUTY, IS_REQUESTER, null]}
+    AssignmentSuggestion:
+      type: object
+      additionalProperties: false
+      required: [taskId, group, estimateMinutes, candidates, reason]
+      properties:
+        taskId: {type: string}
+        group: {type: string, description: Support group or manual for OTHER.}
+        estimateMinutes: {type: integer, minimum: 1}
+        recommended: {type: string, nullable: true}
+        reason: {type: string}
+        candidates: {type: array, items: {$ref: '#/components/schemas/AssignmentCandidate'}}
+    DutyStatus:
+      type: object
+      additionalProperties: false
+      required: [subject, onDuty, note, updatedAt]
+      properties:
+        subject:
+          type: string
+        onDuty:
+          type: boolean
+        note:
+          type: string
+          nullable: true
+          maxLength: 500
+        updatedAt:
+          type: string
+          format: date-time
+          nullable: true
     Priority:
       type: string
       enum:

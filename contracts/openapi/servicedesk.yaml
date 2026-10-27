@@ -8,6 +8,37 @@ servers:
 security:
   - bearer: []
 paths:
+  /workspaces/{workspace}/tickets/{id}/assignment-suggestion:
+    parameters:
+    - $ref: core.yaml#/components/parameters/Workspace
+    - $ref: '#/components/parameters/TicketId'
+    get:
+      operationId: previewTicketAssignment
+      description: Independent Coordinator with task:assign previews pending review using explicit form category/priority and optional ET override. Read-only; never persists classifications, assignments or cursor. taskId is the current review task ID, not a future handle ID. Available before handle exists; returns 409 outside review.
+      parameters:
+      - name: category
+        in: query
+        required: true
+        schema: {type: string, enum: [HARDWARE, NETWORK, SOFTWARE, ACCOUNT, OTHER]}
+      - name: priority
+        in: query
+        required: true
+        schema: {type: string, enum: [LOW, MEDIUM, HIGH, CRITICAL]}
+      - name: estimateMinutes
+        in: query
+        schema: {type: integer, minimum: 1, maximum: 10080}
+      responses:
+        '200':
+          description: Transient recommendation for the supplied review form; not a decision.
+          content:
+            application/json:
+              schema: {$ref: '../hpdi/openapi.yaml#/components/schemas/AssignmentSuggestion'}
+        '400': {$ref: 'core.yaml#/components/responses/BadRequest'}
+        '401': {$ref: 'core.yaml#/components/responses/Unauthorized'}
+        '403': {$ref: 'core.yaml#/components/responses/Forbidden'}
+        '404': {$ref: 'core.yaml#/components/responses/NotFound'}
+        '409': {$ref: 'core.yaml#/components/responses/Conflict'}
+        '503': {$ref: '../hpdi/openapi.yaml#/components/responses/ServiceUnavailable'}
   /workspaces/{workspace}/tickets/{id}/review:
     parameters:
     - $ref: core.yaml#/components/parameters/Workspace

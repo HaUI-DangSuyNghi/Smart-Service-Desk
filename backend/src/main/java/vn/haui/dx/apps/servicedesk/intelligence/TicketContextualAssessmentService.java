@@ -152,8 +152,9 @@ public class TicketContextualAssessmentService {
                     "DONE".equals(cached.state()) ? cached.category() : null, settings.modelDigest());
         } else {
             try {
+                // Class order is part of the pinned wire policy (OTHER precedes SOFTWARE).
                 var value = classifier.observe(workspace, new ClassificationInput(input.fields(),
-                        List.of("ACCOUNT", "HARDWARE", "NETWORK", "SOFTWARE", "OTHER"), settings.modelDigest(), settings.policyDigest()));
+                        List.of("ACCOUNT", "HARDWARE", "NETWORK", "OTHER", "SOFTWARE"), settings.modelDigest(), settings.policyDigest()));
                 validate(value);
                 String category = "PROPOSE".equals(value.decision()) ? value.classId() : null;
                 attempts.finish(key, claim.get(), "DONE", category);

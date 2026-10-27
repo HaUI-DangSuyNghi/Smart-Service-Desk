@@ -7,6 +7,8 @@ import java.util.List;
  * file BPMN không được đăng ký, hoặc hai nơi đăng ký trùng key.
  */
 public interface ProcessRegistration {
+    default void afterAssign(String workspace, String processKey, String processId, String taskKey, String subject) {}
+    default void beforeAssign(String workspace, String processKey, String processId, String taskKey, String subject) {}
     List<ProcessPolicy> policies();
 
     default java.util.Map<String, java.util.Set<String>> executionTasks() { return java.util.Map.of(); }

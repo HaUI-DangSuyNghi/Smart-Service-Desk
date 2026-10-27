@@ -101,6 +101,7 @@ class FinalAssessmentIntegrationTest {
         }
         assertFalse(worker.processOne());
         verify(transport, times(1)).observe(any());
+        verify(transport).observe(argThat(input -> List.of("ACCOUNT", "HARDWARE", "NETWORK", "OTHER", "SOFTWARE").equals(input.allowedClasses())));
     }
 
     @Test

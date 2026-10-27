@@ -74,6 +74,63 @@ paths:
           description: Ticket not visible or no intake.
         '409':
           description: Context/version/generation changed or review already admitted.
+  /workspaces/{workspace}/intake-pending:
+    parameters:
+      - $ref: '#/components/parameters/Workspace'
+    get:
+      operationId: listPendingIntake
+      description: Coordinator worklist, including sealed v2 intake still waiting for human handoff.
+      parameters:
+        - {name: page, in: query, schema: {type: integer, minimum: 0, maximum: 100000, default: 0}}
+        - {name: size, in: query, schema: {type: integer, minimum: 1, maximum: 100, default: 50}}
+      responses:
+        '200':
+          description: Ordered ticket IDs; the caller can request the next page.
+          content:
+            application/json:
+              schema: {type: array, maxItems: 100, items: {type: string, format: uuid}}
+        '400': {description: Invalid pagination}
+        '403': {description: Coordinator role required}
+  /workspaces/{workspace}/tickets/{id}/intake/duplicate-preflight:
+    parameters:
+      - $ref: '#/components/parameters/Workspace'
+      - $ref: '#/components/parameters/TicketId'
+    post:
+      operationId: preflightTicketDuplicates
+      description: Bounded CPU evidence; requester never receives candidate IDs. No inference or automatic merge.
+      responses:
+        '200':
+          description: Coverage, candidate digest, unverified candidates and aggregate incident signal.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [contractVersion, ticketId, contextRevision, candidateSetIncomplete, candidates, autoMergeAllowed, operationalAuthority]
+                properties:
+                  contractVersion: {type: string, enum: ['duplicate-preflight@1.0.0']}
+                  ticketId: {type: string, format: uuid}
+                  contextRevision: {type: integer, minimum: 0}
+                  candidateSetDigest: {type: string, nullable: true}
+                  candidateSetIncomplete: {type: boolean}
+                  retrievalCoverage: {type: string, enum: [BOUNDED_90_DAY_WINDOW]}
+                  scanned: {type: integer, minimum: 0, maximum: 500}
+                  candidates:
+                    type: array
+                    maxItems: 20
+                    items:
+                      type: object
+                      properties:
+                        candidateRef: {type: string, format: uuid}
+                        contextRevision: {type: integer, minimum: 0}
+                        decision: {type: string}
+                        strongUnverified: {type: boolean}
+                  incidentSignal: {type: boolean}
+                  incidentCount: {type: integer, minimum: 0}
+                  policyDigest: {type: string}
+                  autoMergeAllowed: {type: boolean, enum: [false]}
+                  operationalAuthority: {type: boolean, enum: [false]}
+        '403': {description: Current processing grant or ticket permission denied}
+        '409': {description: Candidates or context changed during evaluation}
 components:
   securitySchemes:
     bearerAuth:

@@ -3,6 +3,8 @@ info:
   title: Service Desk human canonical disposition
   version: 1.0.0
   description: CPU evidence is advisory; independent coordinator decisions require current CAS and exact physical evidence. Feature defaults off.
+security:
+  - bearerAuth: []
 paths:
   /api/apps/servicedesk/v1/workspaces/{workspace}/tickets/{id}/canonical:
     parameters:
@@ -25,7 +27,7 @@ paths:
       responses:
         '200': {description: Linked or identical operation replay}
         '403': {description: Flag disabled or independent coordinator absent}
-        '409': {description: Revision, candidates, physical evidence, category or workflow changed}
+        '409': {description: 'Revision, candidates, physical evidence, category or workflow changed'}
   /api/apps/servicedesk/v1/workspaces/{workspace}/tickets/{id}/canonical/split:
     parameters:
       - $ref: '#/components/parameters/workspace'
@@ -49,6 +51,8 @@ paths:
         '403': {description: Independent coordinator required}
         '409': {description: Link/context changed or follower already ended}
 components:
+  securitySchemes:
+    bearerAuth: {type: http, scheme: bearer, bearerFormat: JWT}
   parameters:
     workspace: {name: workspace, in: path, required: true, schema: {type: string}}
     id: {name: id, in: path, required: true, schema: {type: string, format: uuid}}

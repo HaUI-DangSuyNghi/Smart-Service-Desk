@@ -95,6 +95,8 @@ class RealQwenIntakeProof {
         assertEquals("REVIEW_RELEASED", state.path("status").asText(), state.toPrettyString());
         assertEquals("HARDWARE", state.path("finalAssessment").path("ai07").path("category").asText());
         assertTrue(state.path("finalAssessment").path("ai07").path("confidence").isNull());
+        mvc.perform(get("/api/apps/servicedesk/v1/workspaces/d2-model/intake-pending").with(as("coordinator", "coordinator")))
+                .andExpect(status().isOk()).andExpect(content().string(org.hamcrest.Matchers.containsString(id(ticket).toString())));
         for (int index = 0; index < 3; index++) assertEquals(state, read(ticket));
         assertFalse(worker.processOne());
         verify(transport, times(1)).observe(any());
@@ -103,9 +105,11 @@ class RealQwenIntakeProof {
                 .content(json.writeValueAsString(Map.of("expectedContextRevision", 0, "expectedVersion", state.path("version").asLong(),
                         "operationId", UUID.randomUUID(), "reason", "Synthetic real model handoff")))).andExpect(status().isOk());
         var released = read(ticket);
+        var decision = json.createObjectNode().put("category", "HARDWARE").put("priority", "MEDIUM")
+                .putNull("assignee").put("reason", "Synthetic human review").put("expectedContextRevision", 0)
+                .put("expectedIntakeVersion", released.path("version").asLong());
         mvc.perform(post(path(ticket) + "/review").with(as("coordinator", "coordinator")).contentType("application/json")
-                .content(json.writeValueAsString(Map.of("category", "HARDWARE", "priority", "MEDIUM", "reason", "Synthetic human review",
-                        "expectedContextRevision", 0, "expectedIntakeVersion", released.path("version").asLong())))).andExpect(status().isOk());
+                .content(decision.toString())).andExpect(status().isOk());
         assertEquals("REVIEWED", read(ticket).path("status").asText());
         assertEquals(1L, jdbc.queryForObject("select count(*) from servicedesk_ai_feedback where ticket_id=?", Long.class, id(ticket)));
         verify(transport, times(1)).observe(any());

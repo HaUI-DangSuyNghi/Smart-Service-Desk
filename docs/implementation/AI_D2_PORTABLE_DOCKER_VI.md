@@ -17,6 +17,18 @@ mount weights/code từ host, mạng `none`. Fixture bàn phím hỏng trả HTT
 schema sai trả 502 theo protocol hiện tại. Kết quả này chỉ chứng minh kỹ thuật
 cho fixture synthetic, không chứng minh chất lượng Gold hoặc quyền xử lý ticket thật.
 
+Pipeline Java/PostgreSQL/Flowable cũng đã chạy với model GPU thật: một inference,
+final result được lưu, GET lặp ổn định, human review và feedback pass. Lệnh tái kiểm:
+
+```powershell
+python scripts/ai-d2/prove-real-qwen-intake.py `
+  --image-receipt .local/ai07/d2/full-image-hf.json `
+  --output .local/ai07/d2/real-java-intake-proof-new.json
+```
+
+Harness này dùng JWT/grant test doubles cho fixture synthetic; không thay nghiệm
+thu quyền xử lý thật hoặc clean-recipient acceptance.
+
 | Danh tính | Giá trị đã kiểm tra tại máy phát triển |
 |---|---|
 | Base serving revision | `23c69c53358a07516b5827588b3fdb12ae78fd65` |
@@ -81,7 +93,7 @@ registry digest. Không dùng mutable tag làm bằng chứng release.
 
 Build backend/frontend từ commit đã kiểm tra; image CPU sidecar từ
 `intelligence/Dockerfile`, gateway từ `infra/apisix/Dockerfile`. Không dùng image
-backend cũ thiếu migrations V14–V17. Ghi config ID sau build vào plan JSON:
+backend cũ thiếu migrations V16–V19. Ghi config ID sau build vào plan JSON:
 
 ```json
 {
@@ -211,6 +223,17 @@ gửi nguyên log có dữ liệu nhạy cảm. Không `down -v`, reset realm ha
 
 Các gate còn cần bằng chứng bên ngoài: quyền phân phối adapter, issuer approval/
 release signature thật, license review, Gold/canonical policy approval và nghiệm
-thu ở máy nhận sạch không có model cache/network. R1/R3 và các phần routing/SLA/
-reporting thuộc backend nghiệp vụ liên quan phải tích hợp từ nhánh phụ trách;
-không coi bộ AI D2 thay thế toàn bộ R0–R12.
+thu ở máy nhận sạch không có model cache/network. R1/R3 routing/duty và gợi ý phân
+công đã tích hợp từ develop có PR #52/#53, áp dụng cho cả process intake mới.
+Các phần SLA/reporting còn lại thuộc backend nghiệp vụ liên quan; bộ AI D2 không
+thay thế toàn bộ R0–R12.
+
+## English quick start
+
+Use a separately trusted public key and manifest SHA-256. Run Verify-Release,
+Install-Team, Start-Team, Test-Team, Export-Diagnostics and Stop-Team as shown
+above. The kit contains immutable Linux/amd64 images; startup never builds or
+pulls images. Recipient secrets are generated locally. DEMO_SYNTHETIC is the
+default; AUTHORIZED_ASSISTED requires independently signed activation and current
+processing grants. Stop preserves volumes. Distribution approval, license review,
+Gold evaluation and clean-recipient acceptance remain separate release gates.

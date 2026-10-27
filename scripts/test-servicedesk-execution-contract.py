@@ -19,6 +19,7 @@ def main():
     parser.add_argument("evidence", type=Path)
     parser.add_argument("--assessment-evidence", type=Path)
     parser.add_argument("--assessment-lifecycle", type=Path)
+    parser.add_argument("--assignment-evidence", type=Path)
     arguments = parser.parse_args()
     import json
     evidence = json.loads(arguments.evidence.read_text(encoding="utf-8-sig"))
@@ -55,6 +56,15 @@ def main():
     OpenAPIV30SpecValidator(app, base_uri=APP.as_uri()).validate()
     registry = Registry().with_resources((location, Resource.from_contents(document, default_specification=DRAFT4))
         for location, document in documents.items())
+    if arguments.assignment_evidence:
+        assignment = json.loads(arguments.assignment_evidence.read_text(encoding="utf-8-sig"))
+        validator = OAS30Validator({"$ref": HPDI.as_uri() + "#/components/schemas/AssignmentSuggestion"}, registry=registry)
+        validator.validate(assignment)
+        for field, value in (("taskId", None), ("estimateMinutes", 0), ("candidates", None), ("unknown", True)):
+            invalid = copy.deepcopy(assignment)
+            invalid[field] = value
+            assert not validator.is_valid(invalid), "Suggestion schema must reject " + field
+        print("PASS assignment suggestion HTTP contract: real response and four negative checks")
     count = 0
     for name, value in evidence.items():
         document, location, schema = (app, APP, "Ticket") if name in ("created", "review") else (hpdi, HPDI, "QueuePage" if name == "queue" else "QueueItem")

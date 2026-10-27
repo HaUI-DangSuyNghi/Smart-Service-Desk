@@ -37,6 +37,12 @@
         {"name": "coordinator", "clientRoles": {"dx-permissions": ["request:create", "request:view-all", "task:handle", "task:assign", "document:view", "document:upload", "member:view", "audit:view", "audit:view-own", "dashboard:view"]}}
       ]}
     ]
+  }, {
+    "name": "support-groups",
+    "subGroups": [
+      {"name": "lab-a", "subGroups": [{"name": "hardware"}, {"name": "network"}, {"name": "software"}, {"name": "sysadmin"}]},
+      {"name": "lab-b", "subGroups": [{"name": "hardware"}, {"name": "network"}, {"name": "software"}, {"name": "sysadmin"}]}
+    ]
   }],
   "clients": [
     {

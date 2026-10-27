@@ -18,14 +18,37 @@ public class ServiceDeskProcess implements ProcessContribution {
     private final org.springframework.beans.factory.ObjectProvider<vn.haui.dx.hpdi.process.api.WorkExecution> execution;
     private final org.springframework.beans.factory.ObjectProvider<vn.haui.dx.apps.servicedesk.intake.IntakeAdmission> intake;
     private final org.springframework.beans.factory.ObjectProvider<vn.haui.dx.apps.servicedesk.intake.CanonicalTicketService> canonical;
+    private final org.springframework.beans.factory.ObjectProvider<TicketAssignmentEligibility> eligibility;
     public ServiceDeskProcess(org.springframework.jdbc.core.JdbcTemplate jdbc,
             org.springframework.beans.factory.ObjectProvider<vn.haui.dx.hpdi.process.api.WorkExecution> execution,
             org.springframework.beans.factory.ObjectProvider<vn.haui.dx.apps.servicedesk.intake.IntakeAdmission> intake,
-            org.springframework.beans.factory.ObjectProvider<vn.haui.dx.apps.servicedesk.intake.CanonicalTicketService> canonical) {
-        this.jdbc = jdbc; this.execution = execution; this.intake = intake; this.canonical = canonical;
+            org.springframework.beans.factory.ObjectProvider<vn.haui.dx.apps.servicedesk.intake.CanonicalTicketService> canonical,
+            org.springframework.beans.factory.ObjectProvider<TicketAssignmentEligibility> eligibility) {
+        this.jdbc = jdbc; this.execution = execution; this.intake = intake; this.canonical = canonical; this.eligibility = eligibility;
+    }
+
+    @Override public void beforeAssign(String workspace, String processKey, String processId, String taskKey, String subject) {
+        if (!reviewed(processKey) || !"handle".equals(taskKey)) return;
+        var rows = jdbc.queryForList("select t.creator,r.category from servicedesk_ticket t join servicedesk_review r on r.ticket_id=t.id"
+            + " where t.workspace=? and t.process_instance_id=?", workspace, processId);
+        if (rows.isEmpty()) throw vn.haui.dx.hpdi.common.api.CapabilityException.conflict("Ticket review required");
+        var row = rows.get(0);
+        eligibility.getObject().require(workspace, TicketReview.Category.valueOf((String) row.get("category")), (String) row.get("creator"), subject);
+
     }
 
     @Override public Map<String, Set<String>> executionTasks() { return Map.of(REVIEWED_KEY, Set.of("handle"), INTAKE_KEY, Set.of("handle")); }
+
+    @Override public void afterAssign(String workspace, String processKey, String processId, String taskKey, String subject) {
+        if (!reviewed(processKey) || !"handle".equals(taskKey)) return;
+        var group = jdbc.queryForObject("select r.category from servicedesk_review r join servicedesk_ticket t on t.id=r.ticket_id"
+            + " where t.workspace=? and t.process_instance_id=?", String.class, workspace, processId);
+        String supportGroup = TicketAssignmentEligibility.supportGroup(TicketReview.Category.valueOf(group));
+        jdbc.update("insert into servicedesk_assignment_event(workspace,process_id,subject) values(?,?,?)", workspace, processId, subject);
+        if (supportGroup != null)
+            jdbc.update("insert into servicedesk_assignment_cursor(workspace,support_group,last_subject) values(?,?,?)"
+                + " on conflict(workspace,support_group) do update set last_subject=excluded.last_subject", workspace, supportGroup, subject);
+    }
 
     @Override public void beforeComplete(String workspace, String processKey, String processId, String taskKey, String taskId, String outcome) {
         if (INTAKE_KEY.equals(processKey) && "intake".equals(taskKey)) {

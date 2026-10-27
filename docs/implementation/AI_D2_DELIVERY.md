@@ -1,8 +1,10 @@
 # AI D2 — Tiến độ triển khai và bàn giao
 
-Baseline: `050a32faf72c8306e719c8384a257b9b48fa2caa`, fetch ngày 27/10/2026.
-Nhánh: `feature/ai-d2-intake-portable-delivery`. PR #47/#51 đã nằm trong baseline;
-R1/R3 ở PR #52 là dependency bên backend, không triển khai lại trong nhánh này.
+Baseline khởi tạo: `050a32faf72c8306e719c8384a257b9b48fa2caa`, ngày 27/10/2026.
+Đã fetch lại và tích hợp `origin/develop@abdbac293531e864c03535a126e3ee5e1fb11709`
+gồm PR #52 routing/duty và PR #53 gợi ý phân công. Nhánh mới:
+`feature/ai-d2-intake-portable-delivery`. Guard và gợi ý hiện có được mở rộng
+cho process intake mới; không triển khai lại nghiệp vụ từ hai PR.
 
 | Cụm | Nội dung | Trạng thái |
 | --- | --- | --- |
@@ -28,7 +30,7 @@ prediction, dữ liệu hoặc secrets.
 
 ## C1 — Admission trước review
 
-Migration V14 additive; V8–V13 không sửa. Bật cho ticket mới bằng
+Migration V16 additive; V8–V13 không sửa. Bật cho ticket mới bằng
 `SERVICE_DESK_INTAKE_NEW_TICKETS=true`, mặc định false. Ticket đã có intake vẫn
 giữ guard và đường manual nếu tắt route mới. Deadline mặc định 86400 giây là
 engineering bound, không phải SLA nghiệp vụ đã duyệt.
@@ -47,7 +49,7 @@ và final assessment; C1 đã chặn worker legacy trên ticket có admission.
 
 ## C2 — Final snapshot và feedback
 
-V15 bổ sung grant digest và review task binding; không sửa V14 đã commit. CPU
+V17 bổ sung grant digest và review task binding; không sửa V16 đã commit. CPU
 screening kiểm readiness trước duplicate Stage A, sau đó seal revision/context/
 policy/grants/review round/task ID. Policy duplicate DRAFT chỉ advisory, không hold
 hoặc merge. Job background hiện có chỉ nhận ticket intake đã seal; inference ở
@@ -89,7 +91,7 @@ Follower branch chưa được phép complete trực tiếp khi canonical dispos
 
 ## C3b — Preflight và canonical do người quyết định
 
-V17 bổ sung projection room/object, notice chờ xử lý, canonical link và lịch sử
+V19 bổ sung projection room/object, notice chờ xử lý, canonical link và lịch sử
 quyết định. Preflight quét tối đa 500 ticket trong 90 ngày trước ticket đang xét,
 lọc workflow đang mở trước khi chọn tối đa 50 candidate. Kết quả báo rõ incomplete;
 không dùng danh sách bị cắt để cho phép liên kết. Projection chỉ ưu tiên truy hồi,
@@ -182,3 +184,54 @@ Bốn test offline/Compose pass, gồm chữ ký OpenSSL thật với key fixtur
 tampered inventory/archive/unlisted secret, scope/policy/grant-key substitution và
 network isolation. Đây là bằng chứng tooling; chưa có distribution approval thật
 hoặc máy nhận sạch, nên export/publish/customer-processing acceptance còn PENDING.
+
+## Đồng bộ develop có PR #52/#53
+
+Giữ migration đã phát hành của develop nguyên bytes: HPDI V14 duty và Service Desk
+V15 assignment. Bốn migration D2 chỉ được chạy trong DB kiểm thử tạm, chưa phát hành,
+được đổi số từ V14–V17 sang **V16–V19** trước tích hợp. Không repair hay sửa history
+DB dùng chung. Các số migration trong các mục phía trên là số cuối cùng của nhánh.
+
+Review giữ eligibility theo support group/duty; cả claim và assign v2 handle đi qua
+hook giống workflow reviewed. Gợi ý phân công nhận cả hai process, vẫn chỉ đọc,
+không tự assignment và không dùng model ET. Test bổ sung: preview/task suggestion
+v2, agent off duty bị chặn claim, không phát assignment event khi claim thất bại.
+Test upgrade riêng V15 giới hạn target V15, test nâng cấp toàn bộ kiểm đến V19.
+
+## Kiểm chứng model thật trong final pipeline
+
+`scripts/ai-d2/prove-real-qwen-intake.py` chạy container Qwen tự chứa trên GPU,
+mạng internal riêng; runner Java/PostgreSQL tạm chỉ mount token, không mount model.
+`RealQwenIntakeProof` là opt-in riêng, không làm các bộ mặc định skip khi không có GPU.
+Đã PASS: đúng một Java HTTP inference cho revision đã seal, HARDWARE với confidence
+null, final-attempt DONE duy nhất, GET lặp không infer, coordinator handoff/review,
+feedback được ghi. Worklist vẫn hiển thị v2 intake đã có kết quả nhưng chờ handoff.
+
+Kiểm chứng thật phát hiện thứ tự class trong contextual request không đúng wire
+policy. Đã sửa thành ACCOUNT/HARDWARE/NETWORK/OTHER/SOFTWARE, khớp mapping A–E đã
+pin; không đổi model bytes/policy để nới verifier. Fixture review gửi explicit
+assignee null theo contract. Receipt: `.local/ai07/d2/real-java-intake-proof.json`.
+JWT/processing grants trong JUnit vẫn là test doubles cho fixture owned synthetic;
+không dùng bằng chứng này cấp quyền xử lý ticket khách hàng.
+
+Python source kiểm lại với đúng dependency pins: **306 pass**, một test Ollama
+filesystem chỉ chạy trên Linux được skip trên Windows. GPU Qwen đã có bằng chứng
+riêng ở trên. Tier boundary: source check và **43 mutation tests pass**. Hai
+OpenAPI mới validate pass; subset live Service Desk có **14 positive/negative
+contract checks pass**, không miễn trừ lỗi baseline của toàn bộ HPDI spec.
+
+## Kết quả cuối sau đồng bộ
+
+Trên source có develop `abdbac2`: **689 backend full tests PASS**, **106 core-only
+PASS**, **33 second-domain PASS**, không fail/error/skip. Bộ tập trung phân công,
+final assessment và true-wait: **28 PASS**. Real Qwen final pipeline: **1 PASS**
+riêng với GPU/Java HTTP/PostgreSQL/Flowable thật và test doubles chỉ ở rights/JWT.
+
+Hai điểm test được làm bền sau khi thêm dữ liệu regression: kiểm phân trang queue
+theo hai lượt scan liên tiếp thay vì giả định toàn DB luôn dưới 100 task; endpoint
+không kết nối được phải trả unavailable hoặc finite timeout, không giả thành công.
+Không nới guard quyền, policy, model identity hoặc CAS để làm test pass.
+
+Docker context backend bổ sung đúng allowlist contract test mà Dockerfile đang
+COPY; `.local`, weights và secrets vẫn bị loại khỏi context. Tài liệu triển khai
+và trạng thái pending bên ngoài nằm trong runbook portable ở trên.

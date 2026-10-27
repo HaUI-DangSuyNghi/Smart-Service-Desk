@@ -63,6 +63,7 @@ def run(root, mode):
     call("coordinator", "POST", path + "/review", {"category": "HARDWARE", "priority": "MEDIUM", "assignee": None,
          "reason": "Synthetic human review", "expectedContextRevision": state["contextRevision"], "expectedIntakeVersion": state["version"]})
     handle = call("coordinator", "GET", path)["taskId"]
+    call("agent", "PUT", "hpdi/v1/workspaces/lab-a/duty/me", {"onDuty": True})
     call("agent", "POST", tasks + handle + "/claim")
     call("agent", "POST", tasks + handle + "/start")
     call("agent", "POST", tasks + handle + "/complete", {"expectedTaskKey": "handle", "outcome": "resolved"}, 204)

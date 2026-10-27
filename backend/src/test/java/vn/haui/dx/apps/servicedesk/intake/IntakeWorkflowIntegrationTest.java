@@ -32,6 +32,16 @@ class IntakeWorkflowIntegrationTest {
     @Autowired MockMvc mvc;
     @Autowired ObjectMapper json;
     @Autowired JdbcTemplate jdbc;
+    @Autowired vn.haui.dx.core.identity.api.WorkspaceDirectory directory;
+
+    @org.junit.jupiter.api.BeforeEach
+    void availableSyntheticAgent() throws Exception {
+        org.mockito.Mockito.when(directory.members("wait-a")).thenReturn(List.of(new vn.haui.dx.core.identity.api.DirectoryMember(
+                "agent", "Synthetic agent", null, java.util.Set.of(vn.haui.dx.core.identity.api.WorkspaceRole.AGENT))));
+        org.mockito.Mockito.when(directory.supportGroupMembers("wait-a", "hardware")).thenReturn(java.util.Set.of("agent"));
+        mvc.perform(put("/api/hpdi/v1/workspaces/wait-a/duty/me").with(as("agent", "agent")).contentType("application/json")
+                .content("{\"onDuty\":true}")).andExpect(status().isOk());
+    }
 
     @DynamicPropertySource
     static void properties(DynamicPropertyRegistry registry) {
@@ -39,6 +49,22 @@ class IntakeWorkflowIntegrationTest {
         registry.add("spring.datasource.username", () -> "workflow");
         registry.add("spring.datasource.password", () -> System.getenv("FILE_TEST_DB_PASSWORD"));
         registry.add("spring.security.oauth2.resourceserver.jwt.jwk-set-uri", () -> "http://127.0.0.1:1/jwks");
+    }
+
+    @Test
+    void v2HandleKeepsDutyRoutingAndReadOnlyAssignmentSuggestion() throws Exception {
+        var ticket = create();
+        release(ticket, UUID.randomUUID());
+        mvc.perform(get(path(ticket) + "/assignment-suggestion").param("category", "HARDWARE").param("priority", "HIGH")
+                .with(as("coordinator", "coordinator"))).andExpect(status().isOk());
+        review(ticket, state(ticket).path("version").asLong(), 200);
+        String handle = getTicket(ticket).path("taskId").asText();
+        mvc.perform(get(TASKS + handle + "/assignment-suggestion").with(as("coordinator", "coordinator"))).andExpect(status().isOk());
+        mvc.perform(put("/api/hpdi/v1/workspaces/wait-a/duty/me").with(as("agent", "agent")).contentType("application/json")
+                .content("{\"onDuty\":false}")).andExpect(status().isOk());
+        mvc.perform(post(TASKS + handle + "/claim").with(as("agent", "agent"))).andExpect(status().isConflict());
+        assertEquals(0L, jdbc.queryForObject("select count(*) from servicedesk_assignment_event where process_id=?", Long.class,
+                ticket.path("process").path("processInstanceId").asText()));
     }
 
     @Test

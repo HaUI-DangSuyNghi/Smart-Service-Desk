@@ -39,6 +39,7 @@ class CanonicalTicketIntegrationTest {
     @Autowired MockMvc mvc;
     @Autowired ObjectMapper json;
     @Autowired JdbcTemplate jdbc;
+    @Autowired vn.haui.dx.core.identity.api.WorkspaceDirectory directory;
     @Autowired vn.haui.dx.core.workflow.internal.WorkflowStateFixture workflow;
 
     @DynamicPropertySource
@@ -52,9 +53,14 @@ class CanonicalTicketIntegrationTest {
     @MockBean ContextProcessingGate rights;
 
     @BeforeEach
-    void authorizeSyntheticData() {
+    void authorizeSyntheticData() throws Exception {
         when(rights.verify(anyString(), anyString())).thenReturn("synthetic-grant");
         when(rights.verifyReadiness(anyString(), anyString(), anyString())).thenReturn("synthetic-grant");
+        when(directory.members("canonical-a")).thenReturn(List.of(new vn.haui.dx.core.identity.api.DirectoryMember(
+                "agent", "Synthetic agent", null, java.util.Set.of(vn.haui.dx.core.identity.api.WorkspaceRole.AGENT))));
+        when(directory.supportGroupMembers("canonical-a", "hardware")).thenReturn(java.util.Set.of("agent"));
+        mvc.perform(put("/api/hpdi/v1/workspaces/canonical-a/duty/me").with(as("agent", "agent")).contentType("application/json")
+                .content("{\"onDuty\":true}")).andExpect(status().isOk());
     }
 
     @Test
