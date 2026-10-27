@@ -1,4 +1,6 @@
 import { apiClient, type Page } from "@/platform/shared/api";
+import { isWorkflowMock } from "./mock/mockMode";
+import { workMock } from "./mock/workMock";
 import { hpdiWorkspace } from "./paths";
 
 // Kiểu khớp schema trong contracts/hpdi/openapi.yaml (WorkItem, ProcessDescriptor, ProcessTimeline...)
@@ -165,6 +167,7 @@ export const listInbox = async (
 
 /** POST nhận việc. 409: đã có người nhận; 403: không thuộc nhóm hoặc là người tạo yêu cầu. */
 export const claimTask = async (workspace: string, taskId: string): Promise<WorkItem> => {
+  if (isWorkflowMock && workMock.hasTask(taskId)) return workMock.claimTask(workspace, taskId);
   const { data } = await apiClient.post<WorkItem>(
     `${hpdiWorkspace(workspace)}/tasks/${encodeURIComponent(taskId)}/claim`,
   );
@@ -177,6 +180,9 @@ export const assignTask = async (
   taskId: string,
   assignee: string,
 ): Promise<WorkItem> => {
+  if (isWorkflowMock && workMock.hasTask(taskId)) {
+    return workMock.assignTask(workspace, taskId, assignee);
+  }
   const { data } = await apiClient.post<WorkItem>(
     `${hpdiWorkspace(workspace)}/tasks/${encodeURIComponent(taskId)}/assign`,
     { assignee },
@@ -203,6 +209,9 @@ export const completeTask = async (
   taskId: string,
   completion: TaskCompletion,
 ): Promise<void> => {
+  if (isWorkflowMock && workMock.hasTask(taskId)) {
+    return workMock.completeTask(workspace, taskId, completion);
+  }
   await apiClient.post(
     `${hpdiWorkspace(workspace)}/tasks/${encodeURIComponent(taskId)}/complete`,
     completion,
@@ -215,6 +224,9 @@ export const getTimeline = async (
   processInstanceId: string,
   signal?: AbortSignal,
 ): Promise<ProcessTimeline> => {
+  if (isWorkflowMock && workMock.hasProcess(processInstanceId)) {
+    return workMock.getTimeline(workspace, processInstanceId);
+  }
   const { data } = await apiClient.get<ProcessTimeline>(
     `${hpdiWorkspace(workspace)}/instances/${encodeURIComponent(processInstanceId)}/timeline`,
     { signal },
