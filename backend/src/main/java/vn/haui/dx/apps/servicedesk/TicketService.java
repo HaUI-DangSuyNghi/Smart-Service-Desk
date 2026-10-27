@@ -24,15 +24,18 @@ public class TicketService {
     private final ActivityJournal audit;
     private final Validator validator;
     private final TicketStatisticsService statistics;
+    private final vn.haui.dx.apps.servicedesk.intelligence.BackgroundTicketAssessment assessments;
 
     public TicketService(TicketRepository repository, HumanContext access, ProcessCapability workflow,
-                         ActivityJournal audit, Validator validator, TicketStatisticsService statistics) {
+                         ActivityJournal audit, Validator validator, TicketStatisticsService statistics,
+                         vn.haui.dx.apps.servicedesk.intelligence.BackgroundTicketAssessment assessments) {
         this.repository = repository;
         this.access = access;
         this.workflow = workflow;
         this.audit = audit;
         this.validator = validator;
         this.statistics = statistics;
+        this.assessments = assessments;
     }
 
     @Transactional
@@ -44,6 +47,7 @@ public class TicketService {
         UUID id = UUID.randomUUID();
         var process = workflow.start(workspace, ServiceDeskProcess.REVIEWED_KEY, id.toString(), Map.of());
         var ticket = repository.insert(id, workspace, user.subject(), input, process.processInstanceId());
+        assessments.enqueue(ticket);
         audit.record(workspace, new BusinessActivity("servicedesk.ticket.create", "servicedesk.ticket", id.toString(),
             Map.of("processInstanceId", process.processInstanceId())));
         return ticket;
