@@ -163,3 +163,22 @@ ms cho fixture bàn phím; bad bearer 403, unknown schema 502.
 
 Hướng dẫn và lệnh cụ thể: [AI_D2_PORTABLE_DOCKER_VI.md](AI_D2_PORTABLE_DOCKER_VI.md).
 Receipt private trong `.local/ai07/d2`; chưa publish registry và chưa phân phối kit.
+
+## C5 — Kit offline và onboarding
+
+Exporter chỉ nhận image config IDs đã kiểm tra và approval phân phối có chữ ký
+độc lập. Đóng gói đủ model/code cha và bảy service, inventory SHA-256/size,
+runtime notices, profile synthetic, Compose và lifecycle script theo allowlist.
+Gói export chưa ký phải được issuer ký release manifest trước khi máy nhận cài.
+
+Verifier kiểm hash manifest nhận độc lập, chữ ký, mọi file, image identity và
+archive không có traversal/link/device. Install sinh secrets/realm ở máy nhận,
+không đổi stack đang có; Start không build/pull, Stop không xóa volume và không
+phụ thuộc approval còn hạn. Diagnostics chỉ lưu health/check names, không log thô.
+Assisted activation cần chữ ký riêng bind chính xác grant/key bytes và policy,
+không có API tự phát grant. Backend vẫn kiểm quyền và grant trong runtime.
+
+Bốn test offline/Compose pass, gồm chữ ký OpenSSL thật với key fixture tạm,
+tampered inventory/archive/unlisted secret, scope/policy/grant-key substitution và
+network isolation. Đây là bằng chứng tooling; chưa có distribution approval thật
+hoặc máy nhận sạch, nên export/publish/customer-processing acceptance còn PENDING.
