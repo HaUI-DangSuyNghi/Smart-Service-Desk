@@ -1,5 +1,9 @@
 # Chạy và nghiệm thu local — bổ sung ngữ cảnh, gợi ý ticket trùng
 
+Kết quả tích hợp backend #48/#49 và chuỗi migration V10–V12 nằm trong
+[AI08-SYNC-00](BASELINE_SYNC_ACCEPTANCE.md). Các số liệu bên dưới là bằng chứng
+lịch sử của nhánh AI08 trước đồng bộ.
+
 ## Hành vi đã triển khai
 
 Client dùng `ticketId` đã có để đọc revision và gửi câu trả lời bổ sung. Server lưu

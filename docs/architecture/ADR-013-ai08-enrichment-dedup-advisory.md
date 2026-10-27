@@ -1,7 +1,9 @@
 # ADR-013 — Bổ sung ngữ cảnh và gợi ý ticket trùng
 
 - Trạng thái: triển khai kỹ thuật; chưa phê duyệt phát hành production.
-- Baseline: `origin/develop`, `122519e046a1153aebe997a67bb522b914aa78c5`.
+- Baseline ban đầu: `origin/develop`, `122519e046a1153aebe997a67bb522b914aa78c5`.
+- Đồng bộ AI08-SYNC-00: `develop@4cbe38c`; xem
+  [báo cáo đồng bộ PR 47](../../intelligence/docs/task/AI08/BASELINE_SYNC_ACCEPTANCE.md).
 - Phạm vi: Service Desk, sau AI07; không thay đổi contract assessment v0.2.
 
 ## Quyết định
@@ -18,7 +20,7 @@ chứng kiểm thử Java, không duy trì một bản policy nghiệp vụ th�
 
 ## Ghi bổ sung
 
-Migration mới `V8`, dưới `db/migration/apps/servicedesk`, thêm revision vào bảng
+Migration `V10`, dưới `db/migration/apps/servicedesk`, thêm revision vào bảng
 ticket và bảng `servicedesk_ticket_clarification`. Không sửa các migration cũ.
 FK `(workspace,ticket_id)` chỉ tham chiếu bảng của Service Desk.
 

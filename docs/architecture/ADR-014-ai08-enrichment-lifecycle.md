@@ -2,6 +2,8 @@
 
 Trạng thái: triển khai MVP-A, policy DRAFT; production NO_GO.
 Nhánh nền: `0e64b67`, chưa nằm trong `origin/develop` khi bắt đầu.
+Đồng bộ AI08-SYNC-00 với `develop@4cbe38c`: migration clarification/lifecycle/admission
+lần lượt là V10/V11/V12; V8/V9 thuộc backend review và estimate history.
 
 ## Quyết định
 
@@ -30,9 +32,11 @@ guard trước/sau inference và lease/CAS trước ghi kết quả. Model augme
 
 ## Giới hạn chủ động
 
-`workflowGateApplied=false` trong mọi response mới. `handle/confirm` vẫn chạy
-theo BPMN v1. MVP-B (review/await-info, SLA pause và migration instance) cần chủ
-quy trình chốt riêng; không triển khai như một phần của MVP-A.
+`workflowGateApplied=false` trong mọi response mới. Ticket legacy giữ
+`service-desk` với `handle/confirm`; ticket mới theo backend #49 dùng
+`service-desk-reviewed` với `review/handle/confirm`. AI08 nhận cả hai loại
+process qua capability và không tự hoàn tất task. Gate trước review, SLA pause
+và migration instance chưa thuộc bước đồng bộ compatibility này.
 
 Các mốc nhắc 1h, hết hạn 24h, khẩn 30m và tối đa 2 vòng là DRAFT engineering
 defaults trong policy, không phải SLA đã duyệt. Timeout không đóng hoặc gộp ticket.

@@ -12,8 +12,11 @@ cũ giữ nguyên; không dùng boolean `blocking` legacy để điều khiển 
 
 ## Phần A.2 — Case, outbox và timeout
 
-Migration V9 thêm case, outbox, question-request và transition ledger trong app
-Service Desk. V8 giữ nguyên. Tạo ticket và append câu trả lời phát event đồng bộ
+Migration V11 thêm case, outbox, question-request và transition ledger trong app
+Service Desk; clarification ở V10. V8/V9 giữ nguyên theo backend review/estimate.
+Đây là số phiên bản sau AI08-SYNC-00; các kết quả dưới đây là bằng chứng lịch sử
+trước đồng bộ, xem [bằng chứng tích hợp mới](BASELINE_SYNC_ACCEPTANCE.md).
+Tạo ticket và append câu trả lời phát event đồng bộ
 trong transaction hiện có; listener chỉ ghi metadata/outbox, không gọi model.
 Outbox lỗi thì rollback cùng câu trả lời/revision/audit. Replay không phát event.
 
@@ -69,7 +72,7 @@ Khi input model không đổi, category có thể được tái dùng với tr�
 MODEL_REUSED_MATERIAL; facts, digest và revision vẫn được tính lại, không gọi là
 model đã inference lần nữa. Không tái dùng assessment v0.2 làm kết quả contextual.
 
-Migration V10 giữ admission theo workspace/ticket/input/model/policy/quyền xử lý.
+Migration V12 giữ admission theo workspace/ticket/input/model/policy/quyền xử lý.
 Chỉ một caller được gọi transport; caller đồng thời hoặc attempt bỏ dở không
 được tự gọi model lần nữa. Cache chỉ chứa category chưa xác minh, không chứa raw
 prompt, answer, evidence hay token. Snapshot/actor/grant/process thay đổi sau
