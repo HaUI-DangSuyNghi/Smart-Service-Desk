@@ -6,6 +6,21 @@ Delivery: existing Draft PR #55 on `feat/r5-sla-engine`; no merge or deployment.
 Current acceptance and tested integration SHA: `evidence/R5_SLA_ENGINE.json`.
 The historical acceptance section below describes pre-AI-D2 source only.
 
+Tested integration commit: `c751681ca3dc6e791ec96e9e16f99dc15db08ace`.
+The evidence follow-up changes documentation only; tested executable source is unchanged.
+
+| Fresh gate | Result |
+| --- | --- |
+| Backend full / ArchUnit | 709 tests, zero failures/errors/skips |
+| Core-only | 106 tests, zero failures/errors/skips |
+| Second-domain | 33 tests, zero failures/errors/skips |
+| SLA + AI-D2 targeted | 103 tests, zero failures/errors/skips |
+| Source boundary / mutations | PASS / 43 checks |
+| SLA HTTP contracts | 8 real responses, 9 negatives each |
+| Real Keycloak JWT | 10 reviewed + 12 intake-reviewed checks, PASS |
+| Whole OpenAPI versus develop | No new errors; HPDI live 3/target 1 existing errors |
+| Hosted GitHub Actions | Separate gate, not certified by local acceptance |
+
 ## AI-D2 compatibility
 
 | Workflow | SLA participation | Lifecycle |

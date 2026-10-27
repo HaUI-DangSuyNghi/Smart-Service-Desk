@@ -2,130 +2,205 @@
   "date": "2026-10-27",
   "timezone": "Asia/Saigon",
   "branch": "feat/r5-sla-engine",
-  "baseline": "abdbac293531e864c03535a126e3ee5e1fb11709",
+  "pullRequest": 55,
+  "draft": true,
+  "baseline": "83e19ec312bf4515c89d8f2277545a17269c72db",
+  "testedIntegrationCommit": "c751681ca3dc6e791ec96e9e16f99dc15db08ace",
+  "provenance": "Final source and test files were run before creating the merge commit; subsequent changes are evidence/documentation only.",
   "countsAreNotAdditive": true,
   "javaProfiles": {
     "backendFull": {
       "failures": 0,
       "profile": "full",
       "errors": 0,
-      "tests": 660,
-      "skipped": 0
+      "tests": 709,
+      "skipped": 0,
+      "artifact": ".local/task-execution-full",
+      "mavenLogSha256": "8fc3cc7b855f3fc48c84b5282fc0edfc070336b4dfe4d4f5259e2f91e91869f2"
     },
     "coreOnly": {
       "failures": 0,
       "profile": "core-only",
       "errors": 0,
       "tests": 106,
-      "skipped": 0
+      "skipped": 0,
+      "artifact": ".local/task-execution-core-only",
+      "mavenLogSha256": "7a78cda8d20cff7d0ba707aa0fe810fd89c651aa4835d6bfdb38a2f64edb96be"
     },
     "secondDomain": {
       "failures": 0,
       "profile": "second-domain",
       "errors": 0,
       "tests": 33,
-      "skipped": 0
+      "skipped": 0,
+      "artifact": ".local/task-execution-second-domain",
+      "mavenLogSha256": "1fb93d524bd51ad6e03f5c03c3765f904c431ba8914e55623add0f45baaf6435"
     },
-    "slaTargetedAndMigration": {
+    "slaAndAiD2Targeted": {
       "failures": 0,
       "profile": "full",
       "errors": 0,
-      "tests": 23,
-      "skipped": 0
+      "tests": 103,
+      "skipped": 0,
+      "artifact": ".local/task-execution-full-targeted",
+      "mavenLogSha256": "0f8d37c5e25b126fa73f99f39dbc08777834840d7c64da819483164f259a2158"
     }
   },
   "boundaries": {
-    "status": "PASS",
-    "source": true,
-    "archUnitInBackendFull": true,
-    "mutationTests": 43
+    "source": "PASS",
+    "archUnit": "PASS in backend full",
+    "mutationChecks": 43,
+    "failures": 0
   },
-  "httpContracts": {
+  "contracts": {
     "status": "PASS",
-    "slaResponses": 8,
-    "negativeChecksPerSla": 9,
-    "existingExecutionChecks": 14
-  },
-  "wholeOpenApiComparison": {
-    "hpdi/openapi.yaml": {
-      "baselineErrors": 3,
-      "currentErrors": 3,
-      "regression": false
-    },
-    "hpdi/openapi-target.yaml": {
-      "baselineErrors": 1,
-      "currentErrors": 1,
-      "regression": false
-    },
-    "openapi/servicedesk.yaml": {
-      "baselineErrors": 0,
-      "currentErrors": 0,
-      "regression": false
-    },
-    "openapi/servicedesk-target.yaml": {
-      "baselineErrors": 0,
-      "currentErrors": 0,
-      "regression": false
+    "slaRealResponses": 8,
+    "negativeChecksPerSlaResponse": 9,
+    "executionPositiveAndNegativeChecks": 14,
+    "baselineComparison": {
+      "hpdiLiveErrors": 3,
+      "hpdiTargetErrors": 1,
+      "serviceDeskLiveErrors": 0,
+      "serviceDeskTargetErrors": 0,
+      "newErrors": 0
     }
   },
-  "realRuntime": {
-    "stack": "PostgreSQL 16.6 / Flowable 7.1 / Keycloak 26.0.7 / signed JWT / direct HTTP, no gateway",
-    "checks": [
-      {
-        "name": "unreviewed ticket has no SLA",
-        "status": "PASS"
-      },
-      {
-        "name": "approval initializes authoritative SLA",
-        "status": "PASS"
-      },
-      {
-        "name": "START freezes response result",
-        "status": "PASS"
-      },
-      {
-        "name": "requester wait pauses SLA",
-        "status": "PASS"
-      },
-      {
-        "name": "pause and original start deadline survive backend restart",
-        "status": "PASS"
-      },
-      {
-        "name": "handle resolved stops SLA before requester confirmation",
-        "status": "PASS"
-      },
-      {
-        "name": "rework awaiting approval has no fabricated SLA",
-        "status": "PASS"
-      },
-      {
-        "name": "new round starts a fresh LOW policy with no assignment",
-        "status": "PASS"
-      },
-      {
-        "name": "scheduled worker escalates unassigned LOW once without changing base priority",
-        "status": "PASS"
-      },
-      {
-        "name": "system escalation records exactly one transactional audit",
-        "status": "PASS"
-      }
+  "migrations": {
+    "slaVersion": 20,
+    "upstreamV1ThroughV19Unchanged": true,
+    "upgradeBaselines": [
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19
     ],
-    "status": "PASS"
+    "v19ToV20MigrationsExecuted": 1,
+    "allAppliedVersionChecksumsPreserved": true,
+    "syntheticBackfillRows": 0,
+    "validateAndIdempotence": "PASS"
   },
-  "gatewayAcceptance": {
-    "status": "SKIP",
-    "reason": "Runtime probe uses signed Keycloak JWT and direct HTTP, not gateway"
+  "realJwtRuntime": {
+    "reviewed": {
+      "stack": "PostgreSQL 16.6 / Flowable 7.1 / Keycloak 26.0.7 / signed JWT / direct HTTP, no gateway",
+      "checks": [
+        {
+          "name": "unreviewed ticket has no SLA",
+          "status": "PASS"
+        },
+        {
+          "name": "approval initializes authoritative SLA",
+          "status": "PASS"
+        },
+        {
+          "name": "START freezes response result",
+          "status": "PASS"
+        },
+        {
+          "name": "requester wait pauses SLA",
+          "status": "PASS"
+        },
+        {
+          "name": "pause and original start deadline survive backend restart",
+          "status": "PASS"
+        },
+        {
+          "name": "handle resolved stops SLA before requester confirmation",
+          "status": "PASS"
+        },
+        {
+          "name": "rework awaiting approval has no fabricated SLA",
+          "status": "PASS"
+        },
+        {
+          "name": "new round starts a fresh LOW policy with no assignment",
+          "status": "PASS"
+        },
+        {
+          "name": "scheduled worker escalates unassigned LOW once without changing base priority",
+          "status": "PASS"
+        },
+        {
+          "name": "system escalation records exactly one transactional audit",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS"
+    },
+    "intakeReviewed": {
+      "stack": "PostgreSQL 16.6 / Flowable 7.1 / Keycloak 26.0.7 / signed JWT / direct HTTP, no gateway",
+      "checks": [
+        {
+          "name": "unreviewed ticket has no SLA",
+          "status": "PASS"
+        },
+        {
+          "name": "human release does not initialize handle SLA",
+          "status": "PASS"
+        },
+        {
+          "name": "approval initializes authoritative SLA",
+          "status": "PASS"
+        },
+        {
+          "name": "START freezes response result",
+          "status": "PASS"
+        },
+        {
+          "name": "requester wait pauses SLA",
+          "status": "PASS"
+        },
+        {
+          "name": "pause and original start deadline survive backend restart",
+          "status": "PASS"
+        },
+        {
+          "name": "handle resolved stops SLA before requester confirmation",
+          "status": "PASS"
+        },
+        {
+          "name": "rework awaiting approval has no fabricated SLA",
+          "status": "PASS"
+        },
+        {
+          "name": "human release does not initialize handle SLA",
+          "status": "PASS"
+        },
+        {
+          "name": "new round starts a fresh LOW policy with no assignment",
+          "status": "PASS"
+        },
+        {
+          "name": "scheduled worker escalates unassigned LOW once without changing base priority",
+          "status": "PASS"
+        },
+        {
+          "name": "system escalation records exactly one transactional audit",
+          "status": "PASS"
+        }
+      ],
+      "status": "PASS"
+    }
   },
+  "runtimeJarSha256": "44dfd5aef93924d43b8cef3ef31743cb0475a774938e15c93203642206a23c66",
   "hostedCI": {
-    "status": "PENDING",
-    "reason": "Feature branch not yet published"
+    "status": "NOT_CERTIFIED",
+    "reason": "Check GitHub Actions on published head; local results do not certify hosted CI."
   },
-  "resolvedValidationIssues": [
-    "V16 reused the existing V11 workspace constraint instead of redeclaring it",
-    "Upgrade assertion now expects V16 instead of V15",
-    "Rollback trigger uses SQLSTATE 23514",
-    "Runtime runner refreshes Docker ephemeral port after restart and bounds readiness wait"
-  ]
+  "limits": [
+    "Direct HTTP, not Gateway E2E.",
+    "Intake JWT smoke uses human release; real model final assessment and duplicate follower are not part of that combined runtime path. Their regression runs in Java PostgreSQL/Flowable tests.",
+    "No production deployment, PR merge or capacity claim."
+  ],
+  "historicalEvidence": {
+    "commit": "220d867db3921f6b800124a650fd86d653dcf5d9",
+    "certifiesCurrentHead": false
+  },
+  "conclusion": "READY FOR INTERNAL REVIEW"
 }
