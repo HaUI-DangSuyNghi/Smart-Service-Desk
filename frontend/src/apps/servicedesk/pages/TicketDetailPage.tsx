@@ -1,15 +1,24 @@
 import { Link, useParams } from "react-router";
 import { IconArrowLeft, IconTicket } from "@tabler/icons-react";
 import { useAuth } from "../../../platform/human/auth";
-import { useCurrentWorkspace } from "../../../platform/human/workspace";
+import {
+  PERMISSIONS,
+  useActor,
+  useCurrentWorkspace,
+  usePermissions,
+} from "../../../platform/human/workspace";
 import { AssistantPanel, SuggestionCard } from "../../../platform/intelligence";
 import { Button } from "../../../platform/shared/ui/button";
 import { ErrorState } from "../../../platform/shared/ui/ErrorState";
 import { Page, PageBody, PageHeader } from "../../../platform/shared/ui/page";
 import { FieldsSkeleton } from "../../../platform/shared/ui/Skeleton";
 import { askTicketAssistance, triageTicket } from "../services/ticketService";
+import { AssessmentCard } from "../tickets/AssessmentCard";
+import { CorrectionsList } from "../tickets/CorrectionsList";
+import { TicketActions } from "../tickets/TicketActions";
 import { TicketProgress } from "../tickets/TicketProgress";
 import { TicketSummary } from "../tickets/TicketSummary";
+import { TicketWorkPanel } from "../tickets/TicketWorkPanel";
 import { useTicket } from "../tickets/useTickets";
 
 const WORKSPACE_PATTERN = /^[a-zA-Z0-9_-]{1,100}$/;
@@ -73,9 +82,14 @@ const TicketDetailPage = () => {
 
 const TicketDetail = ({ workspace, ticketId }: { workspace: string; ticketId: string }) => {
   const ticket = useTicket(workspace, ticketId);
+  const { actor } = useActor();
+  const { can } = usePermissions();
+  // Người gửi không xử lý việc: không cần thấy tải, ước tính, lịch sử sửa
+  const isRequesterView = !can(PERMISSIONS.taskHandle) && !can(PERMISSIONS.taskAssign);
+  const assessment = ticket.data?.assessment;
 
   return (
-    // Màn rộng: trái là ticket + tiến độ, phải là AI; điện thoại xếp dọc
+    // Màn rộng: trái là ticket + xử lý + tiến độ, phải là AI; điện thoại xếp dọc
     <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)]">
       <div className="min-w-0">
         {ticket.isPending && <FieldsSkeleton rows={5} label="Đang tải ticket" />}
@@ -85,17 +99,30 @@ const TicketDetail = ({ workspace, ticketId }: { workspace: string; ticketId: st
             <h2 className="border-b border-crm-line px-4 py-3 text-crm-lg font-semibold wrap-break-word">
               {ticket.data.title}
             </h2>
+            <TicketActions ticket={ticket.data} />
+            <TicketWorkPanel
+              ticket={ticket.data}
+              isRequesterView={isRequesterView && actor?.subject === ticket.data.creator}
+            />
             <TicketSummary ticket={ticket.data} />
+            {!isRequesterView && ticket.data.corrections && (
+              <CorrectionsList corrections={ticket.data.corrections} />
+            )}
             <TicketProgress processInstanceId={ticket.data.process.processInstanceId} />
           </>
         )}
       </div>
       <aside className="min-w-0 border-t border-crm-line lg:border-t-0 lg:border-l">
-        <SuggestionCard
-          fetchSuggestion={() => triageTicket(workspace, ticketId)}
-          fieldLabels={SUGGESTION_LABELS}
-          evidenceLabels={EVIDENCE_LABELS}
-        />
+        {/* Có kết quả AI đã lưu (chạy nền lúc tạo) thì hiện cho người xử lý; backend cũ chưa có thì gọi tay */}
+        {assessment ? (
+          !isRequesterView && <AssessmentCard assessment={assessment} />
+        ) : (
+          <SuggestionCard
+            fetchSuggestion={() => triageTicket(workspace, ticketId)}
+            fieldLabels={SUGGESTION_LABELS}
+            evidenceLabels={EVIDENCE_LABELS}
+          />
+        )}
         <AssistantPanel
           ask={(question, signal) => askTicketAssistance(workspace, ticketId, question, signal)}
           subjectLabel="ticket"
