@@ -84,8 +84,14 @@ services:
         target: classification-token
     networks: [default, model-private]
   intelligence:
-    image: ${AI_D2_TRIAGE_IMAGE:?Verified CPU sidecar image required}
+    # Contains reviewed E5 ONNX files and optional dense runtime dependencies.
+    # Existing rules triage stays default; E5 is offline-capable, not implicitly enabled.
+    image: ${AI_D2_TRIAGE_IMAGE:?Verified E5 CPU sidecar image required}
     pull_policy: never
+    environment:
+      HDPI_E5_MODEL_DIRECTORY: /opt/models/e5
+      HF_HUB_OFFLINE: "1"
+      TRANSFORMERS_OFFLINE: "1"
   frontend:
     image: ${AI_D2_FRONTEND_IMAGE:?Verified frontend image required}
     pull_policy: never

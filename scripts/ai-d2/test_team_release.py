@@ -92,6 +92,13 @@ class OfflineReleaseTest(unittest.TestCase):
             images = {name: {"imageId": "sha256:" + "b" * 64, "configDigest": "sha256:" + config_digest,
                              "localRef": reference, "os": "linux", "architecture": "amd64"} for name in release.SERVICES}
             images["model-code"] = {**images["ai07-qwen"], "imageId": receipt["codeImageId"]}
+            images["e5-base"] = {**images["ai07-qwen"], "imageId": "sha256:" + "d" * 64}
+            from e5_release import MODEL, REVISION, ARTIFACT_DIGEST, SCHEMA, FILES
+            e5 = {"schemaVersion": SCHEMA, "model": MODEL, "revision": REVISION,
+                  "artifactDigest": ARTIFACT_DIGEST, "imageId": receipt["distributionImageId"],
+                  "parentImageId": images["e5-base"]["imageId"],
+                  "files": {name: {"size": size, "sha256": digest} for name, size, digest in FILES}}
+            (root / "e5-image.json").write_text(json.dumps(e5), encoding="utf-8")
             manifest = {"schemaVersion": "ai-d2-offline-release@1.0.0", "productionApproved": False,
                         "os": "linux", "architecture": "amd64", "modelDigest": receipt["modelDigest"],
                         "approvedChannel": "FIXTURE_OFFLINE", "images": images, "files": release.inventory(root)}

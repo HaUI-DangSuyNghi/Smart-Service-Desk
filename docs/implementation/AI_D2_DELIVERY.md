@@ -246,3 +246,16 @@ Có thêm test phân biệt index/config; tổng boundary release/offline/Compos
 khớp build output và giữ receipt ở `.local/ai-d2-frontend-archive-proof.json`.
 Plan đủ bảy image sẵn tại `.local/ai-d2-release-images.json`. Chưa có approval nên
 chưa export kit chứa weights hoặc push.
+
+
+## D2-A + E5 image extension (follow-up PR #54)
+
+D2-A giữ Qwen classifier đóng gói full weights. E5 bổ sung image ONNX CPU
+self-contained, SHA-256/size pinned, verify in Docker `--network none`,
+receipt có provenance và signed offline inventory. Export/install reject E5
+missing/tampered; danh sách archive là 7 services + 2 parent images.
+Cloud LLM dùng integration API hiện có opt-in, không bundle LLM weights hay API keys.
+
+**Status:** source/package contract prepared. E5 actual image build, clean-machine
+acceptance, dense/hybrid app-route integration, independent signing and approval
+remain PENDING; do not claim runtime E2E PASS until verified.

@@ -29,9 +29,11 @@ if not HELPERS.exists():
 sys.path.insert(0, str(HELPERS))
 from full_model_release import (docker, file_digest, inspect, read_json, require,
                                 safe_file, verify_approval, verify_receipt, write_new)
+from e5_release import validate_receipt as verify_e5_receipt, verify_image as verify_e5_image
 
 ROOT = Path(__file__).resolve().parents[2]
 SERVICES = ("postgres", "keycloak", "platform", "gateway", "frontend", "intelligence", "ai07-qwen")
+AUX_IMAGES = ("model-code", "e5-base")
 STATIC_FILES = (
     "compose.yaml", "infra/compose/compose.triage.yaml", "infra/compose/compose.ai-d2-release.yaml",
     "infra/compose/compose.ai-d2-synthetic.yaml", "infra/postgres/init.sql",
@@ -41,7 +43,7 @@ STATIC_FILES = (
     "scripts/ai-d2/Verify-Release.ps1", "scripts/ai-d2/Install-Team.ps1", "scripts/ai-d2/Start-Team.ps1",
     "scripts/ai-d2/Stop-Team.ps1", "scripts/ai-d2/Test-Team.ps1", "scripts/ai-d2/Export-Diagnostics.ps1",
     "scripts/ai-d2/Configure-Assisted.ps1",
-    "scripts/ai-d2/release.schema.json",
+    "scripts/ai-d2/release.schema.json", "scripts/ai-d2/e5_release.py",
     "docs/implementation/AI_D2_PORTABLE_DOCKER_VI.md",
 )
 PROFILE = "intelligence/src/apps/servicedesk/intelligence/profiles"
@@ -102,7 +104,8 @@ def verify_files(root, manifest):
     require(manifest["os"] == "linux" and manifest["architecture"] == "amd64", "Unsupported release platform")
     files = manifest["files"]
     require(type(files) is dict and 1 <= len(files) <= 5000)
-    require(set(manifest["images"]) == set(SERVICES) | {"model-code"}, "Incomplete offline image set")
+    require(set(manifest["images"]) == set(SERVICES) | set(AUX_IMAGES), "Incomplete offline image set")
+    require("e5-image.json" in files, "Signed E5 model receipt missing")
     for name, item in files.items():
         relative_name(name)
         require(not name.startswith((".local/", ".env")) and "/.git/" not in name and "/.secrets/" not in name)
@@ -142,6 +145,9 @@ def verify(args):
     verify_files(root, manifest)
     approval = verify_approval(root / "approval.json", root / "approval.sig", args.public_key)
     receipt = read_json(root / "model-image.json")
+    e5 = verify_e5_receipt(read_json(root / "e5-image.json"))
+    require(e5["imageId"] == manifest["images"]["intelligence"]["imageId"]
+            and e5["parentImageId"] == manifest["images"]["e5-base"]["imageId"], "E5 image identity mismatch")
     require(approval["modelDigest"] == receipt["modelDigest"] == manifest["modelDigest"])
     require(approval["channel"] == manifest["approvedChannel"])
     require(receipt["distributionImageId"] == manifest["images"]["ai07-qwen"]["imageId"])
@@ -154,13 +160,15 @@ def export(args):
     receipt = read_json(args.image_receipt)
     verify_receipt(receipt)
     approval = verify_approval(args.approval, args.approval_signature, args.public_key)
+    e5 = verify_e5_receipt(read_json(args.e5_receipt))
     require(approval["modelDigest"] == receipt["modelDigest"] and approval["channel"] == args.channel)
     require(set(plan["images"]) == set(SERVICES), "Pin all seven services in the export plan")
+    require(plan["images"]["intelligence"] == e5["imageId"], "CPU intelligence must be the E5-enabled image")
     root = args.output.resolve()
     require(root.is_relative_to((ROOT / ".local").resolve()) and not root.exists(), "Use a new private .local export directory")
     root.mkdir(parents=True)
     images = {}
-    for service, pin in {**plan["images"], "model-code": receipt["codeImageId"]}.items():
+    for service, pin in {**plan["images"], "model-code": receipt["codeImageId"], "e5-base": e5["parentImageId"]}.items():
         require(re.fullmatch(r"sha256:[0-9a-f]{64}", pin), "Exact Docker image IDs required; tags are not immutable identities")
         actual = inspect(pin)
         require(actual["Id"] == pin and actual["Os"] == "linux" and actual["Architecture"] == "amd64")
@@ -170,6 +178,7 @@ def export(args):
         images[service] = {"imageId": pin, "localRef": reference, "sourceDescriptor": actual.get("Descriptor"),
                            "ociRefs": actual.get("RepoDigests", []), "os": actual["Os"], "architecture": actual["Architecture"]}
     require(images["ai07-qwen"]["imageId"] == receipt["distributionImageId"])
+    verify_e5_image(images["intelligence"]["imageId"], e5)
     for name in STATIC_FILES:
         source = safe_file(ROOT, name)
         target = root / name
@@ -188,7 +197,7 @@ def export(args):
     helper_target = root / "scripts/ai-d2/lib"
     helper_target.mkdir()
     shutil.copyfile(HELPERS / "full_model_release.py", helper_target / "full_model_release.py")
-    for source, target in ((args.image_receipt, "model-image.json"), (args.approval, "approval.json"), (args.approval_signature, "approval.sig")):
+    for source, target in ((args.image_receipt, "model-image.json"), (args.e5_receipt, "e5-image.json"), (args.approval, "approval.json"), (args.approval_signature, "approval.sig")):
         shutil.copyfile(source, root / target)
     # Export original runtime notices and dependency inventory from the pinned model image.
     license_script = ROOT / "scripts/apps/servicedesk/ai07/export-qwen-licenses.py"
@@ -319,6 +328,8 @@ def install(args, root, manifest):
         imported[name] = actual["Id"]
     verify_receipt(read_json(root / "model-image.json"), code_ref=manifest["images"]["model-code"]["localRef"],
                    distribution_ref=manifest["images"]["ai07-qwen"]["localRef"])
+    verify_e5_image(manifest["images"]["intelligence"]["localRef"],
+                    read_json(root / "e5-image.json"))
     # Generate local demo users/realm using the existing project's setup logic.
     result = subprocess.run(["powershell", "-NoProfile", "-File", str(root / "scripts/setup.ps1")], cwd=root, capture_output=True)
     require(result.returncode == 0, "Local secrets/realm preparation failed")
@@ -369,7 +380,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     commands = parser.add_subparsers(dest="action", required=True)
     out = commands.add_parser("export")
-    for name in ("plan", "image-receipt", "approval", "approval-signature", "public-key", "output"):
+    for name in ("plan", "image-receipt", "e5-receipt", "approval", "approval-signature", "public-key", "output"):
         out.add_argument("--" + name, type=Path, required=True)
     out.add_argument("--channel", required=True)
     for action in ("verify", "install", "configure-assisted", "start", "stop", "test", "diagnostics"):

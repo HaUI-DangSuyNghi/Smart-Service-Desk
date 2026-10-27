@@ -243,3 +243,58 @@ pulls images. Recipient secrets are generated locally. DEMO_SYNTHETIC is the
 default; AUTHORIZED_ASSISTED requires independently signed activation and current
 processing grants. Stop preserves volumes. Distribution approval, license review,
 Gold evaluation and clean-recipient acceptance remain separate release gates.
+
+
+## 8. D2-A + E5 (AI05 dense, không thêm LLM nội bộ)
+
+Bản mở rộng này đóng gói **hai bộ trọng số AI**: Qwen3.5-0.8B + LoRA (classifier,
+GPU) và `intfloat/multilingual-e5-small` ONNX (embeddings 384 chiều, CPU).
+BM25/TF-IDF/rules là thuật toán, **không** phải mô hình weights bổ sung.
+Bộ kit gồm bảy service images và **hai** image code/parent hỗ trợ
+(`model-code` và `e5-base`), tổng cộng chín image archive entries.
+Không tải model khi người nhận Start-Team; cả Qwen và E5 phải pass isolated
+`docker run --network none` khi export/install. Chưa tự bật dense/hybrid search
+qua Ticket Assistant: retrieval runtime hiện có dùng TF-IDF mặc định;
+việc chuyển các route cụ thể sang E5 phải được kiểm thử permission, citation
+freshness và retrieval quality trước khi công bố khả năng đó hoạt động end-to-end.
+
+### 8.1 Build E5 trên máy phát hành (có mạng, trước approval)
+
+Image `intelligence` trong release plan bắt buộc là image E5 mới, không phải
+CPU sidecar gốc. Download và kiểm đúng upstream revision/size/SHA-256 ngoài Git,
+rồi build layer E5 có runtime ONNX được pin. Script tạo receipt private.
+
+```powershell
+python scripts/ai-d2/build-e5-sidecar.py \
+  --model-directory .local/models/e5 \
+  --download \
+  --cpu-base-image <CPU-TRIAGE-IMAGE-ID> \
+  --tag ssd-ai-d2-intelligence-e5:local \
+  --output .local/ai-d2-e5-image.json
+```
+
+Dòng ví dụ trên dùng `\\` nối lệnh dành cho shell POSIX; trên PowerShell
+hãy nhập cùng một dòng hoặc thay bằng dấu backtick. Pin `images.intelligence`
+trong `.local/ai-d2-release-images.json` bằng image ID ở E5 receipt.
+Build dùng Docker buildx named context `e5-model` chứa đúng hai file
+`onnx/model.onnx`, `onnx/tokenizer.json`. Không commit file trọng số.
+Exporter giờ cần thêm `--e5-receipt .local/ai-d2-e5-image.json`.
+Issuer ký release manifest chứa `e5-image.json` và cả hai parent images;
+manifest thiếu E5 bị từ chối.
+
+### 8.2 Cloud LLM qua API, opt-in riêng (không offline)
+
+Giữ provider integration hiện có (`intelligence/Dockerfile.cloud`,
+`infra/compose/compose.generation.yaml`, `infra/compose/compose.cloud.yaml`).
+Cloud LLM (ví dụ Gemini/Groq) **không** nằm trong bộ offline D2-A+E5; mặc định
+DISABLED. Chỉ bật trong deployment online riêng khi đã có catalog, provider pins,
+cloud-egress policy và quyền gửi dữ liệu ra ngoài. Không copy API key vào Git,
+Docker layer, `images.tar`, `release.json` hay diagnostics. Không tự bật cloud
+inference với ticket thực nếu chưa có chấp thuận data-processing/egress.
+
+### 8.3 Chưa thể gọi release PASS
+
+Phải kiểm build E5 thực tế, exact ONNX runtime dependency resolution,
+license/redistribution E5, GPU recipient, clean-machine offline install,
+chữ ký issuer và endpoint retrieval integration. Không suy diễn build proof từ
+mã nguồn/receipt template. Các acceptance gate D2 cũ vẫn giữ nguyên.
