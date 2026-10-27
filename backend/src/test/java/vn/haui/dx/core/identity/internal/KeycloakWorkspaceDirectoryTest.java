@@ -35,7 +35,7 @@ class KeycloakWorkspaceDirectoryTest {
     @Test void supportGroupLookupFailsClosedAndRequiresWorkspaceMembership() {
         doThrow(CoreException.forbidden("Workspace required")).when(access).requireMember("lab-b");
         assertThrows(CoreException.class, () -> directory.supportGroupMembers("lab-b", "hardware"));
-        assertThrows(CoreException.class, () -> directory.supportGroupMembers("lab-a", "coordinator"));
+        assertThrows(CoreException.class, () -> directory.supportGroupMembers("lab-a", "../agent"));
         server.verify();
     }
     private static final String KC = "http://kc";

@@ -1,6 +1,6 @@
 # Intelligent assignment: PR A (R1 + R3)
 
-Baseline: develop b9e2a5537cf047a634f2e98698f217ea587f1575. PR B must build on this change; do not merge automatically.
+Initial baseline: develop b9e2a5537cf047a634f2e98698f217ea587f1575. Integrated develop 050a32f (AI08) through merge commit bb646bb, without rebasing or force-pushing. PR B remains out of scope; keep PR #52 Draft and do not merge automatically.
 
 ## GAP matrix
 
@@ -10,7 +10,7 @@ Baseline: develop b9e2a5537cf047a634f2e98698f217ea587f1575. PR B must build on t
 | Default ET, coordinator override and estimate history | ALREADY IMPLEMENTED | Preserved, ACCOUNT/HIGH remains 20 |
 | Workspace membership, candidate roles, creator exclusion | PARTIAL | Fresh agent role + task:handle + support membership checks |
 | Category to actual Keycloak support group | MISSING | HARDWARE/hardware, NETWORK/network, SOFTWARE/software, ACCOUNT/sysadmin |
-| Workspace duty persistence and self-service | MISSING | V11, GET/PUT duty, transactional audit |
+| Workspace duty persistence and self-service | MISSING | Shared HPDI V14, GET/PUT duty, transactional audit |
 | WorkExecution / WorkProjection batch queue and elapsed time | ALREADY IMPLEMENTED | Reused, no queue rewrite |
 | R2 ranking, daily assignment counts, persistent concurrent round-robin | MISSING | Deferred to dependent PR B |
 | Assignment-suggestion HTTP endpoint | MISSING | Deferred to PR B; target only, not live |
@@ -30,9 +30,11 @@ No recommendation or automatic assignment is introduced. Existing explicit revie
 
 ## R3 migration and HTTP handoff
 
-Flyway V11 is app-scoped and creates `servicedesk_agent_duty`, primary key `(workspace, subject)`.
+Flyway `db/migration/hpdi/V14__agent_duty.sql` creates `hpdi_agent_duty`, primary key `(workspace, subject)`.
+V11 clarification, V12 enrichment and V13 contextual attempts belong to AI08 and remain unchanged, including applied checksums.
+Duty is a shared HPDI Human capability, available in the second-domain assembly without Service Desk. Core-only excludes HPDI code and V14.
 No row means off-duty. Existing agents must explicitly opt in after deployment.
-Duty and `servicedesk.duty.changed` audit commit or roll back together. Notes are stored but excluded from audit references.
+Duty and `human.duty.changed` audit commit or roll back together. Notes are stored but excluded from audit references.
 Concurrent updates serialize through PostgreSQL's upsert row locking; last committed update wins.
 Off-duty changes do not pause, cancel, or reassign any existing task.
 
@@ -59,7 +61,7 @@ For an existing realm, use the Admin Console with an authorized operator:
 5. Have each agent opt in using PUT duty/me; verify a coordinator sees them in GET duty.
 
 Do not run realm reset/import over a shared existing realm. Repeat additive creation for each existing workspace.
-Rollback application changes before dropping V11; preserve duty/audit data for investigation. No automated destructive rollback is provided.
+Rollback application changes before dropping V14; preserve duty/audit data for investigation. No automated destructive rollback is provided.
 
 ## Performance and scope ceilings
 
@@ -71,20 +73,22 @@ round-robin selection per workspace/support-group. Keep coordinator override and
 
 ## Acceptance evidence
 
-Local runs on 2026-10-27 use disposable PostgreSQL 16.6 and real Flowable, not H2. No shared realm was changed.
+Local post-merge runs on 2026-10-27 use disposable PostgreSQL 16.6 and real Flowable, not H2. No shared realm was changed. Counts below replace the pre-AI08 acceptance results.
 
 | Check | Result | Evidence |
 | --- | --- | --- |
-| Backend full, final tree | PASS: 532 tests, 0 failures/errors/skips | `.local/task-execution-full/summary.json` |
+| Backend full, final tree | PASS: 630 tests, 0 failures/errors/skips | `.local/task-execution-full/summary.json` |
 | Core-only | PASS: 106 tests, 0 failures/errors/skips | `.local/task-execution-core-only/summary.json` |
-| Supported second-domain | PASS: 30 tests, 0 failures/errors/skips | `.local/task-execution-second-domain/summary.json` |
-| Targeted R1/R3 + review/directory | PASS: 52 tests, 0 failures/errors/skips | `.local/task-execution-full-targeted/summary.json` |
-| Source boundary guard + mutation tests | PASS: 41 tests; no new debt | `python scripts/test-tier-boundaries.py`; `python scripts/check-tier-boundaries.py` |
+| Supported second-domain | PASS: 33 tests, 0 failures/errors/skips | `.local/task-execution-second-domain/summary.json` |
+| Targeted R1/R3 + review/directory | PASS: 59 tests, 0 failures/errors/skips | `.local/task-execution-full-targeted/summary.json` |
+| Source boundary guard + mutation tests | PASS: 43 tests; no new debt | `python scripts/test-tier-boundaries.py`; `python scripts/check-tier-boundaries.py` |
 | Java architecture boundaries | PASS in full and second-domain | Maven TierBoundaryTest reports |
-| Existing execution HTTP contract | PASS: 14 positive/negative request/response checks and stored assessment examples | `scripts/test-servicedesk-execution-contract.py` with generated servicedesk-http-evidence.json |
+| Existing execution HTTP contract | PASS: 14 positive/negative request/response checks, plus 9 Background Assessment checks | `scripts/test-servicedesk-execution-contract.py` with generated servicedesk-http-evidence.json and background-assessment-http-evidence.json |
 | Duty HTTP authorization/isolation, persistence and audit rollback | PASS | AgentDutyIntegrationTest and TicketIntegrationTest |
 | Concurrent duty updates and coordinator review | PASS | AgentDutyIntegrationTest and existing concurrentCoordinatorReviewsHaveOneWinnerAndOneEstimateHistory |
-| Flyway upgrade / validation | PASS in real PostgreSQL suite, V11 applied | Maven reports and migration logs |
+| Flyway upgrade / validation | PASS: baseline targets 9, 10, 11, 12 and 13 upgrade to V14; checksum validation and repeat migration | ServiceDeskMigrationIntegrationTest (5 cases) |
+| Upgrade runtime | PASS: V13 active process/task retained; V14 boots Flowable, duty GET/PUT, review/assign/start and ET=90 | AgentDutyUpgradeIntegrationTest |
+| AI08 OpenAPI 3.1 context contract | PASS, unchanged from develop | Correct OpenAPI 3.1 validator; `.local/routing-duty-contract-validation.json` |
 | Whole live OpenAPI | FAIL: same 3 baseline validation errors | `.local/routing-duty-contract-validation.json` |
 | Whole target OpenAPI | FAIL: same 1 baseline validation error | `.local/routing-duty-contract-validation.json` |
 | Hosted GitHub Actions | NOT VERIFIED locally | Inspect the PR checks; do not infer success from local tests |
@@ -103,3 +107,26 @@ and substitute `core-only` or `second-domain` for the profile. JSON summaries re
 Acceptance status: **BLOCKED for unconditional internal merge** by the pre-existing whole-spec errors.
 R1/R3 implementation and local regression suites pass. R2 is deliberately not claimed complete; proceed on a dependency-ready PR A baseline,
 without automatically merging this PR. The draft PR should retain these blockers until maintainers resolve or explicitly accept the baseline contract debt.
+
+## AI08 integration and compatibility review
+
+- V14 is the first unused migration version after inspecting every migration in the merged tree, including HPDI and all apps. The conflicting PR-only V11 duty migration is removed; AI08 V11-V13 files are not edited or repaired.
+- `MemberDirectory` is restored to its existing five-method public contract, byte-for-byte against develop. Fresh assignment eligibility is an opt-in `AgentDirectory` capability, not a new required method for every display-directory implementation.
+- `WorkspaceDirectory.supportGroupMembers` has a default fail-closed SERVICE_UNAVAILABLE implementation for existing providers. Core validates generic group names; Service Desk owns category mapping. A compatibility test guards the old MemberDirectory surface and legacy provider behavior.
+- `AgentDuty` is the public HPDI API; implementation/controller live in HPDI Human. The second-domain proof runs the same persistence, authorization, concurrent update and audit rollback HTTP tests without compiling any Service Desk classes or migrations.
+- Duty URI and response JSON remain unchanged. Audit consumers should use `human.duty.changed` / `human.agent`, not the draft's old Service Desk action/resource names. No existing released schema or AI08 audit events change.
+- Ticket, clarification/context revision, enrichment, contextual attempts, Background Assessment and identity/workspace changes from AI08 were retained. ET defaults/overrides, queue projections, workload and R2 remain reused, not reimplemented.
+- Upgrade tests seed existing ticket, review, estimate and assessment/history data; V11-V13 fixtures retain clarification answers, enrichment state and contextual attempt rows. Applied AI08 checksum rows are compared before/after and Flyway validates without repair. A second migrate must execute zero migrations.
+- The runtime upgrade uses a separate disposable `duty_upgrade` database. Before upgrade, Flyway applies V1-V13 and a real Flowable engine deploys/starts a reviewed ticket process; its active review task ID is saved and the engine is closed. Spring then applies V14 and reopens the engine, retaining the process/task, stored AI08 state and checksum rows. Duty HTTP opt-in, coordinator review/assignment and agent start all succeed; the reused HARDWARE/HIGH default remains 90 minutes. This separate DB avoids Flowable metadata discovery mistaking another schema's engine tables for its own. No shared database is modified.
+
+Deployment: upgrade a normal develop/AI08 database using V14 before exposing duty endpoints; all agents default off-duty and explicitly opt in. Do not apply this branch to a preview database that already recorded the obsolete PR-only V11 duty migration and then run Flyway repair. That conflicting private history requires an operator-reviewed backup/export and reconciliation path, not checksum replacement or an automatic reset.
+
+AI08 source integrity against `050a32faf72c8306e719c8384a257b9b48fa2caa` (SHA-256, normalized repository LF bytes; each file matches develop):
+
+| Immutable migration | SHA-256 |
+| --- | --- |
+| V11 clarification | `1bbf962eac8f441aca4072a94bc279d1e893e7feac20c9e07008a7e0b0421bfa` |
+| V12 enrichment | `403fbf08a50092a9e88b9d72d675c65c47404032968f481940c7e2a7cae2f4d2` |
+| V13 contextual attempt | `ba42d1305e877222320581cf7871a7ff5458d05d0b89f7dead82f3609dcf11cb` |
+
+FE handoff: continue GET duty and self-only PUT duty/me; no schedule or coordinator-edit feature is enabled. AI08 context/enrichment/clarification endpoints and DTOs stay intact. Recommendations/R2 are still absent and must not be inferred from duty status. Deployment must include shared HPDI V14 in second-domain builds as well as the full Service Desk assembly.

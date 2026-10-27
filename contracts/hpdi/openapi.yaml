@@ -12,7 +12,7 @@ paths:
     - $ref: '#/components/parameters/Workspace'
     get:
       operationId: listDuty
-      description: Service Desk agents see their own duty; coordinators with task:assign see current workspace agents. Missing duty defaults to off. No schedules.
+      description: Shared HPDI human capability, available without Service Desk. Agents see their own duty; coordinators with task:assign see current workspace agents. Missing duty defaults to off. No schedules.
       responses:
         '200':
           description: Current agent duty states

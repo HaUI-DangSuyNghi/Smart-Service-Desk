@@ -9,8 +9,8 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 class TicketAssignmentEligibilityTest {
-    private final MemberDirectory directory = mock(MemberDirectory.class);
-    private final AgentDutyService duty = mock(AgentDutyService.class);
+    private final AgentDirectory directory = mock(AgentDirectory.class);
+    private final AgentDuty duty = mock(AgentDuty.class);
     private final TicketAssignmentEligibility eligibility = new TicketAssignmentEligibility(directory, duty);
 
     @Test void categoryMappingPreservesManualOtherAndAccountEstimate() {

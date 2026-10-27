@@ -2,13 +2,14 @@ package vn.haui.dx.apps.servicedesk;
 
 import org.springframework.stereotype.Service;
 import vn.haui.dx.hpdi.common.api.CapabilityException;
-import vn.haui.dx.hpdi.human.api.MemberDirectory;
+import vn.haui.dx.hpdi.human.api.AgentDirectory;
+import vn.haui.dx.hpdi.human.api.AgentDuty;
 
 @Service
 public class TicketAssignmentEligibility {
-    private final MemberDirectory directory;
-    private final AgentDutyService duty;
-    public TicketAssignmentEligibility(MemberDirectory directory, AgentDutyService duty) {
+    private final AgentDirectory directory;
+    private final AgentDuty duty;
+    public TicketAssignmentEligibility(AgentDirectory directory, AgentDuty duty) {
         this.directory = directory; this.duty = duty;
     }
     public static String supportGroup(TicketReview.Category category) {

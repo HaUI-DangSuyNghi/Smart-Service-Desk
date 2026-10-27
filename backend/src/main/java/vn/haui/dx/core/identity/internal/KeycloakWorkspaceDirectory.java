@@ -86,7 +86,7 @@ class KeycloakWorkspaceDirectory implements WorkspaceDirectory {
     @Override
     public Set<String> supportGroupMembers(String workspace, String group) {
         access.requireMember(workspace);
-        if (!Set.of("hardware", "network", "software", "sysadmin").contains(group))
+        if (group == null || !WorkspaceRole.NAME.matcher(group).matches())
             throw CoreException.validation("Unknown support group");
         if (http == null || clientSecret == null || clientSecret.isBlank())
             throw CoreException.unavailable("Workspace directory is not configured");

@@ -19,7 +19,7 @@ import vn.haui.dx.hpdi.human.api.WorkspacePermission;
  * chỉ lỗi danh bạ không phản hồi được hạ cấp ở những chỗ hiển thị phụ (tên workspace, tên người tạo).
  */
 @Service
-public class IdentityMemberDirectory implements MemberDirectory {
+public class IdentityMemberDirectory implements MemberDirectory, vn.haui.dx.hpdi.human.api.AgentDirectory {
     public List<WorkspaceMember> currentAgents(String workspace, String supportGroup) {
         directory.refresh(workspace);
         var permissions = directory.rolePermissions(workspace);

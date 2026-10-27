@@ -19,6 +19,14 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 class IdentityMemberDirectoryTest {
+    @Test void legacyMemberDirectoryContractRemainsUnchangedAndMissingSupportProviderFailsClosed() {
+        assertEquals(Set.of("myWorkspaces", "members", "displayNames", "myPermissions", "names"),
+            java.util.Arrays.stream(vn.haui.dx.hpdi.human.api.MemberDirectory.class.getDeclaredMethods())
+                .map(java.lang.reflect.Method::getName).collect(java.util.stream.Collectors.toSet()));
+        var legacy = mock(WorkspaceDirectory.class, CALLS_REAL_METHODS);
+        var error = assertThrows(CoreException.class, () -> legacy.supportGroupMembers("lab-a", "hardware"));
+        assertEquals(vn.haui.dx.core.common.ErrorCode.SERVICE_UNAVAILABLE, error.code());
+    }
     @Test void supportMembershipCannotGrantAgentRoleOrRestoreRevokedPermission() {
         var access = mock(WorkspaceAccess.class);
         var directory = mock(WorkspaceDirectory.class);

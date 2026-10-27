@@ -43,6 +43,7 @@
       <id>core-only</id>
       <properties>
         <dx.resource.app1>apps/**</dx.resource.app1>
+        <dx.resource.migration4>db/migration/hpdi/**</dx.resource.migration4>
         <dx.resource.migration1>db/migration/apps/**</dx.resource.migration1>
         <dx.resource.migration2>db/migration/V5__servicedesk_ticket.sql</dx.resource.migration2>
         <dx.resource.migration3>db/migration/V6__decouple_servicedesk_workflow_reference.sql</dx.resource.migration3>

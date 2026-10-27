@@ -60,7 +60,7 @@ class TicketIntegrationTest {
     @SpyBean TicketReviewService reviewViews;
     @SpyBean vn.haui.dx.hpdi.process.api.ProcessCapability processViews;
     @Autowired vn.haui.dx.core.identity.api.WorkspaceDirectory directory;
-    @SpyBean AgentDutyService duty;
+    @SpyBean vn.haui.dx.hpdi.human.api.AgentDuty duty;
 
     @org.junit.jupiter.api.BeforeEach
     void availableRegressionAgents() {

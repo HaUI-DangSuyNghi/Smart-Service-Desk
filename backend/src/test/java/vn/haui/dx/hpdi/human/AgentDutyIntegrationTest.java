@@ -1,4 +1,4 @@
-package vn.haui.dx.apps.servicedesk;
+package vn.haui.dx.hpdi.human;
 
 import java.util.List;
 import java.util.Set;
@@ -49,8 +49,8 @@ class AgentDutyIntegrationTest {
         mvc.perform(get(BASE).with(as(subject,"agent"))).andExpect(status().isOk()).andExpect(jsonPath("$[0].onDuty").value(false));
         mvc.perform(put(BASE+"/me").with(as(subject,"agent")).contentType("application/json").content("{\"onDuty\":true,\"note\":\"Available\"}"))
             .andExpect(status().isOk()).andExpect(jsonPath("$.onDuty").value(true));
-        assertTrue(jdbc.queryForObject("select on_duty from servicedesk_agent_duty where workspace='lab-a' and subject=?",Boolean.class,subject));
-        assertEquals(1, jdbc.queryForObject("select count(*) from audit_event where workspace='lab-a' and action='servicedesk.duty.changed' and resource=?",Integer.class,subject));
+        assertTrue(jdbc.queryForObject("select on_duty from hpdi_agent_duty where workspace='lab-a' and subject=?",Boolean.class,subject));
+        assertEquals(1, jdbc.queryForObject("select count(*) from audit_event where workspace='lab-a' and action='human.duty.changed' and resource=?",Integer.class,subject));
         mvc.perform(get(BASE).with(as("coordinator","coordinator"))).andExpect(status().isOk()).andExpect(jsonPath("$[0].subject").value(subject));
         mvc.perform(get(BASE).with(as("another-agent","agent"))).andExpect(status().isOk()).andExpect(jsonPath("$.length()").value(0));
         mvc.perform(put(BASE+"/"+subject).with(as("coordinator","coordinator")).contentType("application/json").content("{\"onDuty\":false}"))
@@ -62,12 +62,12 @@ class AgentDutyIntegrationTest {
 
     @Test void auditFailureRollsBackDutyMutation() throws Exception {
         String subject = agent();
-        jdbc.execute("create function duty_reject_audit() returns trigger language plpgsql as $$ begin if new.action='servicedesk.duty.changed' then raise exception 'duty rejection' using errcode='23514'; end if; return new; end $$");
+        jdbc.execute("create function duty_reject_audit() returns trigger language plpgsql as $$ begin if new.action='human.duty.changed' then raise exception 'duty rejection' using errcode='23514'; end if; return new; end $$");
         jdbc.execute("create trigger duty_reject before insert on audit_event for each row execute function duty_reject_audit()");
         try {
             mvc.perform(put(BASE+"/me").with(as(subject,"agent"))
                 .contentType("application/json").content("{\"onDuty\":true}")).andExpect(status().isConflict());
-            assertEquals(0, jdbc.queryForObject("select count(*) from servicedesk_agent_duty where workspace='lab-a' and subject=?",Integer.class,subject));
+            assertEquals(0, jdbc.queryForObject("select count(*) from hpdi_agent_duty where workspace='lab-a' and subject=?",Integer.class,subject));
         } finally { jdbc.execute("drop trigger duty_reject on audit_event"); jdbc.execute("drop function duty_reject_audit()"); }
     }
 
@@ -89,8 +89,8 @@ class AgentDutyIntegrationTest {
             assertTrue(ready.await(10, java.util.concurrent.TimeUnit.SECONDS));
             start.countDown();
             for (var result : results) assertEquals(200, result.get(15, java.util.concurrent.TimeUnit.SECONDS));
-            assertEquals(1, jdbc.queryForObject("select count(*) from servicedesk_agent_duty where workspace='lab-a' and subject=?",Integer.class,subject));
-            assertEquals(2, jdbc.queryForObject("select count(*) from audit_event where workspace='lab-a' and action='servicedesk.duty.changed' and resource=?",Integer.class,subject));
+            assertEquals(1, jdbc.queryForObject("select count(*) from hpdi_agent_duty where workspace='lab-a' and subject=?",Integer.class,subject));
+            assertEquals(2, jdbc.queryForObject("select count(*) from audit_event where workspace='lab-a' and action='human.duty.changed' and resource=?",Integer.class,subject));
         } finally { start.countDown(); workers.shutdownNow(); }
     }
 }
