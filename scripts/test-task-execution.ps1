@@ -43,6 +43,8 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'Cannot create workflow test database' }
     docker exec $container createdb -U workflow background_assessment
     if ($LASTEXITCODE -ne 0) { throw 'Cannot create assessment test database' }
+    docker exec $container createdb -U workflow duty_upgrade
+    if ($LASTEXITCODE -ne 0) { throw 'Cannot create duty upgrade test database' }
     $address = 'database:5432'
     if (-not $BuildImage) { $address = (docker port $container 5432/tcp).Trim() }
     $env:FILE_TEST_JDBC_URL = "jdbc:postgresql://$address/file_storage"
@@ -52,11 +54,12 @@ try {
     $env:WORKFLOW_TEST_DB_PASSWORD = $password
     $arguments = @('-B', '-o', '-f', (Join-Path $root 'backend/pom.xml'), 'clean', 'test')
     $arguments += '-Dservice-desk.background.scheduled=false'
+    $arguments += '-Dspring.datasource.hikari.maximum-pool-size=3'
     if ($Test) { $arguments += "-Dtest=$Test" }
     if ($Profile -eq 'execution') { $arguments += '-Dtest=WorkflowApprovalTest,WorkflowExecutionCompatibilityTest,WorkExecutionTest' }
     elseif ($Profile -ne 'full') { $arguments += "-P$Profile" }
     if ($Profile -eq 'second-domain') {
-        $arguments += '-Dtest=RoomRequestIntegrationTest,TierBoundaryTest,CoreKnowledgeCatalogTest,CoreProcessCapabilitiesTest,WorkspaceActivityJournalTest,TrustedIntelligenceCapabilityTest,HttpClassificationTransportTest,WorkExecutionTest'
+        $arguments += '-Dtest=AgentDutyIntegrationTest,RoomRequestIntegrationTest,TierBoundaryTest,CoreKnowledgeCatalogTest,CoreProcessCapabilitiesTest,WorkspaceActivityJournalTest,TrustedIntelligenceCapabilityTest,HttpClassificationTransportTest,WorkExecutionTest'
     }
     $reports = Join-Path $root 'backend/target/surefire-reports'
     $ErrorActionPreference = 'Continue'

@@ -7,6 +7,69 @@ info:
 security:
 - bearerAuth: []
 paths:
+  /api/hpdi/v1/workspaces/{workspace}/duty:
+    parameters:
+    - $ref: '#/components/parameters/Workspace'
+    get:
+      operationId: listDuty
+      description: Shared HPDI human capability, available without Service Desk. Agents see their own duty; coordinators with task:assign see current workspace agents. Missing duty defaults to off. No schedules.
+      responses:
+        '200':
+          description: Current agent duty states
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DutyStatus'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /api/hpdi/v1/workspaces/{workspace}/duty/{subject}:
+    parameters:
+    - $ref: '#/components/parameters/Workspace'
+    - name: subject
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Own subject or me. Changing another agent is forbidden, including for coordinators.
+    put:
+      operationId: setDuty
+      description: Agent with current membership and task:handle changes only their own persisted duty. Does not interrupt work. Audit and duty commit atomically.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [onDuty]
+              properties:
+                onDuty:
+                  type: boolean
+                note:
+                  type: string
+                  nullable: true
+                  maxLength: 500
+      responses:
+        '200':
+          description: Persisted duty status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DutyStatus'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
   /api/hpdi/v1/workspaces/{workspace}/queue:
     parameters:
     - $ref: '#/components/parameters/Workspace'
@@ -669,6 +732,23 @@ paths:
           $ref: '#/components/responses/NotFound'
 components:
   schemas:
+    DutyStatus:
+      type: object
+      additionalProperties: false
+      required: [subject, onDuty, note, updatedAt]
+      properties:
+        subject:
+          type: string
+        onDuty:
+          type: boolean
+        note:
+          type: string
+          nullable: true
+          maxLength: 500
+        updatedAt:
+          type: string
+          format: date-time
+          nullable: true
     Priority:
       type: string
       enum:

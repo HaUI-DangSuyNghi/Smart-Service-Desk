@@ -176,10 +176,7 @@ paths:
       - {name: subject, in: path, required: true, schema: {type: string}, description: 'subject; "me" = chính mình'}
     put:
       operationId: setDuty
-      description: >-
-        Bật/tắt trực (giai đoạn đầu chưa có lịch). Kỹ thuật viên tự đổi của mình; điều phối viên đổi cho người khác.
-        Tắt trực → việc Chưa bắt đầu của người đó được đề xuất người khác, việc Đang làm báo điều phối viên (R3).
-        Sau này có lịch trực thì trường này thành ghi đè tạm thời; API giữ nguyên.
+      description: Agents change only their own manual duty (subject or me). Coordinator changes for other agents and schedules are deferred. Off-duty never interrupts active work.
       requestBody:
         required: true
         content:
@@ -408,17 +405,7 @@ components:
         decisionNote: {type: string, nullable: true}
         createdAt: {type: string, format: date-time}
     DutyStatus:
-      type: object
-      additionalProperties: false
-      required: [subject, displayName, onDuty, source, changedAt]
-      properties:
-        subject: {type: string}
-        displayName: {type: string}
-        onDuty: {type: boolean}
-        source: {type: string, enum: [MANUAL, SCHEDULE], description: 'MANUAL = bật/tắt tay; SCHEDULE = theo lịch (sau này)'}
-        changedAt: {type: string, format: date-time}
-        changedBy: {type: string, nullable: true}
-        note: {type: string, nullable: true}
+      $ref: 'openapi.yaml#/components/schemas/DutyStatus'
     Alert:
       type: object
       additionalProperties: false
