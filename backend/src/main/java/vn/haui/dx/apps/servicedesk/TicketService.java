@@ -29,11 +29,15 @@ public class TicketService {
     private final ApplicationEventPublisher events;
     private final BackgroundTicketAssessment assessments;
     private final org.springframework.beans.factory.ObjectProvider<vn.haui.dx.hpdi.intelligence.api.BackgroundProcessing> processing;
+    private final boolean trueWait;
 
     public TicketService(TicketRepository repository, HumanContext access, ProcessCapability workflow,
                          ActivityJournal audit, Validator validator, TicketStatisticsService statistics,
                          ApplicationEventPublisher events, BackgroundTicketAssessment assessments,
-                         org.springframework.beans.factory.ObjectProvider<vn.haui.dx.hpdi.intelligence.api.BackgroundProcessing> processing) {
+                         org.springframework.beans.factory.ObjectProvider<vn.haui.dx.hpdi.intelligence.api.BackgroundProcessing> processing,
+                         @org.springframework.beans.factory.annotation.Value("${serviceDesk.intake.true-wait:false}") boolean trueWait,
+                         @org.springframework.beans.factory.annotation.Value("${serviceDesk.intake.new-tickets:false}") boolean intakeEnabled) {
+        if (trueWait && !intakeEnabled) throw new IllegalArgumentException("True intake wait requires new-ticket admission");
         this.repository = repository;
         this.access = access;
         this.workflow = workflow;
@@ -43,6 +47,7 @@ public class TicketService {
         this.events = events;
         this.assessments = assessments;
         this.processing = processing;
+        this.trueWait = trueWait;
     }
 
     @Transactional
@@ -52,8 +57,8 @@ public class TicketService {
         text(input.title(), 200, false);
         text(input.description(), 4000, true);
         UUID id = UUID.randomUUID();
-        var process = workflow.start(workspace, ServiceDeskProcess.REVIEWED_KEY, id.toString(), Map.of());
-        var ticket = repository.insert(id, workspace, user.subject(), input, process.processInstanceId());
+        var process = workflow.start(workspace, trueWait ? ServiceDeskProcess.INTAKE_KEY : ServiceDeskProcess.REVIEWED_KEY, id.toString(), Map.of());
+        var ticket = repository.insert(id, workspace, user.subject(), input, process.processInstanceId(), process.processKey());
         assessments.enqueue(ticket);
         audit.record(workspace, new BusinessActivity("servicedesk.ticket.create", "servicedesk.ticket", id.toString(),
             Map.of("processInstanceId", process.processInstanceId())));

@@ -126,5 +126,5 @@ components:
         readiness: {type: object, nullable: true}
         duplicatePreflight: {type: object, nullable: true}
         finalAssessment: {type: object, nullable: true}
-        reviewTaskMayExist: {type: boolean, enum: [true]}
+        reviewTaskMayExist: {type: boolean}
         operationalAuthority: {type: boolean, enum: [false]}

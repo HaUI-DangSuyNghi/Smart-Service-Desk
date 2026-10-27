@@ -815,6 +815,8 @@ components:
           - PENDING
           - AWAITING_CONFIRMATION
           - REOPENED
+          - INTAKE
+          - FOLLOWING
           - CLOSED
           - UNCLASSIFIED
         taskId:

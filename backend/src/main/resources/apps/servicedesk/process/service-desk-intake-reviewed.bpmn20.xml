@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:flowable="http://flowable.org/bpmn" targetNamespace="https://haui.vn/dx/apps/servicedesk">
+  <process id="service-desk-intake-reviewed" name="Intake and reviewed IT support" isExecutable="true">
+    <startEvent id="start"/>
+    <sequenceFlow id="toIntake" sourceRef="start" targetRef="intake"/>
+    <userTask id="intake" name="Intake disposition" flowable:candidateGroups="${workspace}:coordinator"/>
+    <sequenceFlow id="intakeDecision" sourceRef="intake" targetRef="admissionDecision"/>
+    <exclusiveGateway id="admissionDecision"/>
+    <sequenceFlow id="admitted" sourceRef="admissionDecision" targetRef="review"><conditionExpression xsi:type="tFormalExpression"><![CDATA[${outcome_intake == 'ready'}]]></conditionExpression></sequenceFlow>
+    <sequenceFlow id="linked" sourceRef="admissionDecision" targetRef="follower"><conditionExpression xsi:type="tFormalExpression"><![CDATA[${outcome_intake == 'duplicate'}]]></conditionExpression></sequenceFlow>
+    <userTask id="review" name="Coordinator review" flowable:candidateGroups="${workspace}:coordinator"/>
+    <sequenceFlow id="toHandle" sourceRef="review" targetRef="handle"/>
+    <userTask id="handle" name="Handle support request" flowable:candidateGroups="${workspace}:agent"/>
+    <sequenceFlow id="toConfirm" sourceRef="handle" targetRef="confirm"/>
+    <userTask id="confirm" name="Confirm resolution" flowable:assignee="${initiator}"/>
+    <sequenceFlow id="toDecision" sourceRef="confirm" targetRef="decision"/>
+    <exclusiveGateway id="decision"/>
+    <sequenceFlow id="accepted" sourceRef="decision" targetRef="end"><conditionExpression xsi:type="tFormalExpression"><![CDATA[${outcome_confirm == 'accepted'}]]></conditionExpression></sequenceFlow>
+    <sequenceFlow id="rework" sourceRef="decision" targetRef="intake"><conditionExpression xsi:type="tFormalExpression"><![CDATA[${outcome_confirm == 'rework'}]]></conditionExpression></sequenceFlow>
+    <userTask id="follower" name="Follow canonical incident" flowable:candidateGroups="${workspace}:assessment-worker,${workspace}:coordinator"/>
+    <sequenceFlow id="followerDecision" sourceRef="follower" targetRef="followerDisposition"/>
+    <exclusiveGateway id="followerDisposition"/>
+    <sequenceFlow id="followerClosed" sourceRef="followerDisposition" targetRef="end"><conditionExpression xsi:type="tFormalExpression"><![CDATA[${outcome_follower == 'closed'}]]></conditionExpression></sequenceFlow>
+    <sequenceFlow id="followerSplit" sourceRef="followerDisposition" targetRef="review"><conditionExpression xsi:type="tFormalExpression"><![CDATA[${outcome_follower == 'split'}]]></conditionExpression></sequenceFlow>
+    <endEvent id="end"/>
+  </process>
+</definitions>

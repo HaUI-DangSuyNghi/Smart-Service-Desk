@@ -34,6 +34,16 @@ và kênh private đã duyệt. Không sinh processing grant production trong on
 Token được tạo ở máy nhận và mount file. Bundle không chứa dữ liệu training,
 credentials, user tickets hoặc keys ký release. GPU thiếu phải báo PARTIAL.
 
+## Process-key mới
+
+Triển khai option B: `service-desk-intake-reviewed` có task `intake` của coordinator
+trước `review`; bật riêng bằng `SERVICE_DESK_INTAKE_TRUE_WAIT=true` và new-ticket
+admission. Không thêm quyền giả coordinator cho worker. Final assessment có thể
+sẵn sàng tự động, nhưng người có quyền vẫn xác nhận handoff qua intake API.
+Callback generic đòi receipt trong cùng transaction. Rework về intake mới, tăng
+review round; không sửa instance cũ. Handlers luôn được đăng ký để drain khi tắt
+route mới. Follower branch chỉ được mở qua canonical disposition có guard riêng.
+
 ## Kiểm chứng
 
 Theo dõi từng cụm, test và giới hạn ở

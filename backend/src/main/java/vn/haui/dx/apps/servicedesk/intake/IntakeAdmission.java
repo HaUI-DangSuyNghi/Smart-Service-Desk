@@ -41,6 +41,7 @@ public class IntakeAdmission {
     private final ObjectMapper json;
     private final ObjectProvider<ContextSnapshotAssembler> snapshots;
     private final ObjectProvider<vn.haui.dx.hpdi.process.api.ProcessCapability> processes;
+    private final ObjectProvider<vn.haui.dx.hpdi.process.api.WorkInbox> inbox;
     private final boolean newTickets;
     private final long timeoutSeconds;
     private final String policyDigest;
@@ -48,6 +49,7 @@ public class IntakeAdmission {
     public IntakeAdmission(JdbcTemplate jdbc, HumanContext human, ActivityJournal audit, ObjectMapper json,
             ObjectProvider<ContextSnapshotAssembler> snapshots,
             ObjectProvider<vn.haui.dx.hpdi.process.api.ProcessCapability> processes,
+            ObjectProvider<vn.haui.dx.hpdi.process.api.WorkInbox> inbox,
             @Value("${serviceDesk.intake.new-tickets:false}") boolean newTickets,
             @Value("${serviceDesk.intake.timeout-seconds:86400}") long timeoutSeconds) {
         if (timeoutSeconds < 60 || timeoutSeconds > 86400) {
@@ -59,6 +61,7 @@ public class IntakeAdmission {
         this.json = json;
         this.snapshots = snapshots;
         this.processes = processes;
+        this.inbox = inbox;
         this.newTickets = newTickets;
         this.timeoutSeconds = timeoutSeconds;
         this.policyDigest = ContextPolicyCatalog.digest(VERSION + ":" + timeoutSeconds);
@@ -71,14 +74,15 @@ public class IntakeAdmission {
     public void changed(TicketContextChanged event) {
         var ticket = lockTicket(event.workspace(), event.ticketId());
         if (newTickets && event.contextRevision() == 0) {
-            jdbc.update("insert into servicedesk_intake_admission(ticket_id,workspace,context_revision,deadline_at,policy_digest) "
-                    + "values (?,?,0,clock_timestamp()+(? * interval '1 second'),?) on conflict do nothing",
-                    event.ticketId(), event.workspace(), timeoutSeconds, policyDigest);
+            jdbc.update("insert into servicedesk_intake_admission(ticket_id,workspace,context_revision,deadline_at,policy_digest,process_stage) "
+                    + "values (?,?,0,clock_timestamp()+(? * interval '1 second'),?,?) on conflict do nothing",
+                    event.ticketId(), event.workspace(), timeoutSeconds, policyDigest,
+                    vn.haui.dx.apps.servicedesk.ServiceDeskProcess.INTAKE_KEY.equals(ticket.get("process_key")) ? "intake" : "review");
         }
         var state = find(event.workspace(), event.ticketId());
         if (state == null || event.contextRevision() <= state.contextRevision()) return;
 
-        boolean reviewed = "REVIEWED".equals(state.status()) || !Boolean.TRUE.equals(ticket.get("awaiting_review"));
+        boolean reviewed = "REVIEWED".equals(state.status());
         if (reviewed) {
             jdbc.update("update servicedesk_intake_admission set context_revision=?,late_notice=true,version=version+1,"
                     + "reason='REVIEW_STALE_NOTICE',updated_at=clock_timestamp() where ticket_id=?",
@@ -99,7 +103,7 @@ public class IntakeAdmission {
                         row.getString("status"), row.getTimestamp("deadline_at").toInstant(),
                         row.getObject("sealed_revision", Long.class), row.getString("context_digest"), row.getString("policy_digest"),
                         row.getString("reason"), row.getBoolean("late_notice"), decode(row.getString("readiness_json")),
-                        decode(row.getString("duplicate_json")), decode(row.getString("final_json")), true, false),
+                        decode(row.getString("duplicate_json")), decode(row.getString("final_json")), "review".equals(row.getString("process_stage")), false),
                 workspace, id).stream().findFirst().orElse(null);
     }
 
@@ -132,8 +136,9 @@ public class IntakeAdmission {
             }
             return state;
         }
-        if (!Boolean.TRUE.equals(ticket.get("awaiting_review")) || "REVIEWED".equals(state.status())
-                || "CANONICAL_FOLLOWER".equals(state.status()) || "REVIEW_RELEASED".equals(state.status())
+        boolean trueWait = vn.haui.dx.apps.servicedesk.ServiceDeskProcess.INTAKE_KEY.equals(ticket.get("process_key")) && !state.reviewTaskMayExist();
+        if ((!Boolean.TRUE.equals(ticket.get("awaiting_review")) && !trueWait) || "REVIEWED".equals(state.status())
+                || "CANONICAL_FOLLOWER".equals(state.status()) || ("REVIEW_RELEASED".equals(state.status()) && !trueWait)
                 || state.contextRevision() != request.expectedContextRevision() || state.version() != request.expectedVersion()) {
             throw CapabilityException.conflict("Intake generation changed or review already admitted");
         }
@@ -141,9 +146,10 @@ public class IntakeAdmission {
         if (snapshot.contextRevision() != request.expectedContextRevision()) {
             throw CapabilityException.conflict("Context changed before release");
         }
-        String taskId = processes.getObject().timeline(workspace, ticket.get("process_instance_id").toString())
-                .currentTasks().stream().filter(task -> "review".equals(task.key())).findFirst()
-                .orElseThrow(() -> CapabilityException.conflict("Process is not awaiting review")).id();
+        var task = processes.getObject().timeline(workspace, ticket.get("process_instance_id").toString())
+                .currentTasks().stream().filter(value -> (trueWait ? "intake" : "review").equals(value.key())).findFirst()
+                .orElseThrow(() -> CapabilityException.conflict("Process is not awaiting intake or review"));
+        String taskId = task.id();
         jdbc.update("update servicedesk_intake_admission set status='REVIEW_RELEASED',sealed_revision=context_revision,"
                 + "context_digest=?,reason=?,review_task_id=?,version=version+1,lease_token=null,lease_until=null,updated_at=clock_timestamp() "
                 + "where ticket_id=?", snapshot.digest(), request.reason(), taskId, id);
@@ -151,7 +157,26 @@ public class IntakeAdmission {
         audit.record(workspace, new BusinessActivity("servicedesk.intake.release", "servicedesk.ticket", id.toString(),
                 Map.of("operationId", request.operationId().toString(), "contextVersion", Long.toString(state.contextRevision()),
                         "reviewRoundVersion", Integer.toString(state.reviewRound()))));
+        if (trueWait) {
+            if (task.assignee() == null) inbox.getObject().claim(workspace, taskId);
+            inbox.getObject().complete(workspace, taskId, "intake", "ready", request.reason());
+            String reviewId = processes.getObject().timeline(workspace, ticket.get("process_instance_id").toString()).currentTasks().stream()
+                    .filter(value -> "review".equals(value.key())).findFirst().orElseThrow().id();
+            jdbc.update("update servicedesk_intake_admission set process_stage='review',review_task_id=?,version=version+1 where ticket_id=?", reviewId, id);
+            jdbc.update("update servicedesk_ticket set awaiting_review=true where id=?", id);
+        }
         return find(workspace, id);
+    }
+
+    public void beforeIntakeComplete(String workspace, String processId, String taskId, String outcome) {
+        if (!"ready".equals(outcome) || !Boolean.TRUE.equals(jdbc.queryForObject(
+                "select exists(select 1 from servicedesk_intake_admission a join servicedesk_ticket t on t.id=a.ticket_id "
+                + "join servicedesk_intake_receipt r on r.ticket_id=a.ticket_id where t.workspace=? and t.process_instance_id=? "
+                + "and a.status='REVIEW_RELEASED' and a.sealed_revision=t.context_revision and a.review_task_id=? "
+                + "and r.action='MANUAL_RELEASE' and r.review_task_id=? and r.context_revision=t.context_revision and r.review_round=a.review_round)",
+                Boolean.class, workspace, processId, taskId, taskId))) {
+            throw CapabilityException.conflict("Use the authorized intake disposition API");
+        }
     }
 
     /** Called under the same ticket lock and transaction as the authoritative review. */
@@ -179,6 +204,7 @@ public class IntakeAdmission {
         jdbc.update("update servicedesk_intake_admission a set status='NEW',review_round=review_round+1,version=a.version+1,"
                 + "sealed_revision=null,context_digest=null,final_json=null,readiness_json=null,duplicate_json=null,"
                 + "attempt_key=null,lease_token=null,lease_until=null,late_notice=false,reason='REWORK',"
+                + "process_stage=case when t.process_key='service-desk-intake-reviewed' then 'intake' else 'review' end,"
                 + "deadline_at=clock_timestamp()+(? * interval '1 second') from servicedesk_ticket t "
                 + "where t.id=a.ticket_id and t.workspace=? and t.process_instance_id=?", timeoutSeconds, workspace, processId);
     }
@@ -212,7 +238,7 @@ public class IntakeAdmission {
     }
 
     private Map<String, Object> lockTicket(String workspace, UUID id) {
-        var rows = jdbc.queryForList("select creator,awaiting_review,process_instance_id from servicedesk_ticket where workspace=? and id=? for update", workspace, id);
+        var rows = jdbc.queryForList("select creator,awaiting_review,process_instance_id,process_key from servicedesk_ticket where workspace=? and id=? for update", workspace, id);
         if (rows.isEmpty()) throw CapabilityException.notFound("Ticket not found");
         return rows.get(0);
     }

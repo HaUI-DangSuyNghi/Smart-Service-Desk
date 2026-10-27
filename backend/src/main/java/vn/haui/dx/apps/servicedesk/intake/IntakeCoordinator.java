@@ -127,7 +127,7 @@ public class IntakeCoordinator {
                     String identity = ContextPolicyCatalog.digest(workspace + ":" + id + ":" + state.reviewRound() + ":"
                             + session.snapshot().contextRevision() + ":" + session.snapshot().digest() + ":" + policy + ":" + processingDigest);
                     String task = processes.timeline(workspace, session.ticket().process().processInstanceId()).currentTasks().stream()
-                            .filter(value -> "review".equals(value.key())).findFirst()
+                            .filter(value -> List.of("review", "intake").contains(value.key())).findFirst()
                             .orElseThrow(() -> CapabilityException.conflict("Ticket is not awaiting review")).id();
                     return new Plan(ready, preflight, identity, processingDigest, "FINAL_ASSESSMENT_QUEUED", "SNAPSHOT_SEALED", task);
                 }
@@ -149,7 +149,8 @@ public class IntakeCoordinator {
                     + "duplicate_json=cast(? as jsonb),sealed_revision=?,context_digest=?,attempt_key=?,processing_digest=?,"
                     + "review_task_id=?,policy_digest=?,reason=?,version=version+1,updated_at=clock_timestamp() "
                     + "where ticket_id=? and version=? and status='NEW' and context_revision=? "
-                    + "and exists(select 1 from servicedesk_ticket t where t.id=a.ticket_id and t.context_revision=a.context_revision and t.awaiting_review)",
+                    + "and exists(select 1 from servicedesk_ticket t where t.id=a.ticket_id and t.context_revision=a.context_revision "
+                    + "and (t.awaiting_review or a.process_stage='intake'))",
                     next, encode(ready), preflight == null ? null : encode(preflight), identity == null ? null : ready.contextRevision(),
                     ready.contextDigest(), identity, grants, taskId, policyDigest(), reason, previous.ticketId(), previous.version(), ready.contextRevision());
             if (changed != 1) throw CapabilityException.conflict("Intake changed before seal");
@@ -253,7 +254,7 @@ public class IntakeCoordinator {
                 boolean reviewer = session.actor().hasRole("coordinator", "agent");
                 return new IntakeAdmission.View(state.contractVersion(), id, state.contextRevision(), state.version(), state.reviewRound(),
                         state.status(), state.deadlineAt(), state.sealedRevision(), state.contextDigest(), state.policyDigest(), state.reason(),
-                        state.lateNotice(), state.readiness(), reviewer ? state.duplicatePreflight() : null, state.finalAssessment(), true, false);
+                        state.lateNotice(), state.readiness(), reviewer ? state.duplicatePreflight() : null, state.finalAssessment(), state.reviewTaskMayExist(), false);
             });
         } catch (RuntimeException denied) { return metadata(state); }
     }
@@ -261,7 +262,7 @@ public class IntakeCoordinator {
     private IntakeAdmission.View metadata(IntakeAdmission.View state) {
         return new IntakeAdmission.View(state.contractVersion(), state.ticketId(), state.contextRevision(), state.version(), state.reviewRound(),
                 state.status(), state.deadlineAt(), state.sealedRevision(), state.contextDigest(), state.policyDigest(), state.reason(),
-                state.lateNotice(), null, null, null, true, false);
+                state.lateNotice(), null, null, null, state.reviewTaskMayExist(), false);
     }
 
     private String policyDigest() {

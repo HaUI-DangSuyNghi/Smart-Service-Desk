@@ -10,6 +10,7 @@ R1/R3 ở PR #52 là dependency bên backend, không triển khai lại trong nh
 | C1 | Server review admission, CAS, timeout/manual/rework | 17 PostgreSQL tests PASS (15 admission + 2 upgrades) |
 | C2 | Sealed final contextual assessment và worker single-flight | 67 focused tests PASS; 13 final pipeline cases |
 | C3 | Duplicate retrieval/incident, feedback và workflow/UI | Chưa kiểm chứng |
+| C3a | Process-key riêng: intake trước review, handoff và rework | 65 regression tests PASS, gồm 6 true-wait cases |
 | C4 | Full model image, provenance, transport secret và Compose | Image offline + GPU HTTP synthetic PASS; tooling đang hoàn thiện |
 | C5 | Offline distribution/onboarding/acceptance | Chưa kiểm chứng |
 
@@ -68,3 +69,18 @@ TicketClassificationOrchestratorTest, ContextProcessingGateTest: **67 pass**, g�
 13 final pipeline cases, 0 fail/error/skip. Bộ riêng trước đó gồm worker identity,
 context guard, legacy contextual và admission: 48 pass. Model transport trong
 JUnit là synthetic; bằng chứng Qwen thật được giữ riêng ở cụm image.
+
+## C3a — True pre-review workflow
+
+`SERVICE_DESK_INTAKE_TRUE_WAIT=false` mặc định. Khi bật cùng new-ticket admission,
+ticket mới dùng `service-desk-intake-reviewed`: chưa có task review/handle lúc tạo.
+Coordinator disposition ghi receipt và hoàn tất intake qua WorkInbox trong cùng
+transaction; sau đó mới tạo review. Generic task completion không bypass receipt.
+Rework quay về intake của cùng process, tăng review round. Flag rollback chỉ đổi
+route mới; legacy process và handler mới vẫn được giữ. ET/execution projection
+tái dùng backend hiện có, không có model ET.
+
+Kiểm chứng IntakeWorkflowIntegrationTest, IntakeAdmissionIntegrationTest,
+FinalAssessmentIntegrationTest, TicketIntegrationTest: **65 pass**, 0 fail/error/skip.
+Follower branch chưa được phép complete trực tiếp khi canonical disposition chưa
+được thực hiện; không coi việc có BPMN branch là R10 đã hoàn tất.

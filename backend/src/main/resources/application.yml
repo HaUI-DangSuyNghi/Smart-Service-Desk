@@ -47,6 +47,7 @@ management:
       show-details: never
 serviceDesk:
   intake:
+    true-wait: ${SERVICE_DESK_INTAKE_TRUE_WAIT:false}
     new-tickets: ${SERVICE_DESK_INTAKE_NEW_TICKETS:false}
     timeout-seconds: ${SERVICE_DESK_INTAKE_TIMEOUT_SECONDS:86400}
     poll-ms: ${SERVICE_DESK_INTAKE_POLL_MS:60000}
