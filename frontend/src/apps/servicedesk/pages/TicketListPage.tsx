@@ -1,10 +1,11 @@
 import { useState } from "react";
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { IconCalendar, IconTicket, IconTypography, IconUser } from "@tabler/icons-react";
 import {
   personName,
   useCurrentWorkspace,
   usePeopleNames,
+  useActor,
 } from "../../../platform/human/workspace";
 import { formatDateTime, formatRelativeTime } from "../../../platform/shared/lib/format";
 import { DataTable, type DataTableColumn } from "../../../platform/shared/ui/DataTable";
@@ -15,6 +16,7 @@ import { Pagination } from "../../../platform/shared/ui/Pagination";
 import { TableSkeleton } from "../../../platform/shared/ui/Skeleton";
 import type { Ticket } from "../services/ticketService";
 import { TICKETS_PAGE_SIZE, useTicketList } from "../tickets/useTickets";
+import { Button } from "../../../platform/shared/ui/button";
 
 const ticketColumns = (names: ReadonlyMap<string, string>): DataTableColumn<Ticket>[] => [
   {
@@ -48,6 +50,7 @@ const ticketColumns = (names: ReadonlyMap<string, string>): DataTableColumn<Tick
 const TicketListPage = () => {
   const navigate = useNavigate();
   const { current } = useCurrentWorkspace();
+  const { roles } = useActor();
   const [page, setPage] = useState(0);
   const tickets = useTicketList(page);
   const items = tickets.data?.items ?? [];
@@ -55,7 +58,17 @@ const TicketListPage = () => {
 
   return (
     <Page>
-      <PageHeader title="Ticket" icon={IconTicket} />
+      <PageHeader
+        title="Ticket"
+        icon={IconTicket}
+        actions={
+          roles.includes("coordinator") && (
+            <Button variant="outline" asChild>
+              <Link to="/servicedesk/enrichment-pending">Cần xem xét thông tin</Link>
+            </Button>
+          )
+        }
+      />
       <PageToolbar
         end={
           tickets.data && (

@@ -1,0 +1,173 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:servicedesk:ticket-readiness-v0.1",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "contractVersion": {
+      "const": "ticket-readiness@0.1.0"
+    },
+    "ticketId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "contextRevision": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "contextDigest": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "overall": {
+      "enum": [
+        "READINESS_OK",
+        "ENRICHMENT_OPTIONAL",
+        "ENRICHMENT_REQUIRED",
+        "MANUAL_REVIEW_REQUIRED",
+        null
+      ]
+    },
+    "tasks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "task": {
+            "enum": [
+              "ASSESSMENT",
+              "DUPLICATE_CHECK"
+            ]
+          },
+          "state": {
+            "enum": [
+              "READINESS_OK",
+              "ENRICHMENT_OPTIONAL",
+              "ENRICHMENT_REQUIRED",
+              "MANUAL_REVIEW_REQUIRED"
+            ]
+          },
+          "missingSlots": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "maxItems": 32
+          },
+          "blockedOperations": {
+            "type": "array",
+            "items": {
+              "enum": [
+                "ASSESSMENT_PROPOSAL",
+                "EXACT_DUPLICATE_ASSERTION"
+              ]
+            },
+            "maxItems": 32
+          }
+        },
+        "required": [
+          "task",
+          "state",
+          "missingSlots",
+          "blockedOperations"
+        ]
+      },
+      "maxItems": 2
+    },
+    "reasonCodes": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      },
+      "maxItems": 32
+    },
+    "nextAction": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "questions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "questionId": {
+            "type": "string",
+            "pattern": "^[a-f0-9]{24}$"
+          },
+          "slot": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "choices": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            "maxItems": 8
+          },
+          "correctionRequired": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "questionId",
+          "slot",
+          "text",
+          "choices",
+          "correctionRequired"
+        ]
+      },
+      "maxItems": 3
+    },
+    "policyDigest": {
+      "type": "string",
+      "pattern": "^[a-f0-9]{64}$"
+    },
+    "needsReview": {
+      "const": true
+    },
+    "operationalAuthority": {
+      "const": false
+    },
+    "workflowGateApplied": {
+      "const": false
+    }
+  },
+  "required": [
+    "contractVersion",
+    "ticketId",
+    "contextRevision",
+    "contextDigest",
+    "overall",
+    "tasks",
+    "reasonCodes",
+    "nextAction",
+    "questions",
+    "policyDigest",
+    "needsReview",
+    "operationalAuthority",
+    "workflowGateApplied"
+  ]
+}

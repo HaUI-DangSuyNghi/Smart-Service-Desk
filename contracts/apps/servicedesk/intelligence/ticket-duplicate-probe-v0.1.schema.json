@@ -1,0 +1,331 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:servicedesk:ticket-duplicate-probe-v0.1.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "contractVersion": {
+      "const": "ticket-duplicate-probe@0.1.0"
+    },
+    "status": {
+      "enum": [
+        "SHADOW",
+        "REVIEW_REQUIRED"
+      ]
+    },
+    "mode": {
+      "enum": [
+        "SHADOW",
+        "ASSISTED"
+      ]
+    },
+    "ticketId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "contextRevision": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "decision": {
+      "enum": [
+        "SAME_TICKET_ID",
+        "MATCH_READY_FOR_REVIEW",
+        "POSSIBLE_DUPLICATE",
+        "RELATED_INCIDENT_POSSIBLE",
+        "DISTINCT",
+        "INSUFFICIENT_EVIDENCE"
+      ]
+    },
+    "duplicateOf": {
+      "type": "null"
+    },
+    "candidates": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "candidateRef": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "canonicalTicketId": {
+            "type": "null"
+          },
+          "contextRevision": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "assessment": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "decision": {
+                "enum": [
+                  "SAME_TICKET_ID",
+                  "MATCH_READY_FOR_REVIEW",
+                  "POSSIBLE_DUPLICATE",
+                  "RELATED_INCIDENT_POSSIBLE",
+                  "DISTINCT",
+                  "INSUFFICIENT_EVIDENCE"
+                ]
+              },
+              "matched": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100
+                },
+                "maxItems": 20
+              },
+              "conflicts": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100
+                },
+                "maxItems": 20
+              },
+              "missing": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1,
+                  "maxLength": 100
+                },
+                "maxItems": 20
+              },
+              "confidence": {
+                "type": "null"
+              },
+              "rankScoreSemantics": {
+                "const": "NON_PROBABILISTIC_INTERNAL_ONLY"
+              }
+            },
+            "required": [
+              "decision",
+              "matched",
+              "conflicts",
+              "missing",
+              "confidence",
+              "rankScoreSemantics"
+            ],
+            "allOf": [
+              {
+                "if": {
+                  "properties": {
+                    "decision": {
+                      "const": "MATCH_READY_FOR_REVIEW"
+                    }
+                  }
+                },
+                "then": {
+                  "properties": {
+                    "missing": {
+                      "maxItems": 0
+                    },
+                    "conflicts": {
+                      "maxItems": 0
+                    },
+                    "matched": {
+                      "allOf": [
+                        {
+                          "contains": {
+                            "const": "SAME_ROOM"
+                          }
+                        },
+                        {
+                          "contains": {
+                            "const": "SAME_OBJECT_TYPE"
+                          }
+                        },
+                        {
+                          "contains": {
+                            "const": "SAME_OBJECT"
+                          }
+                        },
+                        {
+                          "contains": {
+                            "const": "SAME_CATEGORY"
+                          }
+                        },
+                        {
+                          "contains": {
+                            "const": "PREDECESSOR_OPEN"
+                          }
+                        },
+                        {
+                          "contains": {
+                            "const": "COMPATIBLE_SYMPTOM"
+                          }
+                        }
+                      ]
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "required": [
+          "candidateRef",
+          "canonicalTicketId",
+          "contextRevision",
+          "assessment"
+        ]
+      },
+      "maxItems": 3
+    },
+    "scanned": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 50
+    },
+    "candidateWindowFull": {
+      "type": "boolean"
+    },
+    "provenance": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/provenance"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "disposition": {
+      "$ref": "#/$defs/disposition"
+    }
+  },
+  "required": [
+    "contractVersion",
+    "status",
+    "mode",
+    "ticketId",
+    "contextRevision",
+    "decision",
+    "duplicateOf",
+    "candidates",
+    "scanned",
+    "candidateWindowFull",
+    "provenance",
+    "disposition"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "mode": {
+            "const": "SHADOW"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "status": {
+            "const": "SHADOW"
+          },
+          "decision": {
+            "const": "INSUFFICIENT_EVIDENCE"
+          },
+          "candidates": {
+            "maxItems": 0
+          },
+          "scanned": {
+            "const": 0
+          },
+          "candidateWindowFull": {
+            "const": false
+          },
+          "provenance": {
+            "type": "null"
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "status": {
+            "const": "REVIEW_REQUIRED"
+          },
+          "provenance": {
+            "$ref": "#/$defs/provenance"
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "disposition": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "needsReview": {
+          "const": true
+        },
+        "operationalAuthority": {
+          "const": false
+        },
+        "autoMergeAllowed": {
+          "const": false
+        }
+      },
+      "required": [
+        "needsReview",
+        "operationalAuthority",
+        "autoMergeAllowed"
+      ]
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "contextDigest": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "policyBundleDigest": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "policyDigests": {
+          "type": "object",
+          "minProperties": 5,
+          "maxProperties": 5,
+          "additionalProperties": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        },
+        "candidateSetDigest": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "retrieverIdentity": {
+          "const": "bounded-rule-first-cpu@0.1.0"
+        },
+        "modelDigest": {
+          "type": "null"
+        }
+      },
+      "required": [
+        "contextDigest",
+        "policyBundleDigest",
+        "policyDigests",
+        "candidateSetDigest",
+        "retrieverIdentity",
+        "modelDigest"
+      ]
+    }
+  }
+}

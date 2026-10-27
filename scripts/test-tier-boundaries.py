@@ -44,6 +44,17 @@ class BoundaryGuardTest(unittest.TestCase):
             with self.subTest(package=package):
                 self.mutation(JAVA + 'core/Bad.java', f'import vn.haui.dx.{package};', 'core-upper-import')
 
+    def test_owned_app_query_can_use_skip_locked_or_nowait(self):
+        for modifier in ('skip locked', 'nowait'):
+            self.write(JAVA + 'apps/example/Store.java',
+                       'class Store { String sql = "select * from example_job for update ' + modifier + '"; }')
+            self.assertFalse(guard.violations(self.root))
+
+    def test_lock_modifier_does_not_hide_private_table_access(self):
+        self.mutation(JAVA + 'apps/example/Bad.java',
+                      'class Bad { String sql = "select * from act_ru_task for update skip locked"; }',
+                      'app-private-sql')
+
     def test_hpdi_cannot_import_apps(self):
         self.mutation(JAVA + 'hpdi/process/Bad.java', 'import vn.haui.dx.apps.example.Ticket;', 'hpdi-app-import')
 

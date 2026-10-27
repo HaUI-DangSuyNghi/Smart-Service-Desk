@@ -46,6 +46,32 @@ management:
     health:
       show-details: never
 serviceDesk:
+  contextual-assessment:
+    # true/false: cho phép 0/1 lượt model trên input augmented; false vẫn tính facts CPU từ revision mới.
+    # Cần benchmark input mới và grant độc lập, không dùng flag để promote model.
+    enabled: ${SERVICE_DESK_CONTEXTUAL_ASSESSMENT_ENABLED:false}
+    # SHA-256 gộp policy input mới + extraction + assessment + model/prompt pins.
+    policy-digest: ${SERVICE_DESK_CONTEXTUAL_ASSESSMENT_POLICY_DIGEST:}
+  enrichment:
+    # true/false: lưu lifecycle/job advisory khi tạo ticket hoặc nhận câu trả lời.
+    enabled: ${SERVICE_DESK_ENRICHMENT_ENABLED:false}
+    # true/false: quét deadline DB để nhắc/chuyển manual; không gọi AI hoặc sửa BPMN.
+    timers-enabled: ${SERVICE_DESK_ENRICHMENT_TIMERS_ENABLED:false}
+    # Chu kỳ quét metadata, đơn vị ms; default 60 giây, mỗi đợt tối đa 50 case.
+    poll-delay-ms: ${SERVICE_DESK_ENRICHMENT_POLL_DELAY_MS:60000}
+  context:
+    # true/false: bật hoặc tắt gợi ý ngữ cảnh và ticket trùng. Mặc định tắt.
+    # Lưu câu trả lời bổ sung hoạt động độc lập, kể cả khi cờ này là false.
+    enabled: ${SERVICE_DESK_CONTEXT_ENABLED:false}
+    # DISABLED: tắt; SHADOW: chạy nhưng ẩn gợi ý; ASSISTED: gợi ý để người duyệt.
+    # PROMOTED: chưa được phép sử dụng; backend từ chối chế độ này.
+    mode: ${SERVICE_DESK_CONTEXT_MODE:DISABLED}
+    # SHA-256 của bộ policy đang chạy; phải khớp grant được cấp độc lập.
+    policy-bundle-digest: ${SERVICE_DESK_CONTEXT_POLICY_BUNDLE_DIGEST:}
+    # Đường dẫn grant ký HMAC; scope OWN_TICKET hoặc WORKSPACE_REVIEW.
+    processing-receipt: ${SERVICE_DESK_CONTEXT_PROCESSING_RECEIPT:}
+    # Khóa xác minh HMAC (ít nhất 32 ký tự); chỉ đặt qua biến môi trường/bí mật triển khai.
+    verification-key: ${SERVICE_DESK_CONTEXT_PROCESSING_VERIFICATION_KEY:}
   assessment:
     enabled: ${SERVICE_DESK_ASSESSMENT_ENABLED:false}
     policy-bundle-digest: ${SERVICE_DESK_ASSESSMENT_POLICY_BUNDLE_DIGEST:}
