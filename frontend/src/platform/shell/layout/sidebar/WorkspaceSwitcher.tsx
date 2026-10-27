@@ -2,13 +2,16 @@ import {
   IconCheck,
   IconChevronDown,
   IconLogout,
+  IconSettings,
   IconShieldLock,
   IconUserCircle,
 } from "@tabler/icons-react";
 import { useNavigate } from "react-router";
 import { cn } from "cn";
 import { keycloakAdminUrl, useAuth } from "@/platform/human/auth";
+import { DutyMenuItem } from "@/platform/human/duty";
 import { useCurrentWorkspace, useMe } from "@/platform/human/workspace";
+import { isWorkflowAvailable } from "@/platform/services";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -74,10 +77,18 @@ export const WorkspaceSwitcher = ({ collapsed }: Props) => {
         <DropdownMenuLabel className="truncate text-crm-xs font-normal text-crm-text-3">
           {me?.username}
         </DropdownMenuLabel>
+        {/* Đang trực / Nghỉ (R3), chỉ người xử lý việc thấy */}
+        {isWorkflowAvailable && <DutyMenuItem />}
         <DropdownMenuItem onSelect={() => navigate("/profile")}>
           <IconUserCircle size={16} stroke={2} />
           Tài khoản
         </DropdownMenuItem>
+        {isWorkflowAvailable && me?.platformAdmin && (
+          <DropdownMenuItem onSelect={() => navigate("/settings")}>
+            <IconSettings size={16} stroke={2} />
+            Cấu hình hệ thống
+          </DropdownMenuItem>
+        )}
         {/* Chỉ quản trị nền tảng: mở trang quản trị Keycloak (người dùng, nhóm, vai trò) ở tab mới */}
         {me?.platformAdmin && (
           <DropdownMenuItem asChild>

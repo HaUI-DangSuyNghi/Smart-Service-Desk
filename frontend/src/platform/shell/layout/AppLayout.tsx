@@ -1,5 +1,7 @@
 import { Suspense } from "react";
 import { Outlet } from "react-router";
+import { AlertWatcher } from "@/platform/process";
+import { isWorkflowAvailable } from "@/platform/services";
 import { PageSkeleton } from "@/platform/shared/ui/Skeleton";
 import { Toaster } from "@/platform/shared/ui/Toaster";
 import type { MenuItem } from "../router/registry";
@@ -21,6 +23,8 @@ const AppLayout = ({ menu }: Props) => {
         </Suspense>
       </div>
       <Toaster />
+      {/* Cảnh báo mới (quá hạn, khẩn cấp...) hiện toast ở mọi trang */}
+      {isWorkflowAvailable && <AlertWatcher />}
     </div>
   );
 };

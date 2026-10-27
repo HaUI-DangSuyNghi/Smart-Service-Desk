@@ -1,17 +1,22 @@
 import {
+  IconBell,
   IconBook,
+  IconCalendarUser,
   IconChartBar,
   IconHistory,
   IconHome,
+  IconHourglass,
   IconInbox,
   IconLayoutSidebarLeftCollapse,
   IconLayoutSidebarLeftExpand,
+  IconListNumbers,
   IconSend,
   IconUsers,
 } from "@tabler/icons-react";
 import { cn } from "cn";
 import { hasAnyRole, PERMISSIONS, useActor, usePermissions } from "@/platform/human/workspace";
-import { InboxBadge } from "@/platform/process";
+import { AlertBadge, InboxBadge } from "@/platform/process";
+import { isWorkflowAvailable } from "@/platform/services";
 import { useIsMobile } from "@/platform/shared/lib/useMediaQuery";
 import type { MenuItem } from "../../router/registry";
 import { NavItem } from "./NavItem";
@@ -67,6 +72,41 @@ const PLATFORM_MENU: readonly MenuItem[] = [
   },
 ];
 
+/** Hàng đợi, cảnh báo, ca trực, yêu cầu sửa ước tính (plan nghiệp vụ R2–R8); chỉ khi đã sẵn sàng. */
+const WORKFLOW_MENU: readonly MenuItem[] = [
+  {
+    label: "Hàng đợi",
+    path: "/queue",
+    icon: IconListNumbers,
+    tone: "blue",
+    requiredPermissions: [PERMISSIONS.taskHandle],
+  },
+  {
+    label: "Cảnh báo",
+    path: "/alerts",
+    icon: IconBell,
+    tone: "orange",
+    badge: AlertBadge,
+    requiredPermissions: [PERMISSIONS.taskHandle],
+  },
+  {
+    label: "Ca trực",
+    path: "/duty",
+    icon: IconCalendarUser,
+    tone: "turquoise",
+    requiredPermissions: [PERMISSIONS.taskAssign],
+  },
+  {
+    label: "Sửa ước tính",
+    path: "/estimate-requests",
+    icon: IconHourglass,
+    tone: "purple",
+    requiredPermissions: [PERMISSIONS.taskAssign],
+  },
+];
+
+const MENU = isWorkflowAvailable ? [...PLATFORM_MENU, ...WORKFLOW_MENU] : PLATFORM_MENU;
+
 interface Props {
   /** Menu do các app (Tầng 3) đăng ký qua registry. */
   appMenu: readonly MenuItem[];
@@ -88,7 +128,7 @@ export const AppSidebar = ({ appMenu }: Props) => {
   const { can } = usePermissions();
   const isVisible = (item: MenuItem) =>
     hasAnyRole(roles, item.requiredRoles) && can(...(item.requiredPermissions ?? []));
-  const visiblePlatformMenu = PLATFORM_MENU.filter(isVisible);
+  const visiblePlatformMenu = MENU.filter(isVisible);
   const visibleAppMenu = appMenu.filter(isVisible);
 
   return (

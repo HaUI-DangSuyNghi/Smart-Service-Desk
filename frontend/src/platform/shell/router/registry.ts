@@ -30,6 +30,13 @@ export interface MenuItem {
   readonly badge?: ComponentType;
 }
 
+/** Một nhóm cấu hình riêng của app trên màn Cấu hình hệ thống (ví dụ bảng ước tính của Service Desk). */
+export interface SettingsSection {
+  readonly id: string;
+  readonly title: string;
+  readonly component: ComponentType;
+}
+
 /** Những gì một app (Tầng 3) đăng ký vào platform (Tầng 2). */
 export interface AppModule {
   readonly id: string;
@@ -39,6 +46,8 @@ export interface AppModule {
   readonly processLinks?: Readonly<Record<string, (businessKey: string) => string>>;
   /** Khối số liệu của app hiện trên dashboard chung (ví dụ thống kê ticket). */
   readonly dashboardWidgets?: readonly DashboardWidget[];
+  /** Cấu hình riêng của app, hiện dưới phần cấu hình chung. */
+  readonly settingsSections?: readonly SettingsSection[];
 }
 
 export interface AppRegistry {
@@ -47,6 +56,7 @@ export interface AppRegistry {
   menu: () => readonly MenuItem[];
   processLink: (processKey: string, businessKey: string) => string | null;
   dashboardWidgets: () => readonly DashboardWidget[];
+  settingsSections: () => readonly SettingsSection[];
 }
 
 export const createAppRegistry = (): AppRegistry => {
@@ -73,5 +83,6 @@ export const createAppRegistry = (): AppRegistry => {
     menu: () => modules.flatMap((m) => m.menu ?? []),
     processLink: (processKey, businessKey) => links.get(processKey)?.(businessKey) ?? null,
     dashboardWidgets: () => modules.flatMap((m) => m.dashboardWidgets ?? []),
+    settingsSections: () => modules.flatMap((m) => m.settingsSections ?? []),
   };
 };
