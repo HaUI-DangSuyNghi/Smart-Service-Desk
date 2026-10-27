@@ -50,12 +50,19 @@ public class EnrichmentCaseStore {
                 workspace, id, revision, policy.digest(), time(now.plusSeconds(policy.waitSeconds())), time(now));
         var previous = findLocked(workspace, id).orElseThrow();
         boolean late = previous.lateAnswer() || previous.status().equals("TIMED_OUT")
-                || previous.status().equals("MANUAL_REVIEW") || previous.status().equals("CANCELLED_BY_PROCESS");
+                || previous.status().equals("MANUAL_REVIEW") || previous.status().equals("CANCELLED_BY_PROCESS")
+                || revision > 0 && previous.deadlineAt() != null && !previous.deadlineAt().isAfter(now);
         jdbc.update("update servicedesk_enrichment_case set context_revision=?,context_digest=null,"
                         + "policy_digest=?,status=?,late_answer=?,manual_required=manual_required or ?,"
                         + "readiness_json=null,version=version+1,updated_at=? where workspace=? and ticket_id=?",
                 revision, policy.digest(), revision == 0 ? "NEW" : "REASSESS_QUEUED", late, late,
                 time(now), workspace, id);
+        if (revision > 0 && !late) {
+            // Câu trả lời đã đến đúng hạn: deadline cũ không được timeout công việc đánh giá lại.
+            jdbc.update("update servicedesk_enrichment_case set deadline_at=?,reminder_due_at=null,reminded_at=null "
+                            + "where workspace=? and ticket_id=?",
+                    time(now.plusSeconds(120)), workspace, id);
+        }
         jdbc.update("update servicedesk_enrichment_question_request set delivery_state='SUPERSEDED' "
                 + "where workspace=? and ticket_id=? and delivery_state='PENDING'", workspace, id);
         jdbc.update("update servicedesk_enrichment_outbox set state='SUPERSEDED',claim_id=null,lease_until=null "
@@ -98,6 +105,10 @@ public class EnrichmentCaseStore {
         long revision = lockTicket(workspace, id, false).orElseThrow();
         var state = findLocked(workspace, id).orElseThrow(() -> CapabilityException.notFound("Enrichment case not found"));
         Instant now = clock.instant();
+        if (!state.lateAnswer() && state.deadlineAt() != null && !state.deadlineAt().isAfter(now)) {
+            manual(workspace, id, "CLARIFICATION_TIMEOUT", true);
+            return Optional.empty();
+        }
         var rows = jdbc.query("select id,attempts from servicedesk_enrichment_outbox where workspace=? "
                         + "and ticket_id=? and event_type='EVALUATE_CONTEXT' and context_revision=? and policy_digest=? "
                         + "and available_at<=? and (state='PENDING' or (state='PROCESSING' and lease_until<=?)) "

@@ -1,0 +1,27 @@
+{
+  "version": "servicedesk-contextual-input@0.1.0",
+  "approvalStatus": "DRAFT",
+  "maxCharacters": 8192,
+  "maxRequestBytes": 16384,
+  "marker": "[USER_REPORTED_CURRENT_CONTEXT]",
+  "materialSlots": [
+    "device.type",
+    "symptomCodes",
+    "affectedCount",
+    "affectedScope",
+    "workBlocked",
+    "workaroundAvailable",
+    "timeWindow",
+    "problemEventStatus"
+  ],
+  "impactByScope": {
+    "INDIVIDUAL": "I1",
+    "MULTIPLE": "I2",
+    "WHOLE_ROOM": "I3"
+  },
+  "urgencyByTrue": {
+    "workBlocked": "U3",
+    "workaroundAvailable": "U1"
+  },
+  "modelValidated": false
+}

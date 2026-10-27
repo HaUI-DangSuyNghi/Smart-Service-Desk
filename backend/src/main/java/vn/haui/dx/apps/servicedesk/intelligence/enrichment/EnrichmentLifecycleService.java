@@ -38,11 +38,13 @@ public class EnrichmentLifecycleService {
     private final HumanContext human;
     private final ProcessObservations processes;
     private final EnrichmentConfiguration.Settings settings;
+    private final vn.haui.dx.apps.servicedesk.intelligence.TicketContextualAssessmentService reassessment;
 
     public EnrichmentLifecycleService(
             TicketService tickets, EnrichmentCaseStore store, ContextEvaluationGuard guard,
             ContextSlotExtractor extractor, ContextReadinessPolicy policy, HumanContext human,
-            ProcessObservations processes, EnrichmentConfiguration.Settings settings) {
+            ProcessObservations processes, EnrichmentConfiguration.Settings settings,
+            vn.haui.dx.apps.servicedesk.intelligence.TicketContextualAssessmentService reassessment) {
         this.tickets = tickets;
         this.store = store;
         this.guard = guard;
@@ -51,6 +53,7 @@ public class EnrichmentLifecycleService {
         this.human = human;
         this.processes = processes;
         this.settings = settings;
+        this.reassessment = reassessment;
     }
 
     public View get(String workspace, UUID id) {
@@ -92,6 +95,21 @@ public class EnrichmentLifecycleService {
                 }
                 var before = processSnapshot(workspace, session.ticket());
                 var result = policy.evaluate(session.snapshot(), extractor.extract(session.snapshot()), claim.previous().roundCount());
+                if (result.overall() == ContextReadinessView.State.READINESS_OK
+                        || result.overall() == ContextReadinessView.State.ENRICHMENT_OPTIONAL) {
+                    var refreshed = reassessment.assess(workspace, id);
+                    if (refreshed.contextRevision() != session.snapshot().contextRevision()
+                            || !session.snapshot().digest().equals(refreshed.contextDigest())) {
+                        throw CapabilityException.conflict("Reassessment revision changed");
+                    }
+                    if ("DEGRADED".equals(refreshed.assessmentStatus())) {
+                        var reasons = new java.util.ArrayList<>(result.reasonCodes());
+                        reasons.add("AI_PROVIDER_UNAVAILABLE");
+                        result = new ContextReadinessView(ContextReadinessView.VERSION, id, result.contextRevision(),
+                                result.contextDigest(), ContextReadinessView.State.MANUAL_REVIEW_REQUIRED, result.tasks(),
+                                reasons, "COORDINATOR_REVIEW", List.of(), result.policyDigest(), true, false, false);
+                    }
+                }
                 if (!java.util.Objects.equals(before, processSnapshot(workspace, session.ticket()))) {
                     throw CapabilityException.conflict("Process changed during evaluation");
                 }

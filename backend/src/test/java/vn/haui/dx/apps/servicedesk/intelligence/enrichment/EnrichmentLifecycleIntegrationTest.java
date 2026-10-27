@@ -236,6 +236,17 @@ class EnrichmentLifecycleIntegrationTest {
         assertNotEquals("READY", state.path("status").asText());
     }
 
+    @Test
+    void expiredWaitIsStillLateBeforeAnyTimerHasPolled() throws Exception {
+        var ticket = create("Xin hỗ trợ");
+        evaluate(ticket);
+        now.set(now.get().plusSeconds(90000));
+        append(ticket, 0, "device.type", "PC");
+        var state = evaluate(ticket);
+        assertEquals("MANUAL_REVIEW", state.path("status").asText());
+        assertTrue(state.path("reasonCodes").toString().contains("LATE_ANSWER_REVIEW_REQUIRED"));
+    }
+
     private void raceTimers() throws Exception {
         var pool = Executors.newFixedThreadPool(2);
         var start = new CountDownLatch(1);

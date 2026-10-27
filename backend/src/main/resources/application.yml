@@ -46,6 +46,12 @@ management:
     health:
       show-details: never
 serviceDesk:
+  contextual-assessment:
+    # true/false: cho phép 0/1 lượt model trên input augmented; false vẫn tính facts CPU từ revision mới.
+    # Cần benchmark input mới và grant độc lập, không dùng flag để promote model.
+    enabled: ${SERVICE_DESK_CONTEXTUAL_ASSESSMENT_ENABLED:false}
+    # SHA-256 gộp policy input mới + extraction + assessment + model/prompt pins.
+    policy-digest: ${SERVICE_DESK_CONTEXTUAL_ASSESSMENT_POLICY_DIGEST:}
   enrichment:
     # true/false: lưu lifecycle/job advisory khi tạo ticket hoặc nhận câu trả lời.
     enabled: ${SERVICE_DESK_ENRICHMENT_ENABLED:false}
