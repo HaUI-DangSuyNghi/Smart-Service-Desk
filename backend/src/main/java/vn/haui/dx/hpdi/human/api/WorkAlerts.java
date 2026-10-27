@@ -1,0 +1,21 @@
+package vn.haui.dx.hpdi.human.api;
+
+import java.time.Instant;
+import java.util.List;
+import java.util.UUID;
+import vn.haui.dx.hpdi.common.api.PageRequest;
+
+public interface WorkAlerts {
+    enum Type { START_OVERDUE, SLA_WARNING, SLA_BREACHED, PENDING_TOO_LONG, CRITICAL_NEW, NO_ONE_ON_DUTY, ASSIGNEE_OFF_DUTY }
+    enum Severity { INFO, WARNING, CRITICAL }
+    record Event(String workspace, Type type, Severity severity, String processInstanceId, String processKey,
+                 String businessKey, String taskId, String generation, String label, boolean coordinators, String agent) {}
+    record Alert(UUID id, Type type, Severity severity, String processInstanceId, String processKey,
+                 String businessKey, String taskId, String label, Instant createdAt, Instant readAt) {}
+    record Inbox(List<Alert> items, int page, int size, long total, long unread) {
+        public Inbox { items = List.copyOf(items); }
+    }
+    void publish(Event event);
+    Inbox list(String workspace, Instant since, boolean unreadOnly, PageRequest page);
+    void read(String workspace, UUID id);
+}

@@ -7,6 +7,49 @@ info:
 security:
 - bearerAuth: []
 paths:
+  /api/hpdi/v1/workspaces/{workspace}/alerts:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+    get:
+      operationId: listAlerts
+      description: >-
+        Cảnh báo gửi cho người gọi, mới nhất trước. FE gọi định kỳ (polling); since để chỉ lấy cảnh báo mới.
+        Kỹ thuật viên nhận cảnh báo về việc mình giữ; điều phối viên nhận cảnh báo của cả workspace.
+      parameters:
+        - {name: since, in: query, required: false, schema: {type: string, format: date-time}, description: Chỉ lấy cảnh báo tạo sau mốc này}
+        - {name: unreadOnly, in: query, required: false, schema: {type: boolean, default: false}}
+        - {$ref: '#/components/parameters/Page'}
+        - {$ref: '#/components/parameters/Size'}
+      responses:
+        '200':
+          description: Một trang cảnh báo
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - {$ref: '#/components/schemas/PageMeta'}
+                  - type: object
+                    required: [items, unread]
+                    properties:
+                      unread: {type: integer, minimum: 0, description: Total visible unread alerts for the caller}
+                      items: {type: array, items: {$ref: '#/components/schemas/Alert'}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+
+  /api/hpdi/v1/workspaces/{workspace}/alerts/{alertId}/read:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+      - {name: alertId, in: path, required: true, schema: {type: string, format: uuid}}
+    post:
+      operationId: markAlertRead
+      description: Đánh dấu đã đọc; gọi lặp vẫn 204.
+      responses:
+        '204': {description: Đã đọc}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+
   /api/hpdi/v1/workspaces/{workspace}/tasks/{id}/assignment-suggestion:
     parameters:
     - $ref: '#/components/parameters/Workspace'
@@ -753,6 +796,26 @@ paths:
           $ref: '#/components/responses/NotFound'
 components:
   schemas:
+    Alert:
+      type: object
+      additionalProperties: false
+      required: [id, type, severity, processInstanceId, processKey, businessKey, label, createdAt]
+      properties:
+        id: {type: string, format: uuid}
+        type:
+          type: string
+          description: >-
+            Persistent deadline, pending, duty and critical notifications. CRITICAL_NEW labels
+            distinguish unapproved AI advice from a Coordinator-approved decision. No emergency auto-queue producer.
+          enum: [START_OVERDUE, SLA_WARNING, SLA_BREACHED, PENDING_TOO_LONG, CRITICAL_NEW, ASSIGNEE_OFF_DUTY, NO_ONE_ON_DUTY]
+        severity: {type: string, enum: [INFO, WARNING, CRITICAL]}
+        taskId: {type: string, nullable: true}
+        processInstanceId: {type: string}
+        processKey: {type: string}
+        businessKey: {type: string}
+        label: {type: string}
+        createdAt: {type: string, format: date-time}
+        readAt: {type: string, format: date-time, nullable: true}
     AssignmentCandidate:
       type: object
       additionalProperties: false

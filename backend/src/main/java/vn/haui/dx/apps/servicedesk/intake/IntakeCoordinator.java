@@ -44,6 +44,7 @@ public class IntakeCoordinator {
     private final AssessmentPolicy assessmentPolicy;
     private final ProcessCapability processes;
     private final ActivityJournal audit;
+    private final vn.haui.dx.apps.servicedesk.TicketAlerts alerts;
     private final BackgroundProcessing processing;
     private final List<String> workspaces;
     private final boolean scheduled;
@@ -58,8 +59,9 @@ public class IntakeCoordinator {
             ClassifierProcessingGate modelRights, AssessmentPolicy assessmentPolicy, ProcessCapability processes,
             ActivityJournal audit, BackgroundProcessing processing, vn.haui.dx.hpdi.human.api.HumanContext human,
             @Value("${service-desk.background.workspaces:}") List<String> workspaces,
-            @Value("${service-desk.background.scheduled:true}") boolean scheduled) {
+            @Value("${service-desk.background.scheduled:true}") boolean scheduled, vn.haui.dx.apps.servicedesk.TicketAlerts alerts) {
         this.jdbc = jdbc;
+        this.alerts = alerts;
         this.json = json;
         this.transaction = new TransactionTemplate(manager);
         this.tickets = tickets;
@@ -230,6 +232,7 @@ public class IntakeCoordinator {
                         UUID.randomUUID(), lease, identity, human.currentActor(ticket.workspace()).subject(), why, ticket.id());
                 audit.record(ticket.workspace(), new BusinessActivity("servicedesk.intake.assessed", "servicedesk.ticket", ticket.id().toString(),
                         Map.of("attemptKey", identity, "contextVersion", Long.toString(before.contextRevision()))));
+                if (modelReady) alerts.advisory(ticket, identity, completed.ai07().priority());
             }
             acknowledge.run();
         });

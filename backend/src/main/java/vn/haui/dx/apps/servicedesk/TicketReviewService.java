@@ -22,19 +22,21 @@ public class TicketReviewService implements WorkProjection {
     private final Validator validator;
     private final TicketAssignmentEligibility eligibility;
     private final TicketSlaService sla;
+    private final TicketAlerts alerts;
     private final vn.haui.dx.apps.servicedesk.intelligence.BackgroundTicketAssessment assessments;
     private final vn.haui.dx.apps.servicedesk.intake.IntakeAdmission intake;
 
     public TicketReviewService(JdbcTemplate jdbc, TicketRepository tickets, HumanContext humans, PermissionGuard permissions,
                               WorkInbox inbox, WorkExecution execution, ProcessCapability processes, ActivityJournal audit, Validator validator,
                               vn.haui.dx.apps.servicedesk.intelligence.BackgroundTicketAssessment assessments,
-                              vn.haui.dx.apps.servicedesk.intake.IntakeAdmission intake, TicketAssignmentEligibility eligibility, TicketSlaService sla) {
+                              vn.haui.dx.apps.servicedesk.intake.IntakeAdmission intake, TicketAssignmentEligibility eligibility, TicketSlaService sla, TicketAlerts alerts) {
         this.jdbc=jdbc; this.tickets=tickets; this.humans=humans; this.permissions=permissions;
         this.inbox=inbox; this.execution=execution; this.processes=processes; this.audit=audit; this.validator=validator;
         this.assessments=assessments;
         this.intake=intake;
         this.eligibility=eligibility;
         this.sla=sla;
+        this.alerts=alerts;
     }
     @Override public String processKey() { return ServiceDeskProcess.REVIEWED_KEY; }
 
@@ -78,6 +80,7 @@ public class TicketReviewService implements WorkProjection {
         inbox.setPriority(workspace, handle.id(), (decision.priority().ordinal() + 1) * 25);
         sla.initialize(workspace, id, ticket.process().processInstanceId(), review.id(), handle.id(), decision.priority().name());
         if (decision.assignee() != null) inbox.assign(workspace, handle.id(), decision.assignee());
+        alerts.reviewed(workspace, ticket, review.id(), handle.id(), decision);
         audit.record(workspace, new BusinessActivity("servicedesk.ticket.review", "servicedesk.ticket", id.toString(),
             Map.of("processInstanceId",ticket.process().processInstanceId(),"reviewTaskId",review.id())));
         return view(workspace, ticket);

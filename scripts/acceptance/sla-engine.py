@@ -13,7 +13,8 @@ from pathlib import Path
 
 root = Path.cwd()
 intake = '--intake' in sys.argv
-jar = root / '.local/r5-runtime.jar'
+alerts = '--alerts' in sys.argv
+jar = root / ('.local/r7-r8-runtime.jar' if alerts else '.local/r5-runtime.jar')
 suffix = uuid.uuid4().hex[:10]
 network = 'r5-e2e-' + suffix
 password = uuid.uuid4().hex
@@ -64,7 +65,7 @@ try:
     with tempfile.TemporaryDirectory(prefix='r5-e2e-') as temporary:
         realm = json.loads((root / 'infra/keycloak/realm-template.json').read_text(encoding='utf-8'))
         for client in realm['clients']:
-            if client['clientId'] == 'dx-directory':
+            if client['clientId'] == 'dx-directory' or alerts and client['clientId'] == 'dx-assessment-worker':
                 client['secret'] = password
         for user in realm['users']:
             if user['username'] in ('user1', 'user2', 'user3'):
@@ -82,17 +83,20 @@ try:
         keycloak = run('r5-kc-' + suffix, '--network-alias', 'keycloak', '-p', '127.0.0.1::8080',
             '-e', 'KC_BOOTSTRAP_ADMIN_USERNAME=admin', '-e', 'KC_BOOTSTRAP_ADMIN_PASSWORD=' + password,
             '--mount', f'type=bind,source={seed},target=/opt/keycloak/data/import/realm.json,readonly',
+            *(['-e', 'KC_HOSTNAME=http://keycloak:8080'] if alerts else []),
             'quay.io/keycloak/keycloak:26.0.7', 'start-dev', '--import-realm')
         wait(keycloak + '/realms/dx-lab/.well-known/openid-configuration')
         backend_name = 'r5-backend-' + suffix
         backend = run(backend_name, '-p', '127.0.0.1::8080', '--mount', f'type=bind,source={jar},target=/app.jar,readonly',
             '-e', 'DATABASE_URL=jdbc:postgresql://database:5432/core', '-e', 'SPRING_DATASOURCE_USERNAME=workflow',
             '-e', 'POSTGRES_PASSWORD=' + password, '-e', 'DX_DIRECTORY_URL=http://keycloak:8080',
-            '-e', 'DX_DIRECTORY_CLIENT_SECRET=' + password, '-e', 'JWT_ISSUER=' + keycloak + '/realms/dx-lab',
+            '-e', 'DX_DIRECTORY_CLIENT_SECRET=' + password, '-e', 'JWT_ISSUER=' + ('http://keycloak:8080' if alerts else keycloak) + '/realms/dx-lab',
             '-e', 'JWT_JWKS=http://keycloak:8080/realms/dx-lab/protocol/openid-connect/certs',
             '-e', 'DX_STORAGE_ROOT=/private/files', 'eclipse-temurin:21-jre-alpine', 'java', '-jar', '/app.jar',
             '--service-desk.background.scheduled=false', '--service-desk.sla.poll-millis=1000',
-            '--serviceDesk.intake.new-tickets=' + str(intake).lower(), '--serviceDesk.intake.true-wait=' + str(intake).lower())
+            '--serviceDesk.intake.new-tickets=' + str(intake).lower(), '--serviceDesk.intake.true-wait=' + str(intake).lower(),
+            *(['--dx.background.token-url=http://keycloak:8080/realms/dx-lab/protocol/openid-connect/token',
+               '--dx.background.client-secret=' + password, '--hpdi.alerts.poll-millis=1000', '--service-desk.alerts.poll-millis=1000'] if alerts else []))
         wait(backend + '/actuator/health')
         tokens = {user: request(keycloak + '/realms/dx-lab/protocol/openid-connect/token', 'POST',
             {'grant_type': 'password', 'client_id': 'core-probe', 'username': user, 'password': password}, form=True)['access_token']
@@ -149,12 +153,41 @@ try:
         count = docker('exec', database, 'psql', '-U', 'workflow', '-d', 'core', '-Atc',
             "select count(*) from audit_event where action='servicedesk.sla.escalated' and resource='" + str(uuid.UUID(ticket['id'])) + "'")
         check('system escalation records exactly one transactional audit', count == '1')
+        if alerts:
+            breached_id = ticket['id']
+            ticket = call(base, 'user1', 'POST', {'clientRequestId': str(uuid.uuid4()), 'title': 'Real R7 critical', 'description': 'Synthetic critical request'})
+            path = base + '/' + ticket['id']
+            critical = approve('CRITICAL', subject)
+            for attempt in range(60):
+                inbox = call(hpdi + '/alerts')
+                critical_events = [item for item in inbox['items'] if item['businessKey'] == ticket['id'] and item['type'] == 'CRITICAL_NEW']
+                breached = [item for item in inbox['items'] if item['businessKey'] == breached_id and item['type'] == 'SLA_BREACHED']
+                if critical_events and breached:
+                    break
+                time.sleep(1)
+            check('real signed worker delivers approved critical and SLA breach without opening queue', bool(critical_events and breached))
+            agent_inbox = call(hpdi + '/alerts', 'user2')
+            check('assigned agent receives persistent critical alert', any(item['businessKey'] == ticket['id'] and item['type'] == 'CRITICAL_NEW' for item in agent_inbox['items']))
+            check('critical notification does not auto START', call(path)['state'] == 'ASSIGNED')
+            alert_id = critical_events[0]['id']
+            call(hpdi + '/alerts/' + alert_id + '/read', method='POST')
+            call(hpdi + '/alerts/' + alert_id + '/read', method='POST')
+            check('read retry leaves agent unread state independent', any(item['id'] == alert_id and item['readAt'] is None for item in call(hpdi + '/alerts', 'user2')['items']))
+            docker('restart', backend_name)
+            backend = 'http://' + docker('port', backend_name, '8080/tcp')
+            wait(backend + '/actuator/health')
+            check('alert and read timestamp survive real backend restart', any(item['id'] == alert_id and item['readAt'] is not None for item in call(hpdi + '/alerts')['items']))
+            try:
+                call(hpdi + '/alerts', 'user1')
+                raise AssertionError('Requester must not read operational alerts')
+            except urllib.error.HTTPError as failure:
+                check('requester cannot read operational alerts', failure.code == 403)
         report['status'] = 'PASS'
 except Exception as error:
     report.update(status='ERROR', error=type(error).__name__ + ': ' + str(error))
     raise
 finally:
-    (root / ('.local/r5-intake-runtime.json' if intake else '.local/r5-real-runtime.json')).write_text(json.dumps(report, indent=2), encoding='utf-8')
+    (root / ('.local/r7-r8-intake-runtime.json' if alerts and intake else '.local/r7-r8-real-runtime.json' if alerts else '.local/r5-intake-runtime.json' if intake else '.local/r5-real-runtime.json')).write_text(json.dumps(report, indent=2), encoding='utf-8')
     for name in reversed(containers):
         subprocess.run(['docker', 'rm', '-f', '-v', name], capture_output=True)
     subprocess.run(['docker', 'network', 'rm', network], capture_output=True)

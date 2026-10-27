@@ -34,17 +34,20 @@ public class BackgroundTicketAssessment {
     private final boolean scheduled;
     private final List<String> workspaces;
     private final org.springframework.beans.factory.ObjectProvider<vn.haui.dx.apps.servicedesk.intake.IntakeCoordinator> intake;
+    private final org.springframework.beans.factory.ObjectProvider<vn.haui.dx.apps.servicedesk.TicketAlerts> alerts;
 
     public BackgroundTicketAssessment(JdbcTemplate jdbc, ObjectMapper json, IntelligenceCapability intelligence,
             BackgroundProcessing processing, ActivityJournal audit, PlatformTransactionManager manager,
             @Value("${service-desk.background.scheduled:true}") boolean scheduled,
             @Value("${service-desk.background.workspaces:}") List<String> workspaces,
-            org.springframework.beans.factory.ObjectProvider<vn.haui.dx.apps.servicedesk.intake.IntakeCoordinator> intake) {
+            org.springframework.beans.factory.ObjectProvider<vn.haui.dx.apps.servicedesk.intake.IntakeCoordinator> intake,
+            org.springframework.beans.factory.ObjectProvider<vn.haui.dx.apps.servicedesk.TicketAlerts> alerts) {
         this.jdbc=jdbc; this.json=json; this.intelligence=intelligence; this.processing=processing;
         this.audit=audit; this.transaction=new TransactionTemplate(manager);
         this.projection=new TicketTriageProjection(json); this.scheduled=scheduled;
         this.workspaces=workspaces.stream().filter(value -> !value.isBlank()).distinct().toList();
         this.intake=intake;
+        this.alerts=alerts;
     }
 
     @Transactional(propagation=Propagation.MANDATORY)
@@ -158,6 +161,7 @@ public class BackgroundTicketAssessment {
             + " where ticket_id=? and status='PENDING' and lease_token=? and lease_until>clock_timestamp()",
             state,encoded,error,job.attempt()==1?5:30,job.ticket().id(),job.lease());
         if (count==1) history(job.ticket().id(),job.attempt(),state,error);
+        if (count==1 && result!=null) alerts.getObject().advisory(job.ticket(), "legacy-v1", result.priority());
         return count==1;
     }
 

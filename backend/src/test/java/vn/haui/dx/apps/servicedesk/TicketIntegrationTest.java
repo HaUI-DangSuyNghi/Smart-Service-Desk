@@ -63,6 +63,81 @@ class TicketIntegrationTest {
     @Autowired vn.haui.dx.core.identity.api.WorkspaceDirectory directory;
     @SpyBean vn.haui.dx.hpdi.human.api.AgentDuty duty;
     @Autowired TicketSlaService slaService;
+    @Autowired TicketAlerts ticketAlerts;
+
+    @Test void r7ApprovedCriticalPersistsAlertWithoutStartingOrInterruptingWork() throws Exception {
+        var ticket = create("critical-owner", "Critical reviewed", "requester");
+        var active = body(review(ticket, "critical-coordinator", "critical-agent", null).andExpect(status().isOk()));
+        mvc.perform(post("/api/hpdi/v1/workspaces/lab-a/tasks/" + active.path("taskId").asText() + "/start").with(as("critical-agent", "lab-a", "agent")))
+            .andExpect(status().isOk());
+        var other = create("critical-other-owner", "Independent critical", "requester");
+        var reviewed = body(mvc.perform(post(BASE + "/" + other.path("id").asText() + "/review").with(as("critical-coordinator", "lab-a", "coordinator"))
+            .contentType("application/json").content("{\"category\":\"HARDWARE\",\"priority\":\"CRITICAL\",\"assignee\":\"critical-agent\",\"reason\":\"Urgent human decision\"}")).andExpect(status().isOk()));
+        UUID id = UUID.fromString(other.path("id").asText());
+        assertNull(slaService.read("lab-a", id).firstStarted());
+        assertEquals("ASSIGNED", reviewed.path("state").asText());
+        assertEquals(1, jdbc.queryForObject("select count(*) from hpdi_alert_event where business_key=? and type='CRITICAL_NEW' and agent='critical-agent'", Integer.class, id.toString()));
+        mvc.perform(get(BASE + "/" + ticket.path("id").asText()).with(as("critical-agent", "lab-a", "agent")))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.state").value("IN_PROGRESS"));
+    }
+
+    @Test void r8ConcurrentEvaluationDeduplicatesAndReviewRoundIsolationIsPreserved() throws Exception {
+        var ticket = create("alert-sla-owner", "Alert SLA", "requester");
+        var reviewed = body(review(ticket, "alert-coordinator", null, null).andExpect(status().isOk()));
+        UUID id = UUID.fromString(ticket.path("id").asText());
+        var state = slaService.read("lab-a", id);
+        jdbc.update("update servicedesk_sla set approved_at=approved_at-interval '10 days',start_by=start_by-interval '10 days',resolve_by=resolve_by-interval '10 days' where ticket_id=?", id);
+        var pool = Executors.newFixedThreadPool(2);
+        try {
+            var first = pool.submit(() -> ticketAlerts.check("lab-a", state.processId(), state.taskId(), null));
+            var second = pool.submit(() -> ticketAlerts.check("lab-a", state.processId(), state.taskId(), null));
+            first.get(20, TimeUnit.SECONDS); second.get(20, TimeUnit.SECONDS);
+        } finally { pool.shutdownNow(); }
+        assertEquals(2, jdbc.queryForObject("select count(*) from hpdi_alert_event where business_key=?", Integer.class, id.toString()));
+        assertNull(slaService.read("lab-a", id).firstStarted());
+        assertEquals(reviewed.path("taskId").asText(), state.taskId());
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(longs = {299, 301})
+    void r7AdvisoryNeverApprovesOrQueuesBeforeOrAfterFiveMinutes(long seconds) throws Exception {
+        var created = create("advisory-owner", "Advisory critical", "requester");
+        UUID id = UUID.fromString(created.path("id").asText());
+        var submitted = java.time.Instant.now().minusSeconds(seconds);
+        jdbc.update("update servicedesk_ticket set created_at=? where id=?", java.sql.Timestamp.from(submitted), id);
+        var stored = new Ticket(id, "lab-a", "advisory-owner", UUID.randomUUID(), "Synthetic", "Synthetic", submitted,
+            new TicketProcessView(created.path("process").path("processInstanceId").asText(), ServiceDeskProcess.REVIEWED_KEY, id.toString(), "lab-a"));
+        var transaction = new org.springframework.transaction.support.TransactionTemplate(new org.springframework.jdbc.datasource.DataSourceTransactionManager(jdbc.getDataSource()));
+        transaction.executeWithoutResult(status -> ticketAlerts.advisory(stored, "assessment-1", "CRITICAL"));
+        transaction.executeWithoutResult(status -> ticketAlerts.advisory(stored, "assessment-1", "CRITICAL"));
+        assertEquals(1, jdbc.queryForObject("select count(*) from hpdi_alert_event where business_key=? and label like '%UNAPPROVED%'", Integer.class, id.toString()));
+        assertEquals(0, jdbc.queryForObject("select count(*) from servicedesk_review where ticket_id=?", Integer.class, id));
+        assertNull(slaService.read("lab-a", id));
+        assertEquals("AWAITING_REVIEW", created.path("state").asText());
+        mvc.perform(get("/api/hpdi/v1/workspaces/lab-a/instances/" + stored.process().processInstanceId() + "/timeline").with(as("advisory-owner", "lab-a", "requester")))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.currentTasks.length()").value(1)).andExpect(jsonPath("$.currentTasks[0].key").value("review"));
+        review(created, "advisory-coordinator", null, null).andExpect(status().isOk());
+        transaction.executeWithoutResult(status -> ticketAlerts.advisory(stored, "stale-assessment", "CRITICAL"));
+        transaction.executeWithoutResult(status -> ticketAlerts.advisory(stored, "abstain", "ABSTAIN"));
+        assertEquals(1, jdbc.queryForObject("select count(*) from hpdi_alert_event where business_key=? and type='CRITICAL_NEW'", Integer.class, id.toString()));
+    }
+
+    @Test void r7AlertAuditFailureRollsBackReviewAdmissionSlaAndHandleCreation() throws Exception {
+        var created = create("critical-rollback-owner", "Critical rollback", "requester");
+        UUID id = UUID.fromString(created.path("id").asText());
+        jdbc.execute("create function reject_critical_alert() returns trigger language plpgsql as $$ begin if new.action='human.alert.created' then raise exception 'reject alert' using errcode='23514'; end if; return new; end $$");
+        jdbc.execute("create trigger reject_critical_alert before insert on audit_event for each row execute function reject_critical_alert()");
+        try {
+            mvc.perform(post(BASE + "/" + id + "/review").with(as("critical-coordinator", "lab-a", "coordinator"))
+                .contentType("application/json").content("{\"category\":\"HARDWARE\",\"priority\":\"CRITICAL\",\"assignee\":null,\"reason\":\"Urgent human decision\"}"))
+                .andExpect(status().isConflict());
+            assertEquals(0, jdbc.queryForObject("select count(*) from servicedesk_review where ticket_id=?", Integer.class, id));
+            assertEquals(0, jdbc.queryForObject("select count(*) from hpdi_alert_event where business_key=?", Integer.class, id.toString()));
+            assertNull(slaService.read("lab-a", id));
+            mvc.perform(get(BASE + "/" + id).with(as("critical-rollback-owner", "lab-a", "requester")))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.state").value("AWAITING_REVIEW"));
+        } finally { jdbc.execute("drop trigger reject_critical_alert on audit_event"); jdbc.execute("drop function reject_critical_alert()"); }
+    }
 
     @Test void slaApprovalSnapshotsCoordinatorDecisionAndLeavesUnreviewedAndForeignTicketsWithoutSla() throws Exception {
         var ticket = create("sla-owner", "SLA approval", "requester");
@@ -359,11 +434,16 @@ class TicketIntegrationTest {
             assertEquals(round,reviewed.path("workedMinutes").asInt());
             assertEquals(round==0?"ASSIGNED":"REOPENED",reviewed.path("state").asText());
             String task=reviewed.path("taskId").asText();
+            ticketAlerts.check("lab-a", process, task, Map.of(worker, false));
+            ticketAlerts.check("lab-a", process, task, Map.of(worker, false));
+            assertEquals((round + 1) * 2, jdbc.queryForObject("select count(*) from hpdi_alert_event where process_instance_id=?", Integer.class, process));
             mvc.perform(post(hpdi+task+"/start").with(as(worker,"lab-a","agent"))).andExpect(status().isOk())
                 .andExpect(jsonPath("$.reopenCount").value(round));
             engineState.elapse(task,60_000);
             mvc.perform(post(hpdi+task+"/complete").with(as(worker,"lab-a","agent")).contentType("application/json")
                 .content("{\"expectedTaskKey\":\"handle\",\"outcome\":\"resolved\"}")).andExpect(status().isNoContent());
+            ticketAlerts.check("lab-a", process, task, Map.of(worker, false));
+            assertEquals((round + 1) * 2, jdbc.queryForObject("select count(*) from hpdi_alert_event where process_instance_id=?", Integer.class, process));
             metrics(statistics("lab-a",owner,"Repeated rework","requester"),0,1,0,0);
             String confirm=currentTask(ticket,owner);
             mvc.perform(post(hpdi+confirm+"/complete").with(as(owner,"lab-a","requester")).contentType("application/json")

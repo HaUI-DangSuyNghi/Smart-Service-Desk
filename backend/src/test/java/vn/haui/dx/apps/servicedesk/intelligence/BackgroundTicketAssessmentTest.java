@@ -70,7 +70,7 @@ class BackgroundTicketAssessmentTest {
                 .audience(List.of(invalidAudience?"wrong-audience":"dx-core"))
                 .subject("background-worker").issuedAt(Instant.now()).expiresAt(Instant.now().plusSeconds(120))
                 .claim("azp","dx-assessment-worker").claim("preferred_username","service-account-dx-assessment-worker")
-                .claim("groups",List.of("/workspaces/background-a/assessment-worker")).build())).getTokenValue();
+                .claim("groups",List.of("/workspaces/background-a/assessment-worker", "/workspaces/background-a/alert-worker")).build())).getTokenValue();
     }
     @AfterAll static void stop() { SERVER.stop(0); }
     @DynamicPropertySource static void properties(DynamicPropertyRegistry registry) {
@@ -88,11 +88,15 @@ class BackgroundTicketAssessmentTest {
     @Autowired JdbcTemplate jdbc;
     @Autowired BackgroundTicketAssessment worker;
     @Autowired org.springframework.beans.factory.ObjectProvider<vn.haui.dx.apps.servicedesk.intake.IntakeCoordinator> intake;
+    @Autowired org.springframework.beans.factory.ObjectProvider<vn.haui.dx.apps.servicedesk.TicketAlerts> alertProvider;
     @Autowired WorkspaceDirectory directory;
     @Autowired PlatformTransactionManager manager;
     @Autowired vn.haui.dx.hpdi.intelligence.api.IntelligenceCapability capability;
     @Autowired vn.haui.dx.hpdi.intelligence.api.BackgroundProcessing processing;
     @Autowired vn.haui.dx.hpdi.human.api.ActivityJournal audit;
+    @Autowired vn.haui.dx.hpdi.human.api.AlertProcessing alertProcessing;
+    @Autowired vn.haui.dx.hpdi.human.api.WorkAlerts workAlerts;
+    @Autowired vn.haui.dx.hpdi.human.internal.AlertDelivery alertDelivery;
     @MockBean IntelligenceTransport transport;
 
     @BeforeEach void setup() {
@@ -139,6 +143,31 @@ class BackgroundTicketAssessmentTest {
     private UUID create() throws Exception { return create(true); }
     private String state(UUID id) { return jdbc.queryForObject("select status from servicedesk_assessment where ticket_id=?",String.class,id); }
     private void due(UUID id) { jdbc.update("update servicedesk_assessment set available_at=clock_timestamp()-interval '1 second' where ticket_id=?",id); }
+
+    @Test void signedAlertWorkerRequiresAnIndependentNonBusinessGrantAndRestoresIdentity() {
+        var grants = new java.util.HashMap<>(directory.rolePermissions("background-a"));
+        grants.put("alert-worker", List.of(new DirectoryPermission("alerts:process", null)));
+        grants.put("coordinator", List.of(new DirectoryPermission("request:view-all", null)));
+        when(directory.rolePermissions("background-a")).thenReturn(grants);
+        when(directory.members("background-a")).thenReturn(List.of(
+            new DirectoryMember("background-worker", "worker", null, Set.of(new WorkspaceRole("assessment-worker"), new WorkspaceRole("alert-worker"))),
+            new DirectoryMember("duty-without-handle-grant", "duty", null, Set.of(new WorkspaceRole("agent"))),
+            new DirectoryMember("alert-coordinator", "coordinator", null, Set.of(new WorkspaceRole("coordinator")))));
+        String process = "alert-process-" + UUID.randomUUID();
+        new org.springframework.transaction.support.TransactionTemplate(manager).executeWithoutResult(status -> workAlerts.publish(new vn.haui.dx.hpdi.human.api.WorkAlerts.Event(
+            "background-a", vn.haui.dx.hpdi.human.api.WorkAlerts.Type.CRITICAL_NEW, vn.haui.dx.hpdi.human.api.WorkAlerts.Severity.CRITICAL,
+            process, "room-request", "synthetic-business-key", null, "review-1", "Critical approved", true, null)));
+        var worker = new vn.haui.dx.hpdi.human.internal.AlertDeliveryWorker(jdbc, alertProcessing, alertDelivery, true);
+        worker.run();
+        assertNull(SecurityContextHolder.getContext().getAuthentication());
+        assertEquals(1, jdbc.queryForObject("select count(*) from hpdi_alert_recipient r join hpdi_alert_event e on e.id=r.event_id where e.process_instance_id=? and r.subject='alert-coordinator'", Integer.class, process));
+        when(directory.supportGroupMembers("background-a", "hardware")).thenReturn(Set.of("duty-without-handle-grant"));
+        jdbc.update("insert into hpdi_agent_duty(workspace,subject,on_duty) values('background-a','duty-without-handle-grant',true) on conflict(workspace,subject) do update set on_duty=true");
+        alertProcessing.run("background-a", () -> assertEquals(Map.of("duty-without-handle-grant", true), alertProcessing.duty("background-a", "hardware")));
+        grants.remove("alert-worker");
+        assertThrows(RuntimeException.class, () -> alertProcessing.run("background-a", () -> fail("Revoked grant must not execute")));
+        assertNull(SecurityContextHolder.getContext().getAuthentication());
+    }
 
     @Test void creationNeverInvokesAiAndGetOnlyReadsStoredReadyResult() throws Exception {
         var id=create(false); verifyNoInteractions(transport);
@@ -249,7 +278,7 @@ class BackgroundTicketAssessmentTest {
     @Test void expiredLeaseAfterRestartIsRecoverableAndLastCrashedAttemptTerminates() throws Exception {
         var id=create();
         jdbc.update("update servicedesk_assessment set attempts=1,lease_token=?,lease_until=clock_timestamp()-interval '1 second' where ticket_id=?",UUID.randomUUID(),id);
-        var restarted=new BackgroundTicketAssessment(jdbc,json,capability,processing,audit,manager,false,List.of("background-a"),intake);
+        var restarted=new BackgroundTicketAssessment(jdbc,json,capability,processing,audit,manager,false,List.of("background-a"),intake,alertProvider);
         assertTrue(restarted.processOne()); assertEquals("READY",state(id));
         var exhausted=create();
         jdbc.update("update servicedesk_assessment set attempts=3,lease_token=?,lease_until=clock_timestamp()-interval '1 second' where ticket_id=?",UUID.randomUUID(),exhausted);
@@ -309,7 +338,7 @@ class BackgroundTicketAssessmentTest {
     }
     @Test void workerCannotClaimOutsideConfiguredWorkspace() throws Exception {
         var id=create(false);
-        var foreign=new BackgroundTicketAssessment(jdbc,json,capability,processing,audit,manager,false,List.of("background-b"),intake);
+        var foreign=new BackgroundTicketAssessment(jdbc,json,capability,processing,audit,manager,false,List.of("background-b"),intake,alertProvider);
         assertFalse(foreign.processOne()); verifyNoInteractions(transport);
         assertEquals(0,jdbc.queryForObject("select attempts from servicedesk_assessment where ticket_id=?",Integer.class,id));
         assertTrue(worker.processOne()); assertEquals("READY",state(id));
