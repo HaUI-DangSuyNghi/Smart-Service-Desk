@@ -13,6 +13,9 @@ import vn.haui.dx.core.common.PageRequest;
  * CONFLICT trùng business key, claim thua, sai bước, gửi lặp; VALIDATION_FAILED biến/outcome không hợp lệ.
  */
 public interface WorkflowService {
+    default Page<TaskExecution> workspaceQueue(String workspace, PageRequest page) {
+        throw new UnsupportedOperationException("Workspace queue is not supported");
+    }
     default TaskExecution execution(String workspace, String taskId) {
         throw vn.haui.dx.core.common.CoreException.conflict("Task execution is not supported");
     }
