@@ -176,9 +176,14 @@ class TicketContextualAssessmentIntegrationTest {
     }
 
     private JsonNode assess(JsonNode ticket, int expected) throws Exception {
-        return json.readTree(mvc.perform(post(route(ticket)).with(as("owner")).contentType("application/json")
+        var value = json.readTree(mvc.perform(post(route(ticket)).with(as("owner")).contentType("application/json")
                         .content("{\"contractVersion\":\"ticket-assessment-contextual@0.1.0\"}"))
                 .andExpect(status().is(expected)).andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8));
+        if (expected == 200) {
+            vn.haui.dx.apps.servicedesk.intelligence.context.ContextSchemaAssertions.verify(
+                    json, "ticket-assessment-contextual-v0.1.schema.json", value);
+        }
+        return value;
     }
 
     private String route(JsonNode ticket) { return BASE + "/" + id(ticket) + "/assistant/assessment-contextual"; }

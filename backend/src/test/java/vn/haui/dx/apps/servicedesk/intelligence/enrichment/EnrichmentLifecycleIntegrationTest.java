@@ -109,6 +109,35 @@ class EnrichmentLifecycleIntegrationTest {
     }
 
     @Test
+    void coordinatorCanReadBeyondFirstFiftyCasesWithoutDuplicates() throws Exception {
+        var created = new java.util.HashSet<String>();
+        for (int index = 0; index < 51; index++) {
+            created.add(create("Synthetic pagination " + index).path("id").asText());
+        }
+        var observed = new java.util.HashSet<String>();
+        int page = 0;
+        JsonNode items;
+        do {
+            items = body(mvc.perform(get(BASE + "/enrichment-pending").param("page", Integer.toString(page++))
+                            .with(as("reviewer", "lifecycle-a", "coordinator")))
+                    .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+            assertTrue(items.size() <= 50);
+            for (var item : items) {
+                assertTrue(observed.add(item.path("ticketId").asText()), "Repeated case across pages");
+                assertFalse(item.path("workflowGateApplied").asBoolean());
+            }
+        } while (items.size() == 50 && page < 10);
+        assertTrue(observed.containsAll(created), "Cases beyond the first page must remain accessible");
+        mvc.perform(get(BASE + "/enrichment-pending").param("page", "-1")
+                        .with(as("reviewer", "lifecycle-a", "coordinator"))).andExpect(status().isBadRequest());
+        mvc.perform(get(BASE + "/enrichment-pending").param("page", "10001")
+                        .with(as("reviewer", "lifecycle-a", "coordinator"))).andExpect(status().isBadRequest());
+        mvc.perform(get(BASE + "/enrichment-pending").param("page", "1")
+                        .with(as("owner", "lifecycle-a", "requester")))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
     void reminderAndTimeoutAreDurableAndIdempotentAcrossWorkers() throws Exception {
         var ticket = create("Xin hỗ trợ, chưa rõ lỗi");
         evaluate(ticket);
@@ -296,7 +325,14 @@ class EnrichmentLifecycleIntegrationTest {
                 Integer.class, id(ticket), type);
     }
 
-    private JsonNode body(String text) throws Exception { return json.readTree(text); }
+    private JsonNode body(String text) throws Exception {
+        var value = json.readTree(text);
+        if ("ticket-enrichment-lifecycle@0.1.0".equals(value.path("contractVersion").asText())) {
+            vn.haui.dx.apps.servicedesk.intelligence.context.ContextSchemaAssertions.verify(
+                    json, "ticket-enrichment-lifecycle-v0.1.schema.json", value);
+        }
+        return value;
+    }
     private UUID id(JsonNode ticket) { return UUID.fromString(ticket.path("id").asText()); }
     private String path(JsonNode ticket) { return BASE + "/tickets/" + id(ticket); }
 

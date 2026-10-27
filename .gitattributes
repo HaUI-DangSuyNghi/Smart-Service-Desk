@@ -15,6 +15,7 @@ scripts/apps/servicedesk/ai07/** text eol=lf
 scripts/apps/servicedesk/ai08/** text eol=lf
 backend/src/main/resources/apps/servicedesk/intelligence/readiness-policy-v0.1.json text eol=lf
 backend/src/main/resources/apps/servicedesk/intelligence/contextual-input-policy-v0.1.json text eol=lf
+backend/src/test/resources/apps/servicedesk/readiness-cases-v0.1.json text eol=lf
 intelligence/** text eol=lf
 backend/src/main/resources/apps/servicedesk/intelligence/guard-policy-v0.1.json text eol=lf
 backend/src/main/resources/apps/servicedesk/intelligence/taxonomy-v0.1.json text eol=lf

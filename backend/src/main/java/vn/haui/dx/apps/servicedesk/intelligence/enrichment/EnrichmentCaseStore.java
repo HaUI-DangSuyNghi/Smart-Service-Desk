@@ -94,10 +94,10 @@ public class EnrichmentCaseStore {
                 this::map, workspace, id).stream().findFirst();
     }
 
-    public List<EnrichmentCase> pending(String workspace) {
+    public List<EnrichmentCase> pending(String workspace, int page) {
         return jdbc.query("select * from servicedesk_enrichment_case where workspace=? "
                         + "and (manual_required or status not in ('READY','CANCELLED_BY_PROCESS')) "
-                        + "order by manual_required desc,updated_at,ticket_id limit 50", this::map, workspace);
+                        + "order by manual_required desc,updated_at,ticket_id limit 50 offset ?", this::map, workspace, page * 50);
     }
 
     @Transactional

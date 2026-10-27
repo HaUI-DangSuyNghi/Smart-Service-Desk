@@ -42,14 +42,16 @@ jobs:
           python-version-file: intelligence/.python-version
       - name: Kiểm tra CPU, contract, ACL và PostgreSQL/Flowable thật
         working-directory: backend
-        run: mvn -B '-Dtest=Context*Test,Duplicate*Test' test
+        run: mvn -B '-Dtest=Context*Test,Duplicate*Test,Enrichment*Test,TicketContextualAssessmentIntegrationTest,TicketAssessmentInputAssemblerTest' test
       - name: Tổng hợp bằng chứng synthetic, không tuyên bố Gold
         run: python scripts/apps/servicedesk/ai08/evaluate-context.py --output .local/context-intelligence/receipt.json
+      - name: Kiểm tra lifecycle, timeout và reassessment có revision
+        run: python scripts/apps/servicedesk/ai08/verify-lifecycle-evidence.py --output .local/context-intelligence/lifecycle-receipt.json
       - name: Lưu receipt không chứa nội dung ticket
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:
           name: context-intelligence-synthetic-receipt
-          path: .local/context-intelligence/receipt.json
+          path: .local/context-intelligence/*receipt.json
           include-hidden-files: true
           if-no-files-found: error
           retention-days: 7

@@ -6,12 +6,14 @@ import { TicketStatsWidget } from "./dashboard/TicketStatsWidget";
 // Trang lazy hiện skeleton của AppLayout trong lúc tải, không cần giữ thời gian tối thiểu
 const TicketListPage = lazy(() => import("./pages/TicketListPage"));
 const TicketDetailPage = lazy(() => import("./pages/TicketDetailPage"));
+const EnrichmentPendingPage = lazy(() => import("./pages/EnrichmentPendingPage"));
 
 export const registerServiceDesk = (registry: AppRegistry) => {
   registry.register({
     id: "servicedesk",
     routes: [
       { path: "servicedesk/tickets", component: TicketListPage },
+      { path: "servicedesk/enrichment-pending", component: EnrichmentPendingPage },
       // Không có workspace trong đường dẫn: dùng workspace đang chọn (link từ inbox, danh sách)
       { path: "servicedesk/tickets/:ticketId", component: TicketDetailPage },
       { path: "servicedesk/workspaces/:workspace/tickets/:ticketId", component: TicketDetailPage },

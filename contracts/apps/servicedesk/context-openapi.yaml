@@ -8,6 +8,108 @@ info:
 security:
   - bearerAuth: []
 paths:
+  /api/apps/servicedesk/v1/workspaces/{workspace}/tickets/{id}/enrichment-state:
+    parameters:
+      - $ref: '#/components/parameters/Workspace'
+      - $ref: '#/components/parameters/TicketId'
+    get:
+      operationId: getTicketEnrichmentLifecycle
+      summary: Đọc trạng thái advisory; không coi chờ bổ sung là tạm dừng workflow
+      responses:
+        '200':
+          description: Metadata và câu hỏi còn hiệu lực; thiếu grant thì chỉ trả metadata manual
+          content:
+            application/json:
+              schema: {$ref: './intelligence/ticket-enrichment-lifecycle-v0.1.schema.json'}
+        '401': {description: Chưa đăng nhập}
+        '403': {description: Không có quyền trong workspace}
+        '404': {description: Ticket hoặc case không tồn tại hoặc không được phép đọc}
+        '409': {description: Snapshot hoặc quyền thay đổi khi đọc}
+  /api/apps/servicedesk/v1/workspaces/{workspace}/tickets/{id}/enrichment-state/evaluate:
+    parameters:
+      - $ref: '#/components/parameters/Workspace'
+      - $ref: '#/components/parameters/TicketId'
+    post:
+      operationId: processLatestTicketEnrichmentGeneration
+      summary: Worker có danh tính xử lý generation mới nhất sau commit
+      description: >-
+        Nhận tối đa một lease/generation; coalesce revision cũ. Không giữ DB
+        transaction trong inference. Timer nội bộ không giả danh actor để gọi API này.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [contractVersion]
+              properties:
+                contractVersion: {const: ticket-enrichment-lifecycle@0.1.0}
+      responses:
+        '200':
+          description: Trạng thái hiện tại sau xử lý hoặc manual fallback
+          content:
+            application/json:
+              schema: {$ref: './intelligence/ticket-enrichment-lifecycle-v0.1.schema.json'}
+        '400': {description: Request không hợp lệ}
+        '401': {description: Chưa đăng nhập}
+        '403': {description: Thiếu quyền đọc ticket}
+        '404': {description: Ticket hoặc case không tồn tại hoặc không được phép đọc}
+        '409': {description: Snapshot thay đổi khi đọc kết quả}
+  /api/apps/servicedesk/v1/workspaces/{workspace}/enrichment-pending:
+    parameters:
+      - $ref: '#/components/parameters/Workspace'
+    get:
+      operationId: listCoordinatorEnrichmentWorklist
+      summary: Danh sách metadata tối đa 50 case cho coordinator trong workspace
+      parameters:
+        - name: page
+          in: query
+          description: Trang từ 0; mỗi trang tối đa 50 case, sắp xếp theo manual/updatedAt/id
+          schema: {type: integer, minimum: 0, maximum: 10000, default: 0}
+      responses:
+        '200':
+          description: Vẫn có đường manual khi AI tắt; không chứa raw ticket hoặc câu hỏi suy luận
+          content:
+            application/json:
+              schema:
+                type: array
+                maxItems: 50
+                items: {$ref: './intelligence/ticket-enrichment-lifecycle-v0.1.schema.json'}
+        '401': {description: Chưa đăng nhập}
+        '403': {description: Cần coordinator của workspace}
+        '400': {description: Page ngoài giới hạn hoặc sai kiểu}
+  /api/apps/servicedesk/v1/workspaces/{workspace}/tickets/{id}/assistant/assessment-contextual:
+    parameters:
+      - $ref: '#/components/parameters/Workspace'
+      - $ref: '#/components/parameters/TicketId'
+    post:
+      operationId: assessPersistedTicketContext
+      summary: Đánh giá lại từ ticket và câu trả lời đã lưu với revision/digest được pin
+      description: >-
+        Facts CPU được tính lại. Model augmented mặc định tắt và chỉ chạy khi đã
+        opt-in/pin policy/grant. Kết quả giữ needsReview; không tự giao việc hoặc đổi SLA.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [contractVersion]
+              properties:
+                contractVersion: {const: ticket-assessment-contextual@0.1.0}
+      responses:
+        '200':
+          description: Kết quả fresh hoặc degraded; SHADOW không có dữ liệu suy luận
+          content:
+            application/json:
+              schema: {$ref: './intelligence/ticket-assessment-contextual-v0.1.schema.json'}
+        '400': {description: Request hoặc augmented input vượt giới hạn}
+        '401': {description: Chưa đăng nhập}
+        '403': {description: Thiếu quyền hoặc grant pin policy contextual/model}
+        '404': {description: Context AI tắt hoặc ticket không được phép đọc}
+        '409': {description: Snapshot/process/quyền thay đổi hoặc response vượt giới hạn}
   /api/apps/servicedesk/v1/workspaces/{workspace}/tickets/{id}/assistant/readiness:
     parameters:
       - $ref: '#/components/parameters/Workspace'

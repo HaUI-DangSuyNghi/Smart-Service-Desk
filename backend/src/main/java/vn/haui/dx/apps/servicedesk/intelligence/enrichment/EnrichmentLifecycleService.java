@@ -39,12 +39,14 @@ public class EnrichmentLifecycleService {
     private final ProcessObservations processes;
     private final EnrichmentConfiguration.Settings settings;
     private final vn.haui.dx.apps.servicedesk.intelligence.TicketContextualAssessmentService reassessment;
+    private final EnrichmentMetrics metrics;
 
     public EnrichmentLifecycleService(
             TicketService tickets, EnrichmentCaseStore store, ContextEvaluationGuard guard,
             ContextSlotExtractor extractor, ContextReadinessPolicy policy, HumanContext human,
             ProcessObservations processes, EnrichmentConfiguration.Settings settings,
-            vn.haui.dx.apps.servicedesk.intelligence.TicketContextualAssessmentService reassessment) {
+            vn.haui.dx.apps.servicedesk.intelligence.TicketContextualAssessmentService reassessment,
+            EnrichmentMetrics metrics) {
         this.tickets = tickets;
         this.store = store;
         this.guard = guard;
@@ -54,6 +56,7 @@ public class EnrichmentLifecycleService {
         this.processes = processes;
         this.settings = settings;
         this.reassessment = reassessment;
+        this.metrics = metrics;
     }
 
     public View get(String workspace, UUID id) {
@@ -88,6 +91,8 @@ public class EnrichmentLifecycleService {
             return get(workspace, id);
         }
         var claim = claimed.get();
+        long started = System.nanoTime();
+        String outcome = "OTHER";
         try {
             var readiness = guard.evaluate(workspace, id, session -> {
                 if (session.shadow()) {
@@ -118,22 +123,31 @@ public class EnrichmentLifecycleService {
             var ticket = tickets.get(workspace, id);
             if (!store.complete(workspace, id, claim, readiness, open(ticket, processSnapshot(workspace, ticket)))) {
                 store.fail(workspace, id, claim, "STALE_CONTEXT");
+                outcome = "STALE_CONTEXT";
+            } else {
+                outcome = store.find(workspace, id).orElseThrow().status();
             }
         } catch (CapabilityException failure) {
-            store.fail(workspace, id, claim, failure.code() == CapabilityException.Code.CONFLICT
-                    ? "STALE_CONTEXT" : "AI_PROCESSING_UNAVAILABLE");
+            outcome = failure.code() == CapabilityException.Code.CONFLICT ? "STALE_CONTEXT" : "AI_PROCESSING_UNAVAILABLE";
+            store.fail(workspace, id, claim, outcome);
         } catch (RuntimeException failure) {
+            outcome = "AI_PROVIDER_UNAVAILABLE";
             store.fail(workspace, id, claim, "AI_PROVIDER_UNAVAILABLE");
+        } finally {
+            metrics.evaluated(outcome, System.nanoTime() - started);
         }
         return get(workspace, id);
     }
 
-    public List<View> pending(String workspace) {
+    public List<View> pending(String workspace, int page) {
         var actor = human.currentActor(workspace);
         if (actor == null || !workspace.equals(actor.workspace()) || !actor.hasRole("coordinator")) {
             throw CapabilityException.forbidden("Coordinator workspace role required");
         }
-        var result = store.pending(workspace).stream().map(state -> view(state, null, !settings.enabled())).toList();
+        if (page < 0 || page > 10000) {
+            throw CapabilityException.validation("Page must be between 0 and 10000");
+        }
+        var result = store.pending(workspace, page).stream().map(state -> view(state, null, !settings.enabled())).toList();
         if (!actor.equals(human.currentActor(workspace))) {
             throw CapabilityException.forbidden("Actor changed before publication");
         }
