@@ -761,7 +761,7 @@ components:
         subject: {type: string}
         displayName: {type: string}
         onDuty: {type: boolean}
-        loadMinutes: {type: integer, format: int64, minimum: 0}
+        loadMinutes: {type: integer, format: int64, minimum: 0, description: 'Other assigned execution workload, excluding only the task being considered for assignment. Preview excludes no existing handle task.'}
         assignedToday: {type: integer, format: int64, minimum: 0}
         shiftRemainingMinutes: {type: integer, minimum: 0, nullable: true, description: Not scheduled in this release; always null.}
         recommended: {type: boolean}

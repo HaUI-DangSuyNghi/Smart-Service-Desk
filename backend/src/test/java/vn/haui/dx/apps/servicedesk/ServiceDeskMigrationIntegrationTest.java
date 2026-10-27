@@ -12,6 +12,58 @@ import static org.junit.jupiter.api.Assertions.*;
 
 @EnabledIfEnvironmentVariable(named = "FILE_TEST_JDBC_URL", matches = ".+/file_storage")
 class ServiceDeskMigrationIntegrationTest {
+    @org.junit.jupiter.api.Test
+    void v15BackfillsOnlyChangedReviewedHandleAssignmentsAndPreservesV14() throws Exception {
+        var source=new DriverManagerDataSource(System.getenv("FILE_TEST_JDBC_URL"),"workflow",System.getenv("FILE_TEST_DB_PASSWORD"));
+        String schema="r2_upgrade_"+UUID.randomUUID().toString().replace("-","");
+        Flyway.configure().dataSource(source).schemas(schema).target("14").load().migrate();
+        var jdbc=new JdbcTemplate(source);
+        for (String process : java.util.List.of("reviewed-a","legacy-a","reviewed-b"))
+            jdbc.update("insert into "+schema+".servicedesk_ticket(id,workspace,creator,client_request_id,title,description,process_instance_id,process_key)"
+                + " values(?,?, 'owner',?,'Upgrade test','Synthetic',?,?)",UUID.randomUUID(),process.endsWith("b") ? "lab-b" : "lab-a",
+                UUID.randomUUID(),process,process.startsWith("legacy") ? ServiceDeskProcess.KEY : ServiceDeskProcess.REVIEWED_KEY);
+        jdbc.update("insert into "+schema+".hpdi_agent_duty(workspace,subject,on_duty,note) values('lab-a','agent-a',true,'Preserve duty')");
+        seedAssignmentAudit(jdbc,schema,"task.assign","reviewed-a","handle","agent-a",null);
+        seedAssignmentAudit(jdbc,schema,"task.assign","reviewed-a","handle","agent-a","agent-a");
+        seedAssignmentAudit(jdbc,schema,"task.assign","reviewed-a","handle","agent-b","agent-a");
+        seedAssignmentAudit(jdbc,schema,"task.assign","reviewed-a","review","agent-a",null);
+        seedAssignmentAudit(jdbc,schema,"task.assign","legacy-a","handle","agent-a",null);
+        seedAssignmentAudit(jdbc,schema,"task.assign","reviewed-b","handle","agent-a",null);
+        seedAssignmentAudit(jdbc,schema,"task.assign","reviewed-a","handle",null,null);
+        seedAssignmentAudit(jdbc,schema,"task.claim","reviewed-a",null,null,null);
+        var checksums=jdbc.queryForList("select version,checksum from "+schema+".flyway_schema_history where success and version is not null order by installed_rank");
+        var duties=jdbc.queryForList("select * from "+schema+".hpdi_agent_duty");
+        var audits=jdbc.queryForList("select * from "+schema+".audit_event order by id");
+        var upgraded=Flyway.configure().dataSource(source).schemas(schema).load();
+        assertEquals(1,upgraded.migrate().migrationsExecuted);
+        assertTrue(upgraded.validateWithResult().validationSuccessful);
+        assertEquals(checksums,jdbc.queryForList("select version,checksum from "+schema+".flyway_schema_history where success and version<>'15' order by installed_rank"));
+        assertEquals(duties,jdbc.queryForList("select * from "+schema+".hpdi_agent_duty"));
+        assertEquals(audits,jdbc.queryForList("select * from "+schema+".audit_event order by id"));
+        assertEquals(3,jdbc.queryForObject("select count(*) from "+schema+".servicedesk_assignment_event",Integer.class));
+        assertEquals(java.util.List.of(java.time.Instant.parse("2026-10-27T01:23:00Z")),jdbc.query("select distinct assigned_at from "+schema
+            + ".servicedesk_assignment_event",(row,index) -> row.getTimestamp(1).toInstant()));
+        assertEquals(java.util.List.of("agent-a","agent-b"),jdbc.queryForList("select subject from "+schema
+            + ".servicedesk_assignment_event where workspace='lab-a' order by subject",String.class));
+        assertEquals(1,jdbc.queryForObject("select count(*) from "+schema+".servicedesk_assignment_event where workspace='lab-b'",Integer.class));
+        assertEquals(0,jdbc.queryForObject("select count(*) from "+schema+".servicedesk_assignment_event where subject='claim-agent'",Integer.class));
+        assertEquals(0,jdbc.queryForObject("select count(*) from "+schema+".servicedesk_assignment_cursor",Integer.class));
+        assertEquals(0,upgraded.migrate().migrationsExecuted);
+    }
+
+    private void seedAssignmentAudit(JdbcTemplate jdbc, String schema, String action, String process,
+                                     String taskKey, String subject, String previous) throws Exception {
+        var details=new java.util.HashMap<String,Object>();
+        details.put("processInstanceId",process);
+        if (taskKey!=null) details.put("taskKey",taskKey);
+        if (subject!=null) details.put("assignee",subject);
+        if (previous!=null) details.put("previousAssignee",previous);
+        jdbc.update("insert into "+schema+".audit_event(id,actor,action,resource_type,resource,workspace,request_id,details,occurred_at)"
+            + " values(?,'claim-agent',?,'task',?,?,?,cast(? as jsonb),?)",UUID.randomUUID(),action,UUID.randomUUID().toString(),
+            process.endsWith("b") ? "lab-b" : "lab-a",UUID.randomUUID().toString(),new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(details),
+            java.sql.Timestamp.from(java.time.Instant.parse("2026-10-27T01:23:00Z")));
+    }
+
     @ParameterizedTest
     @ValueSource(ints = {9, 10, 11, 12, 13, 14})
     void upgradesDevelopWithoutChangingPersistedWork(int baselineVersion) {

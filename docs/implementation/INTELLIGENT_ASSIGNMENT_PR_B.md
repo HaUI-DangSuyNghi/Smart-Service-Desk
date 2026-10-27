@@ -55,7 +55,7 @@ Both endpoints require Coordinator and `task:assign`, enforce workspace access, 
   "group": "hardware",
   "estimateMinutes": 90,
   "recommended": "agent-a",
-  "reason": "Minimum-load band (<15 minutes from minimum), then fewest assignments today, then committed-assignment round-robin; selected agent-a with 30 load minutes and 1 assignments today",
+  "reason": "Minimum-load band (<15 minutes from minimum; considered task excluded), then fewest assignments today, then committed-assignment round-robin; selected agent-a with 30 load minutes and 1 assignments today",
   "candidates": [{"subject":"agent-a","displayName":"Agent A","onDuty":true,"loadMinutes":30,"assignedToday":1,"shiftRemainingMinutes":null,"recommended":true,"excludedReason":null}]
 }
 ```
@@ -75,7 +75,9 @@ The new Core queue capability reuses the exact existing queue SQL/execution mapp
 It checks Coordinator/`task:assign` itself. HPDI adapts Core types; application code uses only public HPDI contracts.
 Read-only REPEATABLE_READ transactions keep DB queue pages/counts/projections/history/cursor on one snapshot.
 Each page is at most 100 tasks, projected once per process using the existing provider's batch projection.
-Registered execution work across processes contributes to the assignee load, not just the ticket being reviewed.
+Other registered execution work across processes contributes to the assignee load. Only the exact considered task ID is excluded before batch projection.
+For an already-assigned handle this removes self-workload bias; preview passes a review task ID, so every existing handle remains included.
+This is a comparison load, not a replacement for the queue's actual total. `assignedToday` is never discounted for the considered ticket.
 More than 10,000 active execution tasks fails explicitly with 409 rather than returning a partial ranking.
 
 The existing reviewed-work projection supplies NOT_STARTED full ET, IN_PROGRESS max(ET-worked,10), and PENDING half remaining (rounded up).
@@ -110,9 +112,9 @@ Concurrent explicit coordinator assignments can choose any eligible agents; the 
 ## Validation and evidence
 
 Detailed machine-readable results are in `R2_ASSIGNMENT_EVIDENCE.json`; local raw logs are under `.local/task-execution-*` and `.local/r2-*`.
-The Windows full run reports 640 tests, zero failures, three OS-specific filesystem errors; it is NOT reported as PASS.
+The historical Windows full run on f6283af reports 640 tests, zero failures, three OS-specific filesystem errors; it is NOT final-HEAD evidence or PASS.
 Linux containers avoid Windows POSIX/symlink limitations. The runner excludes `backend/.local` so copied host permissions cannot poison private storage initialization.
-The final Linux full suite runs 640 tests, core-only 106, second-domain 33, each with zero failures/errors/skips.
+The reviewed Linux full suite runs 645 tests, core-only 106, second-domain 33, each with zero failures/errors/skips.
 ArchUnit runs in these suites. Source boundary gate and all 43 boundary mutation regressions pass.
 Real PostgreSQL and Flowable integration covers preview/handle APIs, read-only polling, real projection load, history counters, override, revocation, off-duty,
 wrong group, creator, empty candidates, workspace access, bounded bulk calls, concurrent assignment cursor updates, and migration upgrades from V14 and earlier.
@@ -140,5 +142,28 @@ Keycloak freshness is a validation-time snapshot, not a distributed transaction:
 Suggestions are advisory and may be stale before assignment; the existing R1/R3 check is still authoritative at commit-time validation.
 No new cursor reservation, user override, workflow state mutation or AI authority is introduced.
 Pre-existing whole-spec OpenAPI errors are compared with the fetched develop baseline rather than repaired or waived.
-Disposition: implementation ready for review, **BLOCKED for unconditional merge** until maintainers accept/fix baseline whole-spec debt and the upgrade-day historical-claim limitation.
+Disposition: **BLOCKED** for internal merge until the upgrade-day historical-claim limitation has an accepted deployment/reconciliation decision and required hosted checks can actually run.
+Baseline OpenAPI debt remains unchanged and separately reported; this review does not expand scope to repair it.
 Keep the PR Draft, do not merge. Hosted CI status must be checked independently; local suite success does not certify GitHub Actions.
+
+## Final merge-readiness review (2026-10-27)
+
+The initial PR B incorrectly counted the handle being considered against its current assignee.
+Example: A holds target T=90 minutes plus another task=20; B holds 60. The old totals (A=110, B=60) incorrectly recommended B for T.
+For a fair reassignment comparison the other-work totals are A=20, B=60, so A wins even though A has received two assignments today versus B's one.
+Only T is removed; A's other 20 minutes remain. A separate review preview still sees A=110/B=60 and recommends B for a NEW ticket.
+Do not remove T's historical receipt from `assignedToday`: when other workloads tie, fewer real assignments today may still legitimately favor B.
+
+The new regression was first run against f6283af production code and FAILED on the NOT_STARTED recommendation (expected A, got B).
+After the fix it passes for NOT_STARTED, IN_PROGRESS and PENDING, while the actual queue still includes T and GET leaves events/cursor untouched.
+Additional regressions exercise no-op reassignment, transfer to another agent, completed work, agent claim, local-day boundaries and workspace isolation.
+The concurrency regression now holds a real PostgreSQL cursor row lock, observes two overlapping assignment transactions waiting,
+verifies GET can read the old committed cursor without blocking/writing, then releases both and checks committed counts and circular recommendation.
+An audit-trigger failure proves event, cursor and Flowable assignee all roll back atomically. Other workspace/support-group cursors remain unchanged.
+
+The new V14-to-V15 fixture verifies changed handle assignments are backfilled, no-op/review/legacy/missing-assignee events are excluded,
+timestamps and applied checksums/duty/audit rows are preserved, workspace isolation holds, and a second migrate is a no-op.
+It also explicitly confirms the known omission of ambiguous pre-V15 `task.claim` audit records; V15 SQL is unchanged in this review.
+This leaves an upgrade-day accuracy gap, not a regression hidden by a green test. Reconcile old claims or obtain approval to enable after the next business-day boundary.
+PR #52 eligibility, duty, remaining-time formula, execution lifecycle, Room Request and legacy behavior remain unchanged and are covered by the full/isolated regressions.
+Hosted checks on f6283af failed to start with GitHub's account-payment/spending-limit annotation. This is not a hosted test PASS or a demonstrated code failure.

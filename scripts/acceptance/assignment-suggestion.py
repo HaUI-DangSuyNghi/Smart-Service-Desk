@@ -120,7 +120,8 @@ try:
         check('coordinator alone commits assignment', reviewed['assignee'] == subject)
         result = call('/api/hpdi/v1/workspaces/lab-a/tasks/' + reviewed['taskId'] + '/assignment-suggestion')
         candidate = next(candidate for candidate in result['candidates'] if candidate['subject'] == subject)
-        check('actual daily assignment and workload', candidate['assignedToday'] == 1 and candidate['loadMinutes'] == 90)
+        queue = call('/api/hpdi/v1/workspaces/lab-a/queue?assignee=' + subject)
+        check('actual daily assignment and workload', candidate['assignedToday'] == 1 and candidate['loadMinutes'] == 0 and queue['loadMinutes'] == 90)
         report.update(status='PASS', suggestion=result)
 except Exception as error:
     report.update(status='ERROR', error=type(error).__name__ + ': ' + str(error))

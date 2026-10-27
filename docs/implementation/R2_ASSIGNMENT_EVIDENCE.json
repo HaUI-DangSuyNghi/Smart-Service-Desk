@@ -6,7 +6,7 @@
       "failures": 0,
       "profile": "full",
       "errors": 0,
-      "tests": 640,
+      "tests": 645,
       "skipped": 0
     },
     "core-only": {
@@ -29,7 +29,8 @@
     "profile": "full",
     "errors": 3,
     "tests": 640,
-    "skipped": 0
+    "skipped": 0,
+    "historicalHead": "f6283af90b1e6875f2c5de7522fc3e2b020f14dc"
   },
   "keycloakSignedHttp": {
     "stack": "PostgreSQL 16.6 / Flowable 7.1 / Keycloak 26.0.7 / signed JWT / direct HTTP, no gateway",
@@ -69,7 +70,7 @@
     ],
     "status": "PASS",
     "suggestion": {
-      "taskId": "0de36e2e-d1f4-11f1-b1e9-2664b208259e",
+      "taskId": "e9e87960-d1f7-11f1-b0db-425d0812a11d",
       "group": "hardware",
       "estimateMinutes": 90,
       "recommended": "b5a318c4-d38c-4acd-ab78-cc3bd7f1efc1",
@@ -78,14 +79,14 @@
           "subject": "b5a318c4-d38c-4acd-ab78-cc3bd7f1efc1",
           "displayName": "Tr\u1ea7n Th\u1ecb B\u00ecnh",
           "onDuty": true,
-          "loadMinutes": 90,
+          "loadMinutes": 0,
           "assignedToday": 1,
           "shiftRemainingMinutes": null,
           "recommended": true,
           "excludedReason": null
         }
       ],
-      "reason": "Minimum-load band (<15 minutes from minimum), then fewest assignments today, then committed-assignment round-robin; selected b5a318c4-d38c-4acd-ab78-cc3bd7f1efc1 with 90 load minutes and 1 assignments today"
+      "reason": "Minimum-load band (<15 minutes from minimum; considered task excluded), then fewest assignments today, then committed-assignment round-robin; selected b5a318c4-d38c-4acd-ab78-cc3bd7f1efc1 with 0 load minutes and 1 assignments today"
     }
   },
   "contracts": {
@@ -150,6 +151,72 @@
     "archUnit": "PASS"
   },
   "httpContracts": "PASS: real MockMvc responses, live schemas, negative mutations; existing execution/assessment schemas preserved",
-  "ci": "NOT_VERIFIED: no hosted Actions result claimed",
-  "disposition": "BLOCKED for unconditional merge: baseline whole-spec errors and upgrade-day historical manual claim reconciliation"
+  "ci": {
+    "status": "BLOCKED_BILLING",
+    "observedHead": "f6283af90b1e6875f2c5de7522fc3e2b020f14dc",
+    "annotations": [
+      {
+        "name": "architecture-java",
+        "annotations": [
+          "The job was not started because recent account payments have failed or your spending limit needs to be increased. Please check the 'Billing & plans' section in your settings"
+        ]
+      },
+      {
+        "name": "second-domain-python",
+        "annotations": [
+          "The job was not started because recent account payments have failed or your spending limit needs to be increased. Please check the 'Billing & plans' section in your settings"
+        ]
+      }
+    ]
+  },
+  "disposition": "BLOCKED: upgrade-day historical-claim reconciliation/deployment acceptance and required hosted execution remain outstanding; self-workload bug fixed.",
+  "mergeReadinessReview": {
+    "productionHeadBeforeFix": "f6283af90b1e6875f2c5de7522fc3e2b020f14dc",
+    "redRegression": {
+      "failures": 1,
+      "profile": "full",
+      "errors": 0,
+      "tests": 1,
+      "skipped": 0
+    },
+    "rootCause": "Considered handle workload counted against current assignee; excluded by exact task ID before projection.",
+    "example": {
+      "targetMinutes": 90,
+      "otherA": 20,
+      "otherB": 60,
+      "oldLoads": {
+        "A": 110,
+        "B": 60
+      },
+      "comparisonLoads": {
+        "A": 20,
+        "B": 60
+      },
+      "recommended": "A",
+      "assignedToday": {
+        "A": 2,
+        "B": 1
+      }
+    },
+    "regressions": [
+      "NOT_STARTED/IN_PROGRESS/PENDING self-work exclusion; existing queue unchanged; preview includes all other handles",
+      "real receipt history retained on no-op/reassign/completion/claim, timezone boundaries and workspace isolation",
+      "two real cursor lock waiters, non-blocking read-only GET, committed tie rotation and workspace/group isolation",
+      "audit failure rolls back ledger/cursor/Flowable",
+      "V14 upgrade backfill filtering/timestamps/checksums/duty/audit/idempotency; ambiguous historical claims explicitly omitted"
+    ],
+    "v15UnchangedSha256": "d30bf8031ce8cea652d57caf12acfb70fcb7d71aee8245644c36eb687d263298",
+    "testedSourceSha256": {
+      "backend/src/main/java/vn/haui/dx/apps/servicedesk/AssignmentSuggestionController.java": "5bc8c21b9fa324437c37a0d6315f9fb1b6c69c5a027e8affb4dd793804835c8c",
+      "backend/src/test/java/vn/haui/dx/apps/servicedesk/AssignmentSuggestionIntegrationTest.java": "241ebe1ef145872e8dc93193c17624c3a49f1abaaaa3937387c560d96f933b2a",
+      "backend/src/test/java/vn/haui/dx/apps/servicedesk/ServiceDeskMigrationIntegrationTest.java": "fcfe595665819722b98296e039d0de01669e716e950ca43bee8fd139a96ecfc3",
+      "contracts/hpdi/openapi.yaml": "d01a358045c6e11b10d6c85d820ebd284d0db5329dd33f239f42c2bff314f73a",
+      "scripts/acceptance/assignment-suggestion.py": "5630af326ae72b5e8b0ad78fe3d43ba7ff23e5651ea5403ee1547d8365a5bdbf"
+    },
+    "blockers": [
+      "Upgrade-day assignedToday omits pre-V15 manual claims; deployment/reconciliation acceptance not recorded.",
+      "Required hosted checks have not executed successfully; GitHub billing/spending-limit annotations observed."
+    ],
+    "baselineOpenApiDebt": "Unchanged: live HPDI 3 errors, target 1, Service Desk 0; not repaired or expanded in scope."
+  }
 }

@@ -82,7 +82,7 @@ public class AssignmentSuggestionController {
         var agents=directory.currentAgents(workspace,group);
         var statuses=new HashMap<String,Boolean>();
         duty.list(workspace).forEach(status -> statuses.put(status.subject(),status.onDuty()));
-        var loads=loads(workspace);
+        var loads=loads(workspace,taskId);
         var today=LocalDate.now(zone);
         var counts=new HashMap<String,Long>();
         jdbc.query("select subject,count(*) as total from servicedesk_assignment_event where workspace=?"
@@ -103,17 +103,18 @@ public class AssignmentSuggestionController {
         ranked.forEach(candidate -> result.add(mark(candidate,selected)));
         candidates.stream().filter(candidate -> candidate.excludedReason()!=null).sorted(Comparator.comparing(Candidate::subject)).forEach(result::add);
         String reason=group==null ? "OTHER requires manual coordinator selection" : selected==null ? "No eligible on-duty agent in support group"
-            : "Minimum-load band (<15 minutes from minimum), then fewest assignments today, then committed-assignment round-robin; selected "
+            : "Minimum-load band (<15 minutes from minimum; considered task excluded), then fewest assignments today, then committed-assignment round-robin; selected "
                 + selected + " with " + ranked.get(0).loadMinutes() + " load minutes and " + ranked.get(0).assignedToday() + " assignments today";
         return new Suggestion(taskId,group==null ? "manual" : group,estimate,selected,List.copyOf(result),reason);
     }
 
-    private Map<String,Long> loads(String workspace) {
+    private Map<String,Long> loads(String workspace, String excludedTaskId) {
         var loads=new HashMap<String,Long>();
         for (int page=0; ; page++) {
             var batch=execution.workspaceQueue(workspace,new PageRequest(page,100));
             if (batch.total()>10000) throw CapabilityException.conflict("Suggestion workload limit exceeded (10000 tasks)");
-            var grouped=batch.items().stream().collect(java.util.stream.Collectors.groupingBy(item -> item.task().processKey()));
+            var grouped=batch.items().stream().filter(item -> !excludedTaskId.equals(item.task().id()))
+                .collect(java.util.stream.Collectors.groupingBy(item -> item.task().processKey()));
             grouped.forEach((key,items) -> {
                 var provider=projections.stream().filter(projection -> projection.processKey().equals(key)).findFirst()
                     .orElseThrow(() -> CapabilityException.conflict("Work projection required for " + key));

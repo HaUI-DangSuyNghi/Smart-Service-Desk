@@ -103,6 +103,53 @@ class AssignmentSuggestionIntegrationTest {
         return jdbc.queryForList("select * from servicedesk_assignment_event order by id");
     }
 
+    private JsonNode handleSuggestion(String taskId) throws Exception {
+        var response=json.readTree(mvc.perform(get("/api/hpdi/v1/workspaces/lab-a/tasks/"+taskId+"/assignment-suggestion")
+            .with(as("coordinator","coordinator"))).andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+        contract(response);
+        return response;
+    }
+
+    private JsonNode candidate(JsonNode response, String subject) {
+        return java.util.stream.StreamSupport.stream(response.path("candidates").spliterator(),false)
+            .filter(candidate -> subject.equals(candidate.path("subject").asText())).findFirst().orElseThrow();
+    }
+
+    @Test void reassignmentExcludesOnlyTheConsideredTaskWithoutChangingQueueOrAssignmentHistory() throws Exception {
+        String target=review(create(),first,90).path("taskId").asText();
+        review(create(),first,20);
+        review(create(),second,60);
+        var preview=suggestion(create());
+        assertEquals(110,candidate(preview,first).path("loadMinutes").asLong());
+        assertEquals(60,candidate(preview,second).path("loadMinutes").asLong());
+        assertEquals(second,preview.path("recommended").asText());
+        var beforeEvents=events();
+        var beforeCursor=jdbc.queryForList("select * from servicedesk_assignment_cursor order by workspace,support_group");
+        for (String state : List.of("NOT_STARTED","IN_PROGRESS","PENDING")) {
+            if ("IN_PROGRESS".equals(state))
+                mvc.perform(post("/api/hpdi/v1/workspaces/lab-a/tasks/"+target+"/start").with(as(first,"agent")))
+                    .andExpect(status().isOk());
+            if ("PENDING".equals(state))
+                mvc.perform(post("/api/hpdi/v1/workspaces/lab-a/tasks/"+target+"/pause").with(as(first,"agent"))
+                    .contentType("application/json").content("{\"reason\":\"WAITING_EXTERNAL\"}"))
+                    .andExpect(status().isOk());
+            var result=handleSuggestion(target);
+            assertEquals(first,result.path("recommended").asText(),state);
+            assertEquals(20,candidate(result,first).path("loadMinutes").asLong(),state);
+            assertEquals(60,candidate(result,second).path("loadMinutes").asLong(),state);
+            assertEquals(2,candidate(result,first).path("assignedToday").asLong(),state);
+            assertEquals(1,candidate(result,second).path("assignedToday").asLong(),state);
+            var queue=json.readTree(mvc.perform(get("/api/hpdi/v1/workspaces/lab-a/queue").param("assignee",first)
+                .with(as("coordinator","coordinator"))).andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+            var current=java.util.stream.StreamSupport.stream(queue.path("items").spliterator(),false)
+                .filter(item -> target.equals(item.path("id").asText())).findFirst().orElseThrow();
+            assertEquals(state,current.path("workState").asText());
+            assertEquals(20+current.path("remainingMinutes").asLong(),queue.path("loadMinutes").asLong());
+            assertEquals(beforeEvents,events());
+            assertEquals(beforeCursor,jdbc.queryForList("select * from servicedesk_assignment_cursor order by workspace,support_group"));
+        }
+    }
+
     @Test void previewIsReadOnlyAndCoordinatorCanOverrideThenEligibilityIsRechecked() throws Exception {
         var ticket=create();
         var beforeEvents=events();
@@ -164,13 +211,86 @@ class AssignmentSuggestionIntegrationTest {
         assertEquals(0,suggestion(ticket).path("candidates").size());
     }
 
+    @Test void dailyCountsRetainReassignmentAndCompletedWorkButIgnoreNoOpAssignments() throws Exception {
+        var ticket=create();
+        String task=review(ticket,first,90).path("taskId").asText();
+        String route="/api/hpdi/v1/workspaces/lab-a/tasks/"+task;
+        int before=events().size();
+        mvc.perform(post(route+"/assign").with(as("coordinator","coordinator")).contentType("application/json")
+            .content(json.writeValueAsString(Map.of("assignee",first)))).andExpect(status().isOk());
+        assertEquals(before,events().size());
+        mvc.perform(post(route+"/assign").with(as("coordinator","coordinator")).contentType("application/json")
+            .content(json.writeValueAsString(Map.of("assignee",second)))).andExpect(status().isOk());
+        assertEquals(before+1,events().size());
+        var reassignment=handleSuggestion(task);
+        assertEquals(1,candidate(reassignment,first).path("assignedToday").asLong());
+        assertEquals(1,candidate(reassignment,second).path("assignedToday").asLong());
+        assertEquals(0,candidate(reassignment,second).path("loadMinutes").asLong());
+        mvc.perform(post(route+"/start").with(as(second,"agent"))).andExpect(status().isOk());
+        mvc.perform(post(route+"/complete").with(as(second,"agent")).contentType("application/json")
+            .content("{\"expectedTaskKey\":\"handle\",\"outcome\":\"resolved\"}")).andExpect(status().isNoContent());
+        var next=create();
+        var afterCompletion=suggestion(next);
+        assertEquals(0,candidate(afterCompletion,second).path("loadMinutes").asLong());
+        assertEquals(1,candidate(afterCompletion,second).path("assignedToday").asLong());
+        String unclaimed=review(next,null,30).path("taskId").asText();
+        mvc.perform(post("/api/hpdi/v1/workspaces/lab-a/tasks/"+unclaimed+"/claim").with(as(first,"agent")))
+            .andExpect(status().isOk());
+        assertEquals(2,candidate(handleSuggestion(unclaimed),first).path("assignedToday").asLong());
+        assertEquals(before+2,events().size());
+    }
+
+    @Test void dailyCountsUseConfiguredBusinessDayBoundariesAndWorkspace() throws Exception {
+        var day=java.time.LocalDate.now(java.time.ZoneId.of("Asia/Ho_Chi_Minh"));
+        var start=day.atStartOfDay(java.time.ZoneId.of("Asia/Ho_Chi_Minh")).toInstant();
+        var end=day.plusDays(1).atStartOfDay(java.time.ZoneId.of("Asia/Ho_Chi_Minh")).toInstant();
+        for (var instant : List.of(start.minusMillis(1),start,end))
+            jdbc.update("insert into servicedesk_assignment_event(workspace,process_id,subject,assigned_at) values('lab-a','day-boundary',?,?)",
+                first,java.sql.Timestamp.from(instant));
+        jdbc.update("insert into servicedesk_assignment_event(workspace,process_id,subject,assigned_at) values('lab-b','other-workspace',?,?)",
+            first,java.sql.Timestamp.from(start));
+        var result=suggestion(create());
+        assertEquals(1,candidate(result,first).path("assignedToday").asLong());
+        assertEquals(0,candidate(result,second).path("assignedToday").asLong());
+    }
+
+    @Test void failedAssignmentRollsBackEventCursorAndFlowableAssignee() throws Exception {
+        String task=review(create(),null,60).path("taskId").asText();
+        var beforeEvents=events();
+        var beforeCursor=jdbc.queryForList("select * from servicedesk_assignment_cursor order by workspace,support_group");
+        jdbc.execute("create function r2_reject_assignment_audit() returns trigger language plpgsql as $$ begin"
+            + " if new.action='task.assign' then raise exception 'R2 audit rollback' using errcode='23514'; end if; return new; end $$");
+        jdbc.execute("create trigger r2_reject_assignment_audit before insert on audit_event for each row execute function r2_reject_assignment_audit()");
+        try {
+            mvc.perform(post("/api/hpdi/v1/workspaces/lab-a/tasks/"+task+"/assign").with(as("coordinator","coordinator"))
+                .contentType("application/json").content(json.writeValueAsString(Map.of("assignee",first))))
+                .andExpect(status().isConflict());
+            assertEquals(beforeEvents,events());
+            assertEquals(beforeCursor,jdbc.queryForList("select * from servicedesk_assignment_cursor order by workspace,support_group"));
+            assertEquals(0,candidate(handleSuggestion(task),first).path("assignedToday").asLong());
+            assertNull(jdbc.queryForObject("select assignee_ from act_ru_task where id_=?",String.class,task));
+        } finally {
+            jdbc.execute("drop trigger r2_reject_assignment_audit on audit_event");
+            jdbc.execute("drop function r2_reject_assignment_audit()");
+        }
+    }
+
     @Test void concurrentExplicitAssignmentsCommitExactlyOneCursorRowAndAllEvents() throws Exception {
         var firstTask=review(create(),null,60).path("taskId").asText();
         var secondTask=review(create(),null,60).path("taskId").asText();
         int before=events().size();
         var workers=java.util.concurrent.Executors.newFixedThreadPool(2);
         var start=new java.util.concurrent.CountDownLatch(1);
-        try {
+        jdbc.update("insert into servicedesk_assignment_cursor(workspace,support_group,last_subject) values('lab-a','hardware','prior-agent')"
+            + " on conflict(workspace,support_group) do update set last_subject=excluded.last_subject");
+        jdbc.update("insert into servicedesk_assignment_cursor(workspace,support_group,last_subject) values('lab-b','hardware','other-workspace'),"
+            + " ('lab-a','software','other-group') on conflict do nothing");
+        var otherCursors=jdbc.queryForList("select * from servicedesk_assignment_cursor where workspace<>'lab-a' or support_group<>'hardware' order by workspace,support_group");
+        try (var blocker=java.sql.DriverManager.getConnection(System.getenv("FILE_TEST_JDBC_URL"),"workflow",System.getenv("FILE_TEST_DB_PASSWORD"))) {
+            blocker.setAutoCommit(false);
+            try (var statement=blocker.prepareStatement("select last_subject from servicedesk_assignment_cursor where workspace='lab-a' and support_group='hardware' for update")) {
+                try (var rows=statement.executeQuery()) { assertTrue(rows.next()); }
+            }
             var results=new ArrayList<java.util.concurrent.Future<Integer>>();
             for (var assignment : Map.of(firstTask,first,secondTask,second).entrySet())
                 results.add(workers.submit(() -> {
@@ -180,10 +300,28 @@ class AssignmentSuggestionIntegrationTest {
                         .content("{\"assignee\":\""+assignment.getValue()+"\"}")).andReturn().getResponse().getStatus();
                 }));
             start.countDown();
+            int waiting=0;
+            long deadline=System.nanoTime()+java.util.concurrent.TimeUnit.SECONDS.toNanos(15);
+            while (waiting<2 && System.nanoTime()<deadline) {
+                waiting=jdbc.queryForObject("select count(*) from pg_stat_activity where datname=current_database()"
+                    + " and wait_event_type='Lock' and query like 'insert into servicedesk_assignment_cursor%'",Integer.class);
+                if (waiting<2) Thread.sleep(25);
+            }
+            assertEquals(2,waiting,"Both real assignment transactions must overlap at the cursor lock");
+            assertEquals(before,events().size());
+            assertEquals(first,handleSuggestion(firstTask).path("recommended").asText());
+            assertEquals("prior-agent",jdbc.queryForObject("select last_subject from servicedesk_assignment_cursor where workspace='lab-a' and support_group='hardware'",String.class));
+            blocker.commit();
             for (var result : results) assertEquals(200,result.get(30,java.util.concurrent.TimeUnit.SECONDS));
             assertEquals(before+2,events().size());
             assertEquals(1,jdbc.queryForObject("select count(*) from servicedesk_assignment_cursor where workspace='lab-a' and support_group='hardware'",Integer.class));
             assertTrue(Set.of(first,second).contains(jdbc.queryForObject("select last_subject from servicedesk_assignment_cursor where workspace='lab-a' and support_group='hardware'",String.class)));
+            String cursor=jdbc.queryForObject("select last_subject from servicedesk_assignment_cursor where workspace='lab-a' and support_group='hardware'",String.class);
+            var next=suggestion(create());
+            assertEquals(1,candidate(next,first).path("assignedToday").asLong());
+            assertEquals(1,candidate(next,second).path("assignedToday").asLong());
+            assertEquals(cursor.equals(first) ? second : first,next.path("recommended").asText());
+            assertEquals(otherCursors,jdbc.queryForList("select * from servicedesk_assignment_cursor where workspace<>'lab-a' or support_group<>'hardware' order by workspace,support_group"));
         } finally { start.countDown(); workers.shutdownNow(); }
     }
 }
