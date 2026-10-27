@@ -105,6 +105,299 @@ class WorkflowApprovalTest {
 
     private ProcessRef start(String key) { return service(requester).start("lab-a", key, UUID.randomUUID().toString(), Map.of("title", "Example")); }
     private TaskView task(ProcessRef process) { return service(requester).tasksOf("lab-a", process.processInstanceId()).get(0); }
+    private FlowableWorkflowService executionService(User user) {
+        return executionService(user, audit(user));
+    }
+    private FlowableWorkflowService executionService(User user, AuditService audit) {
+        return executionService(user, audit, vn.haui.dx.core.identity.PermissionTestDirectory.allowed());
+    }
+    private FlowableWorkflowService executionService(User user, AuditService audit,
+            vn.haui.dx.core.identity.api.WorkspaceDirectory directory) {
+        return new FlowableWorkflowService(engine, jdbc, user, audit, executionRegistry(), manager, directory);
+    }
+    private ProcessRegistry executionRegistry() {
+        ProcessRegistration work = new ProcessRegistration() {
+            public List<ProcessPolicy> policies() { return registration.policies(); }
+            public Map<String, Set<String>> executionTasks() { return Map.of("equipment-approval", Set.of("handover")); }
+        };
+        return new ProcessRegistry(List.of(work), engine.getRepositoryService());
+    }
+    private TaskView executionTask() {
+        return executionTask(agent);
+    }
+    private TaskView executionTask(User worker) {
+        var process = start("equipment-approval");
+        var approval = task(process);
+        service(reviewer).claim("lab-a", approval.id());
+        service(reviewer).complete("lab-a", approval.id(), "approve", "approved", null);
+        var handover = task(process);
+        service(worker).claim("lab-a", handover.id());
+        return handover;
+    }
+
+    @Test void queueProjectionDoesNotHydrateAReassignedTaskUnderThePreviousAssignee() {
+        var worker = new User("snapshot-" + UUID.randomUUID(), agent.memberships());
+        var task = executionTask(worker);
+        var reassigned = new java.util.concurrent.atomic.AtomicBoolean();
+        var racingJdbc = new JdbcTemplate(jdbc.getDataSource()) {
+            private void reassign(String sql) {
+                if (sql.startsWith("select t.id_") && reassigned.compareAndSet(false, true))
+                    engine.getTaskService().setAssignee(task.id(), "different-assignee");
+            }
+            @Override public <T> List<T> queryForList(String sql, Class<T> type, Object... args) {
+                var result = super.queryForList(sql, type, args);
+                reassign(sql);
+                return result;
+            }
+            @Override public <T> List<T> query(String sql, org.springframework.jdbc.core.RowMapper<T> mapper, Object... args) {
+                var result = super.query(sql, mapper, args);
+                reassign(sql);
+                return result;
+            }
+        };
+        try {
+            var work = new FlowableWorkflowService(engine, racingJdbc, worker, audit(worker), executionRegistry(), manager,
+                vn.haui.dx.core.identity.PermissionTestDirectory.allowed());
+            var result = work.queue("lab-a", null, PageRequest.of(0, 20));
+            assertTrue(reassigned.get());
+            assertEquals(1, result.total());
+            assertEquals(worker.sub(), result.items().get(0).task().assignee());
+            assertEquals("different-assignee", engine.getTaskService().createTaskQuery().taskId(task.id()).singleResult().getAssignee());
+        } finally {
+            engine.getRuntimeService().deleteProcessInstance(task.processInstanceId(), "queue snapshot test cleanup");
+        }
+    }
+
+    @Test void nonOptedInProcessesAndApprovalStepsDoNotExecuteOrEnterTheWorkQueue() {
+        var worker = new User("opt-in-" + UUID.randomUUID(), agent.memberships());
+        var task = executionTask(worker);
+        var awaitingApproval = start("equipment-approval");
+        try {
+            denied(ErrorCode.CONFLICT, () -> service(worker).execute("lab-a", task.id(), TaskExecution.Action.START, null, null));
+            assertTrue(service(worker).queue("lab-a", null, PageRequest.of(0, 20)).items().isEmpty());
+            var approval = task(awaitingApproval);
+            service(reviewer).claim("lab-a", approval.id());
+            denied(ErrorCode.CONFLICT, () -> executionService(reviewer).execute("lab-a", approval.id(), TaskExecution.Action.START, null, null));
+            assertTrue(executionService(reviewer).queue("lab-a", null, PageRequest.of(0, 100)).items().isEmpty());
+            assertNull(engine.getTaskService().getVariableLocal(task.id(), "executionState"));
+            service(worker).complete("lab-a", task.id(), "handover", "delivered", null);
+        } finally {
+            if (engine.getRuntimeService().createProcessInstanceQuery().processInstanceId(task.processInstanceId()).count() > 0)
+                engine.getRuntimeService().deleteProcessInstance(task.processInstanceId(), "legacy execution test cleanup");
+            engine.getRuntimeService().deleteProcessInstance(awaitingApproval.processInstanceId(), "approval exclusion test cleanup");
+        }
+    }
+
+    @Test void queueOrdersActiveThenPriorityThenDeadlineThenCreationAndIdWithStablePagination() {
+        var worker = new User("queue-" + UUID.randomUUID(), agent.memberships());
+        var work = executionService(worker);
+        var tasks = java.util.stream.IntStream.range(0, 5).mapToObj(index -> executionTask(worker)).toList();
+        try {
+            var service = engine.getTaskService();
+            for (var task : tasks) {
+                service.setPriority(task.id(), 50);
+                service.setDueDate(task.id(), java.util.Date.from(java.time.Instant.parse("2026-11-01T00:00:00Z")));
+                jdbc.update("update act_ru_task set create_time_=? where id_=?",
+                    java.sql.Timestamp.from(java.time.Instant.parse("2026-10-01T00:00:00Z")), task.id());
+            }
+            var active = tasks.get(0);
+            service.setPriority(active.id(), 1);
+            work.execute("lab-a", active.id(), TaskExecution.Action.START, null, null);
+            service.setPriority(tasks.get(1).id(), 100);
+            service.setDueDate(tasks.get(2).id(), java.util.Date.from(java.time.Instant.parse("2026-10-31T00:00:00Z")));
+            var tie = List.of(tasks.get(3).id(), tasks.get(4).id()).stream().sorted().toList();
+            var expected = new java.util.ArrayList<>(List.of(active.id(), tasks.get(1).id(), tasks.get(2).id()));
+            expected.addAll(tie);
+            var result = work.queue("lab-a", null, PageRequest.of(0, 100));
+            assertEquals(expected, result.items().stream().map(item -> item.task().id()).toList());
+            assertEquals(5, result.total());
+            assertEquals(expected.subList(2, 4), work.queue("lab-a", null, PageRequest.of(1, 2)).items().stream()
+                .map(item -> item.task().id()).toList());
+            assertTrue(work.queue("lab-a", null, PageRequest.of(3, 2)).items().isEmpty());
+            assertEquals(expected, executionService(reviewer).queue("lab-a", worker.sub(), PageRequest.of(0, 100))
+                .items().stream().map(item -> item.task().id()).toList());
+        } finally {
+            tasks.forEach(task -> engine.getRuntimeService().deleteProcessInstance(task.processInstanceId(), "queue test cleanup"));
+        }
+    }
+
+    @Test void executionRechecksCurrentPermissionCandidateRoleOwnerAndResourceWorkspace() {
+        var task = executionTask();
+        try {
+            var directory = vn.haui.dx.core.identity.PermissionTestDirectory.allowed();
+            when(directory.rolePermissions("lab-a")).thenReturn(Map.of());
+            denied(ErrorCode.FORBIDDEN, () -> executionService(agent, audit(agent), directory)
+                .execute("lab-a", task.id(), TaskExecution.Action.START, null, null));
+            when(directory.rolePermissions("lab-a")).thenThrow(CoreException.unavailable("synthetic directory outage"));
+            denied(ErrorCode.SERVICE_UNAVAILABLE, () -> executionService(agent, audit(agent), directory)
+                .execute("lab-a", task.id(), TaskExecution.Action.START, null, null));
+            var foreign = new User(agent.sub(), Set.of(new Membership("lab-b", AGENT)));
+            denied(ErrorCode.NOT_FOUND, () -> executionService(foreign).execute("lab-b", task.id(), TaskExecution.Action.START, null, null));
+            engine.getTaskService().setAssignee(task.id(), reviewer.sub());
+            denied(ErrorCode.FORBIDDEN, () -> executionService(reviewer).execute("lab-a", task.id(), TaskExecution.Action.START, null, null));
+            engine.getTaskService().setAssignee(task.id(), agent.sub());
+            jdbc.update("update process_scope set owner=? where id=?", agent.sub(), task.processInstanceId());
+            denied(ErrorCode.FORBIDDEN, () -> executionService(agent).execute("lab-a", task.id(), TaskExecution.Action.START, null, null));
+            assertNull(engine.getTaskService().getVariableLocal(task.id(), "executionState"));
+        } finally {
+            jdbc.update("update process_scope set owner=? where id=?", requester.sub(), task.processInstanceId());
+            engine.getRuntimeService().deleteProcessInstance(task.processInstanceId(), "authorization test cleanup");
+        }
+    }
+
+    @Test void executionIntervalsExcludePendingTimeAndCompletionClosesLastInterval() {
+        var task = executionTask();
+        var work = executionService(agent);
+        try {
+            denied(ErrorCode.CONFLICT, () -> work.complete("lab-a", task.id(), "handover", "delivered", null));
+            assertEquals(TaskExecution.State.IN_PROGRESS, work.execute("lab-a", task.id(), TaskExecution.Action.START, null, null).state());
+            denied(ErrorCode.CONFLICT, () -> work.execute("lab-a", task.id(), TaskExecution.Action.START, null, null));
+            denied(ErrorCode.VALIDATION_FAILED, () -> work.execute("lab-a", task.id(), TaskExecution.Action.PAUSE, null, null));
+            long started = System.currentTimeMillis() - 60_000;
+            engine.getTaskService().setVariableLocal(task.id(), "executionStarted", started);
+            var paused = work.execute("lab-a", task.id(), TaskExecution.Action.PAUSE, "WAITING_PARTS", "Await replacement");
+            assertEquals(TaskExecution.State.PENDING, paused.state());
+            assertTrue(paused.workedMillis() >= 60_000);
+            assertNull(paused.startedAt());
+            var waiting = work.queue("lab-a", null, PageRequest.of(0, 100)).items().stream()
+                .filter(item -> item.task().id().equals(task.id())).findFirst().orElseThrow();
+            assertEquals(paused.workedMillis(), waiting.workedMillis());
+            assertEquals("WAITING_PARTS", waiting.pendingReason());
+            denied(ErrorCode.CONFLICT, () -> work.execute("lab-a", task.id(), TaskExecution.Action.PAUSE, "WAITING_PARTS", null));
+            var resumed = work.execute("lab-a", task.id(), TaskExecution.Action.RESUME, null, null);
+            assertNull(resumed.pendingReason());
+            denied(ErrorCode.CONFLICT, () -> work.execute("lab-a", task.id(), TaskExecution.Action.RESUME, null, null));
+            work.complete("lab-a", task.id(), "handover", "delivered", null);
+            var historic = engine.getHistoryService().createHistoricTaskInstanceQuery().taskId(task.id())
+                .includeTaskLocalVariables().singleResult();
+            assertNull(historic.getTaskLocalVariables().get("executionStarted"));
+            assertTrue((Long) historic.getTaskLocalVariables().get("executionMillis") >= paused.workedMillis());
+        } finally {
+            if (engine.getTaskService().createTaskQuery().taskId(task.id()).count() > 0)
+                engine.getRuntimeService().deleteProcessInstance(task.processInstanceId(), "execution test cleanup");
+        }
+    }
+
+    @Test void concurrentExecutionStartsAndResumesHaveExactlyOneWinner() throws Exception {
+        var first = executionTask();
+        var second = executionTask();
+        try {
+            race(() -> executionService(agent).execute("lab-a", first.id(), TaskExecution.Action.START, null, null),
+                () -> executionService(agent).execute("lab-a", second.id(), TaskExecution.Action.START, null, null));
+            var active = engine.getTaskService().createTaskQuery().taskAssignee(agent.sub())
+                .taskVariableValueEquals("executionState", "IN_PROGRESS").singleResult();
+            assertNotNull(active);
+            var queued = active.getId().equals(first.id()) ? second : first;
+            executionService(agent).execute("lab-a", active.getId(), TaskExecution.Action.PAUSE, "WAITING_REQUESTER", null);
+            executionService(agent).execute("lab-a", queued.id(), TaskExecution.Action.START, null, null);
+            executionService(agent).execute("lab-a", queued.id(), TaskExecution.Action.PAUSE, "WAITING_PARTS", null);
+            race(() -> executionService(agent).execute("lab-a", first.id(), TaskExecution.Action.RESUME, null, null),
+                () -> executionService(agent).execute("lab-a", second.id(), TaskExecution.Action.RESUME, null, null));
+        } finally {
+            engine.getRuntimeService().deleteProcessInstance(first.processInstanceId(), "execution test cleanup");
+            engine.getRuntimeService().deleteProcessInstance(second.processInstanceId(), "execution test cleanup");
+        }
+    }
+
+    @Test void executionAuthorizationAndAuditFailureLeaveStateUnchanged() {
+        var task = executionTask();
+        try {
+            denied(ErrorCode.FORBIDDEN, () -> executionService(reviewer).execute("lab-a", task.id(), TaskExecution.Action.START, null, null));
+            denied(ErrorCode.FORBIDDEN, () -> executionService(agent).execute("lab-b", task.id(), TaskExecution.Action.START, null, null));
+            var failingAudit = mock(AuditService.class);
+            doThrow(new IllegalStateException("synthetic audit outage")).when(failingAudit)
+                .record(anyString(), anyString(), anyString(), anyString(), anyMap());
+            assertThrows(IllegalStateException.class, () -> executionService(agent, failingAudit)
+                .execute("lab-a", task.id(), TaskExecution.Action.START, null, null));
+            assertNull(engine.getTaskService().getVariableLocal(task.id(), "executionState"));
+            assertNull(engine.getTaskService().getVariableLocal(task.id(), "executionStarted"));
+            denied(ErrorCode.FORBIDDEN, () -> executionService(requester).queue("lab-a", agent.sub(), PageRequest.of(0, 20)));
+            assertTrue(executionService(agent).queue("lab-a", null, PageRequest.of(0, 100)).items().stream()
+                .anyMatch(item -> item.task().id().equals(task.id())));
+        } finally {
+            engine.getRuntimeService().deleteProcessInstance(task.processInstanceId(), "execution test cleanup");
+        }
+    }
+
+    @Test void activeWorkCannotBeReassignedAndPausedWorkKeepsElapsedTimeForTheNewAssignee() {
+        var first = new User("first-" + UUID.randomUUID(), agent.memberships());
+        var second = new User("second-" + UUID.randomUUID(), agent.memberships());
+        var task = executionTask(first);
+        try {
+            var directory = vn.haui.dx.core.identity.PermissionTestDirectory.allowed();
+            when(directory.members("lab-a")).thenReturn(List.of(new vn.haui.dx.core.identity.api.DirectoryMember(
+                second.sub(), second.sub(), null, Set.of(AGENT))));
+            var coordinator = executionService(reviewer, audit(reviewer), directory);
+            executionService(first).execute("lab-a", task.id(), TaskExecution.Action.START, null, null);
+            denied(ErrorCode.CONFLICT, () -> coordinator.assign("lab-a", task.id(), second.sub()));
+            assertEquals(first.sub(), engine.getTaskService().createTaskQuery().taskId(task.id()).singleResult().getAssignee());
+            var paused = executionService(first).execute("lab-a", task.id(), TaskExecution.Action.PAUSE, "WAITING_EXTERNAL", null);
+            coordinator.assign("lab-a", task.id(), second.sub());
+            var queued = executionService(second).queue("lab-a", null, PageRequest.of(0, 20)).items().get(0);
+            assertEquals(TaskExecution.State.NOT_STARTED, queued.state());
+            assertEquals(paused.workedMillis(), queued.workedMillis());
+            assertNull(queued.pendingReason());
+            denied(ErrorCode.FORBIDDEN, () -> executionService(first).execute("lab-a", task.id(), TaskExecution.Action.START, null, null));
+            assertEquals(TaskExecution.State.IN_PROGRESS, executionService(second)
+                .execute("lab-a", task.id(), TaskExecution.Action.START, null, null).state());
+        } finally {
+            engine.getRuntimeService().deleteProcessInstance(task.processInstanceId(), "reassignment test cleanup");
+        }
+    }
+
+    @Test void duplicateConcurrentStartOnTheSameTaskOpensOnlyOneInterval() throws Exception {
+        var task = executionTask();
+        try {
+            Callable<?> start = () -> executionService(agent).execute("lab-a", task.id(), TaskExecution.Action.START, null, null);
+            race(start, start);
+            assertEquals("IN_PROGRESS", engine.getTaskService().getVariableLocal(task.id(), "executionState"));
+            assertNotNull(engine.getTaskService().getVariableLocal(task.id(), "executionStarted"));
+        } finally {
+            engine.getRuntimeService().deleteProcessInstance(task.processInstanceId(), "duplicate start test cleanup");
+        }
+    }
+
+    @Test void pauseAndCompletionAuditFailuresRollBackIntervalsAndConcurrentPauseResumeDoNotDoubleCount() throws Exception {
+        var worker = new User("interval-" + UUID.randomUUID(), agent.memberships());
+        var task = executionTask(worker);
+        var work = executionService(worker);
+        try {
+            work.execute("lab-a", task.id(), TaskExecution.Action.START, null, null);
+            long started = System.currentTimeMillis() - 60_000;
+            engine.getTaskService().setVariableLocal(task.id(), "executionStarted", started);
+            var failingAudit = audit(worker);
+            doThrow(new IllegalStateException("synthetic pause audit failure")).when(failingAudit)
+                .record(eq("task.pause"), anyString(), anyString(), anyString(), anyMap());
+            assertThrows(IllegalStateException.class, () -> executionService(worker, failingAudit)
+                .execute("lab-a", task.id(), TaskExecution.Action.PAUSE, "WAITING_EXTERNAL", null));
+            assertEquals("IN_PROGRESS", engine.getTaskService().getVariableLocal(task.id(), "executionState"));
+            assertEquals(started, engine.getTaskService().getVariableLocal(task.id(), "executionStarted"));
+            assertNull(engine.getTaskService().getVariableLocal(task.id(), "executionMillis"));
+            assertEquals(0, jdbc.queryForObject("select count(*) from test_audit where action='task.work-interval' and resource=?",
+                Integer.class, task.id()));
+            Callable<?> pause = () -> work.execute("lab-a", task.id(), TaskExecution.Action.PAUSE, "WAITING_EXTERNAL", null);
+            race(pause, pause);
+            long accumulated = (Long) engine.getTaskService().getVariableLocal(task.id(), "executionMillis");
+            assertTrue(accumulated >= 60_000);
+            Callable<?> resume = () -> work.execute("lab-a", task.id(), TaskExecution.Action.RESUME, null, null);
+            race(resume, resume);
+            assertEquals(accumulated, engine.getTaskService().getVariableLocal(task.id(), "executionMillis"));
+            var resumedAt = engine.getTaskService().getVariableLocal(task.id(), "executionStarted");
+            var failingCompletion = audit(worker);
+            doThrow(new IllegalStateException("synthetic completion audit failure")).when(failingCompletion)
+                .record(eq("task.complete"), anyString(), anyString(), anyString(), anyMap());
+            assertThrows(IllegalStateException.class, () -> executionService(worker, failingCompletion)
+                .complete("lab-a", task.id(), "handover", "delivered", null));
+            assertNotNull(engine.getTaskService().createTaskQuery().taskId(task.id()).singleResult());
+            assertEquals("IN_PROGRESS", engine.getTaskService().getVariableLocal(task.id(), "executionState"));
+            assertEquals(resumedAt, engine.getTaskService().getVariableLocal(task.id(), "executionStarted"));
+            assertEquals(accumulated, engine.getTaskService().getVariableLocal(task.id(), "executionMillis"));
+            assertEquals(1, jdbc.queryForObject("select count(*) from test_audit where action='task.work-interval' and resource=?",
+                Integer.class, task.id()));
+        } finally {
+            engine.getRuntimeService().deleteProcessInstance(task.processInstanceId(), "interval atomicity test cleanup");
+        }
+    }
     private void denied(ErrorCode code, org.junit.jupiter.api.function.Executable action) {
         assertEquals(code, assertThrows(CoreException.class, action).code());
     }
@@ -444,6 +737,11 @@ class WorkflowApprovalTest {
         try {
             ProcessRegistration confirm = () -> List.of(new ProcessPolicy("initiator-confirm", Set.of(REQUESTER), Set.of("title"),
                 Map.of("review", Set.of("approved"), "confirm", Set.of("done"))));
+            ProcessRegistration invalidConfirmation = new ProcessRegistration() {
+                public List<ProcessPolicy> policies() { return confirm.policies(); }
+                public Map<String, Set<String>> executionTasks() { return Map.of("initiator-confirm", Set.of("confirm")); }
+            };
+            assertThrows(IllegalArgumentException.class, () -> new ProcessRegistry(List.of(registration, invalidConfirmation), repository));
             var both = new ProcessRegistry(List.of(registration, confirm), repository);
             java.util.function.Function<User, FlowableWorkflowService> as = user -> new FlowableWorkflowService(engine, jdbc, user, audit(user), both, manager,
                 vn.haui.dx.core.identity.PermissionTestDirectory.allowed());

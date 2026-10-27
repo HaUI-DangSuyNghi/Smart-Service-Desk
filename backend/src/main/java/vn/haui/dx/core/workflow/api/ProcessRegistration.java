@@ -8,4 +8,6 @@ import java.util.List;
  */
 public interface ProcessRegistration {
     List<ProcessPolicy> policies();
+
+    default java.util.Map<String, java.util.Set<String>> executionTasks() { return java.util.Map.of(); }
 }
