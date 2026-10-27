@@ -1,0 +1,106 @@
+# Use after compose.yaml and compose.triage.yaml. Model weights/code live in the image.
+services:
+  ai07-qwen:
+    profiles: [ai-d2-qwen]
+    image: ${AI07_QWEN_DISTRIBUTION_IMAGE:?Verified embedded model image required}
+    pull_policy: never
+    entrypoint: [python, -m, local_classification.qwen_lora_server]
+    command:
+      - --bundle
+      - /opt/model
+      - --model-digest
+      - ${AI07_QWEN_MODEL_DIGEST:?Verified model digest required}
+      - --runtime-identity
+      - ${AI07_QWEN_CODE_IMAGE_ID:?Verified parent code image ID required}
+      - --token-file
+      - /run/secrets/classification-token
+      - --bind
+      - 0.0.0.0
+    environment:
+      AI07_QWEN_ENABLED: '1'
+      AI07_QWEN_TOKEN_FILE: /run/secrets/classification-token
+      PYTHONPATH: /opt/apps
+      HF_HUB_OFFLINE: '1'
+      TRANSFORMERS_OFFLINE: '1'
+      HF_HUB_DISABLE_TELEMETRY: '1'
+      DO_NOT_TRACK: '1'
+      HOME: /tmp/qwen
+    secrets:
+      - source: ai07-classification-token
+        target: classification-token
+    networks:
+      model-private:
+        aliases: [intelligence-classification]
+    user: '10001:10001'
+    read_only: true
+    tmpfs: ['/tmp:rw,noexec,nosuid,size=256m']
+    shm_size: 256m
+    mem_limit: 6g
+    cpus: 4
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 96
+    logging: {driver: none}
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    healthcheck:
+      test: [CMD, python, -m, local_classification.qwen_lora_health]
+      interval: 15s
+      timeout: 3s
+      retries: 5
+      start_period: 180s
+    restart: 'no'
+  platform:
+    image: ${AI_D2_PLATFORM_IMAGE:?Verified backend image required}
+    pull_policy: never
+    environment:
+      INTELLIGENCE_CLASSIFICATION_BASE_URL: http://intelligence-classification:8003
+      INTELLIGENCE_CLASSIFICATION_TOKEN: ''
+      INTELLIGENCE_CLASSIFICATION_TOKEN_FILE: /run/secrets/classification-token
+      SERVICE_DESK_CLASSIFIER_MODE: ${AI07_CLASSIFIER_MODE:-DISABLED}
+      SERVICE_DESK_CLASSIFIER_PROVIDER: ${AI07_CLASSIFIER_PROVIDER:-QWEN_LORA}
+      SERVICE_DESK_CLASSIFIER_MODEL_DIGEST: ${AI07_QWEN_MODEL_DIGEST:?}
+      SERVICE_DESK_CLASSIFIER_POLICY_DIGEST: ${AI07_QWEN_POLICY_DIGEST:?}
+      SERVICE_DESK_CLASSIFIER_PROCESSING_RECEIPT: /run/ai-rights/classifier.json
+      SERVICE_DESK_CLASSIFIER_PROCESSING_VERIFICATION_KEY_FILE: ${AI_D2_CLASSIFIER_KEY_CONTAINER_PATH:-}
+      SERVICE_DESK_CONTEXT_PROCESSING_RECEIPT: /run/ai-rights/context
+      SERVICE_DESK_CONTEXT_PROCESSING_VERIFICATION_KEY_FILE: ${AI_D2_CONTEXT_KEY_CONTAINER_PATH:-}
+      SERVICE_DESK_CONTEXT_ENABLED: ${SERVICE_DESK_CONTEXT_ENABLED:-false}
+      SERVICE_DESK_CONTEXT_MODE: ${SERVICE_DESK_CONTEXT_MODE:-DISABLED}
+      SERVICE_DESK_CONTEXT_POLICY_BUNDLE_DIGEST: ${SERVICE_DESK_CONTEXT_POLICY_BUNDLE_DIGEST:-}
+      SERVICE_DESK_CONTEXTUAL_ASSESSMENT_ENABLED: ${SERVICE_DESK_CONTEXTUAL_ASSESSMENT_ENABLED:-false}
+      SERVICE_DESK_CONTEXTUAL_ASSESSMENT_POLICY_DIGEST: ${SERVICE_DESK_CONTEXTUAL_ASSESSMENT_POLICY_DIGEST:-}
+      SERVICE_DESK_INTAKE_NEW_TICKETS: ${SERVICE_DESK_INTAKE_NEW_TICKETS:-false}
+      INTELLIGENCE_TRIAGE_BASE_URL: http://intelligence:8000
+    volumes:
+      - ${AI_D2_RIGHTS_DIRECTORY:?Recipient rights directory required}:/run/ai-rights:ro
+    secrets:
+      - source: ai07-classification-token
+        target: classification-token
+    networks: [default, model-private]
+  intelligence:
+    image: ${AI_D2_TRIAGE_IMAGE:?Verified CPU sidecar image required}
+    pull_policy: never
+  frontend:
+    image: ${AI_D2_FRONTEND_IMAGE:?Verified frontend image required}
+    pull_policy: never
+  gateway:
+    image: ${AI_D2_GATEWAY_IMAGE:?Verified gateway image required}
+    pull_policy: never
+  postgres:
+    image: ${AI_D2_POSTGRES_IMAGE:?Verified database image required}
+    pull_policy: never
+  keycloak:
+    image: ${AI_D2_KEYCLOAK_IMAGE:?Verified identity image required}
+    pull_policy: never
+secrets:
+  ai07-classification-token:
+    file: ${AI07_QWEN_TOKEN_FILE:?Recipient-generated token file required}
+networks:
+  model-private:
+    internal: true

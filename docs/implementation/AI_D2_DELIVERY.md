@@ -9,19 +9,21 @@ R1/R3 ở PR #52 là dependency bên backend, không triển khai lại trong nh
 | C0 | Pin baseline, ADR, phạm vi và acceptance | Đã ghi nhận |
 | C1 | Server review admission, CAS, timeout/manual/rework | 17 PostgreSQL tests PASS (15 admission + 2 upgrades) |
 | C2 | Sealed final contextual assessment và worker single-flight | 67 focused tests PASS; 13 final pipeline cases |
-| C3 | Duplicate retrieval/incident, feedback và workflow/UI | Chưa kiểm chứng |
+| C3 | Duplicate retrieval/incident, feedback và workflow/UI | Canonical + true-wait + final: 27 tests PASS; UI ở C6 |
 | C3a | Process-key riêng: intake trước review, handoff và rework | 65 regression tests PASS, gồm 6 true-wait cases |
-| C4 | Full model image, provenance, transport secret và Compose | Image offline + GPU HTTP synthetic PASS; tooling đang hoàn thiện |
-| C5 | Offline distribution/onboarding/acceptance | Chưa kiểm chứng |
+| C4 | Full model image, provenance, transport secret và Compose | Image offline + GPU HTTP synthetic PASS; transport/Compose tests PASS |
+| C5 | Offline distribution/onboarding/acceptance | Tooling có tests; bàn giao thật chờ approval và máy nhận sạch |
+| C6 | Intake/review/canonical UI và legacy compatibility | 83 unit + 19 browser tests PASS; build/typecheck/lint PASS |
 
 ET vẫn là bảng mặc định và coordinator override. Không thêm effortSize hay model ET.
 Auto canonical merge, chất lượng Gold, SLA/notification của toàn bộ ticket spec và
 production GO cần quyết định/receipt độc lập; không dùng synthetic để thay thế.
 
 Artifact local tìm thấy: adapter safetensors và tokenizer tại
-`.local/ai07_qwen35_silver_lora_results`. Base serving snapshot và receipt quyền
-phân phối chưa được xác minh. Người dùng đã cho phép tải base phục vụ từ Hugging Face;
-đang tải revision `23c69c53358a07516b5827588b3fdb12ae78fd65`. Không commit model,
+`.local/ai07_qwen35_silver_lora_results`. Base serving snapshot đã tải và kiểm checksum
+theo quyền người dùng cho phép từ Hugging Face, revision
+`23c69c53358a07516b5827588b3fdb12ae78fd65`. Quyền phân phối adapter chờ issuer.
+Không commit model,
 prediction, dữ liệu hoặc secrets.
 
 ## C1 — Admission trước review
@@ -143,3 +145,21 @@ Frontend: typecheck, lint, production build pass; **83 unit tests**, **19 browse
 tests** pass. Browser test chạy Vite source ở cổng riêng 5175, không tái dùng
 frontend Docker cũ ở 5173. Các test browser dùng API/session synthetic, không
 thay thế nghiệm thu Keycloak/gateway/model thật.
+
+## C4 — Image model tự chứa và transport
+
+Wrapper image chứa base/adapter/tokenizer, policy mapping/guard, license base và
+supplement; chỉ copy file allowlist đã kiểm manifest. `runtimeIdentity` vẫn là
+code image config ID, wrapper config ID và registry digest được ghi bên ngoài
+để tránh vòng hash. Offline verifier chạy không mạng/không mount model. Runtime
+non-root, read-only, chỉ mount token file; Compose model nằm trên mạng internal,
+chỉ backend dùng chung mạng đó và không có host port.
+
+Java hỗ trợ token/key file có giới hạn kích thước, từ chối nguồn inline đồng thời
+với file; lỗi không chứa secret. Giữ constructor cũ cho callers hiện có. Scope
+HMAC grant vẫn do issuer cấp độc lập. Năm Python boundary tests, Compose resolution
+và Java secret/HTTP tests pass. GPU HTTP thật: HARDWARE/PROPOSE, score null, 724.697
+ms cho fixture bàn phím; bad bearer 403, unknown schema 502.
+
+Hướng dẫn và lệnh cụ thể: [AI_D2_PORTABLE_DOCKER_VI.md](AI_D2_PORTABLE_DOCKER_VI.md).
+Receipt private trong `.local/ai07/d2`; chưa publish registry và chưa phân phối kit.

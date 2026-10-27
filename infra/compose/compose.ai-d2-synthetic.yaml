@@ -1,0 +1,11 @@
+# Fixed synthetic diagnostics only. This overlay cannot authorize customer inference.
+services:
+  platform:
+    environment:
+      SERVICE_DESK_CLASSIFIER_MODE: DISABLED
+      SERVICE_DESK_CONTEXT_ENABLED: 'false'
+      SERVICE_DESK_CONTEXT_MODE: DISABLED
+      SERVICE_DESK_CONTEXTUAL_ASSESSMENT_ENABLED: 'false'
+      SERVICE_DESK_INTAKE_NEW_TICKETS: 'true'
+      SERVICE_DESK_INTAKE_TRUE_WAIT: 'true'
+      SERVICE_DESK_INTAKE_TIMEOUT_SECONDS: '60'

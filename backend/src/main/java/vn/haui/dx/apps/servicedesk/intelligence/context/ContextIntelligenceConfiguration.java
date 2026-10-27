@@ -18,7 +18,9 @@ public class ContextIntelligenceConfiguration {
             @Value("${serviceDesk.context.mode:DISABLED}") Mode mode,
             @Value("${serviceDesk.context.policy-bundle-digest:}") String digest,
             @Value("${serviceDesk.context.processing-receipt:}") String receipt,
-            @Value("${serviceDesk.context.verification-key:}") String key) {
-        return new Settings(enabled, mode, digest, receipt, key);
+            @Value("${serviceDesk.context.verification-key:}") String key,
+            @Value("${serviceDesk.context.verification-key-file:}") String keyFile) {
+        return new Settings(enabled, mode, digest, receipt,
+                vn.haui.dx.hpdi.common.api.SecretFiles.resolve(key, keyFile));
     }
 }
