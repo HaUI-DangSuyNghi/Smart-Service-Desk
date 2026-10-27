@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @EnabledIfEnvironmentVariable(named = "FILE_TEST_JDBC_URL", matches = ".+/file_storage")
 class ServiceDeskMigrationIntegrationTest {
     @ParameterizedTest
-    @ValueSource(ints = {9, 10, 11, 12, 13})
+    @ValueSource(ints = {9, 10, 11, 12, 13, 14})
     void upgradesDevelopWithoutChangingPersistedWork(int baselineVersion) {
         var source = new DriverManagerDataSource(System.getenv("FILE_TEST_JDBC_URL"),
                 "workflow", System.getenv("FILE_TEST_DB_PASSWORD"));
@@ -52,7 +52,7 @@ class ServiceDeskMigrationIntegrationTest {
                 ? jdbc.queryForList("select * from " + schema + ".servicedesk_assessment_history where ticket_id=?", ticket) : null;
 
         var upgraded = Flyway.configure().dataSource(source).schemas(schema).load();
-        assertEquals(14 - baselineVersion, upgraded.migrate().migrationsExecuted);
+        assertEquals(15 - baselineVersion, upgraded.migrate().migrationsExecuted);
         assertTrue(upgraded.validateWithResult().validationSuccessful);
         var after = jdbc.queryForMap("select * from " + schema + ".servicedesk_ticket where id=?", ticket);
         if (baselineVersion < 11) assertEquals(0L, after.remove("context_revision"));

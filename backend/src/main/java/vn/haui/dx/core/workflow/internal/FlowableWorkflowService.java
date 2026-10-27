@@ -150,17 +150,26 @@ public final class FlowableWorkflowService implements WorkflowService {
 
     @Override
     public Page<TaskExecution> queue(String workspace, String assignee, PageRequest page) {
+        return queue(workspace, assignee, page, false);
+    }
+
+    @Override
+    public Page<TaskExecution> workspaceQueue(String workspace, PageRequest page) {
+        return queue(workspace, null, page, true);
+    }
+
+    private Page<TaskExecution> queue(String workspace, String assignee, PageRequest page, boolean all) {
         var user = member(workspace);
         validPage(page);
         String subject = assignee == null ? user.sub() : assignee;
         text(subject, 100, "assignee");
-        WorkspacePermissions.require(user, directory, workspace, user.sub().equals(subject) ? "task:handle" : "task:assign");
-        if (!user.sub().equals(subject) && !user.hasRole(workspace, WorkspaceRole.COORDINATOR))
+        WorkspacePermissions.require(user, directory, workspace, !all && user.sub().equals(subject) ? "task:handle" : "task:assign");
+        if ((all || !user.sub().equals(subject)) && !user.hasRole(workspace, WorkspaceRole.COORDINATOR))
             throw CoreException.forbidden("Coordinator required");
         var predicates = new ArrayList<String>();
         var parameters = new ArrayList<Object>();
         parameters.add(workspace);
-        parameters.add(subject);
+        if (!all) parameters.add(subject);
         registry.executionTasks().forEach((process, keys) -> keys.forEach(key -> {
             predicates.add("(t.proc_def_id_=? and t.task_def_key_=?)");
             parameters.add(registry.definitionId(process));
@@ -168,7 +177,7 @@ public final class FlowableWorkflowService implements WorkflowService {
         }));
         if (predicates.isEmpty()) return new Page<>(List.of(), page.page(), page.size(), 0);
         String from = " from act_ru_task t join process_scope s on s.id=t.proc_inst_id_";
-        String where = " where s.workspace=? and t.assignee_=? and s.owner<>t.assignee_ and t.suspension_state_=1 and ("
+        String where = " where s.workspace=?" + (all ? "" : " and t.assignee_=?") + " and s.owner<>t.assignee_ and t.suspension_state_=1 and ("
             + String.join(" or ", predicates) + ")";
         return transaction.execute(status -> {
             long total = jdbc.queryForObject("select count(*)" + from + where, Long.class, parameters.toArray());
@@ -331,6 +340,7 @@ public final class FlowableWorkflowService implements WorkflowService {
             candidate(user, workspace, task);
             registry.beforeAssign(workspace, (String) scope.get("process_key"), task.getProcessInstanceId(), task.getTaskDefinitionKey(), user.sub());
             engine.getTaskService().claim(taskId, user.sub());
+            registry.afterAssign(workspace, (String) scope.get("process_key"), task.getProcessInstanceId(), task.getTaskDefinitionKey(), user.sub());
             // Ghi kèm processKey để nhật ký hiện được tên quy trình mà không phải tra lại
             audit.record("task.claim", "task", taskId, workspace,
                 Map.of("processInstanceId", task.getProcessInstanceId(), "processKey", scope.get("process_key")));
@@ -485,6 +495,8 @@ public final class FlowableWorkflowService implements WorkflowService {
                 engine.getTaskService().removeVariableLocal(taskId, "pendingNote");
             }
             engine.getTaskService().setAssignee(taskId, assignee);
+            if (!assignee.equals(previous))
+                registry.afterAssign(workspace, (String) scope.get("process_key"), task.getProcessInstanceId(), task.getTaskDefinitionKey(), assignee);
             Map<String, Object> details = new HashMap<>();
             details.put("processInstanceId", task.getProcessInstanceId());
             details.put("taskKey", task.getTaskDefinitionKey());

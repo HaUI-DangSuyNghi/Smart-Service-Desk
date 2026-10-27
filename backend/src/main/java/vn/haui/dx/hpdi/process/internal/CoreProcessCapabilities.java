@@ -17,6 +17,11 @@ public class CoreProcessCapabilities implements ProcessCapability, WorkInbox, Wo
     private final WorkflowService workflow;
     public CoreProcessCapabilities(WorkflowService workflow) { this.workflow = workflow; }
     public WorkExecution.Item get(String workspace, String taskId) { return execution(workflow.execution(workspace, taskId)); }
+    public Page<WorkExecution.Item> workspaceQueue(String workspace, PageRequest page) {
+        var result = workflow.workspaceQueue(workspace, corePage(page));
+        return new Page<>(result.items().stream().map(CoreProcessCapabilities::execution).toList(),
+            result.page(), result.size(), result.total());
+    }
     public WorkExecution.Item execute(String workspace, String taskId, WorkExecution.Action action, String reason, String note) {
         if (action == null) throw vn.haui.dx.hpdi.common.api.CapabilityException.validation("action is required");
         if (action == WorkExecution.Action.PAUSE) {

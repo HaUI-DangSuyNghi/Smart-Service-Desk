@@ -1,0 +1,155 @@
+{
+  "date": "2026-10-27",
+  "baseline": "217296d7bc2381b0df98a16c05b1012f007f338f",
+  "linux": {
+    "full": {
+      "failures": 0,
+      "profile": "full",
+      "errors": 0,
+      "tests": 640,
+      "skipped": 0
+    },
+    "core-only": {
+      "failures": 0,
+      "profile": "core-only",
+      "errors": 0,
+      "tests": 106,
+      "skipped": 0
+    },
+    "second-domain": {
+      "failures": 0,
+      "profile": "second-domain",
+      "errors": 0,
+      "tests": 33,
+      "skipped": 0
+    }
+  },
+  "windowsFull": {
+    "failures": 0,
+    "profile": "full",
+    "errors": 3,
+    "tests": 640,
+    "skipped": 0
+  },
+  "keycloakSignedHttp": {
+    "stack": "PostgreSQL 16.6 / Flowable 7.1 / Keycloak 26.0.7 / signed JWT / direct HTTP, no gateway",
+    "checks": [
+      {
+        "name": "off-duty yields no recommendation",
+        "status": "PASS"
+      },
+      {
+        "name": "real current support-group membership",
+        "status": "PASS"
+      },
+      {
+        "name": "GET polling is stable and read-only",
+        "status": "PASS"
+      },
+      {
+        "name": "support-group revocation is fresh",
+        "status": "PASS"
+      },
+      {
+        "name": "assignment rechecks real revoked membership",
+        "status": "PASS"
+      },
+      {
+        "name": "disabled Keycloak account is excluded",
+        "status": "PASS"
+      },
+      {
+        "name": "coordinator alone commits assignment",
+        "status": "PASS"
+      },
+      {
+        "name": "actual daily assignment and workload",
+        "status": "PASS"
+      }
+    ],
+    "status": "PASS",
+    "suggestion": {
+      "taskId": "0de36e2e-d1f4-11f1-b1e9-2664b208259e",
+      "group": "hardware",
+      "estimateMinutes": 90,
+      "recommended": "b5a318c4-d38c-4acd-ab78-cc3bd7f1efc1",
+      "candidates": [
+        {
+          "subject": "b5a318c4-d38c-4acd-ab78-cc3bd7f1efc1",
+          "displayName": "Tr\u1ea7n Th\u1ecb B\u00ecnh",
+          "onDuty": true,
+          "loadMinutes": 90,
+          "assignedToday": 1,
+          "shiftRemainingMinutes": null,
+          "recommended": true,
+          "excludedReason": null
+        }
+      ],
+      "reason": "Minimum-load band (<15 minutes from minimum), then fewest assignments today, then committed-assignment round-robin; selected b5a318c4-d38c-4acd-ab78-cc3bd7f1efc1 with 90 load minutes and 1 assignments today"
+    }
+  },
+  "contracts": {
+    "contracts/hpdi/openapi.yaml": {
+      "status": "FAIL_BASELINE",
+      "baseline": [
+        {
+          "path": "components/schemas/KnowledgePage",
+          "message": "{'allOf': [{'$ref': '#/components/schemas/PageMeta'}, {'type': 'object', 'required': ['items'], 'properties': {'items': {'type': 'array', 'items': {'$ref': '#/components/schemas/KnowledgeSummary'}}, 'description': 'Authorized exact bytes, B"
+        },
+        {
+          "path": "allOf/1/properties/description",
+          "message": "'Authorized exact bytes, Base64 encoded' is not of type 'object'"
+        },
+        {
+          "path": "",
+          "message": "'Authorized exact bytes, Base64 encoded' is not of type 'object', 'boolean'"
+        }
+      ],
+      "current": [
+        {
+          "path": "components/schemas/KnowledgePage",
+          "message": "{'allOf': [{'$ref': '#/components/schemas/PageMeta'}, {'type': 'object', 'required': ['items'], 'properties': {'items': {'type': 'array', 'items': {'$ref': '#/components/schemas/KnowledgeSummary'}}, 'description': 'Authorized exact bytes, B"
+        },
+        {
+          "path": "allOf/1/properties/description",
+          "message": "'Authorized exact bytes, Base64 encoded' is not of type 'object'"
+        },
+        {
+          "path": "",
+          "message": "'Authorized exact bytes, Base64 encoded' is not of type 'object', 'boolean'"
+        }
+      ],
+      "unchanged": true
+    },
+    "contracts/hpdi/openapi-target.yaml": {
+      "status": "FAIL_BASELINE",
+      "baseline": [
+        {
+          "path": "paths//api/hpdi/v1/workspaces/{workspace}/alerts/get/responses/200",
+          "message": "{'description': 'M\u1ed9t trang c\u1ea3nh b\u00e1o', 'content': {'application/json': {'schema': {'allOf': [{'$ref': 'openapi.yaml#/components/schemas/PageMeta'}, {'type': 'object', 'required': ['items', 'unread'], 'properties': {'unread': {'type': 'intege"
+        }
+      ],
+      "current": [
+        {
+          "path": "paths//api/hpdi/v1/workspaces/{workspace}/alerts/get/responses/200",
+          "message": "{'description': 'M\u1ed9t trang c\u1ea3nh b\u00e1o', 'content': {'application/json': {'schema': {'allOf': [{'$ref': 'openapi.yaml#/components/schemas/PageMeta'}, {'type': 'object', 'required': ['items', 'unread'], 'properties': {'unread': {'type': 'intege"
+        }
+      ],
+      "unchanged": true
+    },
+    "contracts/openapi/servicedesk.yaml": {
+      "status": "PASS",
+      "baseline": [],
+      "current": [],
+      "unchanged": true
+    }
+  },
+  "boundary": {
+    "source": "PASS",
+    "mutationTests": 43,
+    "archUnit": "PASS"
+  },
+  "httpContracts": "PASS: real MockMvc responses, live schemas, negative mutations; existing execution/assessment schemas preserved",
+  "ci": "NOT_VERIFIED: no hosted Actions result claimed",
+  "disposition": "BLOCKED for unconditional merge: baseline whole-spec errors and upgrade-day historical manual claim reconciliation"
+}

@@ -78,6 +78,9 @@ public class ProcessRegistry {
     public void beforeAssign(String workspace, String processKey, String processId, String taskKey, String subject) {
         owners.get(processKey).beforeAssign(workspace, processKey, processId, taskKey, subject);
     }
+    public void afterAssign(String workspace, String processKey, String processId, String taskKey, String subject) {
+        owners.get(processKey).afterAssign(workspace, processKey, processId, taskKey, subject);
+    }
 
     private static boolean candidateTask(UserTask task) {
         return (task.getAssignee() == null || task.getAssignee().isBlank()) && task.getCandidateUsers().isEmpty()

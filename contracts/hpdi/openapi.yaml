@@ -7,6 +7,27 @@ info:
 security:
 - bearerAuth: []
 paths:
+  /api/hpdi/v1/workspaces/{workspace}/tasks/{id}/assignment-suggestion:
+    parameters:
+    - $ref: '#/components/parameters/Workspace'
+    - name: id
+      in: path
+      required: true
+      schema: {type: string}
+    get:
+      operationId: assignmentSuggestion
+      description: Read-only Coordinator/task:assign suggestion for an active reviewed Service Desk handle task. Available only in the Service Desk assembly. Does not reserve or assign an agent. Unsupported processes return 409. Review-time preview is an application endpoint.
+      responses:
+        '200':
+          description: Current candidates and recommendation; no eligible agent or OTHER returns null recommended.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AssignmentSuggestion'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '503': {$ref: '#/components/responses/ServiceUnavailable'}
   /api/hpdi/v1/workspaces/{workspace}/duty:
     parameters:
     - $ref: '#/components/parameters/Workspace'
@@ -732,6 +753,30 @@ paths:
           $ref: '#/components/responses/NotFound'
 components:
   schemas:
+    AssignmentCandidate:
+      type: object
+      additionalProperties: false
+      required: [subject, displayName, onDuty, loadMinutes, assignedToday, recommended]
+      properties:
+        subject: {type: string}
+        displayName: {type: string}
+        onDuty: {type: boolean}
+        loadMinutes: {type: integer, format: int64, minimum: 0}
+        assignedToday: {type: integer, format: int64, minimum: 0}
+        shiftRemainingMinutes: {type: integer, minimum: 0, nullable: true, description: Not scheduled in this release; always null.}
+        recommended: {type: boolean}
+        excludedReason: {type: string, nullable: true, enum: [OFF_DUTY, IS_REQUESTER, null]}
+    AssignmentSuggestion:
+      type: object
+      additionalProperties: false
+      required: [taskId, group, estimateMinutes, candidates, reason]
+      properties:
+        taskId: {type: string}
+        group: {type: string, description: Support group or manual for OTHER.}
+        estimateMinutes: {type: integer, minimum: 1}
+        recommended: {type: string, nullable: true}
+        reason: {type: string}
+        candidates: {type: array, items: {$ref: '#/components/schemas/AssignmentCandidate'}}
     DutyStatus:
       type: object
       additionalProperties: false

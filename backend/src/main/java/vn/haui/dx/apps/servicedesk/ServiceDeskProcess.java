@@ -32,6 +32,17 @@ public class ServiceDeskProcess implements ProcessContribution {
 
     @Override public Map<String, Set<String>> executionTasks() { return Map.of(REVIEWED_KEY, Set.of("handle")); }
 
+    @Override public void afterAssign(String workspace, String processKey, String processId, String taskKey, String subject) {
+        if (!REVIEWED_KEY.equals(processKey) || !"handle".equals(taskKey)) return;
+        var group = jdbc.queryForObject("select r.category from servicedesk_review r join servicedesk_ticket t on t.id=r.ticket_id"
+            + " where t.workspace=? and t.process_instance_id=?", String.class, workspace, processId);
+        String supportGroup = TicketAssignmentEligibility.supportGroup(TicketReview.Category.valueOf(group));
+        jdbc.update("insert into servicedesk_assignment_event(workspace,process_id,subject) values(?,?,?)", workspace, processId, subject);
+        if (supportGroup != null)
+            jdbc.update("insert into servicedesk_assignment_cursor(workspace,support_group,last_subject) values(?,?,?)"
+                + " on conflict(workspace,support_group) do update set last_subject=excluded.last_subject", workspace, supportGroup, subject);
+    }
+
     @Override public void beforeComplete(String workspace, String processKey, String processId, String taskKey, String taskId, String outcome) {
         if (REVIEWED_KEY.equals(processKey) && "confirm".equals(taskKey) && "rework".equals(outcome))
             jdbc.update("update servicedesk_ticket set awaiting_review=true where workspace=? and process_instance_id=?",workspace,processId);

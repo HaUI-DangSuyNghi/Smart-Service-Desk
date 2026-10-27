@@ -7,6 +7,11 @@ import vn.haui.dx.core.workflow.api.ProcessRegistration;
 import vn.haui.dx.hpdi.process.api.ProcessContribution;
 @Component
 public class ContributionRegistry implements ProcessRegistration {
+    @Override public void afterAssign(String workspace, String processKey, String processId, String taskKey, String subject) {
+        contributions.stream().filter(contribution -> contribution.definitions().stream()
+            .anyMatch(definition -> definition.processKey().equals(processKey))).findFirst().orElseThrow()
+            .afterAssign(workspace, processKey, processId, taskKey, subject);
+    }
     private final List<ProcessPolicy> policies;
     private final List<ProcessContribution> contributions;
     private final java.util.Map<String, java.util.Set<String>> executionTasks;
