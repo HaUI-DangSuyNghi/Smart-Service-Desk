@@ -60,8 +60,13 @@ public class TicketReviewService implements WorkProjection {
             .orElseThrow(() -> CapabilityException.conflict("Ticket is not awaiting review"));
         intake.approveReview(workspace, id, decision.expectedContextRevision(), decision.expectedIntakeVersion(), review.id());
         int defaults = TicketReview.defaultMinutes(decision.category(), decision.priority());
+        var handover = jdbc.queryForList("select r.estimate_minutes,r.estimate_basis from servicedesk_work_release h join servicedesk_review r on r.ticket_id=h.ticket_id"
+            + " where h.workspace=? and h.review_task_id=?", workspace, review.id());
+        if (!handover.isEmpty()) defaults = ((Number) handover.get(0).get("estimate_minutes")).intValue();
         int minutes = decision.estimateMinutes() == null ? defaults : decision.estimateMinutes();
         String basis = decision.estimateMinutes() == null ? "DEFAULT" : "COORDINATOR";
+        String initialBasis = handover.isEmpty() ? "DEFAULT" : (String) handover.get(0).get("estimate_basis");
+        if (decision.estimateMinutes() == null) basis = initialBasis;
         jdbc.update("update servicedesk_ticket set awaiting_review=false where id=?",id);
         jdbc.update("delete from servicedesk_review where ticket_id=?",id);
         jdbc.update("insert into servicedesk_review(ticket_id,category,priority,estimate_minutes,estimate_basis,assignee,review_task_id,reviewed_by,reason,impact,urgency)"
@@ -69,7 +74,7 @@ public class TicketReviewService implements WorkProjection {
             id, decision.category().name(), decision.priority().name(), minutes, basis, decision.assignee(), review.id(), actor.subject(), decision.reason(), decision.impact(), decision.urgency());
         intake.feedback(workspace, id, review.id(), decision, actor.subject(), decision.reason());
         jdbc.update("insert into servicedesk_estimate_history(ticket_id,review_task_id,category,priority,assignee,minutes,basis,changed_by,reason) values(?,?,?,?,?,?,?,?,?)",
-            id, review.id(), decision.category().name(), decision.priority().name(), decision.assignee(), defaults, "DEFAULT", actor.subject(), decision.reason());
+            id, review.id(), decision.category().name(), decision.priority().name(), decision.assignee(), defaults, initialBasis, actor.subject(), decision.reason());
         if (decision.estimateMinutes() != null)
             jdbc.update("insert into servicedesk_estimate_history(ticket_id,review_task_id,category,priority,assignee,minutes,basis,changed_by,reason) values(?,?,?,?,?,?,?,?,?)",
                 id, review.id(), decision.category().name(), decision.priority().name(), decision.assignee(), minutes, basis, actor.subject(), decision.reason());
@@ -133,7 +138,7 @@ public class TicketReviewService implements WorkProjection {
         parameters.add(ServiceDeskProcess.INTAKE_KEY);
         executions.forEach(item -> parameters.add(item.task().processInstanceId()));
         var rows = jdbc.queryForList("select t.process_instance_id,t.title,t.worked_millis,r.priority,r.estimate_minutes,r.estimate_basis,"
-            + " (select greatest(count(distinct h.review_task_id)-1,0) from servicedesk_estimate_history h where h.ticket_id=t.id) as reopened"
+            + " (select greatest(count(distinct h.review_task_id)-1-(select count(*) from servicedesk_work_release x where x.ticket_id=t.id),0) from servicedesk_estimate_history h where h.ticket_id=t.id) as reopened"
             + " from servicedesk_ticket t join servicedesk_review r on r.ticket_id=t.id where t.workspace=? and t.process_key in (?,?)"
             + " and t.process_instance_id in (" + String.join(",", Collections.nCopies(executions.size(), "?")) + ")", parameters.toArray());
         var byProcess = new HashMap<String,Map<String,Object>>();
@@ -154,7 +159,7 @@ public class TicketReviewService implements WorkProjection {
     private QueueItem projected(WorkExecution.Item execution, Map<String,Object> row) {
         int minutes=((Number)row.get("estimate_minutes")).intValue();
         long worked=(execution.workedMillis()+((Number)row.get("worked_millis")).longValue())/60_000;
-        long remaining="NOT_STARTED".equals(execution.workState()) ? minutes : Math.max(10,minutes-worked);
+        long remaining="NOT_STARTED".equals(execution.workState()) && worked == 0 ? minutes : Math.max(10,minutes-worked);
         if ("PENDING".equals(execution.workState())) remaining=(remaining+1)/2;
         int reopened=((Number)row.get("reopened")).intValue();
         return new QueueItem(execution.task(),(String)row.get("title"),execution.workState(),(String)row.get("priority"),

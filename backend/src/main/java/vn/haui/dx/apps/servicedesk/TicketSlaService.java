@@ -30,7 +30,35 @@ public class TicketSlaService {
     public Instant now() { return clock.instant(); }
 
     @Transactional(propagation = Propagation.MANDATORY)
+    public void released(String workspace, String taskId) {
+        var states = jdbc.query("select * from servicedesk_sla where workspace=? and handle_task_id=? for update", this::map, workspace, taskId);
+        if (states.isEmpty()) throw vn.haui.dx.hpdi.common.api.CapabilityException.conflict("SLA snapshot required for handover");
+        var state = states.get(0);
+        var at = clock.instant();
+        var due = state.resolveBy();
+        if (state.pausedAt() != null) {
+            var target = state.policy().targets().get(state.base());
+            due = state.policy().calendar().add(due, state.policy().calendar().between(state.pausedAt(), at, target.continuous()), target.continuous());
+        }
+        jdbc.update("update servicedesk_sla set released_at=?,paused_at=null,resolve_by=? where workspace=? and handle_task_id=?",
+            timestamp(at), timestamp(due), workspace, taskId);
+        activity(workspace, state.ticketId(), taskId, "released", false);
+    }
+
+    @Transactional(propagation = Propagation.MANDATORY)
     public void initialize(String workspace, UUID ticketId, String processId, String reviewId, String taskId, String priority) {
+        var previous = jdbc.query("select s.* from servicedesk_sla s join servicedesk_work_release h on h.workspace=s.workspace and h.task_id=s.handle_task_id"
+            + " where h.workspace=? and h.review_task_id=?", this::map, workspace, reviewId);
+        if (!previous.isEmpty()) {
+            var state = previous.get(0);
+            if (!state.base().name().equals(priority)) throw vn.haui.dx.hpdi.common.api.CapabilityException.conflict("Handover preserves SLA base priority");
+            jdbc.update("insert into servicedesk_sla(workspace,ticket_id,process_instance_id,review_task_id,handle_task_id,policy,base_priority,priority,approved_at,start_by,resolve_by,first_started_at,escalated_at,checked_at)"
+                + " select workspace,ticket_id,process_instance_id,?,?,policy,base_priority,priority,approved_at,start_by,resolve_by,first_started_at,escalated_at,clock_timestamp()"
+                + " from servicedesk_sla where workspace=? and handle_task_id=?", reviewId, taskId, workspace, state.taskId());
+            scheduling.reconcile(workspace, processId, taskId, () -> new WorkScheduling.Schedule((state.priority().ordinal() + 1) * 25, state.resolveBy()));
+            activity(workspace, ticketId, taskId, "continued", false);
+            return;
+        }
         var approved = clock.instant();
         var base = Priority.valueOf(priority);
         var target = policy.targets().get(base);

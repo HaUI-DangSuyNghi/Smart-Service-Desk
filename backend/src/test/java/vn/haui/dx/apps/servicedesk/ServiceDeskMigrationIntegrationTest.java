@@ -65,7 +65,7 @@ class ServiceDeskMigrationIntegrationTest {
     }
 
     @ParameterizedTest
-    @ValueSource(ints = {9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20})
+    @ValueSource(ints = {9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22})
     void upgradesDevelopWithoutChangingPersistedWork(int baselineVersion) {
         var source = new DriverManagerDataSource(System.getenv("FILE_TEST_JDBC_URL"),
                 "workflow", System.getenv("FILE_TEST_DB_PASSWORD"));
@@ -104,7 +104,7 @@ class ServiceDeskMigrationIntegrationTest {
                 ? jdbc.queryForList("select * from " + schema + ".servicedesk_assessment_history where ticket_id=?", ticket) : null;
 
         var upgraded = Flyway.configure().dataSource(source).schemas(schema).load();
-        assertEquals(22 - baselineVersion, upgraded.migrate().migrationsExecuted);
+        assertEquals(24 - baselineVersion, upgraded.migrate().migrationsExecuted);
         assertEquals(0L, jdbc.queryForObject("select count(*) from " + schema + ".servicedesk_sla", Long.class));
         assertEquals(0L, jdbc.queryForObject("select count(*) from " + schema + ".hpdi_alert_event", Long.class));
         assertEquals(0L, jdbc.queryForObject("select count(*) from " + schema + ".hpdi_alert_recipient", Long.class));

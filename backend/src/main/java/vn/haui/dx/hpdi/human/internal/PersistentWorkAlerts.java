@@ -13,6 +13,10 @@ import vn.haui.dx.hpdi.process.api.ProcessContribution;
 
 @Service
 public class PersistentWorkAlerts implements WorkAlerts {
+    @Transactional
+    public void suppressAgent(String workspace, String taskId) {
+        jdbc.update("update hpdi_alert_event set agent_suppressed=true where workspace=? and task_id=? and delivered_at is null", workspace, taskId);
+    }
     private final JdbcTemplate jdbc;
     private final HumanContext humans;
     private final PermissionGuard permissions;

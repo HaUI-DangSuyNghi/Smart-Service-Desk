@@ -15,32 +15,7 @@ security:
 paths:
   # ---------- R4: hàng đợi ----------
   /api/hpdi/v1/workspaces/{workspace}/tasks/{id}/release:
-    parameters:
-      - {$ref: 'openapi.yaml#/components/parameters/Workspace'}
-      - {$ref: '#/components/parameters/TaskId'}
-    post:
-      operationId: releaseWork
-      description: >-
-        Trả việc về điều phối viên (R6: sai tổ…; R3: hết ca bàn giao). Bắt buộc lý do;
-        bàn giao phải ghi đã làm đến đâu. Việc quay lại hàng chờ duyệt, thời gian đã làm được giữ.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              additionalProperties: false
-              required: [reason, note]
-              properties:
-                reason: {type: string, enum: [WRONG_GROUP, HANDOVER, OTHER]}
-                note: {type: string, minLength: 1, maxLength: 1000}
-      responses:
-        '204': {description: Đã trả việc}
-        '400': {$ref: 'openapi.yaml#/components/responses/BadRequest'}
-        '401': {$ref: 'openapi.yaml#/components/responses/Unauthorized'}
-        '403': {$ref: 'openapi.yaml#/components/responses/Forbidden'}
-        '404': {$ref: 'openapi.yaml#/components/responses/NotFound'}
-        '409': {$ref: 'openapi.yaml#/components/responses/Conflict'}
+    $ref: 'openapi.yaml#/paths/~1api~1hpdi~1v1~1workspaces~1{workspace}~1tasks~1{id}~1release'
 
   # ---------- R2: đề xuất người ----------
   /api/hpdi/v1/workspaces/{workspace}/tasks/{id}/assignment-suggestion:
@@ -66,90 +41,13 @@ paths:
 
   # ---------- R2: xin sửa ET ----------
   /api/hpdi/v1/workspaces/{workspace}/tasks/{id}/estimate-requests:
-    parameters:
-      - {$ref: 'openapi.yaml#/components/parameters/Workspace'}
-      - {$ref: '#/components/parameters/TaskId'}
-    post:
-      operationId: requestEstimateChange
-      description: Người đang giữ việc xin sửa ET kèm lý do. 409 nếu đã có yêu cầu đang chờ cho việc này.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              additionalProperties: false
-              required: [proposedMinutes, reason]
-              properties:
-                proposedMinutes: {type: integer, minimum: 1, maximum: 10080}
-                reason: {type: string, minLength: 1, maxLength: 1000}
-      responses:
-        '201':
-          description: Yêu cầu đã tạo, chờ điều phối viên
-          content:
-            application/json:
-              schema: {$ref: '#/components/schemas/EstimateRequest'}
-        '400': {$ref: 'openapi.yaml#/components/responses/BadRequest'}
-        '401': {$ref: 'openapi.yaml#/components/responses/Unauthorized'}
-        '403': {$ref: 'openapi.yaml#/components/responses/Forbidden'}
-        '404': {$ref: 'openapi.yaml#/components/responses/NotFound'}
-        '409': {$ref: 'openapi.yaml#/components/responses/Conflict'}
+    $ref: 'openapi.yaml#/paths/~1api~1hpdi~1v1~1workspaces~1{workspace}~1tasks~1{id}~1estimate-requests'
 
   /api/hpdi/v1/workspaces/{workspace}/estimate-requests:
-    parameters:
-      - {$ref: 'openapi.yaml#/components/parameters/Workspace'}
-    get:
-      operationId: listEstimateRequests
-      description: Điều phối viên xem yêu cầu sửa ET (quyền task:assign); kỹ thuật viên chỉ thấy yêu cầu của mình. Mới nhất trước.
-      parameters:
-        - {name: status, in: query, required: false, schema: {$ref: '#/components/schemas/EstimateRequestStatus'}}
-        - {$ref: 'openapi.yaml#/components/parameters/Page'}
-        - {$ref: 'openapi.yaml#/components/parameters/Size'}
-      responses:
-        '200':
-          description: Một trang yêu cầu
-          content:
-            application/json:
-              schema:
-                allOf:
-                  - {$ref: 'openapi.yaml#/components/schemas/PageMeta'}
-                  - type: object
-                    required: [items]
-                    properties:
-                      items: {type: array, items: {$ref: '#/components/schemas/EstimateRequest'}}
-        '400': {$ref: 'openapi.yaml#/components/responses/BadRequest'}
-        '401': {$ref: 'openapi.yaml#/components/responses/Unauthorized'}
-        '403': {$ref: 'openapi.yaml#/components/responses/Forbidden'}
+    $ref: 'openapi.yaml#/paths/~1api~1hpdi~1v1~1workspaces~1{workspace}~1estimate-requests'
 
   /api/hpdi/v1/workspaces/{workspace}/estimate-requests/{requestId}/decision:
-    parameters:
-      - {$ref: 'openapi.yaml#/components/parameters/Workspace'}
-      - {name: requestId, in: path, required: true, schema: {type: string, format: uuid}}
-    post:
-      operationId: decideEstimateRequest
-      description: Điều phối viên đồng ý (ET đổi thành proposedMinutes, nguồn COORDINATOR) hoặc từ chối. 409 nếu đã quyết.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              additionalProperties: false
-              required: [approved]
-              properties:
-                approved: {type: boolean}
-                note: {type: string, maxLength: 1000}
-      responses:
-        '200':
-          description: Yêu cầu sau khi quyết
-          content:
-            application/json:
-              schema: {$ref: '#/components/schemas/EstimateRequest'}
-        '400': {$ref: 'openapi.yaml#/components/responses/BadRequest'}
-        '401': {$ref: 'openapi.yaml#/components/responses/Unauthorized'}
-        '403': {$ref: 'openapi.yaml#/components/responses/Forbidden'}
-        '404': {$ref: 'openapi.yaml#/components/responses/NotFound'}
-        '409': {$ref: 'openapi.yaml#/components/responses/Conflict'}
+    $ref: 'openapi.yaml#/paths/~1api~1hpdi~1v1~1workspaces~1{workspace}~1estimate-requests~1{requestId}~1decision'
 
   # ---------- R3: ca trực ----------
   /api/hpdi/v1/workspaces/{workspace}/duty:

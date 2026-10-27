@@ -237,6 +237,48 @@ public final class FlowableWorkflowService implements WorkflowService {
     }
 
     @Override
+    public void release(String workspace, String taskId, String reason, String note) {
+        var user = member(workspace);
+        text(reason, 100, "reason");
+        text(note, 1000, "note");
+        transaction.executeWithoutResult(status -> {
+            var task = lockedTask(workspace, taskId);
+            var reference = scope(workspace, task.getProcessInstanceId());
+            String key = (String) reference.get("process_key");
+            WorkspacePermissions.require(user, directory, workspace, "task:handle");
+            if (!user.sub().equals(task.getAssignee()) || user.sub().equals(reference.get("owner")))
+                throw CoreException.forbidden("Independent task assignee required");
+            candidate(user, workspace, task);
+            String target = registry.releaseTarget(key, task.getTaskDefinitionKey());
+            directory.refresh(workspace);
+            if (directory.members(workspace).stream().noneMatch(person -> person.sub().equals(user.sub())
+                    && person.roles().stream().anyMatch(role -> user.hasRole(workspace, role)
+                        && view(task).candidateGroups().contains(workspace + ":" + role.value()))))
+                throw CoreException.forbidden("Current workspace membership required");
+            if (target == null || task.isSuspended() || !registry.executionTask(key, task.getTaskDefinitionKey()))
+                throw CoreException.conflict("Task does not support release");
+            var active = engine.getTaskService().createTaskQuery().processInstanceId(task.getProcessInstanceId()).list();
+            if (active.size() != 1) throw CoreException.conflict("Release requires a single active work task");
+            long now = Instant.now().toEpochMilli();
+            if (executionState(taskId) == TaskExecution.State.IN_PROGRESS) closeWorkInterval(workspace, task, now);
+            long worked = execution(task, now).workedMillis();
+            engine.getTaskService().setVariableLocal(taskId, "outcome", "released");
+            engine.getTaskService().setVariableLocal(taskId, "releaseReason", reason);
+            engine.getIdentityService().setAuthenticatedUserId(user.sub());
+            try { engine.getTaskService().addComment(taskId, task.getProcessInstanceId(), note); }
+            finally { engine.getIdentityService().setAuthenticatedUserId(null); }
+            engine.getRuntimeService().createChangeActivityStateBuilder().processInstanceId(task.getProcessInstanceId())
+                .moveActivityIdTo(task.getTaskDefinitionKey(), target).changeState();
+            var returned = engine.getTaskService().createTaskQuery().processInstanceId(task.getProcessInstanceId()).list();
+            if (returned.size() != 1 || !target.equals(returned.get(0).getTaskDefinitionKey()))
+                throw CoreException.conflict("Release did not produce the expected review task");
+            registry.afterRelease(workspace, key, task.getProcessInstanceId(), taskId, returned.get(0).getId(), worked, user.sub(), reason, note);
+            audit.record("task.release", "task", taskId, workspace, Map.of("processInstanceId", task.getProcessInstanceId(),
+                "reviewTaskId", returned.get(0).getId(), "reason", reason, "note", note, "workedMillis", worked));
+        });
+    }
+
+    @Override
     public void setPriority(String workspace, String taskId, int priority) {
         var user = member(workspace);
         if (priority < 0 || priority > 100) throw CoreException.validation("Invalid priority");

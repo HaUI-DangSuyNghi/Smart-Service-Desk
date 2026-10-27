@@ -30,9 +30,13 @@ public class AlertDelivery {
     }
     @Transactional
     public void deliver(String workspace, UUID id, Set<String> recipients) {
-        var rows = jdbc.queryForList("select id from hpdi_alert_event where workspace=? and id=? and delivered_at is null for update", workspace, id);
+        var rows = jdbc.queryForList("select * from hpdi_alert_event where workspace=? and id=? and delivered_at is null and (not agent_suppressed or coordinators) for update", workspace, id);
         if (rows.isEmpty() || recipients.isEmpty()) return;
-        for (String subject : recipients) jdbc.update("insert into hpdi_alert_recipient(workspace,event_id,subject) values(?,?,?) on conflict do nothing", workspace, id, subject);
+        var event = rows.get(0);
+        var current = recipients(workspace, (Boolean) event.get("coordinators"), Boolean.TRUE.equals(event.get("agent_suppressed")) ? null : (String) event.get("agent"));
+        for (String subject : recipients) {
+            if (current.contains(subject)) jdbc.update("insert into hpdi_alert_recipient(workspace,event_id,subject) values(?,?,?) on conflict do nothing", workspace, id, subject);
+        }
         jdbc.update("update hpdi_alert_event set delivered_at=current_timestamp where workspace=? and id=?", workspace, id);
         audit.recordSystem(workspace, new BusinessActivity("human.alert.delivered", "human.alert", id.toString(), Map.of()));
     }

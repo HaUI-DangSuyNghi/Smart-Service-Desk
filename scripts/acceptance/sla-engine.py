@@ -14,7 +14,8 @@ from pathlib import Path
 root = Path.cwd()
 intake = '--intake' in sys.argv
 alerts = '--alerts' in sys.argv
-jar = root / ('.local/r7-r8-runtime.jar' if alerts else '.local/r5-runtime.jar')
+handover = '--handover' in sys.argv
+jar = root / ('.local/r2-r6-runtime.jar' if handover else '.local/r7-r8-runtime.jar' if alerts else '.local/r5-runtime.jar')
 suffix = uuid.uuid4().hex[:10]
 network = 'r5-e2e-' + suffix
 password = uuid.uuid4().hex
@@ -125,6 +126,41 @@ try:
         reviewed = approve('HIGH', subject)
         check('approval initializes authoritative SLA', reviewed['sla'] is not None and reviewed['classification']['basePriority'] == 'HIGH')
         task = hpdi + '/tasks/' + reviewed['taskId']
+        if handover:
+            estimate = call(task + '/estimate-requests', 'user2', 'POST', {'proposedMinutes': 120, 'reason': 'Replace mainboard'})
+            report['estimateRequest'] = estimate
+            check('request does not change ET', call(path)['estimate']['minutes'] == reviewed['estimate']['minutes'])
+            docker('restart', backend_name)
+            backend = 'http://' + docker('port', backend_name, '8080/tcp')
+            wait(backend + '/actuator/health')
+            pending = call(hpdi + '/estimate-requests?status=PENDING')['items']
+            check('estimate request survives real restart', any(item['id'] == estimate['id'] for item in pending))
+            report['estimateDecision'] = call(hpdi + '/estimate-requests/' + estimate['id'] + '/decision', method='POST', data={'approved': True})
+            check('approved estimate uses canonical ET storage', call(path)['estimate'] == {'minutes': 120, 'basis': 'COORDINATOR'})
+            call(task + '/start', 'user2', 'POST')
+            call(task + '/pause', 'user2', 'POST', {'reason': 'WAITING_EXTERNAL'})
+            stale = call(task + '/estimate-requests', 'user2', 'POST', {'proposedMinutes': 180, 'reason': 'More diagnostics'})
+            call(task + '/release', 'user2', 'POST', {'reason': 'HANDOVER', 'note': 'Hardware checked; continue diagnostics'})
+            docker('restart', backend_name)
+            backend = 'http://' + docker('port', backend_name, '8080/tcp')
+            wait(backend + '/actuator/health')
+            returned = call(path)
+            check('release survives real restart without closing process', returned['state'] == 'AWAITING_REVIEW' and returned['process'] == reviewed['process'])
+            try:
+                call(hpdi + '/estimate-requests/' + stale['id'] + '/decision', method='POST', data={'approved': True})
+                raise AssertionError('Stale estimate must conflict')
+            except urllib.error.HTTPError as failure:
+                check('released task estimate is stale', failure.code == 409)
+            decision = {'category': 'HARDWARE', 'priority': 'HIGH', 'assignee': subject, 'reason': 'Continue handed-over work'}
+            if intake:
+                state = call(path + '/intake')
+                check('handover advances intake generation', state['reviewRound'] == 2 and state['status'] == 'REVIEW_RELEASED')
+                decision.update(expectedContextRevision=state['contextRevision'], expectedIntakeVersion=state['version'])
+            continued = call(path + '/review', method='POST', data=decision)
+            check('handover preserves deadline and estimate', continued['sla']['resolveBy'] == reviewed['sla']['resolveBy'] and continued['estimate']['minutes'] == 120)
+            check('handover creates one fresh handle', continued['taskId'] != reviewed['taskId'] and continued['state'] == 'ASSIGNED')
+            reviewed = continued
+            task = hpdi + '/tasks/' + reviewed['taskId']
         started = call(task + '/start', 'user2', 'POST')
         check('START freezes response result', not started['sla']['startBreached'])
         paused = call(task + '/pause', 'user2', 'POST', {'reason': 'WAITING_REQUESTER'})
@@ -187,7 +223,7 @@ except Exception as error:
     report.update(status='ERROR', error=type(error).__name__ + ': ' + str(error))
     raise
 finally:
-    (root / ('.local/r7-r8-intake-runtime.json' if alerts and intake else '.local/r7-r8-real-runtime.json' if alerts else '.local/r5-intake-runtime.json' if intake else '.local/r5-real-runtime.json')).write_text(json.dumps(report, indent=2), encoding='utf-8')
+    (root / ('.local/r2-r6-intake-runtime.json' if handover and intake else '.local/r2-r6-runtime.json' if handover else '.local/r7-r8-intake-runtime.json' if alerts and intake else '.local/r7-r8-real-runtime.json' if alerts else '.local/r5-intake-runtime.json' if intake else '.local/r5-real-runtime.json')).write_text(json.dumps(report, indent=2), encoding='utf-8')
     for name in reversed(containers):
         subprocess.run(['docker', 'rm', '-f', '-v', name], capture_output=True)
     subprocess.run(['docker', 'network', 'rm', network], capture_output=True)

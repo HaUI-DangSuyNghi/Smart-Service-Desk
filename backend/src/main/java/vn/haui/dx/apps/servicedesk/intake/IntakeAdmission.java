@@ -210,6 +210,22 @@ public class IntakeAdmission {
                 + "where t.id=a.ticket_id and t.workspace=? and t.process_instance_id=?", timeoutSeconds, workspace, processId);
     }
 
+    public void handover(String workspace, String processId, String reviewId, String actor, String reason, String note) {
+        var tickets = jdbc.queryForList("select id,context_revision from servicedesk_ticket where workspace=? and process_instance_id=? for update", workspace, processId);
+        if (tickets.isEmpty()) throw CapabilityException.notFound("Ticket not found");
+        UUID id = (UUID) tickets.get(0).get("id");
+        var state = find(workspace, id);
+        if (state == null) return;
+        if (!"REVIEWED".equals(state.status()) || state.sealedRevision() == null
+                || state.sealedRevision().longValue() != ((Number) tickets.get(0).get("context_revision")).longValue())
+            throw CapabilityException.conflict("Handover requires the current approved intake revision");
+        jdbc.update("update servicedesk_intake_admission set status='REVIEW_RELEASED',review_round=review_round+1,version=version+1,"
+            + "review_task_id=?,process_stage='review',reason='HANDOVER',updated_at=clock_timestamp() where ticket_id=?", reviewId, id);
+        var current = find(workspace, id);
+        receipt(id, UUID.randomUUID(), "HANDOVER", current, current.contextDigest(),
+            ContextPolicyCatalog.digest(reviewId + ":" + reason + ":" + note), actor, note, reviewId);
+    }
+
     public void feedback(String workspace, UUID id, String taskId, Object decision, String actor, String reason) {
         var state = find(workspace, id);
         if (state == null) return;

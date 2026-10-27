@@ -37,7 +37,8 @@ public class TicketAlerts {
     public void reviewed(String workspace, Ticket ticket, String review, String handle, TicketReview.Decision decision) {
         jdbc.update("insert into servicedesk_alert_monitor(workspace,ticket_id,process_instance_id,process_key,review_task_id,handle_task_id,category,assignee,checked_at) values(?,?,?,?,?,?,?,?,?)",
             workspace, ticket.id(), ticket.process().processInstanceId(), ticket.process().processKey(), review, handle, decision.category().name(), decision.assignee(), Timestamp.from(sla.now()));
-        if (decision.priority() == TicketReview.Priority.CRITICAL)
+        if (decision.priority() == TicketReview.Priority.CRITICAL && !Boolean.TRUE.equals(jdbc.queryForObject(
+                "select exists(select 1 from servicedesk_work_release where workspace=? and review_task_id=?)", Boolean.class, workspace, review)))
             alerts.publish(new WorkAlerts.Event(workspace, CRITICAL_NEW, CRITICAL, ticket.process().processInstanceId(), ticket.process().processKey(),
                 ticket.id().toString(), handle, review, "CRITICAL approved by Coordinator", true, decision.assignee()));
     }
@@ -54,6 +55,11 @@ public class TicketAlerts {
     @Transactional(propagation = Propagation.MANDATORY)
     public void resolved(String workspace, String task) {
         jdbc.update("update servicedesk_alert_monitor set active=false,pending_at=null where workspace=? and handle_task_id=?", workspace, task);
+    }
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void released(String workspace, String task) {
+        resolved(workspace, task);
+        alerts.suppressAgent(workspace, task);
     }
     @Transactional
     public void check(String workspace, String processId, String task, Map<String, Boolean> duty) {
