@@ -1,0 +1,29 @@
+{
+  "version": "servicedesk-readiness@0.1.0",
+  "approvalStatus": "DRAFT",
+  "maxRounds": 2,
+  "maxQuestions": 3,
+  "waitSeconds": 86400,
+  "reminderSeconds": 3600,
+  "highWaitSeconds": 1800,
+  "debounceMillis": 750,
+  "jobLeaseSeconds": 60,
+  "maxStaleRetries": 1,
+  "accountPattern": "(?:không đăng nhập|khong dang nhap|tài khoản|tai khoan|mật khẩu|mat khau|cannot log in|password reset)",
+  "safetyFlags": [
+    "SECURITY_EXPOSURE",
+    "DATA_LOSS",
+    "SAFETY"
+  ],
+  "blockedOperations": [
+    "ASSESSMENT_PROPOSAL",
+    "EXACT_DUPLICATE_ASSERTION"
+  ],
+  "workflowGateApplied": false,
+  "questions": {
+    "device.type": "Thiết bị hoặc dịch vụ nào đang gặp lỗi?",
+    "symptomCodes": "Thiết bị hoặc dịch vụ đang có biểu hiện lỗi gì?",
+    "location.room": "Sự cố đang xảy ra ở phòng nào?",
+    "device.identifier": "Thiết bị gặp lỗi có mã hoặc số máy nào?"
+  }
+}

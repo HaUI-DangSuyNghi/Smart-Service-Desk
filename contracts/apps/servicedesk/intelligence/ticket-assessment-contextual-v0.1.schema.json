@@ -1,0 +1,267 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:servicedesk:ticket-assessment-contextual-v0.1.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "contractVersion": {
+      "const": "ticket-assessment-contextual@0.1.0"
+    },
+    "ticketId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "contextRevision": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "contextDigest": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "assessmentStatus": {
+      "enum": [
+        "SHADOW",
+        "DETERMINISTIC_ONLY",
+        "ENRICHMENT_REQUIRED",
+        "REVIEW_REQUIRED",
+        "MODEL_REUSED_MATERIAL",
+        "DEGRADED"
+      ]
+    },
+    "dataReadiness": {
+      "enum": [
+        "READINESS_OK",
+        "ENRICHMENT_OPTIONAL",
+        "ENRICHMENT_REQUIRED",
+        "MANUAL_REVIEW_REQUIRED",
+        null
+      ]
+    },
+    "ai07": {
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "category": {
+              "enum": [
+                "ACCOUNT",
+                "HARDWARE",
+                "NETWORK",
+                "SOFTWARE",
+                "OTHER",
+                null
+              ]
+            },
+            "impact": {
+              "enum": [
+                "I1",
+                "I2",
+                "I3",
+                "I4",
+                null
+              ]
+            },
+            "urgency": {
+              "enum": [
+                "U1",
+                "U2",
+                "U3",
+                "U4",
+                null
+              ]
+            },
+            "priority": {
+              "enum": [
+                "LOW",
+                "MEDIUM",
+                "HIGH",
+                "CRITICAL",
+                null
+              ]
+            },
+            "riskFlags": {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 256
+              },
+              "maxItems": 64
+            },
+            "confidence": {
+              "type": "null"
+            },
+            "confidenceSemantics": {
+              "const": "NOT_CALIBRATED"
+            }
+          },
+          "required": [
+            "category",
+            "impact",
+            "urgency",
+            "priority",
+            "riskFlags",
+            "confidence",
+            "confidenceSemantics"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "evidence": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/evidence"
+      },
+      "maxItems": 64
+    },
+    "reasons": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      },
+      "maxItems": 64
+    },
+    "provenance": {
+      "anyOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "modelDigest": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "modelPolicyDigest": {
+              "anyOf": [
+                {
+                  "type": "string",
+                  "pattern": "^[0-9a-f]{64}$"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "contextualPolicyDigest": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "assessmentPolicyDigest": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "inputDigest": {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            "evidenceStatus": {
+              "const": "USER_REPORTED_NOT_VERIFIED"
+            }
+          },
+          "required": [
+            "modelDigest",
+            "modelPolicyDigest",
+            "contextualPolicyDigest",
+            "assessmentPolicyDigest",
+            "inputDigest",
+            "evidenceStatus"
+          ]
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "needsReview": {
+      "const": true
+    },
+    "operationalAuthority": {
+      "const": false
+    },
+    "workflowGateApplied": {
+      "const": false
+    }
+  },
+  "required": [
+    "contractVersion",
+    "ticketId",
+    "contextRevision",
+    "contextDigest",
+    "assessmentStatus",
+    "dataReadiness",
+    "ai07",
+    "evidence",
+    "reasons",
+    "provenance",
+    "needsReview",
+    "operationalAuthority",
+    "workflowGateApplied"
+  ],
+  "$defs": {
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "sourceId": {
+          "type": "string",
+          "pattern": "^(title|description|clarification:[0-9a-f-]{36}:[0-7])$"
+        },
+        "sourceRevision": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "quote": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4000
+        },
+        "start": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "end": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "ruleId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "correction": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "sourceId",
+        "sourceRevision",
+        "quote",
+        "start",
+        "end",
+        "ruleId",
+        "correction"
+      ]
+    }
+  }
+}

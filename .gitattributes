@@ -12,11 +12,19 @@ fixtures/intelligence/**/*.yaml text eol=lf
 scripts/intelligence/*.py text eol=lf
 scripts/apps/servicedesk/ai06/** text eol=lf
 scripts/apps/servicedesk/ai07/** text eol=lf
+scripts/apps/servicedesk/ai08/** text eol=lf
+backend/src/main/resources/apps/servicedesk/intelligence/readiness-policy-v0.1.json text eol=lf
+backend/src/main/resources/apps/servicedesk/intelligence/contextual-input-policy-v0.1.json text eol=lf
+backend/src/test/resources/apps/servicedesk/readiness-cases-v0.1.json text eol=lf
 intelligence/** text eol=lf
 backend/src/main/resources/apps/servicedesk/intelligence/guard-policy-v0.1.json text eol=lf
 backend/src/main/resources/apps/servicedesk/intelligence/taxonomy-v0.1.json text eol=lf
 backend/src/main/resources/apps/servicedesk/intelligence/assessment-policy-v0.1.json text eol=lf
 backend/src/main/resources/apps/servicedesk/intelligence/triage-policy.json text eol=lf
+backend/src/main/resources/apps/servicedesk/intelligence/context-slots-v0.1.json text eol=lf
+backend/src/main/resources/apps/servicedesk/intelligence/enrichment-questions-v0.1.json text eol=lf
+backend/src/main/resources/apps/servicedesk/intelligence/duplicate-policy-v0.1.json text eol=lf
+backend/src/test/resources/apps/servicedesk/context-evaluation-v0.1.json text eol=lf
 backend/src/test/resources/apps/servicedesk/intelligence/*.json text eol=lf
 # Preserve upstream notices verbatim, including their original spacing and CRLF.
 licenses/** -text -whitespace
