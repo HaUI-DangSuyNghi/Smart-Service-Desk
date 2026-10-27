@@ -35,7 +35,8 @@ export const CorrectionsList = ({ corrections }: { corrections: readonly Correct
           <li key={`${item.at}-${item.field}-${index}`} className="text-crm-sm">
             <p className="text-crm-text">
               {FIELD_LABELS[item.field]}: {valueLabel(item.field, item.previousValue)}
-              {item.fromAi && " (AI)"} → <span className="font-medium">{valueLabel(item.field, item.newValue)}</span>
+              {item.fromAi && " (AI)"} →{" "}
+              <span className="font-medium">{valueLabel(item.field, item.newValue)}</span>
             </p>
             <p className="text-crm-text-3">
               {personName(names, item.by)} · {formatRelativeTime(item.at)}

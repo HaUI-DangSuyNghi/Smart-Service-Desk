@@ -27,7 +27,13 @@ import {
   type ReviewValues,
 } from "./reviewForm";
 import { CATEGORY_LABELS, groupLabel } from "./ticketLabels";
-import { CATEGORIES, DEFAULT_CATEGORY_GROUPS, DEFAULT_ESTIMATES, MAX_REASON, PRIORITIES } from "./ticketRules";
+import {
+  CATEGORIES,
+  DEFAULT_CATEGORY_GROUPS,
+  DEFAULT_ESTIMATES,
+  MAX_REASON,
+  PRIORITIES,
+} from "./ticketRules";
 import { useReviewTicket } from "./useTickets";
 
 interface FormProps {
@@ -54,7 +60,8 @@ const ReviewForm = ({ ticket, taskId, onDone }: FormProps) => {
   // Đổi loại hoặc ưu tiên mà chưa tự sửa ET thì điền lại ET theo bảng mặc định (R2)
   const handleClassificationChange = () => {
     const values = form.getValues();
-    if (!values.category || !values.priority || form.getFieldState("estimateMinutes").isDirty) return;
+    if (!values.category || !values.priority || form.getFieldState("estimateMinutes").isDirty)
+      return;
     form.setValue("estimateMinutes", DEFAULT_ESTIMATES[values.category][values.priority]);
   };
 
@@ -113,7 +120,9 @@ const ReviewForm = ({ ticket, taskId, onDone }: FormProps) => {
         <fieldset className="flex flex-col gap-1.5">
           <legend className="mb-1 text-crm-sm text-crm-text-2">
             Mức ưu tiên
-            {matrixPriority && <> · theo bảng ảnh hưởng × độ gấp: {PRIORITY_LABELS[matrixPriority]}</>}
+            {matrixPriority && (
+              <> · theo bảng ảnh hưởng × độ gấp: {PRIORITY_LABELS[matrixPriority]}</>
+            )}
           </legend>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             {PRIORITIES.map((item) => (

@@ -21,23 +21,25 @@ const ASSESSMENT_POLL_MS = 2000;
 
 const ticketKeys = {
   all: (workspace: string | null) => ["servicedesk", "tickets", workspace] as const,
-  list: (workspace: string | null, query: Omit<TicketQuery, "size">) =>
+  list: (workspace: string | null, query: TicketQuery) =>
     [...ticketKeys.all(workspace), "list", query] as const,
-  detail: (workspace: string, id: string) =>
-    [...ticketKeys.all(workspace), "detail", id] as const,
+  detail: (workspace: string, id: string) => [...ticketKeys.all(workspace), "detail", id] as const,
 };
 
 export type TicketFilter = Omit<TicketQuery, "page" | "size">;
 
 /** Ticket của workspace đang chọn theo bộ lọc; mặc định mới nhất trước. */
-export const useTicketList = (page: number, filter: TicketFilter = {}) => {
+export const useTicketList = (
+  page: number,
+  filter: TicketFilter = {},
+  { size = TICKETS_PAGE_SIZE, enabled = true }: { size?: number; enabled?: boolean } = {},
+) => {
   const { current } = useCurrentWorkspace();
   return useQuery({
-    queryKey: ticketKeys.list(current, { ...filter, page }),
+    queryKey: ticketKeys.list(current, { ...filter, page, size }),
     // `enabled` bảo đảm current khác null khi queryFn chạy
-    queryFn: ({ signal }) =>
-      listTickets(current!, { ...filter, page, size: TICKETS_PAGE_SIZE }, signal),
-    enabled: current !== null,
+    queryFn: ({ signal }) => listTickets(current!, { ...filter, page, size }, signal),
+    enabled: current !== null && enabled,
     placeholderData: keepPreviousData,
   });
 };
@@ -94,10 +96,7 @@ export const useCorrectClassification = () =>
 /** Người gửi xác nhận kết quả (R11): accepted đóng ticket, rework mở lại cho kỹ thuật viên. */
 export const useConfirmResolution = () =>
   useTicketAction(
-    (
-      workspace,
-      input: { taskId: string; outcome: "accepted" | "rework"; comment?: string },
-    ) =>
+    (workspace, input: { taskId: string; outcome: "accepted" | "rework"; comment?: string }) =>
       completeTask(workspace, input.taskId, {
         // Gửi bước đang thấy: backend trả 409 nếu bước đã đổi
         expectedTaskKey: "confirm",

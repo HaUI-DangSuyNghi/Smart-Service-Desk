@@ -108,4 +108,40 @@ describe("ticketMock", () => {
       stats.unclassified;
     expect(sum).toBe(stats.total);
   });
+  it("bộ ticket mẫu cố định: 28 ticket, id không đổi, phủ đủ các cột của Board", async () => {
+    const first = await ticketMock.listTickets(WORKSPACE, { page: 0, size: 100 });
+    expect(first.total).toBe(28);
+    expect(first.items.map((item) => item.id)).toContain("00000000-0000-4000-8000-000000000001");
+
+    const counts = new Map<string, number>();
+    for (const item of first.items) counts.set(item.state!, (counts.get(item.state!) ?? 0) + 1);
+    expect(Object.fromEntries(counts)).toEqual({
+      AWAITING_REVIEW: 6,
+      ASSIGNED: 5,
+      IN_PROGRESS: 4,
+      PENDING: 4,
+      AWAITING_CONFIRMATION: 3,
+      REOPENED: 3,
+      CLOSED: 3,
+    });
+
+    // Nạp lại kho thì vẫn đúng các id đó (link chi tiết còn đúng sau khi tải lại trang)
+    ticketMock.resetTicketMock();
+    workMock.resetWorkMock(USER);
+    const second = await ticketMock.listTickets(WORKSPACE, { page: 0, size: 100 });
+    expect(new Set(second.items.map((item) => item.id))).toEqual(
+      new Set(first.items.map((item) => item.id)),
+    );
+  });
+
+  it("ticket mẫu có đủ trường hợp SLA và ET: quá hạn bắt đầu, quá hạn xong, ưu tiên nâng, trung vị", async () => {
+    const list = await ticketMock.listTickets(WORKSPACE, { page: 0, size: 100 });
+    const items = list.items;
+    expect(items.some((item) => item.sla?.startBreached)).toBe(true);
+    expect(items.some((item) => item.sla?.resolveBreached)).toBe(true);
+    expect(items.some((item) => item.classification?.escalated)).toBe(true);
+    expect(items.some((item) => item.estimate?.basis === "SIMILAR")).toBe(true);
+    expect(items.some((item) => item.closedBy === "AUTO")).toBe(true);
+    expect(items.filter((item) => item.assignee === USER.sub).length).toBeGreaterThanOrEqual(2);
+  });
 });

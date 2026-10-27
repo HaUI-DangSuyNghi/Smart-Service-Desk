@@ -13,12 +13,10 @@ import { formatDateTime, formatRelativeTime } from "../../../platform/shared/lib
 import type { DataTableColumn } from "../../../platform/shared/ui/DataTable";
 import type { TicketView } from "../services/ticketService";
 import { CATEGORY_LABELS } from "./ticketLabels";
+import { isStarted } from "./ticketRules";
 import { TicketStateTag } from "./TicketStateTag";
 
 const NONE = <span className="text-crm-text-3">—</span>;
-
-const isStarted = (ticket: TicketView) =>
-  ticket.state === "IN_PROGRESS" || ticket.state === "PENDING" || (ticket.workedMinutes ?? 0) > 0;
 
 export const titleColumn: DataTableColumn<TicketView> = {
   key: "title",
@@ -49,7 +47,9 @@ export const creatorColumn = (names: ReadonlyMap<string, string>): DataTableColu
 });
 
 /** Cột nghiệp vụ mới (R4–R6); chỉ dùng khi backend trả trạng thái hoặc bật dữ liệu giả. */
-export const workflowColumns = (names: ReadonlyMap<string, string>): DataTableColumn<TicketView>[] => [
+export const workflowColumns = (
+  names: ReadonlyMap<string, string>,
+): DataTableColumn<TicketView>[] => [
   {
     key: "state",
     header: "Trạng thái",

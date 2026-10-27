@@ -7,18 +7,19 @@ import {
   useCurrentWorkspace,
   usePermissions,
 } from "../../../platform/human/workspace";
-import { AssistantPanel, SuggestionCard } from "../../../platform/intelligence";
+import { SuggestionCard } from "../../../platform/intelligence";
 import { Button } from "../../../platform/shared/ui/button";
 import { ErrorState } from "../../../platform/shared/ui/ErrorState";
 import { Page, PageBody, PageHeader } from "../../../platform/shared/ui/page";
 import { FieldsSkeleton } from "../../../platform/shared/ui/Skeleton";
-import { askTicketAssistance, triageTicket } from "../services/ticketService";
+import { triageTicket } from "../services/ticketService";
 import { AssessmentCard } from "../tickets/AssessmentCard";
-import { CorrectionsList } from "../tickets/CorrectionsList";
-import { TicketActions } from "../tickets/TicketActions";
-import { TicketProgress } from "../tickets/TicketProgress";
+import { DetailsCard } from "../tickets/detail/DetailsCard";
+import { DetailTabs } from "../tickets/detail/DetailTabs";
+import { ProgressCard } from "../tickets/detail/ProgressCard";
+import { StatusBlock } from "../tickets/detail/StatusBlock";
+import { ticketCode } from "../tickets/ticketLabels";
 import { TicketSummary } from "../tickets/TicketSummary";
-import { TicketWorkPanel } from "../tickets/TicketWorkPanel";
 import { useTicket } from "../tickets/useTickets";
 
 const WORKSPACE_PATTERN = /^[a-zA-Z0-9_-]{1,100}$/;
@@ -33,7 +34,7 @@ const SUGGESTION_LABELS = {
 const EVIDENCE_LABELS = { title: "Tiêu đề", description: "Mô tả" };
 
 /**
- * Chi tiết ticket: nội dung, tiến độ (khối P) và hỗ trợ của AI (khối I).
+ * Chi tiết ticket kiểu Jira: trái là nội dung, kết quả AI, lịch sử sửa, hỏi AI; phải là trạng thái, hành động, bảng Chi tiết và Tiến độ (thu gọn, mở sẵn cho người gửi).
  * Link từ inbox không có workspace trong đường dẫn nên dùng workspace đang chọn.
  */
 const TicketDetailPage = () => {
@@ -89,45 +90,60 @@ const TicketDetail = ({ workspace, ticketId }: { workspace: string; ticketId: st
   const assessment = ticket.data?.assessment;
 
   return (
-    // Màn rộng: trái là ticket + xử lý + tiến độ, phải là AI; điện thoại xếp dọc
-    <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,26rem)]">
-      <div className="min-w-0">
-        {ticket.isPending && <FieldsSkeleton rows={5} label="Đang tải ticket" />}
-        {ticket.error && <ErrorState error={ticket.error} fallback="Không tải được ticket." />}
-        {ticket.data && (
-          <>
-            <h2 className="border-b border-crm-line px-4 py-3 text-crm-lg font-semibold wrap-break-word">
-              {ticket.data.title}
-            </h2>
-            <TicketActions ticket={ticket.data} />
-            <TicketWorkPanel
+    // Màn rộng: hai cột cố định chiều cao, mỗi cột tự cuộn (cột phải đứng yên khi đọc nội dung bên trái);
+    // điện thoại xếp dọc và cả trang cuộn
+    // (trạng thái và hành động lên trước, rồi đến nội dung)
+    <div className="flex flex-col lg:grid lg:h-full lg:grid-cols-[minmax(0,1fr)_20rem]">
+      {ticket.isPending && (
+        <div className="lg:col-span-2">
+          <FieldsSkeleton rows={5} label="Đang tải ticket" />
+        </div>
+      )}
+      {ticket.error && (
+        <div className="lg:col-span-2">
+          <ErrorState error={ticket.error} fallback="Không tải được ticket." />
+        </div>
+      )}
+      {ticket.data && (
+        <>
+          <div className="order-2 min-w-0 lg:order-1 lg:overflow-y-auto">
+            <div className="border-b border-crm-line px-4 py-3">
+              <p className="mb-1 text-crm-sm text-crm-text-3">
+                <Link to="/servicedesk/tickets" className="hover:underline">
+                  Ticket
+                </Link>
+                {" › "}
+                <span className="tabular-nums">{ticketCode(ticket.data.id)}</span>
+              </p>
+              <h2 className="text-crm-xl font-semibold wrap-break-word">{ticket.data.title}</h2>
+            </div>
+            <TicketSummary ticket={ticket.data} />
+            {/* Có kết quả AI đã lưu (chạy nền lúc tạo) thì hiện cho người xử lý; backend cũ chưa có thì gọi tay */}
+            {assessment ? (
+              !isRequesterView && <AssessmentCard assessment={assessment} />
+            ) : (
+              <SuggestionCard
+                fetchSuggestion={() => triageTicket(workspace, ticketId)}
+                fieldLabels={SUGGESTION_LABELS}
+                evidenceLabels={EVIDENCE_LABELS}
+              />
+            )}
+            <DetailTabs
+              workspace={workspace}
+              ticket={ticket.data}
+              isRequesterView={isRequesterView}
+            />
+          </div>
+          <aside className="order-1 min-w-0 border-b border-crm-line lg:order-2 lg:overflow-x-hidden lg:overflow-y-auto lg:border-b-0 lg:border-l">
+            <StatusBlock ticket={ticket.data} />
+            <DetailsCard
               ticket={ticket.data}
               isRequesterView={isRequesterView && actor?.subject === ticket.data.creator}
             />
-            <TicketSummary ticket={ticket.data} />
-            {!isRequesterView && ticket.data.corrections && (
-              <CorrectionsList corrections={ticket.data.corrections} />
-            )}
-            <TicketProgress processInstanceId={ticket.data.process.processInstanceId} />
-          </>
-        )}
-      </div>
-      <aside className="min-w-0 border-t border-crm-line lg:border-t-0 lg:border-l">
-        {/* Có kết quả AI đã lưu (chạy nền lúc tạo) thì hiện cho người xử lý; backend cũ chưa có thì gọi tay */}
-        {assessment ? (
-          !isRequesterView && <AssessmentCard assessment={assessment} />
-        ) : (
-          <SuggestionCard
-            fetchSuggestion={() => triageTicket(workspace, ticketId)}
-            fieldLabels={SUGGESTION_LABELS}
-            evidenceLabels={EVIDENCE_LABELS}
-          />
-        )}
-        <AssistantPanel
-          ask={(question, signal) => askTicketAssistance(workspace, ticketId, question, signal)}
-          subjectLabel="ticket"
-        />
-      </aside>
+            <ProgressCard ticket={ticket.data} defaultOpen={isRequesterView} />
+          </aside>
+        </>
+      )}
     </div>
   );
 };

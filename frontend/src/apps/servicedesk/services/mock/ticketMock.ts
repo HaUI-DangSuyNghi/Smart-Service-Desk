@@ -28,13 +28,16 @@ import type {
   TicketStatistics,
   TicketView,
 } from "../ticketService";
-import { assessText, unavailableAssessment } from "./mockAssessment";
+import { assessText } from "./mockAssessment";
+import { buildSeeds, type SeedTicket } from "./ticketSeeds";
 
 // Kho ticket giả theo contracts/openapi/servicedesk-target.yaml; trạng thái lấy từ bộ máy giả của Tầng 2
 
 const PROCESS_KEY = "service-desk";
 // AI chạy nền vài giây sau khi tạo ticket (plan mục 2)
 const ASSESSMENT_DELAY_MS = 4000;
+// Ticket mẫu có AI chưa xong: để người xem thấy trạng thái "đang phân tích" trước khi có kết quả
+const PENDING_SEED_MS = 45 * 1000;
 
 interface MockTicket {
   ticket: Ticket;
@@ -167,7 +170,11 @@ const toView = (record: MockTicket, withCorrections: boolean): TicketView => {
     ...record.ticket,
     state: stateOf(process),
     classification: record.classification
-      ? { ...record.classification, priority: handling?.priority ?? record.classification.priority }
+      ? {
+          ...record.classification,
+          priority: handling?.priority ?? record.classification.priority,
+          escalated: handling?.escalated ?? record.classification.escalated,
+        }
       : null,
     assessment: Date.now() < record.assessmentReadyAt ? pendingAssessment() : record.assessment,
     assignee: work?.assignee ?? null,
@@ -200,25 +207,8 @@ const processOf = (record: MockTicket) => {
 
 // ---------- Tạo ticket, dữ liệu mẫu ----------
 
-interface SeedTicket {
-  title: string;
-  description: string;
-  creator: string;
-  createdMinutesAgo: number;
-  assessment?: Assessment;
-  /** Đã duyệt: bước xử lý và người giữ. */
-  handle?: {
-    category: Category;
-    priority: Priority;
-    assignee: string;
-    task?: Partial<NextTaskSpec>;
-  };
-  /** Bước hiện tại không phải xử lý. */
-  stage?: "confirm" | "closed";
-}
-
 const addTicket = (workspace: string, seed: SeedTicket): MockTicket => {
-  const id = crypto.randomUUID();
+  const id = seed.id;
   const createdAt = minutesAgo(seed.createdMinutesAgo);
   const assessment = seed.assessment ?? assessText(seed.title, seed.description);
   const classification: Classification | null = seed.handle
@@ -250,7 +240,8 @@ const addTicket = (workspace: string, seed: SeedTicket): MockTicket => {
       ...seed.handle.task,
     };
   }
-  if (seed.stage === "confirm") task = { ...confirmStep(seed.creator), createdAt: minutesAgo(30) };
+  if (seed.stage === "confirm")
+    task = { ...confirmStep(seed.creator), createdAt: minutesAgo(seed.confirmMinutesAgo ?? 30) };
   if (seed.stage === "closed") task = null;
 
   const process = workMock.createProcess({
@@ -272,12 +263,14 @@ const addTicket = (workspace: string, seed: SeedTicket): MockTicket => {
               comment: "Đã thay dây nguồn, máy chạy bình thường.",
               startedAt: createdAt,
               claimedAt: createdAt,
-              endedAt: minutesAgo(30),
+              endedAt: minutesAgo(seed.closedMinutesAgo ?? 30),
             },
           ]
         : [],
     task,
   });
+  // Đóng từ lâu: createProcess đóng quy trình ở thời điểm hiện tại
+  if (seed.stage === "closed") process.endedAt = minutesAgo(seed.closedMinutesAgo ?? 30);
 
   const record: MockTicket = {
     ticket: {
@@ -297,114 +290,18 @@ const addTicket = (workspace: string, seed: SeedTicket): MockTicket => {
     },
     classification,
     assessment,
-    assessmentReadyAt: 0,
+    assessmentReadyAt: seed.assessmentPending ? Date.now() + PENDING_SEED_MS : 0,
     corrections: [],
-    closedBy: seed.stage === "closed" ? "REQUESTER" : null,
+    closedBy: seed.stage === "closed" ? (seed.closedBy ?? "REQUESTER") : null,
     workedMinutes: seed.stage ? 40 : 0,
   };
   tickets.set(id, record);
   return record;
 };
 
-/** Phủ đủ trường hợp của plan: CRITICAL, AI không chắc / lỗi, quá hạn, đang chờ, mở lại... */
+/** Nạp bộ ticket cố định ở ticketSeeds.ts; phủ đủ cột của Board và các trường hợp của plan. */
 const seedWorkspace = (workspace: string, user: MockUser) => {
-  const me = user.sub;
-  addTicket(workspace, {
-    title: "Phòng thi 1304 mất mạng, thi sau 15 phút",
-    description: "Cả phòng 1304 nhà A1 không vào được mạng, 15 phút nữa bắt đầu thi.",
-    creator: "mock-requester-dung",
-    createdMinutesAgo: 3,
-  });
-  addTicket(workspace, {
-    title: "Máy bị lỗi",
-    description: "Máy không dùng được, nhờ kiểm tra giúp.",
-    creator: "mock-requester-hai",
-    createdMinutesAgo: 25,
-  });
-  addTicket(workspace, {
-    title: "Điều hòa phòng A2-301 kêu to",
-    description: "Điều hòa phòng A2-301 kêu rất to, ảnh hưởng giờ học.",
-    creator: "mock-requester-dung",
-    createdMinutesAgo: 40,
-    assessment: unavailableAssessment(),
-  });
-  addTicket(workspace, {
-    title: "Máy 15 phòng 1304 không lên nguồn",
-    description: "Máy số 15 phòng 1304 nhà A1 bấm nút nguồn không lên, các máy khác bình thường.",
-    creator: "mock-requester-hai",
-    createdMinutesAgo: 50,
-    handle: { category: "HARDWARE", priority: "MEDIUM", assignee: me },
-  });
-  addTicket(workspace, {
-    title: "Không cài được phần mềm Matlab máy 7",
-    description: "Máy 7 phòng 1302 cài Matlab báo lỗi thiếu license, cần cho buổi thực hành.",
-    creator: "mock-requester-dung",
-    createdMinutesAgo: 180,
-    handle: {
-      category: "SOFTWARE",
-      priority: "HIGH",
-      assignee: me,
-      task: {
-        workState: "PENDING",
-        pendingReason: "WAITING_EXTERNAL",
-        pendingNote: "Chờ phòng đào tạo cấp license.",
-        pendingSince: minutesAgo(60),
-        workedBefore: 20,
-        firstStartedAt: minutesAgo(120),
-      },
-    },
-  });
-  addTicket(workspace, {
-    title: "Wi-Fi tầng 7 nhà A1 chập chờn",
-    description: "Cả tầng 7 nhà A1 Wi-Fi lúc được lúc không, nhiều phòng bị ảnh hưởng.",
-    creator: "mock-requester-hai",
-    createdMinutesAgo: 400,
-    handle: {
-      category: "NETWORK",
-      priority: "HIGH",
-      assignee: "mock-agent-an",
-      task: {
-        workState: "IN_PROGRESS",
-        inProgressSince: minutesAgo(35),
-        firstStartedAt: minutesAgo(35),
-      },
-    },
-  });
-  addTicket(workspace, {
-    title: "Máy chiếu phòng 1201 bị mờ",
-    description: "Máy chiếu phòng 1201 hình rất mờ, đã chỉnh nét nhưng không được.",
-    creator: "mock-requester-dung",
-    createdMinutesAgo: 60 * 30,
-    handle: { category: "HARDWARE", priority: "LOW", assignee: "mock-agent-binh" },
-  });
-  addTicket(workspace, {
-    title: "Bàn phím máy 3 phòng 1305 liệt phím",
-    description: "Bàn phím máy 3 phòng 1305 liệt mấy phím chữ, đã báo hai lần.",
-    creator: "mock-requester-hai",
-    createdMinutesAgo: 60 * 26,
-    handle: {
-      category: "HARDWARE",
-      priority: "MEDIUM",
-      assignee: "mock-agent-binh",
-      task: { reopenCount: 2, workedBefore: 25 },
-    },
-  });
-  addTicket(workspace, {
-    title: "Máy 9 phòng 1302 không lên màn hình",
-    description: "Máy 9 phòng 1302 bật nguồn có đèn nhưng màn hình không hiện gì.",
-    creator: me,
-    createdMinutesAgo: 120,
-    handle: { category: "HARDWARE", priority: "MEDIUM", assignee: "mock-agent-an" },
-    stage: "confirm",
-  });
-  addTicket(workspace, {
-    title: "Quên mật khẩu tài khoản email",
-    description: "Tôi quên mật khẩu email nhà trường, cần đặt lại.",
-    creator: me,
-    createdMinutesAgo: 60 * 50,
-    handle: { category: "ACCOUNT", priority: "LOW", assignee: "mock-agent-cuong" },
-    stage: "closed",
-  });
+  buildSeeds(user.sub, minutesAgo).forEach((seed) => addTicket(workspace, seed));
 
   // Cảnh báo mẫu để thấy chuông có số
   workMock
@@ -482,6 +379,7 @@ const createTicket = async (workspace: string, input: NewTicket) => {
   if (duplicate) throw mockError(409, "Yêu cầu này đã được gửi.");
 
   const record = addTicket(workspace, {
+    id: crypto.randomUUID(),
     title,
     description,
     creator: user.sub,

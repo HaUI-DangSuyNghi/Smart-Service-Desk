@@ -1,21 +1,15 @@
 import { useState } from "react";
-import { PERMISSIONS, useActor, usePermissions } from "../../../platform/human/workspace";
+import { useActor } from "../../../platform/human/workspace";
 import { useQueue, useTimeline, WorkActions } from "../../../platform/process";
 import { isWorkflowAvailable } from "../../../platform/services";
 import { Button } from "../../../platform/shared/ui/button";
-import type { TicketState, TicketView } from "../services/ticketService";
+import type { TicketView } from "../services/ticketService";
 import { ConfirmResolution } from "./ConfirmResolution";
 import { CorrectClassificationDialog } from "./CorrectClassificationDialog";
 import { ReviewDialog } from "./ReviewDialog";
+import { ticketPermissions } from "./ticketPermissions";
 import { useRefreshTickets } from "./useTickets";
-
-// Bước xử lý: còn sửa được phân loại
-const HANDLING_STATES: ReadonlySet<TicketState> = new Set([
-  "ASSIGNED",
-  "IN_PROGRESS",
-  "PENDING",
-  "REOPENED",
-]);
+import { useViewer } from "./useViewer";
 
 /**
  * Thao tác theo vai trò và trạng thái: điều phối viên duyệt (R4), người giữ việc
@@ -24,12 +18,10 @@ const HANDLING_STATES: ReadonlySet<TicketState> = new Set([
  */
 export const TicketActions = ({ ticket }: { ticket: TicketView }) => {
   const { actor } = useActor();
-  const { can } = usePermissions();
+  const viewer = useViewer();
   const refresh = useRefreshTickets();
   const [dialog, setDialog] = useState<"review" | "correct" | null>(null);
-  const isHolder = Boolean(actor && ticket.assignee === actor.subject);
-  const isCreator = actor?.subject === ticket.creator;
-  const canAssign = can(PERMISSIONS.taskAssign);
+  const { isHolder, isCreator, canReview, canCorrect } = ticketPermissions(ticket, viewer);
   // Thao tác R6 lấy từ hàng đợi của chính mình (Tầng 2 giữ trạng thái việc)
   const queue = useQueue(undefined, isWorkflowAvailable && isHolder);
   const queueItem = queue.data?.items.find((item) => item.id === ticket.taskId);
@@ -45,8 +37,6 @@ export const TicketActions = ({ ticket }: { ticket: TicketView }) => {
   const { state, taskId } = ticket;
   if (!state || !taskId) return null;
 
-  const canReview = state === "AWAITING_REVIEW" && canAssign;
-  const canCorrect = HANDLING_STATES.has(state) && (isHolder || canAssign);
   if (!canReview && !canCorrect && !(isHolder && queueItem)) return null;
 
   const closeDialog = () => {

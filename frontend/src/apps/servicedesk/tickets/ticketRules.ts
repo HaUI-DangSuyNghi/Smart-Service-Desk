@@ -1,4 +1,5 @@
 import type { Priority } from "../../../platform/services";
+import type { TicketState, TicketView } from "../services/ticketService";
 
 // Luật nghiệp vụ thuần của ticket (plan ticket.md): R1 chọn tổ, mục 4 bảng ưu tiên, R2 ET mặc định
 
@@ -6,7 +7,13 @@ export type Category = "HARDWARE" | "NETWORK" | "SOFTWARE" | "ACCOUNT" | "OTHER"
 export type Impact = "I1" | "I2" | "I3" | "I4";
 export type Urgency = "U1" | "U2" | "U3" | "U4";
 
-export const CATEGORIES: readonly Category[] = ["HARDWARE", "NETWORK", "SOFTWARE", "ACCOUNT", "OTHER"];
+export const CATEGORIES: readonly Category[] = [
+  "HARDWARE",
+  "NETWORK",
+  "SOFTWARE",
+  "ACCOUNT",
+  "OTHER",
+];
 export const PRIORITIES: readonly Priority[] = ["LOW", "MEDIUM", "HIGH", "CRITICAL"];
 export const IMPACTS: readonly Impact[] = ["I1", "I2", "I3", "I4"];
 export const URGENCIES: readonly Urgency[] = ["U1", "U2", "U3", "U4"];
@@ -47,3 +54,15 @@ export const MAX_DESCRIPTION = 4000;
 export const MAX_REASON = 1000;
 /** Một tuần, khớp maximum của estimateMinutes trong contract. */
 export const MAX_ESTIMATE_MINUTES = 10080;
+
+/** Bước xử lý: còn sửa được phân loại, đổi người. */
+export const HANDLING_STATES: ReadonlySet<TicketState> = new Set([
+  "ASSIGNED",
+  "IN_PROGRESS",
+  "PENDING",
+  "REOPENED",
+]);
+
+/** Đã bắt đầu làm (đang làm, đang chờ, hoặc đã có thời gian làm): hạn tính tới hạn xong. */
+export const isStarted = (ticket: Pick<TicketView, "state" | "workedMinutes">) =>
+  ticket.state === "IN_PROGRESS" || ticket.state === "PENDING" || (ticket.workedMinutes ?? 0) > 0;

@@ -55,7 +55,10 @@ export const differsFromAi = (
   Boolean(assessment?.category) &&
   (values.category !== assessment?.category || values.priority !== assessment?.priority);
 
-export const toDecision = (values: ReviewValues, assessment?: Assessment | null): ReviewDecision => ({
+export const toDecision = (
+  values: ReviewValues,
+  assessment?: Assessment | null,
+): ReviewDecision => ({
   category: values.category,
   impact: assessment?.impact ?? undefined,
   urgency: assessment?.urgency ?? undefined,

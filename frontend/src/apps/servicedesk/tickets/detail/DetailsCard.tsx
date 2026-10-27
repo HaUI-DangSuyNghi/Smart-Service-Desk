@@ -27,7 +27,7 @@ export const DetailsCard = ({ ticket, isRequesterView }: Props) => {
     <Collapsible title="Chi tiết">
       <dl>
         {state && (
-          <FieldRow label="Người xử lý">
+          <FieldRow stacked label="Người xử lý">
             {ticket.assignee ? (
               personName(names, ticket.assignee)
             ) : (
@@ -37,51 +37,61 @@ export const DetailsCard = ({ ticket, isRequesterView }: Props) => {
             )}
           </FieldRow>
         )}
-        <FieldRow label="Người gửi">{personName(names, ticket.creator)}</FieldRow>
+        <FieldRow stacked label="Người gửi">
+          {personName(names, ticket.creator)}
+        </FieldRow>
         {classification && (
           <>
-            <FieldRow label="Ưu tiên">
+            <FieldRow stacked label="Ưu tiên">
               <PriorityTag
                 priority={classification.priority}
                 escalated={classification.escalated}
               />
             </FieldRow>
-            <FieldRow label="Loại sự cố">{CATEGORY_LABELS[classification.category]}</FieldRow>
-            {!isRequesterView && <FieldRow label="Tổ">{groupLabel(classification.group)}</FieldRow>}
+            <FieldRow stacked label="Loại sự cố">
+              {CATEGORY_LABELS[classification.category]}
+            </FieldRow>
+            {!isRequesterView && (
+              <FieldRow stacked label="Tổ">
+                {groupLabel(classification.group)}
+              </FieldRow>
+            )}
           </>
         )}
         {!isRequesterView && estimate && (
-          <FieldRow label="Ước tính">
+          <FieldRow stacked label="Ước tính">
             <EstimateText estimate={estimate} />
           </FieldRow>
         )}
         {!isRequesterView && (ticket.workedMinutes ?? 0) > 0 && (
-          <FieldRow label="Đã làm">{formatMinutes(ticket.workedMinutes ?? 0)}</FieldRow>
+          <FieldRow stacked label="Đã làm">
+            {formatMinutes(ticket.workedMinutes ?? 0)}
+          </FieldRow>
         )}
         {sla && (
-          <FieldRow label="Hạn">
+          <FieldRow stacked label="Hạn">
             <SlaIndicator sla={sla} started={isStarted(ticket)} />
           </FieldRow>
         )}
         {ticket.expectedStartAt && (
-          <FieldRow label="Dự kiến bắt đầu">
+          <FieldRow stacked label="Dự kiến bắt đầu">
             <time dateTime={ticket.expectedStartAt} title={formatDateTime(ticket.expectedStartAt)}>
               {formatRelativeTime(ticket.expectedStartAt)}
             </time>
           </FieldRow>
         )}
         {(ticket.reopenCount ?? 0) > 0 && (
-          <FieldRow label="Mở lại">
+          <FieldRow stacked label="Mở lại">
             <span className="text-crm-tone-red">{ticket.reopenCount} lần</span>
           </FieldRow>
         )}
-        <FieldRow label="Tạo lúc">
+        <FieldRow stacked label="Tạo lúc">
           <time dateTime={ticket.createdAt} title={formatDateTime(ticket.createdAt)}>
             {formatRelativeTime(ticket.createdAt)}
           </time>
         </FieldRow>
         {ticket.closedAt && (
-          <FieldRow label="Đóng lúc">
+          <FieldRow stacked label="Đóng lúc">
             {formatDateTime(ticket.closedAt)}
             {ticket.closedBy === "AUTO" && (
               <span className="text-crm-text-3"> · tự đóng do không xác nhận</span>

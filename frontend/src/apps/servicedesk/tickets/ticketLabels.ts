@@ -58,3 +58,6 @@ const GROUP_LABELS: Readonly<Record<string, string>> = {
 export const groupLabel = (group: string) => GROUP_LABELS[group] ?? group;
 
 export const EVIDENCE_FIELD_LABELS = { title: "Tiêu đề", description: "Mô tả" } as const;
+
+/** Mã ngắn hiển thị cho ticket (6 ký tự cuối của id; chưa có mã tuần tự từ backend). */
+export const ticketCode = (id: string) => `#${id.slice(-6)}`;
