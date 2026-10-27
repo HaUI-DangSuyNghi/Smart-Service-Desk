@@ -9,6 +9,7 @@
     "client": {
       "dx-permissions": [
         {"name": "intelligence:process", "description": "Process background assessment in assigned workspaces only"},
+        {"name": "alerts:process", "description": "Deliver and evaluate alerts only; no approval, assignment or execution authority"},
         {"name": "request:create", "description": "Tạo yêu cầu"},
         {"name": "request:view-all", "description": "Xem mọi yêu cầu trong workspace"},
         {"name": "task:handle", "description": "Xử lý công việc"},
@@ -27,6 +28,7 @@
     "subGroups": [
       {"name": "lab-a", "attributes": {"displayName": ["Phòng máy A"]}, "subGroups": [
         {"name": "assessment-worker", "clientRoles": {"dx-permissions": ["intelligence:process", "task:handle"]}},
+        {"name": "alert-worker", "clientRoles": {"dx-permissions": ["alerts:process"]}},
         {"name": "requester", "clientRoles": {"dx-permissions": ["request:create", "audit:view-own"]}},
         {"name": "agent", "clientRoles": {"dx-permissions": ["request:create", "task:handle", "document:view", "document:upload", "audit:view-own"]}},
         {"name": "coordinator", "clientRoles": {"dx-permissions": ["request:create", "request:view-all", "task:handle", "task:assign", "document:view", "document:upload", "member:view", "audit:view", "audit:view-own", "dashboard:view"]}}
@@ -125,7 +127,7 @@
   "users": [
     {
       "username": "service-account-dx-assessment-worker", "enabled": true,
-      "serviceAccountClientId": "dx-assessment-worker", "groups": ["/workspaces/lab-a/assessment-worker"]
+      "serviceAccountClientId": "dx-assessment-worker", "groups": ["/workspaces/lab-a/assessment-worker", "/workspaces/lab-a/alert-worker"]
     },
     {
       "username": "service-account-dx-directory", "enabled": true, "serviceAccountClientId": "dx-directory",
