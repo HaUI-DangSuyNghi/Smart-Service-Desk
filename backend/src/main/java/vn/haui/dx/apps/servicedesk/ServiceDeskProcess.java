@@ -11,10 +11,35 @@ import vn.haui.dx.hpdi.process.api.ProcessLabels;
 @Component
 public class ServiceDeskProcess implements ProcessContribution {
     public static final String KEY = "service-desk";
+    public static final String REVIEWED_KEY = "service-desk-reviewed";
+    private final org.springframework.jdbc.core.JdbcTemplate jdbc;
+    private final org.springframework.beans.factory.ObjectProvider<vn.haui.dx.hpdi.process.api.WorkExecution> execution;
+    public ServiceDeskProcess(org.springframework.jdbc.core.JdbcTemplate jdbc,
+            org.springframework.beans.factory.ObjectProvider<vn.haui.dx.hpdi.process.api.WorkExecution> execution) {
+        this.jdbc = jdbc; this.execution = execution;
+    }
+
+    @Override public Map<String, Set<String>> executionTasks() { return Map.of(REVIEWED_KEY, Set.of("handle")); }
+
+    @Override public void beforeComplete(String workspace, String processKey, String processId, String taskKey, String taskId, String outcome) {
+        if (REVIEWED_KEY.equals(processKey) && "confirm".equals(taskKey) && "rework".equals(outcome))
+            jdbc.update("update servicedesk_ticket set awaiting_review=true where workspace=? and process_instance_id=?",workspace,processId);
+        if (REVIEWED_KEY.equals(processKey) && "handle".equals(taskKey))
+            jdbc.update("update servicedesk_ticket set worked_millis=worked_millis+? where workspace=? and process_instance_id=?",
+                execution.getObject().get(workspace, taskId).workedMillis(), workspace, processId);
+        if (REVIEWED_KEY.equals(processKey) && "review".equals(taskKey)
+                && !Boolean.TRUE.equals(jdbc.queryForObject("select exists(select 1 from servicedesk_review r"
+                    + " join servicedesk_ticket t on t.id=r.ticket_id where t.workspace=?"
+                    + " and t.process_instance_id=? and r.review_task_id=?)", Boolean.class, workspace, processId, taskId)))
+            throw vn.haui.dx.hpdi.common.api.CapabilityException.conflict("Use the ticket review API before completing review");
+    }
 
     // Không tự phục vụ: process phải ra đời cùng ticket qua API của app
     @Override public List<ProcessDefinition> definitions() {
-        return List.of(new ProcessDefinition(KEY, Set.of("requester", "agent", "coordinator"), Set.of(),
+        return List.of(new ProcessDefinition(REVIEWED_KEY, Set.of("requester", "agent", "coordinator"), Set.of(),
+            Map.of("review", Set.of("approved"), "handle", Set.of("resolved"), "confirm", Set.of("accepted", "rework")),
+            Set.of("agent", "coordinator"), Set.of("agent", "coordinator")),
+            new ProcessDefinition(KEY, Set.of("requester", "agent", "coordinator"), Set.of(),
             Map.of("handle", Set.of("resolved"), "confirm", Set.of("accepted", "rework")),
             Set.of("agent", "coordinator"), Set.of("coordinator"))
             .withLabels(ProcessLabels.named("Yêu cầu hỗ trợ CNTT")

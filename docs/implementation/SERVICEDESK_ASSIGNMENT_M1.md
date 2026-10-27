@@ -4,6 +4,11 @@ Date: 2026-10-27 (Asia/Saigon). Branch: `feat/ticket-execution-queue`.
 Base: `origin/develop` at `122519e`, fetched before implementation.
 Status: **PARTIAL; Java capabilities only, not a completed M1 or FE-ready API.**
 
+This document records the historical PR #48 Foundation boundary. The subsequent
+review/execution HTTP implementation, FE examples, migration notes and remaining
+M1 gaps are documented in `SERVICEDESK_REVIEW_EXECUTION_API.md`; do not interpret
+the historical Foundation limitations below as its current HTTP acceptance report.
+
 ## 1. Requirement-to-code gap matrix
 
 | Rule | Reused baseline | This change / remaining gap |

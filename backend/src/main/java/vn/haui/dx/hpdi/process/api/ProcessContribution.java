@@ -4,4 +4,5 @@ import java.util.List;
 public interface ProcessContribution {
     List<ProcessDefinition> definitions();
     default java.util.Map<String, java.util.Set<String>> executionTasks() { return java.util.Map.of(); }
+    default void beforeComplete(String workspace, String processKey, String processId, String taskKey, String taskId, String outcome) {}
 }

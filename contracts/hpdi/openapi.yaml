@@ -7,6 +7,140 @@ info:
 security:
 - bearerAuth: []
 paths:
+  /api/hpdi/v1/workspaces/{workspace}/queue:
+    parameters:
+    - $ref: '#/components/parameters/Workspace'
+    get:
+      operationId: getQueue
+      description: Own agent queue; another assignee requires coordinator and task:assign. IN_PROGRESS first, native
+        priority descending, due date then creation/id. Full-queue remaining load; no SLA/aging/shift projection.
+      parameters:
+      - name: assignee
+        in: query
+        required: false
+        schema:
+          type: string
+        description: subject; bỏ trống = chính mình
+      - $ref: '#/components/parameters/Page'
+      - $ref: '#/components/parameters/Size'
+      responses:
+        '200':
+          description: Một trang hàng đợi đã sắp xếp
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueuePage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /api/hpdi/v1/workspaces/{workspace}/tasks/{id}/start:
+    parameters:
+    - $ref: '#/components/parameters/Workspace'
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 100
+    post:
+      operationId: startWork
+      description: Reviewed work only. JWT, workspace and current permissions required. No SLA, aging, duty or predicted-start
+        calculation.
+      responses:
+        '200':
+          description: Việc sau khi bắt đầu
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueueItem'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /api/hpdi/v1/workspaces/{workspace}/tasks/{id}/pause:
+    parameters:
+    - $ref: '#/components/parameters/Workspace'
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 100
+    post:
+      operationId: pauseWork
+      description: Reviewed work only. JWT, workspace and current permissions required. No SLA, aging, duty or predicted-start
+        calculation.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+              - reason
+              properties:
+                reason:
+                  $ref: '#/components/schemas/PendingReason'
+                note:
+                  type: string
+                  maxLength: 1000
+                  description: Bắt buộc khi reason = OTHER
+      responses:
+        '200':
+          description: Việc sau khi tạm dừng
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueueItem'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /api/hpdi/v1/workspaces/{workspace}/tasks/{id}/resume:
+    parameters:
+    - $ref: '#/components/parameters/Workspace'
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 100
+    post:
+      operationId: resumeWork
+      description: Reviewed work only. JWT, workspace and current permissions required. No SLA, aging, duty or predicted-start
+        calculation.
+      responses:
+        '200':
+          description: Việc sau khi tiếp tục
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueueItem'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
   /api/hpdi/v1/workspaces/{workspace}/actor:
     parameters:
     - &id001
@@ -535,6 +669,101 @@ paths:
           $ref: '#/components/responses/NotFound'
 components:
   schemas:
+    Priority:
+      type: string
+      enum:
+      - LOW
+      - MEDIUM
+      - HIGH
+      - CRITICAL
+    WorkState:
+      type: string
+      enum:
+      - NOT_STARTED
+      - IN_PROGRESS
+      - PENDING
+    PendingReason:
+      type: string
+      enum:
+      - WAITING_REQUESTER
+      - WAITING_PARTS
+      - WAITING_EXTERNAL
+      - OTHER
+    Estimate:
+      type: object
+      additionalProperties: false
+      required:
+      - minutes
+      - basis
+      properties:
+        minutes:
+          type: integer
+          minimum: 1
+          maximum: 10080
+        basis:
+          type: string
+          enum:
+          - DEFAULT
+          - COORDINATOR
+    QueueItem:
+      allOf:
+      - $ref: '#/components/schemas/WorkItem'
+      - type: object
+        required:
+        - label
+        - workState
+        - priority
+        - basePriority
+        - estimate
+        - workedMinutes
+        - remainingMinutes
+        - reopenCount
+        properties:
+          label:
+            type: string
+            maxLength: 200
+          workState:
+            $ref: '#/components/schemas/WorkState'
+          priority:
+            $ref: '#/components/schemas/Priority'
+          basePriority:
+            $ref: '#/components/schemas/Priority'
+          estimate:
+            $ref: '#/components/schemas/Estimate'
+          workedMinutes:
+            type: integer
+            minimum: 0
+          remainingMinutes:
+            type: integer
+            minimum: 0
+          reopenCount:
+            type: integer
+            minimum: 0
+          pendingReason:
+            type: string
+            nullable: true
+            enum: [WAITING_REQUESTER, WAITING_PARTS, WAITING_EXTERNAL, OTHER, null]
+          pendingNote:
+            type: string
+            nullable: true
+    QueuePage:
+      allOf:
+      - $ref: '#/components/schemas/PageMeta'
+      - type: object
+        required:
+        - items
+        - assignee
+        - loadMinutes
+        properties:
+          assignee:
+            type: string
+          loadMinutes:
+            type: integer
+            minimum: 0
+          items:
+            type: array
+            items:
+              $ref: '#/components/schemas/QueueItem'
     Problem:
       type: object
       required:

@@ -5,6 +5,9 @@ import vn.haui.dx.hpdi.common.api.Page;
 import vn.haui.dx.hpdi.common.api.PageRequest;
 
 public interface WorkExecution {
+    default Item get(String workspace, String taskId) {
+        throw vn.haui.dx.hpdi.common.api.CapabilityException.conflict("Task execution is not supported");
+    }
     enum Action { START, PAUSE, RESUME }
     record Item(WorkItem task, String workState, int priority, Instant dueAt, long workedMillis,
                 Instant startedAt, String pendingReason, String pendingNote) {}

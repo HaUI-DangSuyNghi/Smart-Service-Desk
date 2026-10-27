@@ -28,7 +28,7 @@
     <resources>
       <resource><directory>src/main/resources</directory><excludes>
         <exclude>${dx.resource.app1}</exclude><exclude>${dx.resource.app2}</exclude>
-        <exclude>${dx.resource.migration1}</exclude><exclude>${dx.resource.migration2}</exclude><exclude>${dx.resource.migration3}</exclude>
+        <exclude>${dx.resource.migration1}</exclude><exclude>${dx.resource.migration2}</exclude><exclude>${dx.resource.migration3}</exclude><exclude>${dx.resource.migration4}</exclude>
       </excludes></resource>
       <resource><directory>../contracts/intelligence/v1</directory><targetPath>intelligence-contract</targetPath><includes><include>triage-*.schema.json</include></includes></resource>
     </resources>
@@ -67,6 +67,7 @@
     <profile>
       <id>second-domain</id>
       <properties>
+        <dx.resource.migration4>db/migration/apps/servicedesk/**</dx.resource.migration4>
         <dx.resource.app1>apps/servicedesk/**</dx.resource.app1><dx.resource.app2>apps/samples/**</dx.resource.app2>
         <dx.resource.migration1>db/migration/V5__servicedesk_ticket.sql</dx.resource.migration1>
         <dx.resource.migration2>db/migration/V6__decouple_servicedesk_workflow_reference.sql</dx.resource.migration2>

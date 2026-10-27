@@ -21,9 +21,9 @@ class TicketRepository {
 
     Ticket insert(UUID id, String workspace, String creator, NewTicket input, String processId) {
         return jdbc.queryForObject("insert into servicedesk_ticket "
-                + "(id,workspace,creator,client_request_id,title,description,process_instance_id) "
-                + "values (?,?,?,?,?,?,?) returning *", TicketRepository::map,
-            id, workspace, creator, input.clientRequestId(), input.title(), input.description(), processId);
+                + "(id,workspace,creator,client_request_id,title,description,process_instance_id,process_key,awaiting_review) "
+                + "values (?,?,?,?,?,?,?,?,true) returning *", TicketRepository::map,
+            id, workspace, creator, input.clientRequestId(), input.title(), input.description(), processId, ServiceDeskProcess.REVIEWED_KEY);
     }
 
     Optional<Ticket> find(String workspace, UUID id, String creator) {
@@ -67,6 +67,17 @@ class TicketRepository {
 
     record ProcessLink(UUID id, String creator, String processId) {}
 
+    Page<Ticket> awaitingReview(String workspace, String query, Instant from, Instant to, PageRequest page, boolean priority) {
+        List<Object> parameters=new ArrayList<>(List.of(workspace));
+        String where=where(null,query,from,to,parameters)+" and t.awaiting_review=true";
+        long total=jdbc.queryForObject("select count(*) from servicedesk_ticket t"+where,Long.class,parameters.toArray());
+        parameters.add(page.size()); parameters.add(page.offset());
+        var items=jdbc.query("select t.* from servicedesk_ticket t left join servicedesk_review r on r.ticket_id=t.id"+where
+            +(priority ? " order by case r.priority when 'CRITICAL' then 4 when 'HIGH' then 3 when 'MEDIUM' then 2 when 'LOW' then 1 else 0 end desc," : " order by")
+            +" t.created_at asc,t.id asc limit ? offset ?",TicketRepository::map,parameters.toArray());
+        return new Page<>(items,page.page(),page.size(),total);
+    }
+
     List<ProcessLink> statisticsBatch(String workspace, String creator, String query, Instant from, Instant to,
                                       UUID after, int limit) {
         List<Object> parameters = new ArrayList<>(List.of(workspace));
@@ -86,6 +97,6 @@ class TicketRepository {
         String workspace = row.getString("workspace");
         return new Ticket(id, workspace, row.getString("creator"), row.getObject("client_request_id", UUID.class),
             row.getString("title"), row.getString("description"), row.getTimestamp("created_at").toInstant(),
-            new TicketProcessView(row.getString("process_instance_id"), ServiceDeskProcess.KEY, id.toString(), workspace));
+            new TicketProcessView(row.getString("process_instance_id"), row.getString("process_key"), id.toString(), workspace));
     }
 }

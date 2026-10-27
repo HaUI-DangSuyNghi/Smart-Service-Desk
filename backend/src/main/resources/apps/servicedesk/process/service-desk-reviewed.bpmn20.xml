@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:flowable="http://flowable.org/bpmn" targetNamespace="https://haui.vn/dx/apps/servicedesk">
+  <process id="service-desk-reviewed" name="Reviewed IT support request" isExecutable="true">
+    <startEvent id="start"/>
+    <sequenceFlow id="toReview" sourceRef="start" targetRef="review"/>
+    <userTask id="review" name="Coordinator review" flowable:candidateGroups="${workspace}:coordinator"/>
+    <sequenceFlow id="toHandle" sourceRef="review" targetRef="handle"/>
+    <userTask id="handle" name="Handle support request" flowable:candidateGroups="${workspace}:agent"/>
+    <sequenceFlow id="toConfirm" sourceRef="handle" targetRef="confirm"/>
+    <userTask id="confirm" name="Confirm resolution" flowable:assignee="${initiator}"/>
+    <sequenceFlow id="toDecision" sourceRef="confirm" targetRef="decision"/>
+    <exclusiveGateway id="decision"/>
+    <sequenceFlow id="accepted" sourceRef="decision" targetRef="end"><conditionExpression xsi:type="tFormalExpression"><![CDATA[${outcome_confirm == 'accepted'}]]></conditionExpression></sequenceFlow>
+    <sequenceFlow id="rework" sourceRef="decision" targetRef="review"><conditionExpression xsi:type="tFormalExpression"><![CDATA[${outcome_confirm == 'rework'}]]></conditionExpression></sequenceFlow>
+    <endEvent id="end"/>
+  </process>
+</definitions>

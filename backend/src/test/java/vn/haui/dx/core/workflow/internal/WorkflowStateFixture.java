@@ -14,6 +14,7 @@ public class WorkflowStateFixture {
             .mapToLong(table -> jdbc.queryForObject("select count(*) from " + table, Long.class)).toArray();
     }
     public void suspend(String id) { engine.getRuntimeService().suspendProcessInstanceById(id); }
+    public void elapse(String taskId,long millis) { engine.getTaskService().setVariableLocal(taskId,"executionStarted",System.currentTimeMillis()-millis); }
     public void activate(String id) { engine.getRuntimeService().activateProcessInstanceById(id); }
     public void cancel(String id) { engine.getRuntimeService().deleteProcessInstance(id, "synthetic test cancellation"); }
     public void removeHistory(String id) { engine.getHistoryService().deleteHistoricProcessInstance(id); }

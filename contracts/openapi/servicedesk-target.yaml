@@ -85,35 +85,6 @@ paths:
         '403': {$ref: 'core.yaml#/components/responses/Forbidden'}
         '404': {$ref: 'core.yaml#/components/responses/NotFound'}
 
-  /workspaces/{workspace}/tickets/{id}/review:
-    parameters:
-      - {$ref: 'core.yaml#/components/parameters/Workspace'}
-      - {$ref: 'servicedesk.yaml#/components/parameters/TicketId'}
-    post:
-      operationId: reviewTicket
-      description: >-
-        R4. Điều phối viên duyệt: chốt loại lỗi, mức ưu tiên, ET và người xử lý trong một lần gọi.
-        Giá trị khác gợi ý AI được ghi thành correction (R9), reason bắt buộc khi có thay đổi.
-        assignee = null nghĩa là để chờ ca sau (tổ không ai trực, R3). Không được giao cho người tạo ticket.
-        Thành công → ticket rời hàng chờ duyệt, vào hàng đợi người được giao (ASSIGNED), tính SLA.
-        409 nếu ticket không còn ở AWAITING_REVIEW (người khác đã duyệt).
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema: {$ref: '#/components/schemas/ReviewDecision'}
-      responses:
-        '200':
-          description: Ticket sau khi duyệt
-          content:
-            application/json:
-              schema: {$ref: '#/components/schemas/TicketView'}
-        '400': {$ref: 'core.yaml#/components/responses/BadRequest'}
-        '401': {$ref: 'core.yaml#/components/responses/Unauthorized'}
-        '403': {$ref: 'core.yaml#/components/responses/Forbidden'}
-        '404': {$ref: 'core.yaml#/components/responses/NotFound'}
-        '409': {$ref: 'core.yaml#/components/responses/Conflict'}
-
   /workspaces/{workspace}/tickets/{id}/classification:
     parameters:
       - {$ref: 'core.yaml#/components/parameters/Workspace'}
@@ -314,15 +285,36 @@ components:
     ReviewDecision:
       type: object
       additionalProperties: false
-      required: [category, priority, estimateMinutes, assignee]
+      required:
+      - category
+      - priority
+      - assignee
+      - reason
       properties:
-        category: {$ref: '#/components/schemas/Category'}
-        impact: {$ref: '#/components/schemas/Impact'}
-        urgency: {$ref: '#/components/schemas/Urgency'}
-        priority: {$ref: '../hpdi/openapi-target.yaml#/components/schemas/Priority'}
-        estimateMinutes: {type: integer, minimum: 1, maximum: 10080}
-        assignee: {type: string, nullable: true, description: 'subject; null = để chờ ca sau'}
-        reason: {type: string, maxLength: 1000, description: Bắt buộc khi có giá trị khác gợi ý AI hoặc khác người được đề xuất}
+        category:
+          $ref: '#/components/schemas/Category'
+        impact:
+          $ref: '#/components/schemas/Impact'
+        urgency:
+          $ref: '#/components/schemas/Urgency'
+        priority:
+          $ref: ../hpdi/openapi.yaml#/components/schemas/Priority
+        estimateMinutes:
+          type: integer
+          minimum: 1
+          maximum: 10080
+          nullable: true
+          description: Omit/null for a frozen default estimate; an integer is a coordinator override.
+        assignee:
+          type: string
+          nullable: true
+          description: subject; null = để chờ ca sau
+          maxLength: 100
+        reason:
+          type: string
+          maxLength: 1000
+          description: Bắt buộc khi có giá trị khác gợi ý AI hoặc khác người được đề xuất
+          minLength: 1
     TicketStatisticsV2:
       allOf:
         - {$ref: 'servicedesk.yaml#/components/schemas/TicketStatistics'}

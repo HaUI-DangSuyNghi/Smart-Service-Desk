@@ -8,6 +8,39 @@ servers:
 security:
   - bearer: []
 paths:
+  /workspaces/{workspace}/tickets/{id}/review:
+    parameters:
+    - $ref: core.yaml#/components/parameters/Workspace
+    - $ref: '#/components/parameters/TicketId'
+    post:
+      operationId: reviewTicket
+      description: Coordinator review with current task:assign and task:handle; independent agent required. Omit/null
+        estimateMinutes to freeze the default table, or supply an override. Reason is always required. Null assignee
+        leaves approved work unclaimed. No duty/SLA or automatic category-team routing. Old service-desk instances
+        retain the legacy flow and return 409 here.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewDecision'
+      responses:
+        '200':
+          description: Ticket sau khi duyệt
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ticket'
+        '400':
+          $ref: core.yaml#/components/responses/BadRequest
+        '401':
+          $ref: core.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: core.yaml#/components/responses/Forbidden
+        '404':
+          $ref: core.yaml#/components/responses/NotFound
+        '409':
+          $ref: core.yaml#/components/responses/Conflict
   /workspaces/{workspace}/tickets/{id}/assistant/assessment:
     parameters:
       - {$ref: 'core.yaml#/components/parameters/Workspace'}
@@ -163,47 +196,77 @@ paths:
               schema: {$ref: '#/components/schemas/TriageProblem'}
   /workspaces/{workspace}/tickets:
     parameters:
-      - {$ref: 'core.yaml#/components/parameters/Workspace'}
+    - $ref: core.yaml#/components/parameters/Workspace
     post:
       operationId: createTicket
-      description: Requester/agent/coordinator. Creator is the authenticated subject. Duplicate clientRequestId per creator/workspace returns 409, including concurrent requests.
+      description: Requester/agent/coordinator. Creator is the authenticated subject. Duplicate clientRequestId
+        per creator/workspace returns 409, including concurrent requests.
       requestBody:
         required: true
         content:
           application/json:
-            schema: {$ref: '#/components/schemas/NewTicket'}
+            schema:
+              $ref: '#/components/schemas/NewTicket'
       responses:
         '201':
           description: Ticket, process scope, engine state and audit committed together.
           headers:
             X-Request-ID:
-              schema: {type: string, format: uuid}
+              schema:
+                type: string
+                format: uuid
           content:
             application/json:
-              schema: {$ref: '#/components/schemas/Ticket'}
-        '400': {$ref: 'core.yaml#/components/responses/BadRequest'}
-        '401': {$ref: 'core.yaml#/components/responses/Unauthorized'}
-        '403': {$ref: 'core.yaml#/components/responses/Forbidden'}
-        '404': {$ref: 'core.yaml#/components/responses/NotFound'}
-        '409': {$ref: 'core.yaml#/components/responses/Conflict'}
+              schema:
+                $ref: '#/components/schemas/Ticket'
+        '400':
+          $ref: core.yaml#/components/responses/BadRequest
+        '401':
+          $ref: core.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: core.yaml#/components/responses/Forbidden
+        '404':
+          $ref: core.yaml#/components/responses/NotFound
+        '409':
+          $ref: core.yaml#/components/responses/Conflict
     get:
       operationId: searchTickets
-      description: Requester sees own tickets; agent/coordinator sees workspace tickets. Stable newest-first ordering by createdAt and id.
+      description: Requester sees own tickets; agent/coordinator sees workspace tickets. Stable newest-first ordering
+        by createdAt and id.
       parameters:
-        - {$ref: '#/components/parameters/Query'}
-        - {$ref: '#/components/parameters/From'}
-        - {$ref: '#/components/parameters/To'}
-        - {$ref: 'core.yaml#/components/parameters/Page'}
-        - {$ref: 'core.yaml#/components/parameters/Size'}
+      - $ref: '#/components/parameters/Query'
+      - $ref: '#/components/parameters/From'
+      - $ref: '#/components/parameters/To'
+      - $ref: core.yaml#/components/parameters/Page
+      - $ref: core.yaml#/components/parameters/Size
+      - name: state
+        in: query
+        schema:
+          type: string
+          enum:
+          - AWAITING_REVIEW
+        description: Coordinator review queue only; other state filters are not implemented.
+      - name: sort
+        in: query
+        schema:
+          type: string
+          enum:
+          - createdAt
+          - priority
+        description: Requires state=AWAITING_REVIEW; reviewed priority then oldest first. No aging/SLA.
       responses:
         '200':
           description: Authorized tickets only; total uses the same access filter.
           content:
             application/json:
-              schema: {$ref: '#/components/schemas/TicketPage'}
-        '400': {$ref: 'core.yaml#/components/responses/BadRequest'}
-        '401': {$ref: 'core.yaml#/components/responses/Unauthorized'}
-        '403': {$ref: 'core.yaml#/components/responses/Forbidden'}
+              schema:
+                $ref: '#/components/schemas/TicketPage'
+        '400':
+          $ref: core.yaml#/components/responses/BadRequest
+        '401':
+          $ref: core.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: core.yaml#/components/responses/Forbidden
   /workspaces/{workspace}/tickets/statistics:
     parameters:
       - {$ref: 'core.yaml#/components/parameters/Workspace'}
@@ -282,6 +345,118 @@ components:
       required: true
       schema: {type: string, format: uuid}
   schemas:
+    ReviewDecision:
+      type: object
+      additionalProperties: false
+      required:
+      - category
+      - priority
+      - assignee
+      - reason
+      properties:
+        category:
+          $ref: '#/components/schemas/Category'
+        impact:
+          $ref: '#/components/schemas/Impact'
+        urgency:
+          $ref: '#/components/schemas/Urgency'
+        priority:
+          $ref: ../hpdi/openapi.yaml#/components/schemas/Priority
+        estimateMinutes:
+          type: integer
+          minimum: 1
+          maximum: 10080
+          nullable: true
+          description: Omit/null for a frozen default estimate; an integer is a coordinator override.
+        assignee:
+          type: string
+          nullable: true
+          description: subject; null = để chờ ca sau
+          maxLength: 100
+        reason:
+          type: string
+          maxLength: 1000
+          description: Bắt buộc khi có giá trị khác gợi ý AI hoặc khác người được đề xuất
+          minLength: 1
+    Category:
+      type: string
+      enum:
+      - HARDWARE
+      - NETWORK
+      - SOFTWARE
+      - ACCOUNT
+      - OTHER
+    Impact:
+      type: string
+      enum:
+      - I1
+      - I2
+      - I3
+      - I4
+    Urgency:
+      type: string
+      enum:
+      - U1
+      - U2
+      - U3
+      - U4
+    Classification:
+      type: object
+      additionalProperties: false
+      description: Giá trị đang hiệu lực (sau khi người duyệt/sửa), không phải gợi ý AI.
+      required:
+      - category
+      - priority
+      - basePriority
+      - escalated
+      - group
+      - source
+      properties:
+        category:
+          $ref: '#/components/schemas/Category'
+        impact:
+          type: string
+          nullable: true
+          enum:
+          - I1
+          - I2
+          - I3
+          - I4
+          - null
+        urgency:
+          type: string
+          nullable: true
+          enum:
+          - U1
+          - U2
+          - U3
+          - U4
+          - null
+        priority:
+          $ref: ../hpdi/openapi.yaml#/components/schemas/Priority
+        basePriority:
+          $ref: ../hpdi/openapi.yaml#/components/schemas/Priority
+        escalated:
+          type: boolean
+          description: Được nâng bậc do chờ lâu (R5)
+        group:
+          type: string
+          description: 'Actual BPMN candidate role: agent. Category-specific routing remains deferred.'
+        source:
+          type: string
+          enum:
+          - AI
+          - COORDINATOR
+          - AGENT
+          description: Ai đặt giá trị hiện tại
+        reviewedBy:
+          type: string
+          nullable: true
+        reviewedAt:
+          type: string
+          format: date-time
+          nullable: true
+
     ModelPrimaryAssessment:
       type: object
       additionalProperties: false
@@ -543,16 +718,85 @@ components:
     Ticket:
       type: object
       additionalProperties: false
-      required: [id, workspace, creator, clientRequestId, title, description, createdAt, process]
+      required:
+      - id
+      - workspace
+      - creator
+      - clientRequestId
+      - title
+      - description
+      - createdAt
+      - process
       properties:
-        id: {type: string, format: uuid}
-        workspace: {type: string}
-        creator: {type: string}
-        clientRequestId: {type: string, format: uuid}
-        title: {type: string}
-        description: {type: string}
-        createdAt: {type: string, format: date-time}
-        process: {$ref: '#/components/schemas/TicketProcessView'}
+        id:
+          type: string
+          format: uuid
+        workspace:
+          type: string
+        creator:
+          type: string
+        clientRequestId:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        process:
+          $ref: '#/components/schemas/TicketProcessView'
+        state:
+          type: string
+          enum:
+          - AWAITING_REVIEW
+          - ASSIGNED
+          - IN_PROGRESS
+          - PENDING
+          - AWAITING_CONFIRMATION
+          - CLOSED
+          - UNCLASSIFIED
+        taskId:
+          type: string
+          nullable: true
+        assignee:
+          type: string
+          nullable: true
+        estimate:
+          anyOf:
+          - $ref: ../hpdi/openapi.yaml#/components/schemas/Estimate
+          - type: object
+            nullable: true
+            enum:
+            - null
+        workState:
+          type: string
+          nullable: true
+          enum:
+          - NOT_STARTED
+          - IN_PROGRESS
+          - PENDING
+          - null
+        workedMinutes:
+          type: integer
+          minimum: 0
+          nullable: true
+        remainingMinutes:
+          type: integer
+          minimum: 0
+          nullable: true
+        reopenCount:
+          type: integer
+          minimum: 0
+        classification:
+          anyOf:
+          - $ref: '#/components/schemas/Classification'
+          - type: object
+            nullable: true
+            enum:
+            - null
+
     TicketPage:
       allOf:
         - {$ref: '#/components/schemas/TicketPageMeta'}

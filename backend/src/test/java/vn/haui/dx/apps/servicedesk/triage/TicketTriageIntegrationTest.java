@@ -130,9 +130,16 @@ class TicketTriageIntegrationTest {
             .andExpect(status().isOk()).andExpect(content().json(ticket.toString()));
         var progress = json.readTree(mvc.perform(get(route + "/progress").with(as("triage-owner", "triage-a", "requester")))
             .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+        mvc.perform(post(route+"/review").with(as("triage-coordinator","triage-a","coordinator")).contentType("application/json")
+            .content("{\"category\":\"OTHER\",\"priority\":\"LOW\",\"assignee\":null,\"reason\":\"Review after triage\"}"))
+            .andExpect(status().isOk());
+        progress = json.readTree(mvc.perform(get(route+"/progress").with(as("triage-owner","triage-a","requester")))
+            .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
         String task = progress.path("currentTasks").get(0).path("id").asText();
         String taskRoute = "/api/core/v1/workspaces/triage-a/instances/" + ticket.path("process").path("processInstanceId").asText() + "/tasks/" + task;
         mvc.perform(post(taskRoute + "/claim").with(as("triage-handler", "triage-a", "agent"))).andExpect(status().isOk());
+        mvc.perform(post("/api/hpdi/v1/workspaces/triage-a/tasks/"+task+"/start").with(as("triage-handler","triage-a","agent")))
+            .andExpect(status().isOk());
         mvc.perform(post(taskRoute + "/complete").with(as("triage-handler", "triage-a", "agent")).contentType("application/json")
             .content("{\"expectedTaskKey\":\"handle\",\"outcome\":\"resolved\"}")).andExpect(status().isNoContent());
     }

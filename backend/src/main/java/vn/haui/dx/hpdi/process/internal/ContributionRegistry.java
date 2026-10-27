@@ -8,8 +8,10 @@ import vn.haui.dx.hpdi.process.api.ProcessContribution;
 @Component
 public class ContributionRegistry implements ProcessRegistration {
     private final List<ProcessPolicy> policies;
+    private final List<ProcessContribution> contributions;
     private final java.util.Map<String, java.util.Set<String>> executionTasks;
     public ContributionRegistry(List<ProcessContribution> contributions) {
+        this.contributions = List.copyOf(contributions);
         var work = new java.util.HashMap<String, java.util.Set<String>>();
         for (var contribution : contributions) {
             contribution.executionTasks().forEach((key, tasks) -> {
@@ -30,5 +32,10 @@ public class ContributionRegistry implements ProcessRegistration {
                 d.selfService())).toList();
     }
     public List<ProcessPolicy> policies() { return policies; }
+    public void beforeComplete(String workspace, String processKey, String processId, String taskKey, String taskId, String outcome) {
+        contributions.stream().filter(contribution -> contribution.definitions().stream()
+            .anyMatch(definition -> definition.processKey().equals(processKey))).findFirst().orElseThrow()
+            .beforeComplete(workspace, processKey, processId, taskKey, taskId, outcome);
+    }
     public java.util.Map<String, java.util.Set<String>> executionTasks() { return executionTasks; }
 }

@@ -10,4 +10,5 @@ public interface ProcessRegistration {
     List<ProcessPolicy> policies();
 
     default java.util.Map<String, java.util.Set<String>> executionTasks() { return java.util.Map.of(); }
+    default void beforeComplete(String workspace, String processKey, String processId, String taskKey, String taskId, String outcome) {}
 }
