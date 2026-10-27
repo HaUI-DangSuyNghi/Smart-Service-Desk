@@ -152,7 +152,7 @@ thay thế nghiệm thu Keycloak/gateway/model thật.
 
 Wrapper image chứa base/adapter/tokenizer, policy mapping/guard, license base và
 supplement; chỉ copy file allowlist đã kiểm manifest. `runtimeIdentity` vẫn là
-code image config ID, wrapper config ID và registry digest được ghi bên ngoài
+code Docker image ID, wrapper Docker image ID và registry digest được ghi bên ngoài
 để tránh vòng hash. Offline verifier chạy không mạng/không mount model. Runtime
 non-root, read-only, chỉ mount token file; Compose model nằm trên mạng internal,
 chỉ backend dùng chung mạng đó và không có host port.
@@ -168,7 +168,7 @@ Receipt private trong `.local/ai07/d2`; chưa publish registry và chưa phân p
 
 ## C5 — Kit offline và onboarding
 
-Exporter chỉ nhận image config IDs đã kiểm tra và approval phân phối có chữ ký
+Exporter chỉ nhận Docker image IDs đã kiểm tra và approval phân phối có chữ ký
 độc lập. Đóng gói đủ model/code cha và bảy service, inventory SHA-256/size,
 runtime notices, profile synthetic, Compose và lifecycle script theo allowlist.
 Gói export chưa ký phải được issuer ký release manifest trước khi máy nhận cài.
@@ -235,3 +235,14 @@ Không nới guard quyền, policy, model identity hoặc CAS để làm test pa
 Docker context backend bổ sung đúng allowlist contract test mà Dockerfile đang
 COPY; `.local`, weights và secrets vẫn bị loại khỏi context. Tài liệu triển khai
 và trạng thái pending bên ngoài nằm trong runbook portable ở trên.
+
+Ba image backend/frontend/CPU sidecar mới đã build thành công với tag riêng
+`ssd-ai-d2-{platform,frontend,triage}:develop-abdbac2-local`; không thay stack đang
+chạy. Trên Docker 29/containerd, `.Id` là OCI index digest, khác config digest.
+Release mapping tách source image ID/descriptor, config digest trong archive,
+registry ref và ID sau import. Runtime identity gốc không bị đổi theo wrapper.
+Có thêm test phân biệt index/config; tổng boundary release/offline/Compose:
+**11 tests PASS**. Đã kiểm `docker save` trên frontend thật, trích config digest
+khớp build output và giữ receipt ở `.local/ai-d2-frontend-archive-proof.json`.
+Plan đủ bảy image sẵn tại `.local/ai-d2-release-images.json`. Chưa có approval nên
+chưa export kit chứa weights hoặc push.

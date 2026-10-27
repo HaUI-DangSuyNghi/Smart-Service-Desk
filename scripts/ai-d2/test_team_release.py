@@ -17,6 +17,19 @@ import team_release as release
 
 
 class OfflineReleaseTest(unittest.TestCase):
+    def test_engine_index_identity_is_distinct_from_config_digest(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            path = Path(temporary) / "images.tar"
+            raw = b'{"architecture":"amd64","os":"linux"}'
+            config = hashlib.sha256(raw).hexdigest()
+            manifest = json.dumps([{"Config": "blobs/sha256/" + config, "RepoTags": ["fixture:local"], "Layers": []}]).encode()
+            with tarfile.open(path, "w") as archive:
+                for name, data in (("manifest.json", manifest), ("blobs/sha256/" + config, raw)):
+                    member = tarfile.TarInfo(name)
+                    member.size = len(data)
+                    archive.addfile(member, io.BytesIO(data))
+            self.assertEqual({"fixture:local": "sha256:" + config}, release.archive_config_digests(path))
+
     def archive(self, path, name="manifest.json", kind=tarfile.REGTYPE):
         with tarfile.open(path, "w") as archive:
             item = tarfile.TarInfo(name)
@@ -56,7 +69,15 @@ class OfflineReleaseTest(unittest.TestCase):
             key, public = base / "FIXTURE-ONLY.key", base / "FIXTURE-ONLY.pub"
             subprocess.run(["openssl", "genpkey", "-algorithm", "RSA", "-pkeyopt", "rsa_keygen_bits:2048", "-out", str(key)], check=True, capture_output=True)
             subprocess.run(["openssl", "pkey", "-in", str(key), "-pubout", "-out", str(public)], check=True, capture_output=True)
-            self.archive(root / "images.tar")
+            config_bytes = b'{"architecture":"amd64","os":"linux"}'
+            config_digest = hashlib.sha256(config_bytes).hexdigest()
+            reference = "ssd-ai-d2-release:fixture-1111111111111111"
+            archive_manifest = json.dumps([{"Config": "blobs/sha256/" + config_digest, "RepoTags": [reference], "Layers": []}]).encode()
+            with tarfile.open(root / "images.tar", "w") as archive:
+                for name, data in (("manifest.json", archive_manifest), ("blobs/sha256/" + config_digest, config_bytes)):
+                    item = tarfile.TarInfo(name)
+                    item.size = len(data)
+                    archive.addfile(item, io.BytesIO(data))
             for name in release.STATIC_FILES:
                 path = root / name
                 path.parent.mkdir(parents=True, exist_ok=True)
@@ -68,8 +89,9 @@ class OfflineReleaseTest(unittest.TestCase):
                         "channel": "FIXTURE_OFFLINE", "modelDigest": "a" * 64}
             (root / "approval.json").write_text(json.dumps(approval), encoding="utf-8")
             self.sign(root / "approval.json", key)
-            images = {name: {"configId": "sha256:" + "b" * 64, "os": "linux", "architecture": "amd64"} for name in release.SERVICES}
-            images["model-code"] = {**images["ai07-qwen"], "configId": receipt["codeImageId"]}
+            images = {name: {"imageId": "sha256:" + "b" * 64, "configDigest": "sha256:" + config_digest,
+                             "localRef": reference, "os": "linux", "architecture": "amd64"} for name in release.SERVICES}
+            images["model-code"] = {**images["ai07-qwen"], "imageId": receipt["codeImageId"]}
             manifest = {"schemaVersion": "ai-d2-offline-release@1.0.0", "productionApproved": False,
                         "os": "linux", "architecture": "amd64", "modelDigest": receipt["modelDigest"],
                         "approvedChannel": "FIXTURE_OFFLINE", "images": images, "files": release.inventory(root)}

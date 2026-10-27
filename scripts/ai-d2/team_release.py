@@ -79,6 +79,24 @@ def inventory(root):
     return result
 
 
+def archive_config_digests(path):
+    """Docker engine IDs may be OCI indexes on Docker 29; read config digests separately."""
+    result = {}
+    with tarfile.open(path, "r") as archive:
+        member = archive.getmember("manifest.json")
+        require(member.isfile() and member.size <= 1024 * 1024)
+        entries = json.loads(archive.extractfile(member).read())
+        for entry in entries:
+            config_name = relative_name(entry["Config"])
+            config = archive.getmember(config_name)
+            require(config.isfile() and config.size <= 2 * 1024 * 1024)
+            digest = "sha256:" + __import__("hashlib").sha256(archive.extractfile(config).read()).hexdigest()
+            for tag in entry.get("RepoTags") or []:
+                require(tag not in result or result[tag] == digest)
+                result[tag] = digest
+    return result
+
+
 def verify_files(root, manifest):
     require(manifest["schemaVersion"] == "ai-d2-offline-release@1.0.0" and manifest["productionApproved"] is False)
     require(manifest["os"] == "linux" and manifest["architecture"] == "amd64", "Unsupported release platform")
@@ -99,9 +117,14 @@ def verify_files(root, manifest):
               and path.relative_to(root).as_posix() not in (".env", "release.json", "release.sig")}
     require(actual == set(files), "Unexpected files in release")
     for item in manifest["images"].values():
-        require(re.fullmatch(r"sha256:[0-9a-f]{64}", item["configId"]))
+        require(re.fullmatch(r"sha256:[0-9a-f]{64}", item["imageId"]))
+        require(re.fullmatch(r"sha256:[0-9a-f]{64}", item["configDigest"]))
+        require(re.fullmatch(r"ssd-ai-d2-release:[a-z0-9-]+-[0-9a-f]{16}", item["localRef"]))
         require(item["os"] == manifest["os"] and item["architecture"] == manifest["architecture"])
     validate_archive(root / "images.tar")
+    configs = archive_config_digests(root / "images.tar")
+    require(all(configs.get(item["localRef"]) == item["configDigest"] for item in manifest["images"].values()),
+            "Archive config digest does not match the signed image mapping")
 
 
 def signature(path, sig, key):
@@ -121,8 +144,8 @@ def verify(args):
     receipt = read_json(root / "model-image.json")
     require(approval["modelDigest"] == receipt["modelDigest"] == manifest["modelDigest"])
     require(approval["channel"] == manifest["approvedChannel"])
-    require(receipt["distributionImageId"] == manifest["images"]["ai07-qwen"]["configId"])
-    require(receipt["codeImageId"] == manifest["images"]["model-code"]["configId"])
+    require(receipt["distributionImageId"] == manifest["images"]["ai07-qwen"]["imageId"])
+    require(receipt["codeImageId"] == manifest["images"]["model-code"]["imageId"])
     return root, manifest
 
 
@@ -138,11 +161,15 @@ def export(args):
     root.mkdir(parents=True)
     images = {}
     for service, pin in {**plan["images"], "model-code": receipt["codeImageId"]}.items():
-        require(re.fullmatch(r"sha256:[0-9a-f]{64}", pin), "Image config IDs required; tags are not immutable identities")
+        require(re.fullmatch(r"sha256:[0-9a-f]{64}", pin), "Exact Docker image IDs required; tags are not immutable identities")
         actual = inspect(pin)
         require(actual["Id"] == pin and actual["Os"] == "linux" and actual["Architecture"] == "amd64")
-        images[service] = {"configId": pin, "ociRefs": actual.get("RepoDigests", []), "os": actual["Os"], "architecture": actual["Architecture"]}
-    require(images["ai07-qwen"]["configId"] == receipt["distributionImageId"])
+        reference = "ssd-ai-d2-release:" + service + "-" + pin.removeprefix("sha256:")[:16]
+        docker("tag", pin, reference)
+        require(inspect(reference)["Id"] == pin)
+        images[service] = {"imageId": pin, "localRef": reference, "sourceDescriptor": actual.get("Descriptor"),
+                           "ociRefs": actual.get("RepoDigests", []), "os": actual["Os"], "architecture": actual["Architecture"]}
+    require(images["ai07-qwen"]["imageId"] == receipt["distributionImageId"])
     for name in STATIC_FILES:
         source = safe_file(ROOT, name)
         target = root / name
@@ -177,8 +204,12 @@ def export(args):
         docker("rm", container)
     shutil.copytree(ROOT / "licenses/models", root / "licenses/models")
     shutil.copytree(ROOT / "licenses/runtime-supplements", root / "licenses/runtime-supplements")
-    docker("save", "--output", root / "images.tar", *sorted({item["configId"] for item in images.values()}))
+    docker("save", "--output", root / "images.tar", *sorted({item["localRef"] for item in images.values()}))
     validate_archive(root / "images.tar")
+    configs = archive_config_digests(root / "images.tar")
+    for item in images.values():
+        require(item["localRef"] in configs, "Image archive is missing an exact config mapping")
+        item["configDigest"] = configs[item["localRef"]]
     manifest = {"schemaVersion": "ai-d2-offline-release@1.0.0", "createdAt": datetime.now(timezone.utc).isoformat(),
                 "sourceCommit": subprocess.check_output(["git", "rev-parse", "HEAD"], cwd=ROOT, text=True).strip(),
                 "worktreeDirty": bool(subprocess.check_output(["git", "status", "--porcelain"], cwd=ROOT, text=True).strip()),
@@ -281,9 +312,13 @@ def install(args, root, manifest):
     docker("compose", "version")
     require(json.loads(docker("info", "--format", "{{json .OSType}}")) == "linux", "Linux Docker engine required")
     docker("load", "--input", root / "images.tar")
-    for item in manifest["images"].values():
-        require(inspect(item["configId"])["Id"] == item["configId"], "Imported image ID mismatch")
-    verify_receipt(read_json(root / "model-image.json"))
+    imported = {}
+    for name, item in manifest["images"].items():
+        actual = inspect(item["localRef"])
+        require(actual["Os"] == item["os"] and actual["Architecture"] == item["architecture"])
+        imported[name] = actual["Id"]
+    verify_receipt(read_json(root / "model-image.json"), code_ref=manifest["images"]["model-code"]["localRef"],
+                   distribution_ref=manifest["images"]["ai07-qwen"]["localRef"])
     # Generate local demo users/realm using the existing project's setup logic.
     result = subprocess.run(["powershell", "-NoProfile", "-File", str(root / "scripts/setup.ps1")], cwd=root, capture_output=True)
     require(result.returncode == 0, "Local secrets/realm preparation failed")
@@ -292,7 +327,7 @@ def install(args, root, manifest):
     token = local / "classification-token"
     token.write_text(secrets.token_hex(32), encoding="ascii")
     receipt = read_json(root / "model-image.json")
-    values = {IMAGE_ENV[name]: manifest["images"][name]["configId"] for name in SERVICES}
+    values = {IMAGE_ENV[name]: imported[name] for name in SERVICES}
     values.update({"AI07_QWEN_CODE_IMAGE_ID": receipt["codeImageId"], "AI07_QWEN_MODEL_DIGEST": receipt["modelDigest"],
                    "AI07_QWEN_POLICY_DIGEST": receipt["policyDigest"], "AI07_QWEN_TOKEN_FILE": "./.local/classification-token",
                    "AI_D2_RIGHTS_DIRECTORY": "./.local/rights", "SERVICE_DESK_INTAKE_NEW_TICKETS": "true",
@@ -301,7 +336,7 @@ def install(args, root, manifest):
         for key, value in values.items():
             stream.write(f"\n{key}={value}")
         stream.write("\n")
-    write_new(local / "team-install.json", {"project": "ssd-d2-" + secrets.token_hex(6), "manifestSha256": args.manifest_sha256,
+    write_new(local / "team-install.json", {"project": "ssd-d2-" + secrets.token_hex(6), "manifestSha256": args.manifest_sha256, "images": imported,
                                             "mode": "DEMO_SYNTHETIC", "productionApproved": False})
     print("INSTALLED DEMO_SYNTHETIC; no real-ticket processing grants issued; existing stacks preserved")
 
@@ -321,7 +356,9 @@ def compose(root, manifest, *arguments):
                    {"POSTGRES_PASSWORD", "KC_ADMIN_PASSWORD", "DEMO_PASSWORD", "DIRECTORY_CLIENT_SECRET", "BACKGROUND_CLIENT_SECRET"}
                    and not key.startswith(("SERVICE_DESK_", "AI_D2_", "AI07_", "INTELLIGENCE_", "COMPOSE_", "VITE_"))}
     for name in SERVICES:
-        environment[IMAGE_ENV[name]] = manifest["images"][name]["configId"]
+        item = manifest["images"][name]
+        require(inspect(item["localRef"])["Id"] == state["images"][name], "Imported image alias changed after installation")
+        environment[IMAGE_ENV[name]] = state["images"][name]
     command += ["--profile", "intelligence", "--profile", "ai-d2-qwen", *arguments]
     result = subprocess.run(command, cwd=root, env=environment, capture_output=True, text=True)
     require(result.returncode == 0, "Compose action failed; inspect local service health without exporting secrets")

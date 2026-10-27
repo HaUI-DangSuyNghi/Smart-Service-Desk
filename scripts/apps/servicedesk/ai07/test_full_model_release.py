@@ -5,10 +5,29 @@ from pathlib import Path
 import tempfile
 import unittest
 from unittest.mock import patch
-from full_model_release import read_json, safe_file, verify_ancestry, verify_approval
+from full_model_release import read_json, safe_file, verify_ancestry, verify_approval, verify_receipt
 
 
 class ReleaseBoundaryTest(unittest.TestCase):
+    def test_import_aliases_keep_original_runtime_pin_and_validate_actual_parent_layers(self):
+        receipt = {"schemaVersion": "ai07-full-model-image@1.0.0", "productionApproved": False,
+                   "trainingBaseRevision": "UNRECORDED", "codeImageId": "sha256:" + "a" * 64,
+                   "distributionImageId": "sha256:" + "b" * 64, "modelDigest": "c" * 64,
+                   "policyDigest": "d" * 64, "guardDigest": "e" * 64}
+        code = {"Id": "sha256:" + "1" * 64, "RootFS": {"Layers": ["base"]}, "Os": "linux", "Architecture": "amd64"}
+        full = {"Id": "sha256:" + "2" * 64, "RootFS": {"Layers": ["base", "weights"]}, "Os": "linux", "Architecture": "amd64",
+                "Config": {"User": "10001:10001", "Labels": {"vn.haui.ssd.code-image-id": receipt["codeImageId"],
+                    "vn.haui.ssd.model-digest": receipt["modelDigest"], "vn.haui.ssd.policy-digest": receipt["policyDigest"]}}}
+        with patch("full_model_release.inspect", side_effect=[code, full]) as inspect, patch("full_model_release.verify_embedded") as embedded:
+            verify_receipt(receipt, code_ref="import:code", distribution_ref="import:model")
+            self.assertEqual([("import:code",), ("import:model",)], [call.args for call in inspect.call_args_list])
+            embedded.assert_called_once_with(full["Id"], receipt["modelDigest"], receipt["policyDigest"], receipt["guardDigest"], receipt["codeImageId"])
+        full["Config"]["Labels"]["vn.haui.ssd.code-image-id"] = code["Id"]
+        with patch("full_model_release.inspect", side_effect=[code, full]), patch("full_model_release.verify_embedded") as embedded:
+            with self.assertRaises(ValueError):
+                verify_receipt(receipt, code_ref="import:code", distribution_ref="import:model")
+            embedded.assert_not_called()
+
     def test_rejects_duplicate_json_keys(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "manifest.json"

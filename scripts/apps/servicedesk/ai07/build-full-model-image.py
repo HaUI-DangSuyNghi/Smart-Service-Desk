@@ -29,7 +29,7 @@ def main():
     require(args.output.resolve().is_relative_to((ROOT / ".local/ai07").resolve()) and not args.output.exists())
     code = inspect(args.code_image)
     require(code["Id"] == args.expected_code_image_id, "Code image identity drift")
-    # Dockerfile FROM interprets sha256:<config-id> as a registry tag. Use a local
+    # Dockerfile FROM interprets sha256:<engine-image-id> as a registry tag. Use a local
     # alias named by that ID, then verify ancestry independently after the build.
     code_alias = "ssd-ai07-code-pinned:" + code["Id"].removeprefix("sha256:")
     docker("tag", code["Id"], code_alias)

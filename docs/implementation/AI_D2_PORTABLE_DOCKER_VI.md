@@ -32,11 +32,11 @@ thu quyền xử lý thật hoặc clean-recipient acceptance.
 | Danh tính | Giá trị đã kiểm tra tại máy phát triển |
 |---|---|
 | Base serving revision | `23c69c53358a07516b5827588b3fdb12ae78fd65` |
-| Code image config ID | `sha256:7ad420520547ab2a345bfdc355db709ef4513ac7480fac8faece1c966e3cce96` |
+| Code Docker image ID | `sha256:7ad420520547ab2a345bfdc355db709ef4513ac7480fac8faece1c966e3cce96` |
 | Model bundle SHA-256 | `a40d655f95f8ed6b6dfa89262b9bc1c99c014233e8ca7b23fe29c4f4dee9576d` |
 | Policy SHA-256 | `ac07759e7e3cfdcddd5e1259fea78564b270aa46e8a680dc9d0df5ce7b661753` |
-| Wrapper image config ID | `sha256:b88e7935726c0d7b7d5e716a9b2069f5d3ce8e6e70686b5b590a606830fdc812` |
-| OCI registry digest | Chưa publish; không được dùng config ID thay digest registry |
+| Wrapper Docker image ID | `sha256:b88e7935726c0d7b7d5e716a9b2069f5d3ce8e6e70686b5b590a606830fdc812` |
+| OCI registry digest | Chưa publish; không dùng image ID thay registry reference |
 
 Receipt riêng tư: `.local/ai07/d2/full-image-hf.json` và
 `.local/ai07/d2/full-image-gpu-smoke.json`. Receipt build ghi đúng trạng thái source
@@ -65,7 +65,7 @@ python scripts/apps/servicedesk/ai07/smoke-full-model-image.py `
 ```
 
 Các output dùng tên mới để tránh ghi đè bằng chứng cũ. `runtimeIdentity` trong
-manifest vẫn là code image config ID. Wrapper phải giữ nguyên prefix layers của
+manifest vẫn là code Docker image ID. Wrapper phải giữ nguyên prefix layers của
 code image, OS/architecture và user `10001:10001`. Wrapper thêm base/adapter/
 tokenizer/policy; không thay code runtime. Image model không mở host port.
 
@@ -86,14 +86,14 @@ phân phối model không thay thế quyền xử lý dữ liệu người dùng
 python scripts/apps/servicedesk/ai07/publish-private-model-image.py --help
 ```
 
-Tool lưu mapping code config ID ↔ model digest ↔ policy ↔ wrapper config ID ↔ OCI
+Tool lưu mapping code Docker image ID ↔ model digest ↔ policy ↔ wrapper Docker image ID ↔ OCI
 registry digest. Không dùng mutable tag làm bằng chứng release.
 
 ## 4. Export kit đầy đủ ở máy build
 
 Build backend/frontend từ commit đã kiểm tra; image CPU sidecar từ
 `intelligence/Dockerfile`, gateway từ `infra/apisix/Dockerfile`. Không dùng image
-backend cũ thiếu migrations V16–V19. Ghi config ID sau build vào plan JSON:
+backend cũ thiếu migrations V16–V19. Ghi Docker image ID sau build vào plan JSON:
 
 ```json
 {
@@ -109,13 +109,19 @@ backend cũ thiếu migrations V16–V19. Ghi config ID sau build vào plan JSON
 }
 ```
 
-Các chuỗi `<64-hex>` phải thay bằng config ID thật từ `docker image inspect`.
+Các chuỗi `<64-hex>` phải thay bằng Docker image ID thật từ `docker image inspect`.
+Docker 29 dùng containerd có thể trả OCI index digest trong `.Id`, khác config
+digest. Exporter lưu riêng `imageId`, `sourceDescriptor`, `configDigest` đọc từ
+archive và registry `ociRefs`. Không đổi `runtimeIdentity` của model bundle đã
+pin. Sau import, installer ghi mapping sang ID thật trên Docker Engine máy nhận;
+Compose dùng ID đã nạp và kiểm alias chưa đổi. Không giả định image ID của mọi
+Docker Engine đều là config digest.
 Exporter kiểm tra đủ bảy service, cùng Linux/amd64, tự thêm code image cha để
 người nhận kiểm ancestry độc lập. Export vào thư mục mới dưới `.local`:
 
 ```powershell
 python scripts/ai-d2/team_release.py export `
-  --plan .local/release-images.json `
+  --plan .local/ai-d2-release-images.json `
   --image-receipt .local/ai07/d2/full-image-hf.json `
   --approval D:/Approved/distribution.json `
   --approval-signature D:/Approved/distribution.sig `
@@ -155,7 +161,7 @@ $pub = 'D:/Trusted/release-issuer.pub.pem'
 ./scripts/ai-d2/Stop-Team.ps1 -BundleRoot $kit
 ```
 
-Install chỉ dùng `docker load`, kiểm exact config ID và model integrity; sinh
+Install chỉ dùng `docker load`, kiểm signed config mapping và model integrity; sinh
 password, token, client secret, realm riêng trên máy nhận. Không tái sử dụng secrets
 máy build. Project có tên `ssd-d2-<random>`; secrets/realm/rights nằm trong `.local`
 của kit, DB và files ở volume theo project đó. Lần install thứ hai bị từ chối để

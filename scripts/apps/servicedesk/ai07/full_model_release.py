@@ -110,19 +110,21 @@ def verify_embedded(image, model, policy, guard, code_id):
     require(output.strip() == "EMBEDDED_BUNDLE_VERIFIED")
 
 
-def verify_receipt(receipt):
+def verify_receipt(receipt, *, code_ref=None, distribution_ref=None):
     require(receipt["schemaVersion"] == "ai07-full-model-image@1.0.0")
     require(receipt["productionApproved"] is False and receipt["trainingBaseRevision"] == "UNRECORDED")
     for key in ("codeImageId", "distributionImageId"):
         require(IMAGE_ID.fullmatch(receipt[key]))
     for key in ("modelDigest", "policyDigest", "guardDigest"):
         require(DIGEST.fullmatch(receipt[key]))
-    code, full = inspect(receipt["codeImageId"]), inspect(receipt["distributionImageId"])
+    # A signed offline archive binds config digests to local import aliases. Docker
+    # 29 containerd IDs can be OCI index digests; classic engines expose config IDs.
+    code, full = inspect(code_ref or receipt["codeImageId"]), inspect(distribution_ref or receipt["distributionImageId"])
     verify_ancestry(code, full)
     labels = full["Config"]["Labels"]
     for name, key in (("code-image-id", "codeImageId"), ("model-digest", "modelDigest"), ("policy-digest", "policyDigest")):
         require(labels.get("vn.haui.ssd." + name) == receipt[key], "Distribution label mismatch")
-    verify_embedded(receipt["distributionImageId"], receipt["modelDigest"], receipt["policyDigest"],
+    verify_embedded(full["Id"], receipt["modelDigest"], receipt["policyDigest"],
                     receipt["guardDigest"], receipt["codeImageId"])
     return full
 
