@@ -47,7 +47,7 @@ class IntakeWorkflowIntegrationTest {
         assertEquals(ServiceDeskProcess.INTAKE_KEY, ticket.path("process").path("processKey").asText());
         assertEquals("INTAKE", ticket.path("state").asText());
         assertFalse(state(ticket).path("reviewTaskMayExist").asBoolean());
-        mvc.perform(get(BASE).param("state", "AWAITING_REVIEW").with(as("coordinator", "coordinator")))
+        mvc.perform(get(BASE).param("state", "AWAITING_REVIEW").param("q", ticket.path("title").asText()).with(as("coordinator", "coordinator")))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.total").value(0));
         assertEquals(0L, jdbc.queryForObject("select count(*) from servicedesk_review where ticket_id=?", Long.class, id(ticket)));
     }
@@ -122,7 +122,7 @@ class IntakeWorkflowIntegrationTest {
 
     private JsonNode create() throws Exception {
         return body(mvc.perform(post(BASE).with(as("owner", "requester")).contentType("application/json")
-                .content(json.writeValueAsString(Map.of("clientRequestId", UUID.randomUUID(), "title", "Synthetic wait", "description", "Synthetic wait"))))
+                .content(json.writeValueAsString(Map.of("clientRequestId", UUID.randomUUID(), "title", "Synthetic wait " + UUID.randomUUID(), "description", "Synthetic wait"))))
                 .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString());
     }
     private JsonNode getTicket(JsonNode ticket) throws Exception {

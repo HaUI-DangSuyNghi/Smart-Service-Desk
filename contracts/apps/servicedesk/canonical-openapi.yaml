@@ -1,0 +1,67 @@
+openapi: 3.0.3
+info:
+  title: Service Desk human canonical disposition
+  version: 1.0.0
+  description: CPU evidence is advisory; independent coordinator decisions require current CAS and exact physical evidence. Feature defaults off.
+paths:
+  /api/apps/servicedesk/v1/workspaces/{workspace}/tickets/{id}/canonical:
+    parameters:
+      - $ref: '#/components/parameters/workspace'
+      - $ref: '#/components/parameters/id'
+    get:
+      operationId: getCanonicalProgress
+      description: Requester sees own follower progress with rootTicketId null. Coordinator and agent may see the root ID.
+      responses:
+        '200': {description: Scoped progress}
+        '404': {description: Link absent or ticket not visible}
+    post:
+      operationId: linkCanonical
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Link'
+      responses:
+        '200': {description: Linked or identical operation replay}
+        '403': {description: Flag disabled or independent coordinator absent}
+        '409': {description: Revision, candidates, physical evidence, category or workflow changed}
+  /api/apps/servicedesk/v1/workspaces/{workspace}/tickets/{id}/canonical/split:
+    parameters:
+      - $ref: '#/components/parameters/workspace'
+      - $ref: '#/components/parameters/id'
+    post:
+      operationId: splitCanonical
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [expectedLinkVersion, expectedContextRevision, operationId, reason]
+              properties:
+                expectedLinkVersion: {type: integer, format: int64, minimum: 1}
+                expectedContextRevision: {type: integer, format: int64, minimum: 0}
+                operationId: {type: string, format: uuid}
+                reason: {type: string, minLength: 1, maxLength: 1000}
+      responses:
+        '200': {description: Active follower returns to fresh intake in the same process}
+        '403': {description: Independent coordinator required}
+        '409': {description: Link/context changed or follower already ended}
+components:
+  parameters:
+    workspace: {name: workspace, in: path, required: true, schema: {type: string}}
+    id: {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+  schemas:
+    Link:
+      type: object
+      required: [rootTicketId, expectedContextRevision, expectedRootRevision, expectedIntakeVersion, candidateSetDigest, verifiedCategory, operationId, reason]
+      properties:
+        rootTicketId: {type: string, format: uuid}
+        expectedContextRevision: {type: integer, format: int64, minimum: 0}
+        expectedRootRevision: {type: integer, format: int64, minimum: 0}
+        expectedIntakeVersion: {type: integer, format: int64, minimum: 0}
+        candidateSetDigest: {type: string, pattern: '^[0-9a-f]{64}$'}
+        verifiedCategory: {type: string, enum: [ACCOUNT, HARDWARE, NETWORK, SOFTWARE, OTHER]}
+        operationId: {type: string, format: uuid}
+        reason: {type: string, minLength: 1, maxLength: 1000}

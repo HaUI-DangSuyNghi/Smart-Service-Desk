@@ -82,7 +82,9 @@ public class TicketReviewService implements WorkProjection {
         var timeline = processes.timeline(workspace, ticket.process().processInstanceId());
         var task = timeline.currentTasks().stream().findFirst().orElse(null);
         int reopened = (int) timeline.steps().stream().filter(step -> "confirm".equals(step.key()) && "rework".equals(step.outcome())).count();
-        String state = timeline.ended() ? (timeline.steps().stream().anyMatch(step -> "confirm".equals(step.key())
+        boolean closedFollower = timeline.ended() && Boolean.TRUE.equals(jdbc.queryForObject("select exists(select 1 from servicedesk_canonical_link "
+                + "where workspace=? and follower_id=? and state='CLOSED')", Boolean.class, workspace, ticket.id()));
+        String state = timeline.ended() ? (closedFollower || timeline.steps().stream().anyMatch(step -> "confirm".equals(step.key())
             && "accepted".equals(step.outcome())) ? "CLOSED" : "UNCLASSIFIED") : task == null ? "UNCLASSIFIED" : switch (task.key()) {
             case "intake" -> "INTAKE"; case "follower" -> "FOLLOWING";
             case "review" -> reopened > 0 ? "REOPENED" : "AWAITING_REVIEW"; case "confirm" -> "AWAITING_CONFIRMATION"; default -> "ASSIGNED";

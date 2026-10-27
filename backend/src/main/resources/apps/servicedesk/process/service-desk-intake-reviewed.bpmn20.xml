@@ -21,7 +21,7 @@
     <sequenceFlow id="followerDecision" sourceRef="follower" targetRef="followerDisposition"/>
     <exclusiveGateway id="followerDisposition"/>
     <sequenceFlow id="followerClosed" sourceRef="followerDisposition" targetRef="end"><conditionExpression xsi:type="tFormalExpression"><![CDATA[${outcome_follower == 'closed'}]]></conditionExpression></sequenceFlow>
-    <sequenceFlow id="followerSplit" sourceRef="followerDisposition" targetRef="review"><conditionExpression xsi:type="tFormalExpression"><![CDATA[${outcome_follower == 'split'}]]></conditionExpression></sequenceFlow>
+    <sequenceFlow id="followerSplit" sourceRef="followerDisposition" targetRef="intake"><conditionExpression xsi:type="tFormalExpression"><![CDATA[${outcome_follower == 'split'}]]></conditionExpression></sequenceFlow>
     <endEvent id="end"/>
   </process>
 </definitions>

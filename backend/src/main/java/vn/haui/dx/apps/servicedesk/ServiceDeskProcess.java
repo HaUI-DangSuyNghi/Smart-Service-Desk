@@ -17,17 +17,23 @@ public class ServiceDeskProcess implements ProcessContribution {
     private final org.springframework.jdbc.core.JdbcTemplate jdbc;
     private final org.springframework.beans.factory.ObjectProvider<vn.haui.dx.hpdi.process.api.WorkExecution> execution;
     private final org.springframework.beans.factory.ObjectProvider<vn.haui.dx.apps.servicedesk.intake.IntakeAdmission> intake;
+    private final org.springframework.beans.factory.ObjectProvider<vn.haui.dx.apps.servicedesk.intake.CanonicalTicketService> canonical;
     public ServiceDeskProcess(org.springframework.jdbc.core.JdbcTemplate jdbc,
             org.springframework.beans.factory.ObjectProvider<vn.haui.dx.hpdi.process.api.WorkExecution> execution,
-            org.springframework.beans.factory.ObjectProvider<vn.haui.dx.apps.servicedesk.intake.IntakeAdmission> intake) {
-        this.jdbc = jdbc; this.execution = execution; this.intake = intake;
+            org.springframework.beans.factory.ObjectProvider<vn.haui.dx.apps.servicedesk.intake.IntakeAdmission> intake,
+            org.springframework.beans.factory.ObjectProvider<vn.haui.dx.apps.servicedesk.intake.CanonicalTicketService> canonical) {
+        this.jdbc = jdbc; this.execution = execution; this.intake = intake; this.canonical = canonical;
     }
 
     @Override public Map<String, Set<String>> executionTasks() { return Map.of(REVIEWED_KEY, Set.of("handle"), INTAKE_KEY, Set.of("handle")); }
 
     @Override public void beforeComplete(String workspace, String processKey, String processId, String taskKey, String taskId, String outcome) {
-        if (INTAKE_KEY.equals(processKey) && "intake".equals(taskKey)) intake.getObject().beforeIntakeComplete(workspace, processId, taskId, outcome);
-        if (INTAKE_KEY.equals(processKey) && "follower".equals(taskKey)) throw vn.haui.dx.hpdi.common.api.CapabilityException.conflict("Canonical disposition API required");
+        if (INTAKE_KEY.equals(processKey) && "intake".equals(taskKey)) {
+            if ("duplicate".equals(outcome)) canonical.getObject().beforeLinkComplete(workspace, processId);
+            else intake.getObject().beforeIntakeComplete(workspace, processId, taskId, outcome);
+        }
+        if (INTAKE_KEY.equals(processKey) && "follower".equals(taskKey)) canonical.getObject().beforeFollowerComplete(workspace, processId, outcome);
+        if (reviewed(processKey) && "confirm".equals(taskKey) && "accepted".equals(outcome)) canonical.getObject().rootConfirmed(workspace, processId);
         if (reviewed(processKey) && "review".equals(taskKey)) intake.getObject().beforeComplete(workspace, processId, taskId);
         if (reviewed(processKey) && "confirm".equals(taskKey) && "rework".equals(outcome)) intake.getObject().rework(workspace, processId);
         if (reviewed(processKey) && "confirm".equals(taskKey) && "rework".equals(outcome))

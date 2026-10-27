@@ -14,12 +14,20 @@ public class IntakeController {
     private final IntakeAdmission admission;
     private final HumanContext human;
     private final IntakeCoordinator coordinator;
+    private final DuplicatePreflightService preflight;
 
-    public IntakeController(TicketService tickets, IntakeAdmission admission, HumanContext human, IntakeCoordinator coordinator) {
+    public IntakeController(TicketService tickets, IntakeAdmission admission, HumanContext human, IntakeCoordinator coordinator, DuplicatePreflightService preflight) {
         this.tickets = tickets;
         this.admission = admission;
         this.human = human;
         this.coordinator = coordinator;
+        this.preflight = preflight;
+    }
+
+    @PostMapping("/tickets/{id}/intake/duplicate-preflight")
+    public DuplicatePreflightService.View preflight(@PathVariable String workspace, @PathVariable UUID id) {
+        tickets.get(workspace, id);
+        return preflight.probe(workspace, id);
     }
 
     @GetMapping("/tickets/{id}/intake")
@@ -44,11 +52,12 @@ public class IntakeController {
     }
 
     @GetMapping("/intake-pending")
-    public List<UUID> pending(@PathVariable String workspace) {
+    public List<UUID> pending(@PathVariable String workspace, @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "50") int size) {
         var actor = human.currentActor(workspace);
         if (actor == null || !workspace.equals(actor.workspace()) || !actor.hasRole("coordinator")) {
             throw CapabilityException.forbidden("Coordinator workspace role required");
         }
-        return admission.pending(workspace);
+        return admission.pending(workspace, page, size);
     }
 }

@@ -84,3 +84,32 @@ Kiểm chứng IntakeWorkflowIntegrationTest, IntakeAdmissionIntegrationTest,
 FinalAssessmentIntegrationTest, TicketIntegrationTest: **65 pass**, 0 fail/error/skip.
 Follower branch chưa được phép complete trực tiếp khi canonical disposition chưa
 được thực hiện; không coi việc có BPMN branch là R10 đã hoàn tất.
+
+## C3b — Preflight và canonical do người quyết định
+
+V17 bổ sung projection room/object, notice chờ xử lý, canonical link và lịch sử
+quyết định. Preflight quét tối đa 500 ticket trong 90 ngày trước ticket đang xét,
+lọc workflow đang mở trước khi chọn tối đa 50 candidate. Kết quả báo rõ incomplete;
+không dùng danh sách bị cắt để cho phép liên kết. Projection chỉ ưu tiên truy hồi,
+bằng chứng quyết định luôn đọc lại context hiện tại và trạng thái Core.
+
+`SERVICE_DESK_CANONICAL_HUMAN_ENABLED=false` mặc định. Khi được bật có kiểm soát,
+coordinator độc lập có thể liên kết v2 intake với root đã được người duyệt cho
+revision hiện tại, cùng phòng, cùng thiết bị vật lý và triệu chứng tương thích.
+Không dùng category do model dự đoán để chứng nhận trùng. Lệnh cần CAS, digest
+candidate, operationId và lý do; chặn chain/cycle/cross-workspace và generic bypass.
+Follower không tạo handle thứ hai. Split đang mở quay về intake trong cùng process.
+Root phải kết thúc bình thường sau requester xác nhận; follower có late context
+không tự đóng. Requester chỉ thấy tiến độ thô, không nhận ID/nội dung root.
+
+Incident nhiều thiết bị/cùng khu vực chỉ tạo tín hiệu và notice PENDING, không merge.
+Worker truyền trạng thái dùng service identity thật; realm template chỉ cấp
+task:handle cho role kỹ thuật ở task follower, không cấp candidate review/handle.
+Không reset realm đang chạy. Notice chưa có kênh gửi ngoài hệ thống; split sau khi
+follower đã kết thúc cần workflow nghiệp vụ riêng. Auto merge và production GO
+vẫn tắt, chờ policy/Gold và chủ sở hữu phê duyệt.
+
+Kiểm chứng trên PostgreSQL/Flowable: 6 canonical cases (liên kết, redaction, split,
+thiết bị khác, root chưa duyệt, đóng theo xác nhận, late context), 6 true-wait cases,
+2 migration upgrade cases đều pass. Cùng lượt có 12 kiểm tra secret/HTTP transport
+pass; tổng **26 pass**, không skip. Bộ full regression được ghi ở cuối tài liệu.

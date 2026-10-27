@@ -47,6 +47,8 @@ management:
       show-details: never
 serviceDesk:
   intake:
+    canonical-human-enabled: ${SERVICE_DESK_CANONICAL_HUMAN_ENABLED:false}
+    incident-threshold: ${SERVICE_DESK_INCIDENT_THRESHOLD:3}
     true-wait: ${SERVICE_DESK_INTAKE_TRUE_WAIT:false}
     new-tickets: ${SERVICE_DESK_INTAKE_NEW_TICKETS:false}
     timeout-seconds: ${SERVICE_DESK_INTAKE_TIMEOUT_SECONDS:86400}
@@ -77,6 +79,7 @@ serviceDesk:
     processing-receipt: ${SERVICE_DESK_CONTEXT_PROCESSING_RECEIPT:}
     # Khóa xác minh HMAC (ít nhất 32 ký tự); chỉ đặt qua biến môi trường/bí mật triển khai.
     verification-key: ${SERVICE_DESK_CONTEXT_PROCESSING_VERIFICATION_KEY:}
+    verification-key-file: ${SERVICE_DESK_CONTEXT_PROCESSING_VERIFICATION_KEY_FILE:}
   assessment:
     enabled: ${SERVICE_DESK_ASSESSMENT_ENABLED:false}
     policy-bundle-digest: ${SERVICE_DESK_ASSESSMENT_POLICY_BUNDLE_DIGEST:}
@@ -87,10 +90,12 @@ serviceDesk:
     policy-digest: ${SERVICE_DESK_CLASSIFIER_POLICY_DIGEST:}
     processing-receipt: ${SERVICE_DESK_CLASSIFIER_PROCESSING_RECEIPT:}
     processing-verification-key: ${SERVICE_DESK_CLASSIFIER_PROCESSING_VERIFICATION_KEY:}
+    processing-verification-key-file: ${SERVICE_DESK_CLASSIFIER_PROCESSING_VERIFICATION_KEY_FILE:}
 intelligence:
   classification:
     base-url: ${INTELLIGENCE_CLASSIFICATION_BASE_URL:}
     token: ${INTELLIGENCE_CLASSIFICATION_TOKEN:}
+    token-file: ${INTELLIGENCE_CLASSIFICATION_TOKEN_FILE:}
 server:
   error:
     include-message: never

@@ -82,10 +82,11 @@ public class IntakeAdmission {
         var state = find(event.workspace(), event.ticketId());
         if (state == null || event.contextRevision() <= state.contextRevision()) return;
 
-        boolean reviewed = "REVIEWED".equals(state.status());
+        boolean reviewed = List.of("REVIEWED", "CANONICAL_FOLLOWER").contains(state.status());
         if (reviewed) {
             jdbc.update("update servicedesk_intake_admission set context_revision=?,late_notice=true,version=version+1,"
-                    + "reason='REVIEW_STALE_NOTICE',updated_at=clock_timestamp() where ticket_id=?",
+                    + "reason=case when status='CANONICAL_FOLLOWER' then 'CANONICAL_CONTEXT_CHANGED' else 'REVIEW_STALE_NOTICE' end,"
+                    + "updated_at=clock_timestamp() where ticket_id=?",
                     event.contextRevision(), event.ticketId());
         } else {
             jdbc.update("update servicedesk_intake_admission set context_revision=?,status='NEW',version=version+1,"
@@ -232,9 +233,14 @@ public class IntakeAdmission {
     }
 
     public List<UUID> pending(String workspace) {
+        return pending(workspace, 0, 50);
+    }
+
+    public List<UUID> pending(String workspace, int page, int size) {
+        if (page < 0 || page > 100000 || size < 1 || size > 100) throw CapabilityException.validation("Invalid page");
         return jdbc.query("select ticket_id from servicedesk_intake_admission where workspace=? "
                 + "and status not in ('REVIEWED','REVIEW_RELEASED','CANONICAL_FOLLOWER') "
-                + "order by deadline_at,ticket_id limit 50", (row, index) -> row.getObject(1, UUID.class), workspace);
+                + "order by deadline_at,ticket_id limit ? offset ?", (row, index) -> row.getObject(1, UUID.class), workspace, size, (long) page * size);
     }
 
     private Map<String, Object> lockTicket(String workspace, UUID id) {

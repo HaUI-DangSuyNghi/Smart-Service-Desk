@@ -49,7 +49,7 @@ class ServiceDeskMigrationIntegrationTest {
                 ? jdbc.queryForList("select * from " + schema + ".servicedesk_assessment_history where ticket_id=?", ticket) : null;
 
         var upgraded = Flyway.configure().dataSource(source).schemas(schema).load();
-        assertEquals(16 - baselineVersion, upgraded.migrate().migrationsExecuted);
+        assertEquals(17 - baselineVersion, upgraded.migrate().migrationsExecuted);
         assertTrue(upgraded.validateWithResult().validationSuccessful);
         var after = jdbc.queryForMap("select * from " + schema + ".servicedesk_ticket where id=?", ticket);
         assertEquals(0L, after.remove("context_revision"));

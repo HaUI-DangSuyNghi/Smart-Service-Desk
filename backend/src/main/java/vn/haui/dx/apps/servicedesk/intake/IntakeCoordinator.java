@@ -35,7 +35,7 @@ public class IntakeCoordinator {
     private final ContextEvaluationGuard guard;
     private final ContextSlotExtractor extractor;
     private final ContextReadinessPolicy readiness;
-    private final ContextIntelligenceService duplicates;
+    private final DuplicatePreflightService duplicates;
     private final TicketContextualAssessmentService assessments;
     private final TicketAssessmentInputAssembler inputs;
     private final ClassifierConfiguration.Settings model;
@@ -48,12 +48,12 @@ public class IntakeCoordinator {
     private final List<String> workspaces;
     private final boolean scheduled;
     private final vn.haui.dx.hpdi.human.api.HumanContext human;
-    private record Plan(ContextReadinessView readiness, ContextIntelligenceService.DuplicateView duplicates,
+    private record Plan(ContextReadinessView readiness, DuplicatePreflightService.View duplicates,
             String identity, String grants, String status, String reason, String taskId) {}
 
     public IntakeCoordinator(JdbcTemplate jdbc, ObjectMapper json, PlatformTransactionManager manager,
             TicketService tickets, IntakeAdmission admission, ContextEvaluationGuard guard, ContextSlotExtractor extractor,
-            ContextReadinessPolicy readiness, ContextIntelligenceService duplicates, TicketContextualAssessmentService assessments,
+            ContextReadinessPolicy readiness, DuplicatePreflightService duplicates, TicketContextualAssessmentService assessments,
             TicketAssessmentInputAssembler inputs, ClassifierConfiguration.Settings model, ContextProcessingGate contextRights,
             ClassifierProcessingGate modelRights, AssessmentPolicy assessmentPolicy, ProcessCapability processes,
             ActivityJournal audit, BackgroundProcessing processing, vn.haui.dx.hpdi.human.api.HumanContext human,
@@ -117,7 +117,7 @@ public class IntakeCoordinator {
                     return new Plan(ready, null, null, null, "NEEDS_ENRICHMENT", "REQUIRED_CONTEXT_MISSING", null);
                 } else {
                     // Stage A is CPU advisory. DRAFT duplicate policy never hard-holds or auto-merges.
-                    var preflight = duplicates.duplicates(workspace, id);
+                    var preflight = duplicates.probe(workspace, id);
                     String grants = contextRights.verifyContextual(workspace, session.scope(), readiness.digest(), inputs.policyDigest());
                     if (model.mode() == ClassifierConfiguration.Mode.ASSISTED) {
                         grants += ":" + modelRights.verifyAssessment(workspace, assessmentPolicy.bundleDigest());
@@ -132,7 +132,7 @@ public class IntakeCoordinator {
                     return new Plan(ready, preflight, identity, processingDigest, "FINAL_ASSESSMENT_QUEUED", "SNAPSHOT_SEALED", task);
                 }
             });
-            saveScreen(state, plan.readiness(), plan.duplicates(), plan.identity(), plan.grants(), plan.status(), plan.reason(), plan.taskId());
+            saveScreen(workspace, state, plan.readiness(), plan.duplicates(), plan.identity(), plan.grants(), plan.status(), plan.reason(), plan.taskId());
         } catch (RuntimeException failure) {
             if (!human.currentActor(workspace).hasRole("assessment-worker")) throw failure;
             manual(workspace, id, state.version(), "PROCESSING_OR_CONTEXT_UNAVAILABLE");
@@ -140,8 +140,8 @@ public class IntakeCoordinator {
         return admission.find(workspace, id);
     }
 
-    private void saveScreen(IntakeAdmission.View previous, ContextReadinessView ready,
-            ContextIntelligenceService.DuplicateView preflight, String identity, String grants,
+    private void saveScreen(String workspace, IntakeAdmission.View previous, ContextReadinessView ready,
+            DuplicatePreflightService.View preflight, String identity, String grants,
             String next, String reason, String taskId) {
         transaction.executeWithoutResult(status -> {
             lock(previous.ticketId());
@@ -154,6 +154,11 @@ public class IntakeCoordinator {
                     next, encode(ready), preflight == null ? null : encode(preflight), identity == null ? null : ready.contextRevision(),
                     ready.contextDigest(), identity, grants, taskId, policyDigest(), reason, previous.ticketId(), previous.version(), ready.contextRevision());
             if (changed != 1) throw CapabilityException.conflict("Intake changed before seal");
+            if ("MANUAL_REQUIRED".equals(next) || preflight != null && preflight.incidentSignal()) {
+                jdbc.update("insert into servicedesk_intake_notice(id,ticket_id,workspace,context_revision,kind) values (?,?,?,?,?) on conflict do nothing",
+                        UUID.randomUUID(), previous.ticketId(), workspace,
+                        ready.contextRevision(), "MANUAL_REQUIRED".equals(next) ? "SAFETY_OR_HUMAN_INTAKE" : "INCIDENT_POSSIBLE");
+            }
             if (identity != null) {
                 jdbc.update("update servicedesk_assessment set status='PENDING',result=null,error_code=null,attempts=0,"
                         + "available_at=clock_timestamp(),lease_token=null,lease_until=null where ticket_id=?", previous.ticketId());
@@ -267,7 +272,7 @@ public class IntakeCoordinator {
 
     private String policyDigest() {
         return ContextPolicyCatalog.digest(admission.policyDigest() + ":" + readiness.digest() + ":" + inputs.policyDigest() + ":"
-                + assessmentPolicy.bundleDigest() + ":" + model.mode() + ":" + model.modelDigest() + ":" + model.policyDigest());
+                + assessmentPolicy.bundleDigest() + ":" + model.mode() + ":" + model.modelDigest() + ":" + model.policyDigest() + ":" + duplicates.policyDigest());
     }
 
     private void lock(UUID id) { jdbc.queryForList("select id from servicedesk_ticket where id=? for update", id); }

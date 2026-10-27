@@ -26,7 +26,7 @@
     "name": "workspaces",
     "subGroups": [
       {"name": "lab-a", "attributes": {"displayName": ["Phòng máy A"]}, "subGroups": [
-        {"name": "assessment-worker", "clientRoles": {"dx-permissions": ["intelligence:process"]}},
+        {"name": "assessment-worker", "clientRoles": {"dx-permissions": ["intelligence:process", "task:handle"]}},
         {"name": "requester", "clientRoles": {"dx-permissions": ["request:create", "audit:view-own"]}},
         {"name": "agent", "clientRoles": {"dx-permissions": ["request:create", "task:handle", "document:view", "document:upload", "audit:view-own"]}},
         {"name": "coordinator", "clientRoles": {"dx-permissions": ["request:create", "request:view-all", "task:handle", "task:assign", "document:view", "document:upload", "member:view", "audit:view", "audit:view-own", "dashboard:view"]}}
