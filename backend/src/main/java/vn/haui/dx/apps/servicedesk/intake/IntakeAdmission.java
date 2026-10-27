@@ -1,0 +1,210 @@
+package vn.haui.dx.apps.servicedesk.intake;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import java.sql.Timestamp;
+import java.time.Instant;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.context.event.EventListener;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import vn.haui.dx.apps.servicedesk.TicketContextChanged;
+import vn.haui.dx.apps.servicedesk.intelligence.context.ContextPolicyCatalog;
+import vn.haui.dx.apps.servicedesk.intelligence.context.ContextSnapshotAssembler;
+import vn.haui.dx.hpdi.common.api.CapabilityException;
+import vn.haui.dx.hpdi.human.api.ActivityJournal;
+import vn.haui.dx.hpdi.human.api.BusinessActivity;
+import vn.haui.dx.hpdi.human.api.HumanContext;
+
+/** App-owned admission; existing Flowable review tasks can exist while admission waits. */
+@Service
+public class IntakeAdmission {
+    public static final String VERSION = "intake-admission@1.0.0";
+
+    public record View(String contractVersion, UUID ticketId, long contextRevision, long version,
+            int reviewRound, String status, Instant deadlineAt, Long sealedRevision,
+            String contextDigest, String policyDigest, String reason, boolean lateNotice,
+            JsonNode readiness, JsonNode duplicatePreflight, JsonNode finalAssessment,
+            boolean reviewTaskMayExist, boolean operationalAuthority) {}
+
+    public record Release(long expectedContextRevision, long expectedVersion, UUID operationId, String reason) {}
+
+    private final JdbcTemplate jdbc;
+    private final HumanContext human;
+    private final ActivityJournal audit;
+    private final ObjectMapper json;
+    private final ObjectProvider<ContextSnapshotAssembler> snapshots;
+    private final boolean newTickets;
+    private final long timeoutSeconds;
+    private final String policyDigest;
+
+    public IntakeAdmission(JdbcTemplate jdbc, HumanContext human, ActivityJournal audit, ObjectMapper json,
+            ObjectProvider<ContextSnapshotAssembler> snapshots,
+            @Value("${serviceDesk.intake.new-tickets:false}") boolean newTickets,
+            @Value("${serviceDesk.intake.timeout-seconds:86400}") long timeoutSeconds) {
+        if (timeoutSeconds < 60 || timeoutSeconds > 86400) {
+            throw new IllegalArgumentException("Intake timeout must be between 60 and 86400 seconds");
+        }
+        this.jdbc = jdbc;
+        this.human = human;
+        this.audit = audit;
+        this.json = json;
+        this.snapshots = snapshots;
+        this.newTickets = newTickets;
+        this.timeoutSeconds = timeoutSeconds;
+        this.policyDigest = ContextPolicyCatalog.digest(VERSION + ":" + timeoutSeconds);
+    }
+
+    public String policyDigest() { return policyDigest; }
+
+    @EventListener
+    @Transactional
+    public void changed(TicketContextChanged event) {
+        var ticket = lockTicket(event.workspace(), event.ticketId());
+        if (newTickets && event.contextRevision() == 0) {
+            jdbc.update("insert into servicedesk_intake_admission(ticket_id,workspace,context_revision,deadline_at,policy_digest) "
+                    + "values (?,?,0,clock_timestamp()+(? * interval '1 second'),?) on conflict do nothing",
+                    event.ticketId(), event.workspace(), timeoutSeconds, policyDigest);
+        }
+        var state = find(event.workspace(), event.ticketId());
+        if (state == null || event.contextRevision() <= state.contextRevision()) return;
+
+        boolean reviewed = "REVIEWED".equals(state.status()) || !Boolean.TRUE.equals(ticket.get("awaiting_review"));
+        if (reviewed) {
+            jdbc.update("update servicedesk_intake_admission set context_revision=?,late_notice=true,version=version+1,"
+                    + "reason='REVIEW_STALE_NOTICE',updated_at=clock_timestamp() where ticket_id=?",
+                    event.contextRevision(), event.ticketId());
+        } else {
+            jdbc.update("update servicedesk_intake_admission set context_revision=?,status='NEW',version=version+1,"
+                    + "sealed_revision=null,context_digest=null,readiness_json=null,duplicate_json=null,final_json=null,"
+                    + "attempt_key=null,lease_token=null,lease_until=null,updated_at=clock_timestamp() where ticket_id=?",
+                    event.contextRevision(), event.ticketId());
+            jdbc.update("update servicedesk_final_attempt set state='STALE',finished_at=clock_timestamp() "
+                    + "where ticket_id=? and state='RUNNING'", event.ticketId());
+        }
+    }
+
+    public View find(String workspace, UUID id) {
+        return jdbc.query("select * from servicedesk_intake_admission where workspace=? and ticket_id=?", (row, index) ->
+                new View(VERSION, id, row.getLong("context_revision"), row.getLong("version"), row.getInt("review_round"),
+                        row.getString("status"), row.getTimestamp("deadline_at").toInstant(),
+                        row.getObject("sealed_revision", Long.class), row.getString("context_digest"), row.getString("policy_digest"),
+                        row.getString("reason"), row.getBoolean("late_notice"), decode(row.getString("readiness_json")),
+                        decode(row.getString("duplicate_json")), decode(row.getString("final_json")), true, false),
+                workspace, id).stream().findFirst().orElse(null);
+    }
+
+    @Transactional
+    public View manualRelease(String workspace, UUID id, Release request) {
+        var actor = human.currentActor(workspace);
+        if (actor == null || !workspace.equals(actor.workspace()) || !actor.hasRole("coordinator")) {
+            throw CapabilityException.forbidden("Coordinator workspace role required");
+        }
+        if (request == null || request.operationId() == null || request.reason() == null
+                || request.reason().isBlank() || request.reason().length() > 1000
+                || request.reason().codePoints().anyMatch(Character::isISOControl)) {
+            throw CapabilityException.validation("Release requires operationId and reason");
+        }
+        var ticket = lockTicket(workspace, id);
+        if (actor.subject().equals(ticket.get("creator"))) {
+            throw CapabilityException.forbidden("Independent coordinator required");
+        }
+        var state = find(workspace, id);
+        if (state == null) throw CapabilityException.notFound("Intake admission not found");
+        String payload = ContextPolicyCatalog.digest(request.toString() + ":" + actor.subject());
+        var replay = jdbc.queryForList("select payload_digest,context_revision,review_round from servicedesk_intake_receipt "
+                + "where ticket_id=? and operation_id=?", id, request.operationId());
+        if (!replay.isEmpty()) {
+            var receipt = replay.get(0);
+            if (!payload.equals(receipt.get("payload_digest"))
+                    || state.contextRevision() != ((Number) receipt.get("context_revision")).longValue()
+                    || state.reviewRound() != ((Number) receipt.get("review_round")).intValue()) {
+                throw CapabilityException.conflict("Release operation has a different payload or generation");
+            }
+            return state;
+        }
+        if (!Boolean.TRUE.equals(ticket.get("awaiting_review")) || "REVIEWED".equals(state.status())
+                || "CANONICAL_FOLLOWER".equals(state.status()) || "REVIEW_RELEASED".equals(state.status())
+                || state.contextRevision() != request.expectedContextRevision() || state.version() != request.expectedVersion()) {
+            throw CapabilityException.conflict("Intake generation changed or review already admitted");
+        }
+        var snapshot = snapshots.getObject().read(workspace, id);
+        if (snapshot.contextRevision() != request.expectedContextRevision()) {
+            throw CapabilityException.conflict("Context changed before release");
+        }
+        jdbc.update("update servicedesk_intake_admission set status='REVIEW_RELEASED',sealed_revision=context_revision,"
+                + "context_digest=?,reason=?,version=version+1,lease_token=null,lease_until=null,updated_at=clock_timestamp() "
+                + "where ticket_id=?", snapshot.digest(), request.reason(), id);
+        receipt(id, request.operationId(), "MANUAL_RELEASE", state, snapshot.digest(), payload, actor.subject(), request.reason());
+        audit.record(workspace, new BusinessActivity("servicedesk.intake.release", "servicedesk.ticket", id.toString(),
+                Map.of("operationId", request.operationId().toString(), "contextVersion", Long.toString(state.contextRevision()),
+                        "reviewRoundVersion", Integer.toString(state.reviewRound()))));
+        return find(workspace, id);
+    }
+
+    /** Called under the same ticket lock and transaction as the authoritative review. */
+    public void approveReview(String workspace, UUID id, Long revision, Long version) {
+        var state = find(workspace, id);
+        if (state == null) return;
+        if (revision == null || version == null || revision != state.contextRevision() || version != state.version()
+                || !"REVIEW_RELEASED".equals(state.status()) || !revision.equals(state.sealedRevision())) {
+            throw CapabilityException.conflict("Review requires the current released intake revision and version");
+        }
+        jdbc.update("update servicedesk_intake_admission set status='REVIEWED',version=version+1 where ticket_id=?", id);
+    }
+
+    public void beforeComplete(String workspace, String processId) {
+        if (Boolean.TRUE.equals(jdbc.queryForObject("select exists(select 1 from servicedesk_intake_admission a "
+                + "join servicedesk_ticket t on t.id=a.ticket_id where t.workspace=? and t.process_instance_id=? "
+                + "and (a.status<>'REVIEWED' or a.sealed_revision is distinct from t.context_revision))",
+                Boolean.class, workspace, processId))) {
+            throw CapabilityException.conflict("Review has not passed current intake admission");
+        }
+    }
+
+    public void rework(String workspace, String processId) {
+        jdbc.update("update servicedesk_intake_admission a set status='NEW',review_round=review_round+1,version=a.version+1,"
+                + "sealed_revision=null,context_digest=null,final_json=null,readiness_json=null,duplicate_json=null,"
+                + "attempt_key=null,lease_token=null,lease_until=null,late_notice=false,reason='REWORK',"
+                + "deadline_at=clock_timestamp()+(? * interval '1 second') from servicedesk_ticket t "
+                + "where t.id=a.ticket_id and t.workspace=? and t.process_instance_id=?", timeoutSeconds, workspace, processId);
+    }
+
+    @Scheduled(fixedDelayString = "${serviceDesk.intake.poll-ms:60000}")
+    public void expire() {
+        jdbc.update("update servicedesk_intake_admission set status='MANUAL_REQUIRED',reason='INTAKE_TIMEOUT',"
+                + "version=version+1,lease_token=null,lease_until=null,updated_at=clock_timestamp() "
+                + "where deadline_at<=clock_timestamp() and status in ('NEW','NEEDS_ENRICHMENT','DUPLICATE_HOLD',"
+                + "'FINAL_ASSESSMENT_QUEUED','ASSESSING')");
+    }
+
+    public List<UUID> pending(String workspace) {
+        return jdbc.query("select ticket_id from servicedesk_intake_admission where workspace=? "
+                + "and status not in ('REVIEWED','REVIEW_RELEASED','CANONICAL_FOLLOWER') "
+                + "order by deadline_at,ticket_id limit 50", (row, index) -> row.getObject(1, UUID.class), workspace);
+    }
+
+    private Map<String, Object> lockTicket(String workspace, UUID id) {
+        var rows = jdbc.queryForList("select creator,awaiting_review from servicedesk_ticket where workspace=? and id=? for update", workspace, id);
+        if (rows.isEmpty()) throw CapabilityException.notFound("Ticket not found");
+        return rows.get(0);
+    }
+
+    private JsonNode decode(String value) {
+        try { return value == null ? null : json.readTree(value); }
+        catch (java.io.IOException failure) { throw new IllegalStateException("Invalid persisted intake data", failure); }
+    }
+
+    private void receipt(UUID id, UUID operation, String action, View state, String digest, String payload, String actor, String reason) {
+        jdbc.update("insert into servicedesk_intake_receipt(id,ticket_id,operation_id,action,context_revision,review_round,"
+                + "context_digest,policy_digest,payload_digest,actor,reason,final_json) values (?,?,?,?,?,?,?,?,?,?,?,cast(? as jsonb))",
+                UUID.randomUUID(), id, operation, action, state.contextRevision(), state.reviewRound(), digest,
+                state.policyDigest(), payload, actor, reason, state.finalAssessment() == null ? null : state.finalAssessment().toString());
+    }
+}

@@ -1,0 +1,110 @@
+openapi: 3.0.3
+info:
+  title: Service Desk intake admission
+  version: 1.0.0
+  description: Server admission before authoritative review; a Flowable review task may already exist.
+servers:
+  - url: /api/apps/servicedesk/v1
+security:
+  - bearerAuth: []
+paths:
+  /workspaces/{workspace}/tickets/{id}/intake:
+    parameters:
+      - $ref: '#/components/parameters/Workspace'
+      - $ref: '#/components/parameters/TicketId'
+    get:
+      operationId: getTicketIntake
+      description: Read metadata; derived AI content requires current processing authorization.
+      responses:
+        '200':
+          description: Persisted admission, no inference triggered.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IntakeView'
+        '403':
+          description: Workspace access denied.
+        '404':
+          description: Ticket not visible or legacy ticket without intake.
+  /workspaces/{workspace}/tickets/{id}/intake/manual-release:
+    parameters:
+      - $ref: '#/components/parameters/Workspace'
+      - $ref: '#/components/parameters/TicketId'
+    post:
+      operationId: releaseTicketIntake
+      description: Independent coordinator only; audited override does not bypass workspace authorization.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ManualRelease'
+      responses:
+        '200':
+          description: Released current snapshot or identical operation replay.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IntakeView'
+        '400':
+          description: Missing reason or invalid operation.
+        '403':
+          description: Independent coordinator required.
+        '404':
+          description: Ticket not visible or no intake.
+        '409':
+          description: Context/version/generation changed or review already admitted.
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    Workspace:
+      name: workspace
+      in: path
+      required: true
+      schema: {type: string, pattern: '^[a-zA-Z0-9_-]{1,100}$'}
+    TicketId:
+      name: id
+      in: path
+      required: true
+      schema: {type: string, format: uuid}
+  schemas:
+    ManualRelease:
+      type: object
+      additionalProperties: false
+      required: [expectedContextRevision, expectedVersion, operationId, reason]
+      properties:
+        expectedContextRevision: {type: integer, format: int64, minimum: 0}
+        expectedVersion: {type: integer, format: int64, minimum: 0}
+        operationId: {type: string, format: uuid}
+        reason: {type: string, minLength: 1, maxLength: 1000}
+    IntakeView:
+      type: object
+      additionalProperties: false
+      required: [contractVersion, ticketId, contextRevision, version, reviewRound, status, deadlineAt,
+                 sealedRevision, contextDigest, policyDigest, reason, lateNotice, readiness,
+                 duplicatePreflight, finalAssessment, reviewTaskMayExist, operationalAuthority]
+      properties:
+        contractVersion: {type: string, enum: ['intake-admission@1.0.0']}
+        ticketId: {type: string, format: uuid}
+        contextRevision: {type: integer, format: int64, minimum: 0}
+        version: {type: integer, format: int64, minimum: 0}
+        reviewRound: {type: integer, minimum: 1}
+        status:
+          type: string
+          enum: [NEW, NEEDS_ENRICHMENT, DUPLICATE_HOLD, FINAL_ASSESSMENT_QUEUED, ASSESSING,
+                 REVIEW_RELEASED, MANUAL_REQUIRED, REVIEWED, CANONICAL_FOLLOWER]
+        deadlineAt: {type: string, format: date-time}
+        sealedRevision: {type: integer, format: int64, minimum: 0, nullable: true}
+        contextDigest: {type: string, pattern: '^[0-9a-f]{64}$', nullable: true}
+        policyDigest: {type: string, pattern: '^[0-9a-f]{64}$'}
+        reason: {type: string, maxLength: 1000, nullable: true}
+        lateNotice: {type: boolean}
+        readiness: {type: object, nullable: true}
+        duplicatePreflight: {type: object, nullable: true}
+        finalAssessment: {type: object, nullable: true}
+        reviewTaskMayExist: {type: boolean, enum: [true]}
+        operationalAuthority: {type: boolean, enum: [false]}

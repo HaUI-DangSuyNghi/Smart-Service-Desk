@@ -69,6 +69,7 @@ public class BackgroundTicketAssessment {
         return transaction.execute(status -> {
             var rows=jdbc.query("select t.*,a.attempts from servicedesk_assessment a join servicedesk_ticket t on t.id=a.ticket_id"
                 + " where a.status='PENDING' and a.available_at<=clock_timestamp() and (a.lease_until is null or a.lease_until<=clock_timestamp())"
+                + " and not exists(select 1 from servicedesk_intake_admission i where i.ticket_id=t.id)"
                 + " and t.workspace in ("+String.join(",",java.util.Collections.nCopies(workspaces.size(),"?"))+")"
                 + " order by a.available_at,a.ticket_id limit 1 for update of a skip locked",(row,index) -> {
                     UUID id=row.getObject("id",UUID.class);

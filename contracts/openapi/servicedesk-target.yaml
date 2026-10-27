@@ -291,6 +291,16 @@ components:
       - assignee
       - reason
       properties:
+        expectedContextRevision:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Required for tickets enrolled in intake admission.
+        expectedIntakeVersion:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Compare-and-set version returned by GET intake.
         category:
           $ref: '#/components/schemas/Category'
         impact:

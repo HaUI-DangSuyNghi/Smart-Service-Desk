@@ -21,13 +21,16 @@ public class TicketReviewService implements WorkProjection {
     private final ActivityJournal audit;
     private final Validator validator;
     private final vn.haui.dx.apps.servicedesk.intelligence.BackgroundTicketAssessment assessments;
+    private final vn.haui.dx.apps.servicedesk.intake.IntakeAdmission intake;
 
     public TicketReviewService(JdbcTemplate jdbc, TicketRepository tickets, HumanContext humans, PermissionGuard permissions,
                               WorkInbox inbox, WorkExecution execution, ProcessCapability processes, ActivityJournal audit, Validator validator,
-                              vn.haui.dx.apps.servicedesk.intelligence.BackgroundTicketAssessment assessments) {
+                              vn.haui.dx.apps.servicedesk.intelligence.BackgroundTicketAssessment assessments,
+                              vn.haui.dx.apps.servicedesk.intake.IntakeAdmission intake) {
         this.jdbc=jdbc; this.tickets=tickets; this.humans=humans; this.permissions=permissions;
         this.inbox=inbox; this.execution=execution; this.processes=processes; this.audit=audit; this.validator=validator;
         this.assessments=assessments;
+        this.intake=intake;
     }
     @Override public String processKey() { return ServiceDeskProcess.REVIEWED_KEY; }
 
@@ -48,6 +51,7 @@ public class TicketReviewService implements WorkProjection {
         var timeline = processes.timeline(workspace, ticket.process().processInstanceId());
         var review = timeline.currentTasks().stream().filter(task -> "review".equals(task.key())).findFirst()
             .orElseThrow(() -> CapabilityException.conflict("Ticket is not awaiting review"));
+        intake.approveReview(workspace, id, decision.expectedContextRevision(), decision.expectedIntakeVersion());
         int defaults = TicketReview.defaultMinutes(decision.category(), decision.priority());
         int minutes = decision.estimateMinutes() == null ? defaults : decision.estimateMinutes();
         String basis = decision.estimateMinutes() == null ? "DEFAULT" : "COORDINATOR";

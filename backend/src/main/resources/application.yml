@@ -46,6 +46,10 @@ management:
     health:
       show-details: never
 serviceDesk:
+  intake:
+    new-tickets: ${SERVICE_DESK_INTAKE_NEW_TICKETS:false}
+    timeout-seconds: ${SERVICE_DESK_INTAKE_TIMEOUT_SECONDS:86400}
+    poll-ms: ${SERVICE_DESK_INTAKE_POLL_MS:60000}
   contextual-assessment:
     # true/false: cho phép 0/1 lượt model trên input augmented; false vẫn tính facts CPU từ revision mới.
     # Cần benchmark input mới và grant độc lập, không dùng flag để promote model.

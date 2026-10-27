@@ -11,7 +11,13 @@ public final class TicketReview {
                            @Min(1) @Max(10080) Integer estimateMinutes,
                            @com.fasterxml.jackson.annotation.JsonProperty(required=true) @Size(max=100) String assignee,
                            @NotBlank @Size(max=1000) String reason,
-                           @Pattern(regexp="I[1-4]") String impact, @Pattern(regexp="U[1-4]") String urgency) {}
+                           @Pattern(regexp="I[1-4]") String impact, @Pattern(regexp="U[1-4]") String urgency,
+                           Long expectedContextRevision, Long expectedIntakeVersion) {
+        public Decision(Category category, Priority priority, Integer estimateMinutes, String assignee,
+                String reason, String impact, String urgency) {
+            this(category, priority, estimateMinutes, assignee, reason, impact, urgency, null, null);
+        }
+    }
     public record View(@com.fasterxml.jackson.annotation.JsonUnwrapped Ticket ticket, String state,
                        String taskId, String assignee, QueueItem.Estimate estimate,
                        String workState, Long workedMinutes, Long remainingMinutes, int reopenCount, Classification classification,

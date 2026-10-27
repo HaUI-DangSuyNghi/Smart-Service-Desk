@@ -14,14 +14,18 @@ public class ServiceDeskProcess implements ProcessContribution {
     public static final String REVIEWED_KEY = "service-desk-reviewed";
     private final org.springframework.jdbc.core.JdbcTemplate jdbc;
     private final org.springframework.beans.factory.ObjectProvider<vn.haui.dx.hpdi.process.api.WorkExecution> execution;
+    private final org.springframework.beans.factory.ObjectProvider<vn.haui.dx.apps.servicedesk.intake.IntakeAdmission> intake;
     public ServiceDeskProcess(org.springframework.jdbc.core.JdbcTemplate jdbc,
-            org.springframework.beans.factory.ObjectProvider<vn.haui.dx.hpdi.process.api.WorkExecution> execution) {
-        this.jdbc = jdbc; this.execution = execution;
+            org.springframework.beans.factory.ObjectProvider<vn.haui.dx.hpdi.process.api.WorkExecution> execution,
+            org.springframework.beans.factory.ObjectProvider<vn.haui.dx.apps.servicedesk.intake.IntakeAdmission> intake) {
+        this.jdbc = jdbc; this.execution = execution; this.intake = intake;
     }
 
     @Override public Map<String, Set<String>> executionTasks() { return Map.of(REVIEWED_KEY, Set.of("handle")); }
 
     @Override public void beforeComplete(String workspace, String processKey, String processId, String taskKey, String taskId, String outcome) {
+        if (REVIEWED_KEY.equals(processKey) && "review".equals(taskKey)) intake.getObject().beforeComplete(workspace, processId);
+        if (REVIEWED_KEY.equals(processKey) && "confirm".equals(taskKey) && "rework".equals(outcome)) intake.getObject().rework(workspace, processId);
         if (REVIEWED_KEY.equals(processKey) && "confirm".equals(taskKey) && "rework".equals(outcome))
             jdbc.update("update servicedesk_ticket set awaiting_review=true where workspace=? and process_instance_id=?",workspace,processId);
         if (REVIEWED_KEY.equals(processKey) && "handle".equals(taskKey))
