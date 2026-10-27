@@ -138,6 +138,19 @@ class KeycloakWorkspaceDirectoryTest {
         expectGet("/admin/realms/dx-lab/groups/r/role-mappings", "{\"clientMappings\":{\"dx-permissions\":{\"mappings\":[" + permissions + "]}}}");
     }
 
+    @Test void explicitRefreshSeesRevocationBeforeCacheExpiryAndFailsClosedOnOutage() {
+        expectToken();
+        expectPermissionSnapshot("{\"name\":\"task:handle\"}");
+        expectPermissionSnapshot("");
+        server.expect(requestTo(KC + "/admin/realms/dx-lab/group-by-path/workspaces/lab-a"))
+            .andRespond(withServerError());
+        assertFalse(directory.rolePermissions("lab-a").get("agent").isEmpty());
+        directory.refresh("lab-a");
+        assertTrue(directory.rolePermissions("lab-a").get("agent").isEmpty());
+        assertEquals(ErrorCode.SERVICE_UNAVAILABLE,assertThrows(CoreException.class,() -> directory.refresh("lab-a")).code());
+        server.verify();
+    }
+
     @Test void membershipIsCheckedBeforeAnyLookup() {
         doThrow(CoreException.forbidden("Workspace access denied")).when(access).requireMember("lab-b");
         var error = assertThrows(CoreException.class, () -> directory.members("lab-b"));

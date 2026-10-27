@@ -4,9 +4,11 @@ import java.util.Map;
 import java.util.UUID;
 import java.time.Instant;
 import jakarta.validation.Validator;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
+import vn.haui.dx.apps.servicedesk.intelligence.BackgroundTicketAssessment;
 import vn.haui.dx.hpdi.human.api.ActivityJournal;
 import vn.haui.dx.hpdi.human.api.BusinessActivity;
 import vn.haui.dx.hpdi.common.api.CapabilityException;
@@ -24,11 +26,12 @@ public class TicketService {
     private final ActivityJournal audit;
     private final Validator validator;
     private final TicketStatisticsService statistics;
-    private final org.springframework.context.ApplicationEventPublisher events;
+    private final ApplicationEventPublisher events;
+    private final BackgroundTicketAssessment assessments;
 
     public TicketService(TicketRepository repository, HumanContext access, ProcessCapability workflow,
                          ActivityJournal audit, Validator validator, TicketStatisticsService statistics,
-                         org.springframework.context.ApplicationEventPublisher events) {
+                         ApplicationEventPublisher events, BackgroundTicketAssessment assessments) {
         this.repository = repository;
         this.access = access;
         this.workflow = workflow;
@@ -36,6 +39,7 @@ public class TicketService {
         this.validator = validator;
         this.statistics = statistics;
         this.events = events;
+        this.assessments = assessments;
     }
 
     @Transactional
@@ -47,6 +51,7 @@ public class TicketService {
         UUID id = UUID.randomUUID();
         var process = workflow.start(workspace, ServiceDeskProcess.REVIEWED_KEY, id.toString(), Map.of());
         var ticket = repository.insert(id, workspace, user.subject(), input, process.processInstanceId());
+        assessments.enqueue(ticket);
         audit.record(workspace, new BusinessActivity("servicedesk.ticket.create", "servicedesk.ticket", id.toString(),
             Map.of("processInstanceId", process.processInstanceId())));
         events.publishEvent(new TicketContextChanged(workspace, id, 0));

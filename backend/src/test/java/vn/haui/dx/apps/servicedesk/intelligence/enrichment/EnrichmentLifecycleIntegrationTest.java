@@ -75,6 +75,11 @@ class EnrichmentLifecycleIntegrationTest {
         var ticket = create("Máy 15 phòng 1304 không lên nguồn");
         assertEquals("AWAITING_REVIEW", ticket.path("state").asText());
         assertEquals("service-desk-reviewed", ticket.path("process").path("processKey").asText());
+        assertEquals("PENDING", jdbc.queryForObject(
+                "select status from servicedesk_assessment where ticket_id=?", String.class, id(ticket)));
+        assertEquals(1L, jdbc.queryForObject(
+                "select count(*) from servicedesk_assessment_history where ticket_id=? and event='QUEUED'",
+                Long.class, id(ticket)));
         long[] before = Arrays.copyOf(workflow.counts(), 3);
         var state = evaluate(ticket);
         assertEquals("READY", state.path("status").asText());
@@ -82,6 +87,27 @@ class EnrichmentLifecycleIntegrationTest {
         assertFalse(state.path("workflowGateApplied").asBoolean());
         assertArrayEquals(before, Arrays.copyOf(workflow.counts(), 3));
         assertEquals(1, count(ticket, "EVALUATE_CONTEXT"));
+    }
+
+    @Test
+    void failedEnrichmentEnrollmentRollsBackTicketProcessAndBackgroundJob() throws Exception {
+        long[] before = workflow.counts();
+        long assessments = jdbc.queryForObject("select count(*) from servicedesk_assessment", Long.class);
+        long assessmentHistory = jdbc.queryForObject("select count(*) from servicedesk_assessment_history", Long.class);
+        String title = "Synthetic enrollment rollback " + UUID.randomUUID();
+        EnrichmentCaseStore target = org.springframework.test.util.AopTestUtils.getUltimateTargetObject(store);
+        doThrow(CapabilityException.validation("Synthetic enrollment failure"))
+                .when(target).enqueue(eq("lifecycle-a"), any(UUID.class), eq(0L));
+
+        mvc.perform(post(BASE + "/tickets").with(as("owner", "lifecycle-a", "requester"))
+                        .contentType("application/json").content(json.writeValueAsString(Map.of(
+                                "clientRequestId", UUID.randomUUID(), "title", title, "description", title))))
+                .andExpect(status().isBadRequest());
+
+        assertArrayEquals(before, workflow.counts());
+        assertEquals(0L, jdbc.queryForObject("select count(*) from servicedesk_ticket where title=?", Long.class, title));
+        assertEquals(assessments, jdbc.queryForObject("select count(*) from servicedesk_assessment", Long.class));
+        assertEquals(assessmentHistory, jdbc.queryForObject("select count(*) from servicedesk_assessment_history", Long.class));
     }
 
     @Test
