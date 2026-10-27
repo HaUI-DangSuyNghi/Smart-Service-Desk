@@ -3,6 +3,7 @@
 Kết quả tích hợp backend #48/#49 và chuỗi migration V10–V12 nằm trong
 [AI08-SYNC-00](BASELINE_SYNC_ACCEPTANCE.md). Các số liệu bên dưới là bằng chứng
 lịch sử của nhánh AI08 trước đồng bộ.
+Sau PR #51, xem [kết quả xử lý conflict và chuỗi V11–V13](PR51_CONFLICT_RESOLUTION.md).
 
 ## Hành vi đã triển khai
 

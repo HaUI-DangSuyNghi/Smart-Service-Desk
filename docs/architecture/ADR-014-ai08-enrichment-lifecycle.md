@@ -4,6 +4,8 @@ Trạng thái: triển khai MVP-A, policy DRAFT; production NO_GO.
 Nhánh nền: `0e64b67`, chưa nằm trong `origin/develop` khi bắt đầu.
 Đồng bộ AI08-SYNC-00 với `develop@4cbe38c`: migration clarification/lifecycle/admission
 lần lượt là V10/V11/V12; V8/V9 thuộc backend review và estimate history.
+Sau backend PR #51 (`develop@b9e2a55`), V10 thuộc background assessment;
+clarification/lifecycle/admission lần lượt chuyển sang V11/V12/V13.
 
 ## Quyết định
 

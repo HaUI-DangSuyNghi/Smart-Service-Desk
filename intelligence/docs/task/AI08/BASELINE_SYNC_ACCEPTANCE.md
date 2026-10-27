@@ -1,5 +1,9 @@
 # AI08-SYNC-00 — Đồng bộ PR 47 với baseline tích hợp
 
+**Bằng chứng lịch sử tại baseline `4cbe38c`.** Sau đó `develop` đã merge PR #51,
+phát sinh conflict constructor và migration V10 mới. Kết quả cập nhật nằm trong
+[xử lý conflict PR #51](PR51_CONFLICT_RESOLUTION.md); chuỗi AI08 hiện là V11–V13.
+
 Ngày thực hiện: 27/10/2026. Phạm vi là bước **PR-A / BASELINE ALIGNMENT** trong
 kế hoạch intake gate; các bước PR-B đến PR-F tiếp tục theo thứ tự phụ thuộc.
 
