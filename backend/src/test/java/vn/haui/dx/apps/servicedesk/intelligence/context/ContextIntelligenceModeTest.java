@@ -85,7 +85,7 @@ class ContextIntelligenceModeTest {
     }
 
     private void prepare() {
-        when(tickets.get("lab", id)).thenReturn(new Ticket(
+        when(tickets.getForIntelligence("lab", id)).thenReturn(new Ticket(
                 id, "lab", "owner", UUID.randomUUID(), "Máy 15 phòng 1304 không lên nguồn",
                 "Mô tả tổng hợp", Instant.EPOCH, null));
         when(human.currentActor("lab")).thenReturn(owner);

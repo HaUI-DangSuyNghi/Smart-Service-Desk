@@ -24,7 +24,7 @@ public class ServiceDeskProcess implements ProcessContribution {
     @Override public Map<String, Set<String>> executionTasks() { return Map.of(REVIEWED_KEY, Set.of("handle")); }
 
     @Override public void beforeComplete(String workspace, String processKey, String processId, String taskKey, String taskId, String outcome) {
-        if (REVIEWED_KEY.equals(processKey) && "review".equals(taskKey)) intake.getObject().beforeComplete(workspace, processId);
+        if (REVIEWED_KEY.equals(processKey) && "review".equals(taskKey)) intake.getObject().beforeComplete(workspace, processId, taskId);
         if (REVIEWED_KEY.equals(processKey) && "confirm".equals(taskKey) && "rework".equals(outcome)) intake.getObject().rework(workspace, processId);
         if (REVIEWED_KEY.equals(processKey) && "confirm".equals(taskKey) && "rework".equals(outcome))
             jdbc.update("update servicedesk_ticket set awaiting_review=true where workspace=? and process_instance_id=?",workspace,processId);
@@ -42,10 +42,10 @@ public class ServiceDeskProcess implements ProcessContribution {
     @Override public List<ProcessDefinition> definitions() {
         return List.of(new ProcessDefinition(REVIEWED_KEY, Set.of("requester", "agent", "coordinator"), Set.of(),
             Map.of("review", Set.of("approved"), "handle", Set.of("resolved"), "confirm", Set.of("accepted", "rework")),
-            Set.of("agent", "coordinator"), Set.of("agent", "coordinator")),
+            Set.of("agent", "coordinator", "assessment-worker"), Set.of("agent", "coordinator", "assessment-worker")),
             new ProcessDefinition(KEY, Set.of("requester", "agent", "coordinator"), Set.of(),
             Map.of("handle", Set.of("resolved"), "confirm", Set.of("accepted", "rework")),
-            Set.of("agent", "coordinator"), Set.of("coordinator"))
+            Set.of("agent", "coordinator", "assessment-worker"), Set.of("coordinator", "assessment-worker"))
             .withLabels(ProcessLabels.named("Yêu cầu hỗ trợ CNTT")
                 .task("handle", "Xử lý yêu cầu")
                 .task("confirm", "Xác nhận kết quả")

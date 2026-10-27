@@ -40,12 +40,14 @@ public class IntakeAdmission {
     private final ActivityJournal audit;
     private final ObjectMapper json;
     private final ObjectProvider<ContextSnapshotAssembler> snapshots;
+    private final ObjectProvider<vn.haui.dx.hpdi.process.api.ProcessCapability> processes;
     private final boolean newTickets;
     private final long timeoutSeconds;
     private final String policyDigest;
 
     public IntakeAdmission(JdbcTemplate jdbc, HumanContext human, ActivityJournal audit, ObjectMapper json,
             ObjectProvider<ContextSnapshotAssembler> snapshots,
+            ObjectProvider<vn.haui.dx.hpdi.process.api.ProcessCapability> processes,
             @Value("${serviceDesk.intake.new-tickets:false}") boolean newTickets,
             @Value("${serviceDesk.intake.timeout-seconds:86400}") long timeoutSeconds) {
         if (timeoutSeconds < 60 || timeoutSeconds > 86400) {
@@ -56,6 +58,7 @@ public class IntakeAdmission {
         this.audit = audit;
         this.json = json;
         this.snapshots = snapshots;
+        this.processes = processes;
         this.newTickets = newTickets;
         this.timeoutSeconds = timeoutSeconds;
         this.policyDigest = ContextPolicyCatalog.digest(VERSION + ":" + timeoutSeconds);
@@ -138,10 +141,13 @@ public class IntakeAdmission {
         if (snapshot.contextRevision() != request.expectedContextRevision()) {
             throw CapabilityException.conflict("Context changed before release");
         }
+        String taskId = processes.getObject().timeline(workspace, ticket.get("process_instance_id").toString())
+                .currentTasks().stream().filter(task -> "review".equals(task.key())).findFirst()
+                .orElseThrow(() -> CapabilityException.conflict("Process is not awaiting review")).id();
         jdbc.update("update servicedesk_intake_admission set status='REVIEW_RELEASED',sealed_revision=context_revision,"
-                + "context_digest=?,reason=?,version=version+1,lease_token=null,lease_until=null,updated_at=clock_timestamp() "
-                + "where ticket_id=?", snapshot.digest(), request.reason(), id);
-        receipt(id, request.operationId(), "MANUAL_RELEASE", state, snapshot.digest(), payload, actor.subject(), request.reason());
+                + "context_digest=?,reason=?,review_task_id=?,version=version+1,lease_token=null,lease_until=null,updated_at=clock_timestamp() "
+                + "where ticket_id=?", snapshot.digest(), request.reason(), taskId, id);
+        receipt(id, request.operationId(), "MANUAL_RELEASE", state, snapshot.digest(), payload, actor.subject(), request.reason(), taskId);
         audit.record(workspace, new BusinessActivity("servicedesk.intake.release", "servicedesk.ticket", id.toString(),
                 Map.of("operationId", request.operationId().toString(), "contextVersion", Long.toString(state.contextRevision()),
                         "reviewRoundVersion", Integer.toString(state.reviewRound()))));
@@ -149,21 +155,22 @@ public class IntakeAdmission {
     }
 
     /** Called under the same ticket lock and transaction as the authoritative review. */
-    public void approveReview(String workspace, UUID id, Long revision, Long version) {
+    public void approveReview(String workspace, UUID id, Long revision, Long version, String taskId) {
         var state = find(workspace, id);
         if (state == null) return;
         if (revision == null || version == null || revision != state.contextRevision() || version != state.version()
-                || !"REVIEW_RELEASED".equals(state.status()) || !revision.equals(state.sealedRevision())) {
+                || !"REVIEW_RELEASED".equals(state.status()) || !revision.equals(state.sealedRevision())
+                || !taskId.equals(jdbc.queryForObject("select review_task_id from servicedesk_intake_admission where ticket_id=?", String.class, id))) {
             throw CapabilityException.conflict("Review requires the current released intake revision and version");
         }
         jdbc.update("update servicedesk_intake_admission set status='REVIEWED',version=version+1 where ticket_id=?", id);
     }
 
-    public void beforeComplete(String workspace, String processId) {
+    public void beforeComplete(String workspace, String processId, String taskId) {
         if (Boolean.TRUE.equals(jdbc.queryForObject("select exists(select 1 from servicedesk_intake_admission a "
                 + "join servicedesk_ticket t on t.id=a.ticket_id where t.workspace=? and t.process_instance_id=? "
-                + "and (a.status<>'REVIEWED' or a.sealed_revision is distinct from t.context_revision))",
-                Boolean.class, workspace, processId))) {
+                + "and (a.status<>'REVIEWED' or a.sealed_revision is distinct from t.context_revision "
+                + "or a.review_task_id is distinct from ?))", Boolean.class, workspace, processId, taskId))) {
             throw CapabilityException.conflict("Review has not passed current intake admission");
         }
     }
@@ -174,6 +181,20 @@ public class IntakeAdmission {
                 + "attempt_key=null,lease_token=null,lease_until=null,late_notice=false,reason='REWORK',"
                 + "deadline_at=clock_timestamp()+(? * interval '1 second') from servicedesk_ticket t "
                 + "where t.id=a.ticket_id and t.workspace=? and t.process_instance_id=?", timeoutSeconds, workspace, processId);
+    }
+
+    public void feedback(String workspace, UUID id, String taskId, Object decision, String actor, String reason) {
+        var state = find(workspace, id);
+        if (state == null) return;
+        try {
+            jdbc.update("insert into servicedesk_ai_feedback(id,ticket_id,review_round,context_revision,review_task_id,"
+                    + "proposal,human_decision,actor,reason) values (?,?,?,?,?,cast(? as jsonb),cast(? as jsonb),?,?)",
+                    UUID.randomUUID(), id, state.reviewRound(), state.contextRevision(), taskId,
+                    state.finalAssessment() == null ? null : state.finalAssessment().toString(),
+                    json.writeValueAsString(decision), actor, reason);
+        } catch (java.io.IOException failure) {
+            throw new IllegalStateException("Cannot record review feedback", failure);
+        }
     }
 
     @Scheduled(fixedDelayString = "${serviceDesk.intake.poll-ms:60000}")
@@ -191,7 +212,7 @@ public class IntakeAdmission {
     }
 
     private Map<String, Object> lockTicket(String workspace, UUID id) {
-        var rows = jdbc.queryForList("select creator,awaiting_review from servicedesk_ticket where workspace=? and id=? for update", workspace, id);
+        var rows = jdbc.queryForList("select creator,awaiting_review,process_instance_id from servicedesk_ticket where workspace=? and id=? for update", workspace, id);
         if (rows.isEmpty()) throw CapabilityException.notFound("Ticket not found");
         return rows.get(0);
     }
@@ -201,10 +222,10 @@ public class IntakeAdmission {
         catch (java.io.IOException failure) { throw new IllegalStateException("Invalid persisted intake data", failure); }
     }
 
-    private void receipt(UUID id, UUID operation, String action, View state, String digest, String payload, String actor, String reason) {
+    private void receipt(UUID id, UUID operation, String action, View state, String digest, String payload, String actor, String reason, String taskId) {
         jdbc.update("insert into servicedesk_intake_receipt(id,ticket_id,operation_id,action,context_revision,review_round,"
-                + "context_digest,policy_digest,payload_digest,actor,reason,final_json) values (?,?,?,?,?,?,?,?,?,?,?,cast(? as jsonb))",
+                + "context_digest,policy_digest,payload_digest,actor,reason,final_json,review_task_id) values (?,?,?,?,?,?,?,?,?,?,?,cast(? as jsonb),?)",
                 UUID.randomUUID(), id, operation, action, state.contextRevision(), state.reviewRound(), digest,
-                state.policyDigest(), payload, actor, reason, state.finalAssessment() == null ? null : state.finalAssessment().toString());
+                state.policyDigest(), payload, actor, reason, state.finalAssessment() == null ? null : state.finalAssessment().toString(), taskId);
     }
 }

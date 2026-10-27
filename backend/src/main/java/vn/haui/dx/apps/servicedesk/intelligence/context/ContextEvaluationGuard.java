@@ -35,9 +35,9 @@ public class ContextEvaluationGuard {
     }
 
     public <T> T evaluate(String workspace, UUID id, Function<Session, T> operation) {
-        var ticket = tickets.get(workspace, id);
+        var ticket = tickets.getForIntelligence(workspace, id);
         var actor = human.currentActor(workspace);
-        if (actor == null || !workspace.equals(actor.workspace()) || !actor.hasRole("requester", "agent", "coordinator")) {
+        if (actor == null || !workspace.equals(actor.workspace()) || !actor.hasRole("requester", "agent", "coordinator", "assessment-worker")) {
             throw CapabilityException.forbidden("Service Desk workspace role required");
         }
         if (!settings.enabled() || settings.mode() == ContextIntelligenceConfiguration.Mode.DISABLED) {
@@ -46,7 +46,7 @@ public class ContextEvaluationGuard {
         if (settings.mode() == ContextIntelligenceConfiguration.Mode.PROMOTED) {
             throw CapabilityException.forbidden("Promotion requires independent release approval");
         }
-        String scope = actor.hasRole("agent", "coordinator") ? ContextProcessingGate.WORKSPACE_REVIEW
+        String scope = actor.hasRole("agent", "coordinator", "assessment-worker") ? ContextProcessingGate.WORKSPACE_REVIEW
                 : ContextProcessingGate.OWN_TICKET;
         String grant = processing.verifyReadiness(workspace, scope, policy.digest());
         var snapshot = snapshots.read(workspace, id);
@@ -55,7 +55,7 @@ public class ContextEvaluationGuard {
         T result = operation.apply(session);
         var current = snapshots.read(workspace, id);
         policy.verifyUnchanged();
-        if (!ticket.equals(tickets.get(workspace, id)) || !snapshot.digest().equals(current.digest())
+        if (!ticket.equals(tickets.getForIntelligence(workspace, id)) || !snapshot.digest().equals(current.digest())
                 || !grant.equals(processing.verifyReadiness(workspace, scope, policy.digest()))) {
             throw CapabilityException.conflict("Context or processing permission changed");
         }

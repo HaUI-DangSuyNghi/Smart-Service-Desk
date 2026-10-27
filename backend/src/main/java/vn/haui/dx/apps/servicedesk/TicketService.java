@@ -28,10 +28,12 @@ public class TicketService {
     private final TicketStatisticsService statistics;
     private final ApplicationEventPublisher events;
     private final BackgroundTicketAssessment assessments;
+    private final org.springframework.beans.factory.ObjectProvider<vn.haui.dx.hpdi.intelligence.api.BackgroundProcessing> processing;
 
     public TicketService(TicketRepository repository, HumanContext access, ProcessCapability workflow,
                          ActivityJournal audit, Validator validator, TicketStatisticsService statistics,
-                         ApplicationEventPublisher events, BackgroundTicketAssessment assessments) {
+                         ApplicationEventPublisher events, BackgroundTicketAssessment assessments,
+                         org.springframework.beans.factory.ObjectProvider<vn.haui.dx.hpdi.intelligence.api.BackgroundProcessing> processing) {
         this.repository = repository;
         this.access = access;
         this.workflow = workflow;
@@ -40,6 +42,7 @@ public class TicketService {
         this.statistics = statistics;
         this.events = events;
         this.assessments = assessments;
+        this.processing = processing;
     }
 
     @Transactional
@@ -55,6 +58,24 @@ public class TicketService {
         audit.record(workspace, new BusinessActivity("servicedesk.ticket.create", "servicedesk.ticket", id.toString(),
             Map.of("processInstanceId", process.processInstanceId())));
         events.publishEvent(new TicketContextChanged(workspace, id, 0));
+        return ticket;
+    }
+
+    @Transactional(readOnly = true)
+    public boolean requiresFinalAdmission(String workspace, UUID id) {
+        get(workspace, id);
+        return repository.hasIntake(workspace, id);
+    }
+
+    @Transactional(readOnly = true)
+    public Ticket getForIntelligence(String workspace, UUID id) {
+        var actor = access.currentActor(workspace);
+        if (actor == null || !workspace.equals(actor.workspace()) || !actor.hasRole("assessment-worker")) {
+            return get(workspace, id);
+        }
+        var ticket = repository.find(workspace, id, null)
+                .orElseThrow(() -> CapabilityException.notFound("Ticket not found"));
+        processing.getObject().authorize(workspace, ticket.creator());
         return ticket;
     }
 

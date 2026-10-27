@@ -19,6 +19,11 @@ class TicketRepository {
 
     TicketRepository(JdbcTemplate jdbc) { this.jdbc = jdbc; }
 
+    boolean hasIntake(String workspace, UUID id) {
+        return Boolean.TRUE.equals(jdbc.queryForObject("select exists(select 1 from servicedesk_intake_admission "
+                + "where workspace=? and ticket_id=?)", Boolean.class, workspace, id));
+    }
+
     Ticket insert(UUID id, String workspace, String creator, NewTicket input, String processId) {
         return jdbc.queryForObject("insert into servicedesk_ticket "
                 + "(id,workspace,creator,client_request_id,title,description,process_instance_id,process_key,awaiting_review) "

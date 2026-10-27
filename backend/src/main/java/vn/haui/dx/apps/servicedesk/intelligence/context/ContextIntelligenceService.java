@@ -108,7 +108,7 @@ public class ContextIntelligenceService {
                         .thenComparing(value -> value.candidate().row().id()))
                 .limit(policy.displayLimit()).toList();
         boolean shadow = shadow();
-        boolean reviewer = guard.actor().hasRole("agent", "coordinator");
+        boolean reviewer = guard.actor().hasRole("agent", "coordinator", "assessment-worker");
         var candidates = shadow || !reviewer ? List.<CandidateView>of() : ranked.stream().map(value ->
                 new CandidateView(value.candidate().row().id(), null,
                         value.candidate().snapshot().contextRevision(), value.result())).toList();
@@ -130,10 +130,10 @@ public class ContextIntelligenceService {
     }
 
     private Guard begin(String workspace, UUID id) {
-        var ticket = tickets.get(workspace, id);
+        var ticket = tickets.getForIntelligence(workspace, id);
         var actor = human.currentActor(workspace);
         if (actor == null || !workspace.equals(actor.workspace()) || actor.subject() == null
-                || actor.subject().isBlank() || !actor.hasRole("requester", "agent", "coordinator")) {
+                || actor.subject().isBlank() || !actor.hasRole("requester", "agent", "coordinator", "assessment-worker")) {
             throw CapabilityException.forbidden("Trusted Service Desk workspace actor required");
         }
         if (!settings.enabled() || settings.mode() == ContextIntelligenceConfiguration.Mode.DISABLED) {
@@ -142,7 +142,7 @@ public class ContextIntelligenceService {
         if (settings.mode() == ContextIntelligenceConfiguration.Mode.PROMOTED) {
             throw CapabilityException.forbidden("AI08 promotion requires independent release approval");
         }
-        String scope = actor.hasRole("agent", "coordinator")
+        String scope = actor.hasRole("agent", "coordinator", "assessment-worker")
                 ? ContextProcessingGate.WORKSPACE_REVIEW : ContextProcessingGate.OWN_TICKET;
         String grant = processing.verify(workspace, scope);
         return new Guard(ticket, snapshots.read(workspace, id), actor, scope, grant);
@@ -155,7 +155,7 @@ public class ContextIntelligenceService {
             throw CapabilityException.forbidden("Actor changed during processing");
         }
         var current = snapshots.read(workspace, id);
-        if (!guard.ticket().equals(tickets.get(workspace, id))
+        if (!guard.ticket().equals(tickets.getForIntelligence(workspace, id))
                 || !guard.snapshot().digest().equals(current.digest())
                 || !guard.grantDigest().equals(processing.verify(workspace, guard.scope()))) {
             throw CapabilityException.conflict("Ticket context or processing permission changed");

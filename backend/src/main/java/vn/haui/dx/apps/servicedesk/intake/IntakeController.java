@@ -13,22 +13,26 @@ public class IntakeController {
     private final TicketService tickets;
     private final IntakeAdmission admission;
     private final HumanContext human;
+    private final IntakeCoordinator coordinator;
 
-    public IntakeController(TicketService tickets, IntakeAdmission admission, HumanContext human) {
+    public IntakeController(TicketService tickets, IntakeAdmission admission, HumanContext human, IntakeCoordinator coordinator) {
         this.tickets = tickets;
         this.admission = admission;
         this.human = human;
+        this.coordinator = coordinator;
     }
 
     @GetMapping("/tickets/{id}/intake")
     public IntakeAdmission.View get(@PathVariable String workspace, @PathVariable UUID id) {
         tickets.get(workspace, id);
-        var state = admission.find(workspace, id);
-        if (state == null) throw CapabilityException.notFound("Intake admission not enabled for this ticket");
-        // Never expose persisted AI evidence without current processing authorization.
-        return new IntakeAdmission.View(state.contractVersion(), id, state.contextRevision(), state.version(), state.reviewRound(),
-                state.status(), state.deadlineAt(), state.sealedRevision(), state.contextDigest(), state.policyDigest(),
-                state.reason(), state.lateNotice(), null, null, null, true, false);
+        return coordinator.read(workspace, id);
+    }
+
+    @PostMapping("/tickets/{id}/intake/evaluate")
+    public IntakeAdmission.View evaluate(@PathVariable String workspace, @PathVariable UUID id) {
+        tickets.get(workspace, id);
+        coordinator.screen(workspace, id);
+        return get(workspace, id);
     }
 
     @PostMapping("/tickets/{id}/intake/manual-release")

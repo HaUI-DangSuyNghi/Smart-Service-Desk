@@ -64,9 +64,9 @@ public class DuplicateCandidateProvider {
 
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public Batch retrieve(String workspace, UUID queryId, Instant windowStart) {
-        var ticket = tickets.get(workspace, queryId);
+        var ticket = tickets.getForIntelligence(workspace, queryId);
         var actor = human.currentActor(workspace);
-        String creator = actor.hasRole("agent", "coordinator") ? null : actor.subject();
+        String creator = actor.hasRole("agent", "coordinator", "assessment-worker") ? null : actor.subject();
         var rows = jdbc.query(
                 "select id,creator,process_instance_id,created_at,title,description,context_revision "
                         + "from servicedesk_ticket where workspace=? and id<>? "

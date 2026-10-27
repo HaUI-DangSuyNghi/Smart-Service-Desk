@@ -33,15 +33,18 @@ public class BackgroundTicketAssessment {
     private final TicketTriageProjection projection;
     private final boolean scheduled;
     private final List<String> workspaces;
+    private final org.springframework.beans.factory.ObjectProvider<vn.haui.dx.apps.servicedesk.intake.IntakeCoordinator> intake;
 
     public BackgroundTicketAssessment(JdbcTemplate jdbc, ObjectMapper json, IntelligenceCapability intelligence,
             BackgroundProcessing processing, ActivityJournal audit, PlatformTransactionManager manager,
             @Value("${service-desk.background.scheduled:true}") boolean scheduled,
-            @Value("${service-desk.background.workspaces:}") List<String> workspaces) {
+            @Value("${service-desk.background.workspaces:}") List<String> workspaces,
+            org.springframework.beans.factory.ObjectProvider<vn.haui.dx.apps.servicedesk.intake.IntakeCoordinator> intake) {
         this.jdbc=jdbc; this.json=json; this.intelligence=intelligence; this.processing=processing;
         this.audit=audit; this.transaction=new TransactionTemplate(manager);
         this.projection=new TicketTriageProjection(json); this.scheduled=scheduled;
         this.workspaces=workspaces.stream().filter(value -> !value.isBlank()).distinct().toList();
+        this.intake=intake;
     }
 
     @Transactional(propagation=Propagation.MANDATORY)
@@ -69,7 +72,9 @@ public class BackgroundTicketAssessment {
         return transaction.execute(status -> {
             var rows=jdbc.query("select t.*,a.attempts from servicedesk_assessment a join servicedesk_ticket t on t.id=a.ticket_id"
                 + " where a.status='PENDING' and a.available_at<=clock_timestamp() and (a.lease_until is null or a.lease_until<=clock_timestamp())"
-                + " and not exists(select 1 from servicedesk_intake_admission i where i.ticket_id=t.id)"
+                + " and (not exists(select 1 from servicedesk_intake_admission i where i.ticket_id=t.id)"
+                + " or exists(select 1 from servicedesk_intake_admission i where i.ticket_id=t.id"
+                + " and i.status in ('FINAL_ASSESSMENT_QUEUED','ASSESSING')))"
                 + " and t.workspace in ("+String.join(",",java.util.Collections.nCopies(workspaces.size(),"?"))+")"
                 + " order by a.available_at,a.ticket_id limit 1 for update of a skip locked",(row,index) -> {
                     UUID id=row.getObject("id",UUID.class);
@@ -103,6 +108,11 @@ public class BackgroundTicketAssessment {
             if (job.exhausted()) { transaction.executeWithoutResult(status -> finish(job,null,"RETRY_EXHAUSTED",false)); return true; }
             processing.run(job.ticket().workspace(),() -> {
                 processing.authorize(job.ticket().workspace(),job.ticket().creator());
+                if (intake.getObject().enrolled(job.ticket())) {
+                    intake.getObject().processFinal(job.ticket(), job.lease(),
+                            () -> finish(job, null, "USE_FINAL_CONTEXT_ASSESSMENT", false));
+                    return;
+                }
                 var suggestion=intelligence.suggest(job.ticket().workspace(),new TriageInput("service-desk","0.3.0",job.ticket().title(),job.ticket().description()));
                 var triage=projection.project(suggestion,job.ticket());
                 if (!"SUCCESS".equals(triage.status())) throw IntelligenceFailure.unavailable();
@@ -121,6 +131,10 @@ public class BackgroundTicketAssessment {
                 });
             });
         } catch (RuntimeException failure) {
+            if (intake.getObject().enrolled(job.ticket())) {
+                var state = intakeState(job.ticket());
+                if (state != null) intake.getObject().manual(job.ticket().workspace(), job.ticket().id(), state.version(), "FINAL_PROCESSING_UNAVAILABLE");
+            }
             String code=failure instanceof IntelligenceFailure intelligenceFailure ? intelligenceFailure.code()
                 : failure instanceof CapabilityException ? "AUTHORIZATION_REVOKED" : "PROCESSING_FAILED";
             boolean retry=failure instanceof IntelligenceFailure intelligenceFailure ? intelligenceFailure.status()>=503
@@ -128,6 +142,10 @@ public class BackgroundTicketAssessment {
             transaction.executeWithoutResult(status -> finish(job,null,code,retry));
         }
         return true;
+    }
+
+    private vn.haui.dx.apps.servicedesk.intake.IntakeAdmission.View intakeState(Ticket ticket) {
+        return intake.getObject().state(ticket.workspace(), ticket.id());
     }
 
     private boolean finish(Job job, StoredAssessment.Result result, String error, boolean retry) {

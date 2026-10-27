@@ -95,6 +95,7 @@ class TicketClassificationOrchestratorTest {
                                                         .get("description")
                                                         .equals(snapshot.description())));
         verify(tickets, times(2)).get("lab-a", id);
+        verify(tickets).requiresFinalAdmission("lab-a", id);
         verifyNoMoreInteractions(tickets);
     }
 

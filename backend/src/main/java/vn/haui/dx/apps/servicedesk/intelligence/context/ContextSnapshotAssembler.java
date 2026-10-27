@@ -33,7 +33,7 @@ public class ContextSnapshotAssembler {
 
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public ContextSnapshot read(String workspace, UUID id) {
-        tickets.get(workspace, id);
+        tickets.getForIntelligence(workspace, id);
         var state = store.state(workspace, id, false)
                 .orElseThrow(() -> CapabilityException.notFound("Ticket not found"));
         return assemble(workspace, state, store.events(workspace, id));

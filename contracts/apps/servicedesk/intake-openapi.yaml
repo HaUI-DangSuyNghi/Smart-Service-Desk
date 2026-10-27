@@ -26,6 +26,26 @@ paths:
           description: Workspace access denied.
         '404':
           description: Ticket not visible or legacy ticket without intake.
+  /workspaces/{workspace}/tickets/{id}/intake/evaluate:
+    parameters:
+      - $ref: '#/components/parameters/Workspace'
+      - $ref: '#/components/parameters/TicketId'
+    post:
+      operationId: evaluateTicketIntake
+      description: CPU screening and duplicate preflight only; final inference is a leased server job.
+      responses:
+        '200':
+          description: Current admission generation, with authorized derived content only.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IntakeView'
+        '403':
+          description: Processing grant or workspace permission denied.
+        '404':
+          description: Ticket not visible or no admission.
+        '409':
+          description: Context changed during screening.
   /workspaces/{workspace}/tickets/{id}/intake/manual-release:
     parameters:
       - $ref: '#/components/parameters/Workspace'

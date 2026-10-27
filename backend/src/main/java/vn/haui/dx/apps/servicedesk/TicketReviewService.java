@@ -51,7 +51,7 @@ public class TicketReviewService implements WorkProjection {
         var timeline = processes.timeline(workspace, ticket.process().processInstanceId());
         var review = timeline.currentTasks().stream().filter(task -> "review".equals(task.key())).findFirst()
             .orElseThrow(() -> CapabilityException.conflict("Ticket is not awaiting review"));
-        intake.approveReview(workspace, id, decision.expectedContextRevision(), decision.expectedIntakeVersion());
+        intake.approveReview(workspace, id, decision.expectedContextRevision(), decision.expectedIntakeVersion(), review.id());
         int defaults = TicketReview.defaultMinutes(decision.category(), decision.priority());
         int minutes = decision.estimateMinutes() == null ? defaults : decision.estimateMinutes();
         String basis = decision.estimateMinutes() == null ? "DEFAULT" : "COORDINATOR";
@@ -60,6 +60,7 @@ public class TicketReviewService implements WorkProjection {
         jdbc.update("insert into servicedesk_review(ticket_id,category,priority,estimate_minutes,estimate_basis,assignee,review_task_id,reviewed_by,reason,impact,urgency)"
             + " values(?,?,?,?,?,?,?,?,?,?,?)",
             id, decision.category().name(), decision.priority().name(), minutes, basis, decision.assignee(), review.id(), actor.subject(), decision.reason(), decision.impact(), decision.urgency());
+        intake.feedback(workspace, id, review.id(), decision, actor.subject(), decision.reason());
         jdbc.update("insert into servicedesk_estimate_history(ticket_id,review_task_id,category,priority,assignee,minutes,basis,changed_by,reason) values(?,?,?,?,?,?,?,?,?)",
             id, review.id(), decision.category().name(), decision.priority().name(), decision.assignee(), defaults, "DEFAULT", actor.subject(), decision.reason());
         if (decision.estimateMinutes() != null)

@@ -92,6 +92,9 @@ public class TicketClassificationOrchestrator {
             Runnable verifyAdditionalPermission) {
         Ticket snapshot = tickets.get(workspace, id);
         requireIdentity(snapshot, workspace, id);
+        if (tickets.requiresFinalAdmission(workspace, id)) {
+            throw CapabilityException.conflict("Use the sealed intake final assessment for this ticket");
+        }
         var actor = human.currentActor(workspace);
         if (actor == null
                 || !workspace.equals(actor.workspace())
