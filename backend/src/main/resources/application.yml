@@ -46,6 +46,13 @@ management:
     health:
       show-details: never
 serviceDesk:
+  enrichment:
+    # true/false: lưu lifecycle/job advisory khi tạo ticket hoặc nhận câu trả lời.
+    enabled: ${SERVICE_DESK_ENRICHMENT_ENABLED:false}
+    # true/false: quét deadline DB để nhắc/chuyển manual; không gọi AI hoặc sửa BPMN.
+    timers-enabled: ${SERVICE_DESK_ENRICHMENT_TIMERS_ENABLED:false}
+    # Chu kỳ quét metadata, đơn vị ms; default 60 giây, mỗi đợt tối đa 50 case.
+    poll-delay-ms: ${SERVICE_DESK_ENRICHMENT_POLL_DELAY_MS:60000}
   context:
     # true/false: bật hoặc tắt gợi ý ngữ cảnh và ticket trùng. Mặc định tắt.
     # Lưu câu trả lời bổ sung hoạt động độc lập, kể cả khi cờ này là false.

@@ -24,15 +24,18 @@ public class TicketService {
     private final ActivityJournal audit;
     private final Validator validator;
     private final TicketStatisticsService statistics;
+    private final org.springframework.context.ApplicationEventPublisher events;
 
     public TicketService(TicketRepository repository, HumanContext access, ProcessCapability workflow,
-                         ActivityJournal audit, Validator validator, TicketStatisticsService statistics) {
+                         ActivityJournal audit, Validator validator, TicketStatisticsService statistics,
+                         org.springframework.context.ApplicationEventPublisher events) {
         this.repository = repository;
         this.access = access;
         this.workflow = workflow;
         this.audit = audit;
         this.validator = validator;
         this.statistics = statistics;
+        this.events = events;
     }
 
     @Transactional
@@ -46,6 +49,7 @@ public class TicketService {
         var ticket = repository.insert(id, workspace, user.subject(), input, process.processInstanceId());
         audit.record(workspace, new BusinessActivity("servicedesk.ticket.create", "servicedesk.ticket", id.toString(),
             Map.of("processInstanceId", process.processInstanceId())));
+        events.publishEvent(new TicketContextChanged(workspace, id, 0));
         return ticket;
     }
 
