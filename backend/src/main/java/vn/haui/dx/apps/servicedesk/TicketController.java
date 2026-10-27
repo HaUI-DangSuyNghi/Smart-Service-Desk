@@ -18,6 +18,7 @@ public class TicketController {
 
     @PostMapping
     @ResponseStatus(CREATED)
+    @org.springframework.transaction.annotation.Transactional
     public TicketReview.View create(@PathVariable String workspace, @Valid @RequestBody NewTicket input) {
         return reviews.view(workspace, tickets.create(workspace, input));
     }

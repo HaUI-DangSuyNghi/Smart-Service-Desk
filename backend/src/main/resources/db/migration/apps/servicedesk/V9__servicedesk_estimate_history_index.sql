@@ -1,0 +1,1 @@
+CREATE INDEX servicedesk_estimate_history_rounds ON servicedesk_estimate_history(ticket_id, review_task_id);

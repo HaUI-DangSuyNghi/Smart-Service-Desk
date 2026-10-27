@@ -60,6 +60,13 @@ Remaining load is ET for NOT_STARTED; otherwise max(10, ET - workedMinutes).
 PENDING contributes half of that remainder, rounded up to an integer minute.
 Queue `loadMinutes` covers the entire assigned queue, not just the current page.
 The HTTP queue uses REPEATABLE_READ while paging through Foundation for that sum.
+Application projection is batched (one application query per 100 execution items),
+including prior review-round counts from estimate history; no per-task workflow
+timeline is read. Requested-page projections are reused from those batches.
+For N assigned tasks, the Service Desk path makes 2 + 3 * ceil(N/100) queue/projection
+SQL calls (4 for an empty queue), excluding identity/permission lookups. Memory is
+bounded by a batch plus the requested page. Exact total load still scans O(N)
+execution rows; this is not a constant-time workload projection or advanced R2.
 Order is IN_PROGRESS first, native priority descending (25/50/75/100), native due
 date null-last, creation and ID. No aging, SLA or expected-start values are fabricated.
 
@@ -93,9 +100,11 @@ returns the original ticket rows. Review queue ordering uses the last reviewed
 priority on rework; first-review tickets have no invented pre-review priority.
 
 The wire execution field is `workState`, as in the target contract. Ticket `state`
-uses AWAITING_REVIEW, ASSIGNED, IN_PROGRESS, PENDING, AWAITING_CONFIRMATION, CLOSED
-or UNCLASSIFIED. Rework is AWAITING_REVIEW with `reopenCount > 0`, not a second
-independent lifecycle state. Legacy ticket GET retains its original shape.
+uses AWAITING_REVIEW, ASSIGNED, IN_PROGRESS, PENDING, AWAITING_CONFIRMATION, REOPENED,
+CLOSED or UNCLASSIFIED. Rework is REOPENED until the new handle task starts,
+including while awaiting its fresh coordinator review. The AWAITING_REVIEW search
+filter selects the review stage, so it includes REOPENED tickets needing review.
+Legacy ticket GET retains its original shape.
 HPDI owns the queue DTO; no Core or Flowable internal DTO is serialized to FE.
 
 ## One real FE flow
@@ -140,6 +149,8 @@ outside execution queue opt-in. New creation uses the distinct reviewed key.
 Old review requests return 409; old instances finish via existing claim/complete/
 confirm APIs. No instance migration, cancellation or deletion is performed.
 Core-only/second-domain builds exclude the Service Desk V8 migration.
+V9 adds only a (ticket_id, review_task_id) history index for batched projection;
+it does not change V8 checksums or existing instance data. Those builds exclude V9 too.
 
 Rolling back after new reviewed instances exist requires retaining their BPMN,
 registration, V8 data and review guard until they drain, or an explicitly reviewed

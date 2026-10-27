@@ -76,14 +76,14 @@ public class TicketReviewService implements WorkProjection {
         int reopened = (int) timeline.steps().stream().filter(step -> "confirm".equals(step.key()) && "rework".equals(step.outcome())).count();
         String state = timeline.ended() ? (timeline.steps().stream().anyMatch(step -> "confirm".equals(step.key())
             && "accepted".equals(step.outcome())) ? "CLOSED" : "UNCLASSIFIED") : task == null ? "UNCLASSIFIED" : switch (task.key()) {
-            case "review" -> "AWAITING_REVIEW"; case "confirm" -> "AWAITING_CONFIRMATION"; default -> "ASSIGNED";
+            case "review" -> reopened > 0 ? "REOPENED" : "AWAITING_REVIEW"; case "confirm" -> "AWAITING_CONFIRMATION"; default -> "ASSIGNED";
         };
         QueueItem item = null;
         if (task != null && "handle".equals(task.key()) && ServiceDeskProcess.REVIEWED_KEY.equals(task.processKey()))
             item = project(workspace, execution.get(workspace, task.id()));
         var estimates = jdbc.query("select estimate_minutes,estimate_basis from servicedesk_review where ticket_id=?",
             (row,index) -> new QueueItem.Estimate(row.getInt(1),row.getString(2)), ticket.id());
-        if (item != null) state = switch(item.workState()) { case "IN_PROGRESS" -> "IN_PROGRESS"; case "PENDING" -> "PENDING"; default -> "ASSIGNED"; };
+        if (item != null) state = switch(item.workState()) { case "IN_PROGRESS" -> "IN_PROGRESS"; case "PENDING" -> "PENDING"; default -> reopened > 0 ? "REOPENED" : "ASSIGNED"; };
         var classifications=jdbc.query("select * from servicedesk_review where ticket_id=?",(row,index) ->
             new TicketReview.Classification(row.getString("category"),row.getString("priority"),row.getString("priority"),false,
                 "agent","COORDINATOR",row.getString("impact"),row.getString("urgency"),row.getString("reviewed_by"),
@@ -95,17 +95,34 @@ public class TicketReviewService implements WorkProjection {
     }
 
     @Override public QueueItem project(String workspace, WorkExecution.Item execution) {
-        var rows = jdbc.queryForList("select t.title,t.worked_millis,r.priority,r.estimate_minutes,r.estimate_basis from servicedesk_ticket t"
-            + " join servicedesk_review r on r.ticket_id=t.id where t.workspace=? and t.process_instance_id=? and t.process_key=?",
-            workspace, execution.task().processInstanceId(), ServiceDeskProcess.REVIEWED_KEY);
-        if (rows.size()!=1) throw CapabilityException.conflict("Reviewed work projection required");
-        var row=rows.get(0);
+        return projectBatch(workspace, List.of(execution)).get(0);
+    }
+
+    @Override public List<QueueItem> projectBatch(String workspace, List<WorkExecution.Item> executions) {
+        if (executions.isEmpty()) return List.of();
+        var parameters = new ArrayList<Object>();
+        parameters.add(workspace);
+        parameters.add(ServiceDeskProcess.REVIEWED_KEY);
+        executions.forEach(item -> parameters.add(item.task().processInstanceId()));
+        var rows = jdbc.queryForList("select t.process_instance_id,t.title,t.worked_millis,r.priority,r.estimate_minutes,r.estimate_basis,"
+            + " (select greatest(count(distinct h.review_task_id)-1,0) from servicedesk_estimate_history h where h.ticket_id=t.id) as reopened"
+            + " from servicedesk_ticket t join servicedesk_review r on r.ticket_id=t.id where t.workspace=? and t.process_key=?"
+            + " and t.process_instance_id in (" + String.join(",", Collections.nCopies(executions.size(), "?")) + ")", parameters.toArray());
+        var byProcess = new HashMap<String,Map<String,Object>>();
+        rows.forEach(row -> byProcess.put((String)row.get("process_instance_id"),row));
+        return executions.stream().map(item -> {
+            var row = byProcess.get(item.task().processInstanceId());
+            if (row == null) throw CapabilityException.conflict("Reviewed work projection required");
+            return projected(item, row);
+        }).toList();
+    }
+
+    private QueueItem projected(WorkExecution.Item execution, Map<String,Object> row) {
         int minutes=((Number)row.get("estimate_minutes")).intValue();
         long worked=(execution.workedMillis()+((Number)row.get("worked_millis")).longValue())/60_000;
         long remaining="NOT_STARTED".equals(execution.workState()) ? minutes : Math.max(10,minutes-worked);
         if ("PENDING".equals(execution.workState())) remaining=(remaining+1)/2;
-        var timeline=processes.timeline(workspace,execution.task().processInstanceId());
-        int reopened=(int)timeline.steps().stream().filter(step -> "confirm".equals(step.key()) && "rework".equals(step.outcome())).count();
+        int reopened=((Number)row.get("reopened")).intValue();
         return new QueueItem(execution.task(),(String)row.get("title"),execution.workState(),(String)row.get("priority"),
             (String)row.get("priority"),new QueueItem.Estimate(minutes,(String)row.get("estimate_basis")),worked,remaining,reopened,
             execution.pendingReason(),execution.pendingNote());

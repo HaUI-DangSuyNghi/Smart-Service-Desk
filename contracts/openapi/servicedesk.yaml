@@ -755,6 +755,7 @@ components:
           - IN_PROGRESS
           - PENDING
           - AWAITING_CONFIRMATION
+          - REOPENED
           - CLOSED
           - UNCLASSIFIED
         taskId:

@@ -36,13 +36,18 @@ public class ExecutionController {
         permissions.require(workspace, subject.equals(humans.currentActor(workspace).subject()) ? Permissions.TASK_HANDLE : Permissions.TASK_ASSIGN);
         var request = PageRequest.of(page, size);
         var result = execution.queue(workspace, subject, request);
+        var selected = new java.util.HashMap<String, QueueItem>();
+        var requestedIds = result.items().stream().map(item -> item.task().id()).collect(java.util.stream.Collectors.toSet());
         long load = 0;
         for (int index = 0; ; index++) {
             var batch = execution.queue(workspace, subject, new PageRequest(index, 100));
-            for (var item : batch.items()) load = Math.addExact(load, project(workspace, item).remainingMinutes());
+            for (var item : projectBatch(workspace, batch.items())) {
+                load = Math.addExact(load, item.remainingMinutes());
+                if (requestedIds.contains(item.task().id())) selected.put(item.task().id(),item);
+            }
             if ((long) (index + 1) * 100 >= batch.total()) break;
         }
-        return new QueuePage(result.items().stream().map(item -> project(workspace, item)).toList(),
+        return new QueuePage(result.items().stream().map(item -> selected.get(item.task().id())).toList(),
             result.page(), result.size(), result.total(), subject, load);
     }
 
@@ -69,5 +74,13 @@ public class ExecutionController {
         return projections.stream().filter(projection -> projection.processKey().equals(item.task().processKey()))
             .findFirst().orElseThrow(() -> CapabilityException.conflict("No public work projection for this process"))
             .project(workspace, item);
+    }
+    private List<QueueItem> projectBatch(String workspace, List<WorkExecution.Item> items) {
+        var projected = new java.util.HashMap<String, QueueItem>();
+        var groups = items.stream().collect(java.util.stream.Collectors.groupingBy(item -> item.task().processKey()));
+        groups.forEach((key, batch) -> projections.stream().filter(provider -> provider.processKey().equals(key))
+            .findFirst().orElseThrow(() -> CapabilityException.conflict("No public work projection for this process"))
+            .projectBatch(workspace, batch).forEach(item -> projected.put(item.task().id(), item)));
+        return items.stream().map(item -> projected.get(item.task().id())).toList();
     }
 }
