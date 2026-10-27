@@ -80,7 +80,7 @@ class AgentDutyUpgradeIntegrationTest {
 
     @Test void bootsFlowableAndServesDutyAfterUpgradingAppliedAi08WithoutChangingHistory() throws Exception {
         assertTrue(flyway.validateWithResult().validationSuccessful);
-        assertEquals("15", flyway.info().current().getVersion().toString());
+        assertEquals("19", flyway.info().current().getVersion().toString());
         assertEquals(checksums, jdbc.queryForList("select version,script,checksum from flyway_schema_history where version in ('11','12','13') order by installed_rank"));
         for (var snapshot : ai08.entrySet())
             assertEquals(snapshot.getValue(), jdbc.queryForList("select * from " + snapshot.getKey() + " where ticket_id=?", TICKET));

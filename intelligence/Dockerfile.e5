@@ -1,0 +1,30 @@
+# syntax=docker/dockerfile:1.7
+# Build-time download ONLY; the distributed image never downloads or mounts E5 weights.
+# Pass --build-context e5-model=<verified directory containing onnx/model.onnx and onnx/tokenizer.json>.
+FROM python:3.12.15-slim-bookworm@sha256:34386ef0cb081344d7ec1c103ba398e6e9f64e9ab3a1509accc92a4e24a07258 AS wheels
+COPY intelligence/requirements.lock /deps/requirements.lock
+COPY intelligence/requirements-dense.lock /deps/requirements-dense.lock
+RUN python -m pip download --only-binary=:all: --dest /wheels -r /deps/requirements-dense.lock
+
+ARG TRIAGE_BASE_IMAGE
+FROM ${TRIAGE_BASE_IMAGE}
+USER root
+COPY --from=wheels /wheels/ /tmp/e5-wheels/
+COPY intelligence/requirements.lock /tmp/e5-deps/requirements.lock
+COPY intelligence/requirements-dense.lock /tmp/e5-deps/requirements-dense.lock
+RUN python -m pip install --no-index --find-links=/tmp/e5-wheels -r /tmp/e5-deps/requirements-dense.lock \
+    && python -m pip check \
+    && rm -rf /tmp/e5-wheels /tmp/e5-deps
+# Copy ONLY the two reviewed, immutable upstream artifacts from the explicit local build context.
+COPY --from=e5-model --chown=10001:10001 /onnx/model.onnx /opt/models/e5/onnx/model.onnx
+COPY --from=e5-model --chown=10001:10001 /onnx/tokenizer.json /opt/models/e5/onnx/tokenizer.json
+ARG TRIAGE_BASE_IMAGE_ID
+LABEL vn.haui.ssd.e5-model="intfloat/multilingual-e5-small" \
+      vn.haui.ssd.e5-revision="614241f622f53c4eeff9890bdc4f31cfecc418b3" \
+      vn.haui.ssd.e5-artifact-digest="sha256:8f5c24508c0307b029da65796be624c0a3345be7f5b96622a04e0b6285bc53fb" \
+      vn.haui.ssd.e5-parent-image-id=${TRIAGE_BASE_IMAGE_ID}
+ENV HF_HUB_OFFLINE=1 TRANSFORMERS_OFFLINE=1 HF_HUB_DISABLE_TELEMETRY=1 DO_NOT_TRACK=1 \
+    HDPI_E5_MODEL_DIRECTORY=/opt/models/e5
+# Exact bytes, locked dependencies and one actual E5 query are exercised without network.
+RUN python -c "from hdpi.retrieval.dense.provider import OnnxEmbeddingProvider; p=OnnxEmbeddingProvider('/opt/models/e5'); assert len(p.encode_query('synthetic ticket')) == 384"
+USER 10001:10001

@@ -34,7 +34,7 @@ class ServiceDeskMigrationIntegrationTest {
         var checksums=jdbc.queryForList("select version,checksum from "+schema+".flyway_schema_history where success and version is not null order by installed_rank");
         var duties=jdbc.queryForList("select * from "+schema+".hpdi_agent_duty");
         var audits=jdbc.queryForList("select * from "+schema+".audit_event order by id");
-        var upgraded=Flyway.configure().dataSource(source).schemas(schema).load();
+        var upgraded=Flyway.configure().dataSource(source).schemas(schema).target("15").load();
         assertEquals(1,upgraded.migrate().migrationsExecuted);
         assertTrue(upgraded.validateWithResult().validationSuccessful);
         assertEquals(checksums,jdbc.queryForList("select version,checksum from "+schema+".flyway_schema_history where success and version<>'15' order by installed_rank"));
@@ -104,7 +104,8 @@ class ServiceDeskMigrationIntegrationTest {
                 ? jdbc.queryForList("select * from " + schema + ".servicedesk_assessment_history where ticket_id=?", ticket) : null;
 
         var upgraded = Flyway.configure().dataSource(source).schemas(schema).load();
-        assertEquals(15 - baselineVersion, upgraded.migrate().migrationsExecuted);
+        assertEquals(19 - baselineVersion, upgraded.migrate().migrationsExecuted);
+
         assertTrue(upgraded.validateWithResult().validationSuccessful);
         var after = jdbc.queryForMap("select * from " + schema + ".servicedesk_ticket where id=?", ticket);
         if (baselineVersion < 11) assertEquals(0L, after.remove("context_revision"));

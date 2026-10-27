@@ -193,7 +193,7 @@ components:
         IN_PROGRESS = Đang làm · PENDING = Đang chờ · AWAITING_CONFIRMATION = chờ người dùng xác nhận ·
         REOPENED = người dùng báo chưa xong, chưa bắt đầu lại · CLOSED = đã đóng ·
         UNCLASSIFIED = dữ liệu quy trình không khớp, cần kiểm tra (như thống kê cũ)
-      enum: [AWAITING_REVIEW, ASSIGNED, IN_PROGRESS, PENDING, AWAITING_CONFIRMATION, REOPENED, CLOSED, UNCLASSIFIED]
+        enum: [INTAKE, FOLLOWING, AWAITING_REVIEW, ASSIGNED, IN_PROGRESS, PENDING, AWAITING_CONFIRMATION, REOPENED, CLOSED, UNCLASSIFIED]
     Classification:
       type: object
       additionalProperties: false
@@ -291,6 +291,16 @@ components:
       - assignee
       - reason
       properties:
+        expectedContextRevision:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Required for tickets enrolled in intake admission.
+        expectedIntakeVersion:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Compare-and-set version returned by GET intake.
         category:
           $ref: '#/components/schemas/Category'
         impact:

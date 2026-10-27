@@ -40,13 +40,14 @@ public class EnrichmentLifecycleService {
     private final EnrichmentConfiguration.Settings settings;
     private final vn.haui.dx.apps.servicedesk.intelligence.TicketContextualAssessmentService reassessment;
     private final EnrichmentMetrics metrics;
+    private final vn.haui.dx.apps.servicedesk.intake.IntakeAdmission intake;
 
     public EnrichmentLifecycleService(
             TicketService tickets, EnrichmentCaseStore store, ContextEvaluationGuard guard,
             ContextSlotExtractor extractor, ContextReadinessPolicy policy, HumanContext human,
             ProcessObservations processes, EnrichmentConfiguration.Settings settings,
             vn.haui.dx.apps.servicedesk.intelligence.TicketContextualAssessmentService reassessment,
-            EnrichmentMetrics metrics) {
+            EnrichmentMetrics metrics, vn.haui.dx.apps.servicedesk.intake.IntakeAdmission intake) {
         this.tickets = tickets;
         this.store = store;
         this.guard = guard;
@@ -57,6 +58,7 @@ public class EnrichmentLifecycleService {
         this.settings = settings;
         this.reassessment = reassessment;
         this.metrics = metrics;
+        this.intake = intake;
     }
 
     public View get(String workspace, UUID id) {
@@ -100,8 +102,8 @@ public class EnrichmentLifecycleService {
                 }
                 var before = processSnapshot(workspace, session.ticket());
                 var result = policy.evaluate(session.snapshot(), extractor.extract(session.snapshot()), claim.previous().roundCount());
-                if (result.overall() == ContextReadinessView.State.READINESS_OK
-                        || result.overall() == ContextReadinessView.State.ENRICHMENT_OPTIONAL) {
+                if (intake.find(workspace, id) == null && (result.overall() == ContextReadinessView.State.READINESS_OK
+                        || result.overall() == ContextReadinessView.State.ENRICHMENT_OPTIONAL)) {
                     var refreshed = reassessment.assess(workspace, id);
                     if (refreshed.contextRevision() != session.snapshot().contextRevision()
                             || !session.snapshot().digest().equals(refreshed.contextDigest())) {

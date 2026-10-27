@@ -1,5 +1,6 @@
 import { Link, useParams } from "react-router";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { IconArrowLeft, IconTicket } from "@tabler/icons-react";
 import { useAuth } from "../../../platform/human/auth";
 import { useCurrentWorkspace } from "../../../platform/human/workspace";
@@ -13,6 +14,8 @@ import { TicketProgress } from "../tickets/TicketProgress";
 import { TicketSummary } from "../tickets/TicketSummary";
 import { useTicket } from "../tickets/useTickets";
 import { EnrichmentPanel } from "../tickets/EnrichmentPanel";
+import { IntakePanel } from "../tickets/IntakePanel";
+import { getIntake } from "../services/intakeService";
 
 const WORKSPACE_PATTERN = /^[a-zA-Z0-9_-]{1,100}$/;
 const UUID_PATTERN = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
@@ -75,6 +78,16 @@ const TicketDetailPage = () => {
 
 const TicketDetail = ({ workspace, ticketId }: { workspace: string; ticketId: string }) => {
   const ticket = useTicket(workspace, ticketId);
+  const { user } = useAuth();
+  const intake = useQuery({
+    queryKey: ["servicedesk", "intake", workspace, ticketId, user?.profile.sub],
+    queryFn: ({ signal }) => getIntake(workspace, ticketId, signal),
+    retry: false,
+    refetchInterval: (query) =>
+      query.state.data && !["REVIEWED", "CANONICAL_FOLLOWER"].includes(query.state.data.status)
+        ? 5000
+        : false,
+  });
   const [contextRevision, setContextRevision] = useState<number | null>(null);
 
   return (
@@ -94,12 +107,26 @@ const TicketDetail = ({ workspace, ticketId }: { workspace: string; ticketId: st
         )}
       </div>
       <aside className="min-w-0 border-t border-crm-line lg:border-t-0 lg:border-l">
-        <EnrichmentPanel
-          workspace={workspace}
-          ticketId={ticketId}
-          onRevisionChange={setContextRevision}
-        />
-        {contextRevision === 0 && (
+        {intake.error && (
+          <ErrorState error={intake.error} fallback="Chưa tải được trạng thái tiếp nhận." />
+        )}
+        {intake.data && (
+          <IntakePanel
+            workspace={workspace}
+            ticketId={ticketId}
+            state={intake.data}
+            independent={!!ticket.data && ticket.data.creator !== user?.profile.sub}
+          />
+        )}
+        {intake.isSuccess && (
+          <EnrichmentPanel
+            workspace={workspace}
+            ticketId={ticketId}
+            onRevisionChange={setContextRevision}
+            managedIntake={!!intake.data}
+          />
+        )}
+        {intake.isSuccess && !intake.data && contextRevision === 0 && (
           <SuggestionCard
             fetchSuggestion={() => triageTicket(workspace, ticketId)}
             fieldLabels={SUGGESTION_LABELS}

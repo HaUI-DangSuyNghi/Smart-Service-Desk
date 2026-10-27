@@ -63,6 +63,10 @@ public class ContextProcessingGate {
                 throw new IllegalArgumentException();
             }
             var path = Path.of(settings.processingReceipt());
+            if (Files.isDirectory(path) && !Files.isSymbolicLink(path)) {
+                if (!workspace.matches("[a-z0-9-]{1,50}")) throw new IllegalArgumentException();
+                path = path.resolve(workspace + "." + scope + ".json");
+            }
             if (Files.isSymbolicLink(path) || Files.size(path) > 16384) {
                 throw new IllegalArgumentException();
             }

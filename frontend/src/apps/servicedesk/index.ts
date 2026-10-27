@@ -7,6 +7,7 @@ import { TicketStatsWidget } from "./dashboard/TicketStatsWidget";
 const TicketListPage = lazy(() => import("./pages/TicketListPage"));
 const TicketDetailPage = lazy(() => import("./pages/TicketDetailPage"));
 const EnrichmentPendingPage = lazy(() => import("./pages/EnrichmentPendingPage"));
+const IntakePendingPage = lazy(() => import("./pages/IntakePendingPage"));
 
 export const registerServiceDesk = (registry: AppRegistry) => {
   registry.register({
@@ -14,6 +15,7 @@ export const registerServiceDesk = (registry: AppRegistry) => {
     routes: [
       { path: "servicedesk/tickets", component: TicketListPage },
       { path: "servicedesk/enrichment-pending", component: EnrichmentPendingPage },
+      { path: "servicedesk/intake-pending", component: IntakePendingPage },
       // Không có workspace trong đường dẫn: dùng workspace đang chọn (link từ inbox, danh sách)
       { path: "servicedesk/tickets/:ticketId", component: TicketDetailPage },
       { path: "servicedesk/workspaces/:workspace/tickets/:ticketId", component: TicketDetailPage },
@@ -24,6 +26,10 @@ export const registerServiceDesk = (registry: AppRegistry) => {
     // businessKey của quy trình service-desk là id ticket
     processLinks: {
       "service-desk": (businessKey) => `/servicedesk/tickets/${encodeURIComponent(businessKey)}`,
+      "service-desk-reviewed": (businessKey) =>
+        `/servicedesk/tickets/${encodeURIComponent(businessKey)}`,
+      "service-desk-intake-reviewed": (businessKey) =>
+        `/servicedesk/tickets/${encodeURIComponent(businessKey)}`,
     },
     // Thống kê ticket hiện trên dashboard chung của điều phối viên
     dashboardWidgets: [

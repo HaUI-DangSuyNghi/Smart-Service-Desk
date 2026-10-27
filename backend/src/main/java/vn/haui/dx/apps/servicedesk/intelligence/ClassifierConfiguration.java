@@ -28,7 +28,9 @@ public class ClassifierConfiguration {
             @Value("${serviceDesk.classifier.model-digest:}") String modelDigest,
             @Value("${serviceDesk.classifier.policy-digest:}") String policyDigest,
             @Value("${serviceDesk.classifier.processing-receipt:}") String receipt,
-            @Value("${serviceDesk.classifier.processing-verification-key:}") String key) {
-        return new Settings(mode, provider, modelDigest, policyDigest, receipt, key);
+            @Value("${serviceDesk.classifier.processing-verification-key:}") String key,
+            @Value("${serviceDesk.classifier.processing-verification-key-file:}") String keyFile) {
+        return new Settings(mode, provider, modelDigest, policyDigest, receipt,
+                vn.haui.dx.hpdi.common.api.SecretFiles.resolve(key, keyFile));
     }
 }

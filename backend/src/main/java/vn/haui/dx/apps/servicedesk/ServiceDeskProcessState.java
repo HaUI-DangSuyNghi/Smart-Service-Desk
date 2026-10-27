@@ -26,6 +26,9 @@ public final class ServiceDeskProcessState {
         if (ServiceDeskProcess.KEY.equals(state.processKey())) {
             return Set.of("handle", "confirm").contains(taskKey);
         }
+        if (ServiceDeskProcess.INTAKE_KEY.equals(state.processKey())) {
+            return Set.of("intake", "review", "handle", "confirm").contains(taskKey);
+        }
         return ServiceDeskProcess.REVIEWED_KEY.equals(state.processKey())
                 && Set.of("review", "handle", "confirm").contains(taskKey);
     }

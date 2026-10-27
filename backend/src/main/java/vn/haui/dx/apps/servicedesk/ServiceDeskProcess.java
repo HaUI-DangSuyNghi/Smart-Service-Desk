@@ -12,28 +12,35 @@ import vn.haui.dx.hpdi.process.api.ProcessLabels;
 public class ServiceDeskProcess implements ProcessContribution {
     public static final String KEY = "service-desk";
     public static final String REVIEWED_KEY = "service-desk-reviewed";
+    public static final String INTAKE_KEY = "service-desk-intake-reviewed";
+    public static boolean reviewed(String key) { return REVIEWED_KEY.equals(key) || INTAKE_KEY.equals(key); }
     private final org.springframework.jdbc.core.JdbcTemplate jdbc;
     private final org.springframework.beans.factory.ObjectProvider<vn.haui.dx.hpdi.process.api.WorkExecution> execution;
+    private final org.springframework.beans.factory.ObjectProvider<vn.haui.dx.apps.servicedesk.intake.IntakeAdmission> intake;
+    private final org.springframework.beans.factory.ObjectProvider<vn.haui.dx.apps.servicedesk.intake.CanonicalTicketService> canonical;
     private final org.springframework.beans.factory.ObjectProvider<TicketAssignmentEligibility> eligibility;
     public ServiceDeskProcess(org.springframework.jdbc.core.JdbcTemplate jdbc,
             org.springframework.beans.factory.ObjectProvider<vn.haui.dx.hpdi.process.api.WorkExecution> execution,
+            org.springframework.beans.factory.ObjectProvider<vn.haui.dx.apps.servicedesk.intake.IntakeAdmission> intake,
+            org.springframework.beans.factory.ObjectProvider<vn.haui.dx.apps.servicedesk.intake.CanonicalTicketService> canonical,
             org.springframework.beans.factory.ObjectProvider<TicketAssignmentEligibility> eligibility) {
-        this.jdbc = jdbc; this.execution = execution; this.eligibility = eligibility;
+        this.jdbc = jdbc; this.execution = execution; this.intake = intake; this.canonical = canonical; this.eligibility = eligibility;
     }
 
     @Override public void beforeAssign(String workspace, String processKey, String processId, String taskKey, String subject) {
-        if (!REVIEWED_KEY.equals(processKey) || !"handle".equals(taskKey)) return;
+        if (!reviewed(processKey) || !"handle".equals(taskKey)) return;
         var rows = jdbc.queryForList("select t.creator,r.category from servicedesk_ticket t join servicedesk_review r on r.ticket_id=t.id"
             + " where t.workspace=? and t.process_instance_id=?", workspace, processId);
         if (rows.isEmpty()) throw vn.haui.dx.hpdi.common.api.CapabilityException.conflict("Ticket review required");
         var row = rows.get(0);
         eligibility.getObject().require(workspace, TicketReview.Category.valueOf((String) row.get("category")), (String) row.get("creator"), subject);
+
     }
 
-    @Override public Map<String, Set<String>> executionTasks() { return Map.of(REVIEWED_KEY, Set.of("handle")); }
+    @Override public Map<String, Set<String>> executionTasks() { return Map.of(REVIEWED_KEY, Set.of("handle"), INTAKE_KEY, Set.of("handle")); }
 
     @Override public void afterAssign(String workspace, String processKey, String processId, String taskKey, String subject) {
-        if (!REVIEWED_KEY.equals(processKey) || !"handle".equals(taskKey)) return;
+        if (!reviewed(processKey) || !"handle".equals(taskKey)) return;
         var group = jdbc.queryForObject("select r.category from servicedesk_review r join servicedesk_ticket t on t.id=r.ticket_id"
             + " where t.workspace=? and t.process_instance_id=?", String.class, workspace, processId);
         String supportGroup = TicketAssignmentEligibility.supportGroup(TicketReview.Category.valueOf(group));
@@ -44,12 +51,20 @@ public class ServiceDeskProcess implements ProcessContribution {
     }
 
     @Override public void beforeComplete(String workspace, String processKey, String processId, String taskKey, String taskId, String outcome) {
-        if (REVIEWED_KEY.equals(processKey) && "confirm".equals(taskKey) && "rework".equals(outcome))
-            jdbc.update("update servicedesk_ticket set awaiting_review=true where workspace=? and process_instance_id=?",workspace,processId);
-        if (REVIEWED_KEY.equals(processKey) && "handle".equals(taskKey))
+        if (INTAKE_KEY.equals(processKey) && "intake".equals(taskKey)) {
+            if ("duplicate".equals(outcome)) canonical.getObject().beforeLinkComplete(workspace, processId);
+            else intake.getObject().beforeIntakeComplete(workspace, processId, taskId, outcome);
+        }
+        if (INTAKE_KEY.equals(processKey) && "follower".equals(taskKey)) canonical.getObject().beforeFollowerComplete(workspace, processId, outcome);
+        if (reviewed(processKey) && "confirm".equals(taskKey) && "accepted".equals(outcome)) canonical.getObject().rootConfirmed(workspace, processId);
+        if (reviewed(processKey) && "review".equals(taskKey)) intake.getObject().beforeComplete(workspace, processId, taskId);
+        if (reviewed(processKey) && "confirm".equals(taskKey) && "rework".equals(outcome)) intake.getObject().rework(workspace, processId);
+        if (reviewed(processKey) && "confirm".equals(taskKey) && "rework".equals(outcome))
+            jdbc.update("update servicedesk_ticket set awaiting_review=? where workspace=? and process_instance_id=?",!INTAKE_KEY.equals(processKey),workspace,processId);
+        if (reviewed(processKey) && "handle".equals(taskKey))
             jdbc.update("update servicedesk_ticket set worked_millis=worked_millis+? where workspace=? and process_instance_id=?",
                 execution.getObject().get(workspace, taskId).workedMillis(), workspace, processId);
-        if (REVIEWED_KEY.equals(processKey) && "review".equals(taskKey)
+        if (reviewed(processKey) && "review".equals(taskKey)
                 && !Boolean.TRUE.equals(jdbc.queryForObject("select exists(select 1 from servicedesk_review r"
                     + " join servicedesk_ticket t on t.id=r.ticket_id where t.workspace=?"
                     + " and t.process_instance_id=? and r.review_task_id=?)", Boolean.class, workspace, processId, taskId)))
@@ -58,17 +73,41 @@ public class ServiceDeskProcess implements ProcessContribution {
 
     // Không tự phục vụ: process phải ra đời cùng ticket qua API của app
     @Override public List<ProcessDefinition> definitions() {
-        return List.of(new ProcessDefinition(REVIEWED_KEY, Set.of("requester", "agent", "coordinator"), Set.of(),
+        return List.of(new ProcessDefinition(INTAKE_KEY, Set.of("requester", "agent", "coordinator"), Set.of(),
+            Map.of("intake", Set.of("ready", "duplicate"), "follower", Set.of("closed", "split"),
+                "review", Set.of("approved"), "handle", Set.of("resolved"), "confirm", Set.of("accepted", "rework")),
+            Set.of("agent", "coordinator", "assessment-worker"), Set.of("agent", "coordinator", "assessment-worker"))
+                .withLabels(reviewLabels("Tiếp nhận và xử lý hỗ trợ CNTT", true)),
+            new ProcessDefinition(REVIEWED_KEY, Set.of("requester", "agent", "coordinator"), Set.of(),
             Map.of("review", Set.of("approved"), "handle", Set.of("resolved"), "confirm", Set.of("accepted", "rework")),
-            Set.of("agent", "coordinator"), Set.of("agent", "coordinator")),
+            Set.of("agent", "coordinator", "assessment-worker"), Set.of("agent", "coordinator", "assessment-worker"))
+                .withLabels(reviewLabels("Duyệt và xử lý hỗ trợ CNTT", false)),
             new ProcessDefinition(KEY, Set.of("requester", "agent", "coordinator"), Set.of(),
             Map.of("handle", Set.of("resolved"), "confirm", Set.of("accepted", "rework")),
-            Set.of("agent", "coordinator"), Set.of("coordinator"))
+            Set.of("agent", "coordinator", "assessment-worker"), Set.of("coordinator", "assessment-worker"))
             .withLabels(ProcessLabels.named("Yêu cầu hỗ trợ CNTT")
                 .task("handle", "Xử lý yêu cầu")
                 .task("confirm", "Xác nhận kết quả")
                 .outcome("resolved", "Đã xử lý")
                 .outcome("accepted", "Chấp nhận")
                 .outcome("rework", "Yêu cầu làm lại")));
+    }
+
+    private ProcessLabels reviewLabels(String name, boolean intakeWorkflow) {
+        var labels = ProcessLabels.named(name)
+                .task("review", "Điều phối viên duyệt")
+                .task("handle", "Xử lý yêu cầu")
+                .task("confirm", "Người gửi xác nhận")
+                .outcome("approved", "Đã duyệt")
+                .outcome("resolved", "Đã xử lý")
+                .outcome("accepted", "Chấp nhận")
+                .outcome("rework", "Yêu cầu làm lại");
+        return intakeWorkflow ? labels
+                .task("intake", "Tiếp nhận thông tin")
+                .task("follower", "Theo dõi sự cố đã liên kết")
+                .outcome("ready", "Chuyển duyệt")
+                .outcome("duplicate", "Theo dõi cùng sự cố")
+                .outcome("closed", "Đã xác nhận kết quả")
+                .outcome("split", "Tách để tiếp nhận độc lập") : labels;
     }
 }

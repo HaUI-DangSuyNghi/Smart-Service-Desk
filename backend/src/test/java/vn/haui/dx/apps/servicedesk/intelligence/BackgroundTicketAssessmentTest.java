@@ -87,6 +87,7 @@ class BackgroundTicketAssessmentTest {
     @Autowired ObjectMapper json;
     @Autowired JdbcTemplate jdbc;
     @Autowired BackgroundTicketAssessment worker;
+    @Autowired org.springframework.beans.factory.ObjectProvider<vn.haui.dx.apps.servicedesk.intake.IntakeCoordinator> intake;
     @Autowired WorkspaceDirectory directory;
     @Autowired PlatformTransactionManager manager;
     @Autowired vn.haui.dx.hpdi.intelligence.api.IntelligenceCapability capability;
@@ -248,7 +249,7 @@ class BackgroundTicketAssessmentTest {
     @Test void expiredLeaseAfterRestartIsRecoverableAndLastCrashedAttemptTerminates() throws Exception {
         var id=create();
         jdbc.update("update servicedesk_assessment set attempts=1,lease_token=?,lease_until=clock_timestamp()-interval '1 second' where ticket_id=?",UUID.randomUUID(),id);
-        var restarted=new BackgroundTicketAssessment(jdbc,json,capability,processing,audit,manager,false,List.of("background-a"));
+        var restarted=new BackgroundTicketAssessment(jdbc,json,capability,processing,audit,manager,false,List.of("background-a"),intake);
         assertTrue(restarted.processOne()); assertEquals("READY",state(id));
         var exhausted=create();
         jdbc.update("update servicedesk_assessment set attempts=3,lease_token=?,lease_until=clock_timestamp()-interval '1 second' where ticket_id=?",UUID.randomUUID(),exhausted);
@@ -308,7 +309,7 @@ class BackgroundTicketAssessmentTest {
     }
     @Test void workerCannotClaimOutsideConfiguredWorkspace() throws Exception {
         var id=create(false);
-        var foreign=new BackgroundTicketAssessment(jdbc,json,capability,processing,audit,manager,false,List.of("background-b"));
+        var foreign=new BackgroundTicketAssessment(jdbc,json,capability,processing,audit,manager,false,List.of("background-b"),intake);
         assertFalse(foreign.processOne()); verifyNoInteractions(transport);
         assertEquals(0,jdbc.queryForObject("select attempts from servicedesk_assessment where ticket_id=?",Integer.class,id));
         assertTrue(worker.processOne()); assertEquals("READY",state(id));

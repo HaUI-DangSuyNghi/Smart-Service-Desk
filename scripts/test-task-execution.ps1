@@ -2,6 +2,10 @@ param(
     [string]$Maven = 'mvn',
     [string]$BuildImage,
     [string]$Test,
+    [string]$ClassificationContainer,
+    [string]$ClassificationTokenFile,
+    [string]$ClassificationModelDigest,
+    [string]$ClassificationPolicyDigest,
     [ValidateSet('execution', 'full', 'core-only', 'second-domain')][string]$Profile = 'execution'
 )
 $ErrorActionPreference = 'Stop'
@@ -15,15 +19,31 @@ $created = $false
 $networkCreated = $false
 $network = "$container-network"
 $saved = @{}
-foreach ($name in @('FILE_TEST_JDBC_URL', 'FILE_TEST_DB_PASSWORD', 'WORKFLOW_TEST_JDBC_URL', 'WORKFLOW_TEST_DB_PASSWORD', 'BACKGROUND_TEST_JDBC_URL')) {
+foreach ($name in @('FILE_TEST_JDBC_URL', 'FILE_TEST_DB_PASSWORD', 'WORKFLOW_TEST_JDBC_URL', 'WORKFLOW_TEST_DB_PASSWORD', 'BACKGROUND_TEST_JDBC_URL', 'REAL_MODEL_BASE_URL', 'REAL_MODEL_TOKEN_FILE', 'REAL_MODEL_DIGEST', 'REAL_MODEL_POLICY_DIGEST')) {
     $saved[$name] = [Environment]::GetEnvironmentVariable($name, 'Process')
 }
 try {
+    $proofArguments = @()
+    if ($ClassificationContainer) {
+        if (!$BuildImage -or $Test -ne 'RealQwenIntakeProof' -or $ClassificationModelDigest -notmatch '^[0-9a-f]{64}$' -or $ClassificationPolicyDigest -notmatch '^[0-9a-f]{64}$') {
+            throw 'Real model proof requires the isolated build runner and exact model/policy pins'
+        }
+        $proofToken = (Resolve-Path -LiteralPath $ClassificationTokenFile).Path
+        $env:REAL_MODEL_BASE_URL = 'http://intelligence-classification:8003'
+        $env:REAL_MODEL_TOKEN_FILE = '/run/proof/model-token'
+        $env:REAL_MODEL_DIGEST = $ClassificationModelDigest
+        $env:REAL_MODEL_POLICY_DIGEST = $ClassificationPolicyDigest
+        $proofArguments = @('--mount', "type=bind,source=$proofToken,target=/run/proof/model-token,readonly", '-e', 'REAL_MODEL_BASE_URL', '-e', 'REAL_MODEL_TOKEN_FILE', '-e', 'REAL_MODEL_DIGEST', '-e', 'REAL_MODEL_POLICY_DIGEST')
+    }
     $networkArguments = @('-p', '127.0.0.1::5432')
     if ($BuildImage) {
         docker network create --internal $network | Out-Null
         if ($LASTEXITCODE -ne 0) { throw 'Cannot create private test network' }
         $networkCreated = $true
+        if ($ClassificationContainer) {
+            docker network connect --alias intelligence-classification $network $ClassificationContainer | Out-Null
+            if ($LASTEXITCODE -ne 0) { throw 'Cannot attach isolated model proof network' }
+        }
         $networkArguments = @('--network', $network, '--network-alias', 'database')
     }
     docker run -d --name $container --label codex.task=ticket-execution --tmpfs /var/lib/postgresql/data `
@@ -72,7 +92,7 @@ try {
             --mount "type=bind,source=$HOME/.m2/repository,target=/root/.m2/repository,readonly" `
             --mount "type=bind,source=$reports,target=/evidence" `
             -e FILE_TEST_JDBC_URL -e WORKFLOW_TEST_JDBC_URL -e BACKGROUND_TEST_JDBC_URL -e FILE_TEST_DB_PASSWORD -e WORKFLOW_TEST_DB_PASSWORD `
-            --entrypoint sh $BuildImage -c $command runner @arguments *> (Join-Path $evidence 'maven.log')
+            @proofArguments --entrypoint sh $BuildImage -c $command runner @arguments *> (Join-Path $evidence 'maven.log')
     } else {
         & $Maven @arguments *> (Join-Path $evidence 'maven.log')
     }
@@ -93,5 +113,8 @@ try {
 } finally {
     foreach ($name in $saved.Keys) { [Environment]::SetEnvironmentVariable($name, $saved[$name], 'Process') }
     if ($created) { docker rm -f -v $container | Out-Null }
-    if ($networkCreated) { docker network rm $network | Out-Null }
+    if ($networkCreated) {
+        if ($ClassificationContainer) { docker network disconnect -f $network $ClassificationContainer | Out-Null }
+        docker network rm $network | Out-Null
+    }
 }

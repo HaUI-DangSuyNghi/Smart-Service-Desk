@@ -159,7 +159,17 @@ class AssignmentSuggestionIntegrationTest {
         var suggested=suggestion(ticket);
         assertNotEquals(owner,suggested.path("recommended").asText());
         assertEquals(suggested,suggestion(ticket));
-        verify(workflow,times(2)).workspaceQueue(eq("lab-a"),any());
+        var scans = org.mockito.ArgumentCaptor.forClass(vn.haui.dx.core.common.PageRequest.class);
+        verify(workflow,atLeast(2)).workspaceQueue(eq("lab-a"),scans.capture());
+        var requests = scans.getAllValues();
+        assertEquals(0, requests.size() % 2);
+        int pages = requests.size() / 2;
+        for (int scan = 0; scan < 2; scan++) {
+            for (int page = 0; page < pages; page++) {
+                assertEquals(page, requests.get(scan * pages + page).page());
+                assertEquals(100, requests.get(scan * pages + page).size());
+            }
+        }
         assertEquals(beforeEvents,events());
         assertEquals(beforeCursor,jdbc.queryForList("select * from servicedesk_assignment_cursor order by workspace,support_group"));
         assertEquals(audits,jdbc.queryForObject("select count(*) from audit_event",Long.class));

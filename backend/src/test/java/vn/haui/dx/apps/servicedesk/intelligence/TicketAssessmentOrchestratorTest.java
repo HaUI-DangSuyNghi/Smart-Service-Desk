@@ -135,6 +135,7 @@ class TicketAssessmentOrchestratorTest {
                         eq("lab-a"),
                         argThat(input -> input.fields().get("title").equals(snapshot.title())));
         verify(tickets, times(2)).get("lab-a", id);
+        verify(tickets).requiresFinalAdmission("lab-a", id);
         verifyNoMoreInteractions(tickets, model);
         assertThrows(UnsupportedOperationException.class, () -> result.evidence().clear());
     }
