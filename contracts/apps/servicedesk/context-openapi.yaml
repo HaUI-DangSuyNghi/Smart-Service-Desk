@@ -8,6 +8,35 @@ info:
 security:
   - bearerAuth: []
 paths:
+  /api/apps/servicedesk/v1/workspaces/{workspace}/tickets/{id}/assistant/readiness:
+    parameters:
+      - $ref: '#/components/parameters/Workspace'
+      - $ref: '#/components/parameters/TicketId'
+    post:
+      operationId: assessTicketTaskReadiness
+      summary: Kiểm tra thông tin đủ cho từng tác vụ AI; không tạm dừng workflow
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [contractVersion]
+              properties:
+                contractVersion: {const: ticket-readiness@0.1.0}
+      responses:
+        '200':
+          description: Readiness có guard trước/sau; SHADOW ẩn kết luận
+          content:
+            application/json:
+              schema:
+                $ref: './intelligence/ticket-readiness-v0.1.schema.json'
+        '400': {description: Request không hợp lệ}
+        '401': {description: Chưa đăng nhập}
+        '403': {description: Thiếu quyền hoặc grant pin readiness policy}
+        '404': {description: AI tắt hoặc không có quyền đọc ticket}
+        '409': {description: Snapshot hoặc quyền thay đổi}
   /api/apps/servicedesk/v1/workspaces/{workspace}/tickets/{id}/context-revision:
     parameters:
       - $ref: '#/components/parameters/Workspace'

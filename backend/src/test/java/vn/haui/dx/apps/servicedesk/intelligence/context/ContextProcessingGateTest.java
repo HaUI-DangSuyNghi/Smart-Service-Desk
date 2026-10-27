@@ -71,6 +71,19 @@ class ContextProcessingGateTest {
                 "expiresEpochSecond", Instant.now().plusSeconds(300).getEpochSecond(), "issuer", "synthetic-test-issuer");
     }
 
+    @Test
+    void oldGrantDoesNotAuthorizeReadinessOrAugmentedInput() throws Exception {
+        var existing = gate(signed(grant()), policy.bundleDigest());
+        assertThrows(CapabilityException.class, () -> existing.verifyReadiness("lab", "OWN_TICKET", "a".repeat(64)));
+        var extended = new LinkedHashMap<>(grant());
+        extended.put("readinessPolicyDigest", "a".repeat(64));
+        extended.put("contextualPolicyDigest", "b".repeat(64));
+        var pinned = gate(signed(extended), policy.bundleDigest());
+        assertEquals(64, pinned.verifyReadiness("lab", "OWN_TICKET", "a".repeat(64)).length());
+        assertEquals(64, pinned.verifyContextual("lab", "OWN_TICKET", "a".repeat(64), "b".repeat(64)).length());
+        assertThrows(CapabilityException.class, () -> pinned.verifyContextual("lab", "OWN_TICKET", "a".repeat(64), "c".repeat(64)));
+    }
+
     private Path signed(Map<String, Object> grant) throws Exception {
         byte[] payload = json.writeValueAsBytes(grant);
         var mac = Mac.getInstance("HmacSHA256");

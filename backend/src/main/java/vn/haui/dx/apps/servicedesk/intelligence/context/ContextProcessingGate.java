@@ -41,6 +41,21 @@ public class ContextProcessingGate {
     }
 
     public String verify(String workspace, String scope) {
+        return verify(workspace, scope, null, null);
+    }
+
+    public String verifyReadiness(String workspace, String scope, String readinessDigest) {
+        requireDigest(readinessDigest);
+        return verify(workspace, scope, readinessDigest, null);
+    }
+
+    public String verifyContextual(String workspace, String scope, String readinessDigest, String contextualDigest) {
+        requireDigest(readinessDigest);
+        requireDigest(contextualDigest);
+        return verify(workspace, scope, readinessDigest, contextualDigest);
+    }
+
+    private String verify(String workspace, String scope, String readinessDigest, String contextualDigest) {
         try {
             if (!policy.bundleDigest().equals(settings.policyBundleDigest())
                     || settings.verificationKey().length() < 32
@@ -71,8 +86,17 @@ public class ContextProcessingGate {
                 throw new IllegalArgumentException();
             }
             var grant = json.readTree(payload);
-            if (!keys(grant).equals(Set.of(
-                    "purpose", "workspace", "scope", "policyBundleDigest", "expiresEpochSecond", "issuer"))
+            var expected = new HashSet<>(Set.of(
+                    "purpose", "workspace", "scope", "policyBundleDigest", "expiresEpochSecond", "issuer"));
+            for (String optional : Set.of("readinessPolicyDigest", "contextualPolicyDigest")) {
+                if (grant.has(optional)) {
+                    requireDigest(grant.path(optional).textValue());
+                    expected.add(optional);
+                }
+            }
+            if (!keys(grant).equals(expected)
+                    || readinessDigest != null && !readinessDigest.equals(grant.path("readinessPolicyDigest").textValue())
+                    || contextualDigest != null && !contextualDigest.equals(grant.path("contextualPolicyDigest").textValue())
                     || !"AI08_ADVISORY_PROCESSING".equals(grant.path("purpose").textValue())
                     || !workspace.equals(grant.path("workspace").textValue())
                     || !scope.equals(grant.path("scope").textValue())
@@ -86,6 +110,12 @@ public class ContextProcessingGate {
             return ContextPolicyCatalog.digest(raw);
         } catch (Exception failure) {
             throw CapabilityException.forbidden("An independently issued AI08 processing grant is required");
+        }
+    }
+
+    private static void requireDigest(String value) {
+        if (value == null || !value.matches("[0-9a-f]{64}")) {
+            throw CapabilityException.forbidden("A pinned processing policy is required");
         }
     }
 
