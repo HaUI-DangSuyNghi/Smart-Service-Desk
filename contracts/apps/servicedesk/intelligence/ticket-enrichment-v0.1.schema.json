@@ -1,0 +1,510 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:servicedesk:ticket-enrichment-v0.1.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "contractVersion": {
+      "const": "ticket-enrichment@0.1.0"
+    },
+    "status": {
+      "enum": [
+        "SHADOW",
+        "REVIEW_REQUIRED",
+        "NEEDS_ENRICHMENT"
+      ]
+    },
+    "mode": {
+      "enum": [
+        "SHADOW",
+        "ASSISTED"
+      ]
+    },
+    "ticketId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "contextRevision": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "readinessProfile": {
+      "enum": [
+        "R10_DUPLICATE",
+        "ASSESSMENT"
+      ]
+    },
+    "context": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "location.building": {
+          "$ref": "#/$defs/slot"
+        },
+        "location.floor": {
+          "$ref": "#/$defs/slot"
+        },
+        "location.room": {
+          "$ref": "#/$defs/slot"
+        },
+        "device.type": {
+          "$ref": "#/$defs/slot"
+        },
+        "device.identifier": {
+          "$ref": "#/$defs/slot"
+        },
+        "device.scope": {
+          "$ref": "#/$defs/slot"
+        },
+        "symptomCodes": {
+          "$ref": "#/$defs/slot"
+        },
+        "affectedService": {
+          "$ref": "#/$defs/slot"
+        },
+        "affectedCount": {
+          "$ref": "#/$defs/slot"
+        },
+        "affectedScope": {
+          "$ref": "#/$defs/slot"
+        },
+        "workBlocked": {
+          "$ref": "#/$defs/slot"
+        },
+        "workaroundAvailable": {
+          "$ref": "#/$defs/slot"
+        },
+        "timeWindow": {
+          "$ref": "#/$defs/slot"
+        },
+        "problemEventStatus": {
+          "$ref": "#/$defs/slot"
+        }
+      },
+      "required": []
+    },
+    "missingInfo": {
+      "type": "array",
+      "items": {
+        "enum": [
+          "location.building",
+          "location.floor",
+          "location.room",
+          "device.type",
+          "device.identifier",
+          "device.scope",
+          "symptomCodes",
+          "affectedService",
+          "affectedCount",
+          "affectedScope",
+          "workBlocked",
+          "workaroundAvailable",
+          "timeWindow",
+          "problemEventStatus"
+        ]
+      },
+      "maxItems": 14
+    },
+    "enrichmentSignals": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/signal"
+      },
+      "maxItems": 14
+    },
+    "questions": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 256
+      },
+      "maxItems": 3
+    },
+    "ai07Status": {
+      "enum": [
+        "AI07_UNCHANGED",
+        "AI07_REFRESH_REQUIRED"
+      ]
+    },
+    "provenance": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/provenance"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "disposition": {
+      "$ref": "#/$defs/disposition"
+    }
+  },
+  "required": [
+    "contractVersion",
+    "status",
+    "mode",
+    "ticketId",
+    "contextRevision",
+    "readinessProfile",
+    "context",
+    "missingInfo",
+    "enrichmentSignals",
+    "questions",
+    "ai07Status",
+    "provenance",
+    "disposition"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "mode": {
+            "const": "SHADOW"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "status": {
+            "const": "SHADOW"
+          },
+          "context": {
+            "maxProperties": 0
+          },
+          "questions": {
+            "maxItems": 0
+          },
+          "enrichmentSignals": {
+            "maxItems": 0
+          },
+          "missingInfo": {
+            "maxItems": 0
+          },
+          "provenance": {
+            "type": "null"
+          }
+        }
+      },
+      "else": {
+        "properties": {
+          "status": {
+            "enum": [
+              "REVIEW_REQUIRED",
+              "NEEDS_ENRICHMENT"
+            ]
+          },
+          "provenance": {
+            "$ref": "#/$defs/provenance"
+          },
+          "context": {
+            "required": [
+              "location.building",
+              "location.floor",
+              "location.room",
+              "device.type",
+              "device.identifier",
+              "device.scope",
+              "symptomCodes",
+              "affectedService",
+              "affectedCount",
+              "affectedScope",
+              "workBlocked",
+              "workaroundAvailable",
+              "timeWindow",
+              "problemEventStatus"
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "$defs": {
+    "disposition": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "needsReview": {
+          "const": true
+        },
+        "operationalAuthority": {
+          "const": false
+        },
+        "autoMergeAllowed": {
+          "const": false
+        }
+      },
+      "required": [
+        "needsReview",
+        "operationalAuthority",
+        "autoMergeAllowed"
+      ]
+    },
+    "provenance": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "contextDigest": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "policyBundleDigest": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "policyDigests": {
+          "type": "object",
+          "minProperties": 5,
+          "maxProperties": 5,
+          "additionalProperties": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          }
+        },
+        "candidateSetDigest": {
+          "anyOf": [
+            {
+              "type": "string",
+              "pattern": "^[0-9a-f]{64}$"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "retrieverIdentity": {
+          "const": "bounded-rule-first-cpu@0.1.0"
+        },
+        "modelDigest": {
+          "type": "null"
+        }
+      },
+      "required": [
+        "contextDigest",
+        "policyBundleDigest",
+        "policyDigests",
+        "candidateSetDigest",
+        "retrieverIdentity",
+        "modelDigest"
+      ]
+    },
+    "slot": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "value": {
+          "anyOf": [
+            {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 256
+            },
+            {
+              "type": "integer",
+              "minimum": 0,
+              "maximum": 9999
+            },
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "array",
+              "items": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 80
+              },
+              "maxItems": 10
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "status": {
+          "enum": [
+            "OBSERVED",
+            "USER_REPORTED",
+            "AMBIGUOUS",
+            "UNKNOWN",
+            "CONFLICT"
+          ]
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/evidence"
+          },
+          "maxItems": 512
+        },
+        "policyVersion": {
+          "const": "servicedesk-context@0.1.0"
+        }
+      },
+      "required": [
+        "value",
+        "status",
+        "evidence",
+        "policyVersion"
+      ],
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "status": {
+                "enum": [
+                  "UNKNOWN",
+                  "CONFLICT",
+                  "AMBIGUOUS"
+                ]
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "value": {
+                "type": "null"
+              }
+            }
+          },
+          "else": {
+            "properties": {
+              "value": {
+                "not": {
+                  "type": "null"
+                }
+              },
+              "evidence": {
+                "minItems": 1
+              }
+            }
+          }
+        }
+      ]
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "sourceId": {
+          "type": "string",
+          "pattern": "^(title|description|clarification:[0-9a-f-]{36}:[0-7])$"
+        },
+        "sourceRevision": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "quote": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 4000
+        },
+        "start": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "end": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "ruleId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 80
+        },
+        "correction": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "sourceId",
+        "sourceRevision",
+        "quote",
+        "start",
+        "end",
+        "ruleId",
+        "correction"
+      ]
+    },
+    "signal": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "questionId": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{24}$"
+        },
+        "slot": {
+          "enum": [
+            "location.building",
+            "location.floor",
+            "location.room",
+            "device.type",
+            "device.identifier",
+            "device.scope",
+            "symptomCodes",
+            "affectedService",
+            "affectedCount",
+            "affectedScope",
+            "workBlocked",
+            "workaroundAvailable",
+            "timeWindow",
+            "problemEventStatus"
+          ]
+        },
+        "reason": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 100
+        },
+        "state": {
+          "enum": [
+            "MISSING",
+            "CONFLICT",
+            "AMBIGUOUS"
+          ]
+        },
+        "question": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "priority": {
+          "const": "HIGH"
+        },
+        "requiredFor": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "R10_DUPLICATE",
+              "ASSESSMENT"
+            ]
+          },
+          "maxItems": 2
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "$ref": "#/$defs/evidence"
+          },
+          "maxItems": 512
+        },
+        "blocking": {
+          "const": true
+        }
+      },
+      "required": [
+        "questionId",
+        "slot",
+        "reason",
+        "state",
+        "question",
+        "priority",
+        "requiredFor",
+        "evidence",
+        "blocking"
+      ]
+    }
+  }
+}

@@ -34,7 +34,7 @@
     </resources>
     <testResources>
       <testResource><directory>src/test/resources</directory></testResource>
-      <testResource><directory>../contracts/apps/servicedesk/intelligence</directory><targetPath>servicedesk-contract</targetPath><includes><include>ticket-assessment-v0.2.schema.json</include><include>examples/ticket-assessment-v0.2.fixture.json</include></includes></testResource>
+      <testResource><directory>../contracts/apps/servicedesk/intelligence</directory><targetPath>servicedesk-contract</targetPath><includes><include>ticket-*.schema.json</include><include>examples/ticket-assessment-v0.2.fixture.json</include></includes></testResource>
     </testResources>
     <plugins><plugin><groupId>org.springframework.boot</groupId><artifactId>spring-boot-maven-plugin</artifactId><configuration><mainClass>vn.haui.dx.assembly.DxOsApplication</mainClass></configuration></plugin></plugins>
   </build>
@@ -70,6 +70,7 @@
         <dx.resource.app1>apps/servicedesk/**</dx.resource.app1><dx.resource.app2>apps/samples/**</dx.resource.app2>
         <dx.resource.migration1>db/migration/V5__servicedesk_ticket.sql</dx.resource.migration1>
         <dx.resource.migration2>db/migration/V6__decouple_servicedesk_workflow_reference.sql</dx.resource.migration2>
+        <dx.resource.migration3>db/migration/apps/servicedesk/**</dx.resource.migration3>
       </properties>
       <build><plugins>
         <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-compiler-plugin</artifactId><configuration>

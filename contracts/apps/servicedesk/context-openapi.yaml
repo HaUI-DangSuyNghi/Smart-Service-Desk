@@ -1,0 +1,153 @@
+openapi: 3.1.0
+info:
+  title: Service Desk — bổ sung thông tin và gợi ý ticket trùng
+  version: 0.1.0
+  description: >-
+    API bổ sung trên ticket hiện có. AI chỉ đưa gợi ý; không tạo ticket,
+    gộp ticket, sửa phân công hoặc thay đổi workflow. Mặc định AI tắt.
+security:
+  - bearerAuth: []
+paths:
+  /api/apps/servicedesk/v1/workspaces/{workspace}/tickets/{id}/context-revision:
+    parameters:
+      - $ref: '#/components/parameters/Workspace'
+      - $ref: '#/components/parameters/TicketId'
+    get:
+      operationId: getTicketContextRevision
+      summary: Đọc revision hiện tại kể cả khi AI tắt để gửi bổ sung hoặc xử lý xung đột
+      responses:
+        '200':
+          description: Revision do server cấp; Cache-Control no-store
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [contractVersion, ticketId, contextRevision]
+                properties:
+                  contractVersion: {const: ticket-context-revision@0.1.0}
+                  ticketId: {type: string, format: uuid}
+                  contextRevision: {type: integer, minimum: 0}
+        '401': {description: Chưa đăng nhập}
+        '403': {description: Không có vai trò trong workspace}
+        '404': {description: Ticket không tồn tại hoặc không có quyền xem}
+  /api/apps/servicedesk/v1/workspaces/{workspace}/tickets/{id}/clarifications:
+    parameters:
+      - $ref: '#/components/parameters/Workspace'
+      - $ref: '#/components/parameters/TicketId'
+    post:
+      operationId: appendTicketClarification
+      summary: Ghi bổ sung trên cùng ticket, có revision và chống ghi lặp
+      description: >-
+        Request tối đa 16 KiB, 1–8 câu trả lời, mỗi giá trị tối đa 256 ký tự.
+        Tối đa 32 sự kiện trên một ticket. correction=true là đính chính do người gửi
+        xác nhận. Không chấp nhận category, priority hoặc actor từ client.
+        Replay cùng actor, clientAnswerId và payload trả cùng answerId/revision của sự kiện.
+        Lưu dữ liệu độc lập với cấu hình AI và không gọi model.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: './intelligence/ticket-clarification-v0.1.schema.json'
+      responses:
+        '201':
+          description: Đã lưu một sự kiện mới; không tạo ticket/workflow
+          headers:
+            Cache-Control:
+              schema: {type: string, const: no-store}
+          content:
+            application/json:
+              schema:
+                $ref: './intelligence/ticket-clarification-result-v0.1.schema.json'
+        '200':
+          description: Replay cùng payload; không ghi lại sự kiện hoặc audit
+          content:
+            application/json:
+              schema:
+                $ref: './intelligence/ticket-clarification-result-v0.1.schema.json'
+        '400': {description: Body không hợp lệ hoặc vượt giới hạn}
+        '401': {description: Chưa đăng nhập}
+        '403': {description: Không có vai trò trong workspace}
+        '404': {description: Ticket không tồn tại hoặc người gọi không có quyền xem}
+        '409': {description: 'Revision cũ, answer ID khác payload hoặc vượt số lần bổ sung'}
+  /api/apps/servicedesk/v1/workspaces/{workspace}/tickets/{id}/assistant/enrichment:
+    parameters:
+      - $ref: '#/components/parameters/Workspace'
+      - $ref: '#/components/parameters/TicketId'
+    post:
+      operationId: suggestTicketEnrichment
+      summary: Đọc slot và câu hỏi còn thiếu từ snapshot đã lưu
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [contractVersion]
+              properties:
+                contractVersion: {const: ticket-enrichment@0.1.0}
+                readinessProfile: {enum: [R10_DUPLICATE, ASSESSMENT], default: R10_DUPLICATE}
+      responses:
+        '200':
+          description: Tối đa 3 câu hỏi; SHADOW không công bố dữ liệu suy luận
+          content:
+            application/json:
+              schema:
+                $ref: './intelligence/ticket-enrichment-v0.1.schema.json'
+        '400': {description: Request sai contract hoặc vượt 1 KiB}
+        '401': {description: Chưa đăng nhập}
+        '403': {description: 'Thiếu quyền, grant sai/hết hạn hoặc mode PROMOTED bị chặn'}
+        '404': {description: AI tắt hoặc ticket không có quyền xem}
+        '409': {description: Snapshot/quyền thay đổi hoặc output vượt 256 KiB}
+  /api/apps/servicedesk/v1/workspaces/{workspace}/tickets/{id}/assistant/duplicates:
+    parameters:
+      - $ref: '#/components/parameters/Workspace'
+      - $ref: '#/components/parameters/TicketId'
+    post:
+      operationId: probeTicketDuplicates
+      summary: Gợi ý ticket trùng trong cửa sổ ứng viên được phép đọc
+      description: >-
+        Quét tối đa 50 ticket tiền nhiệm gần nhất trong 90 ngày, rồi lọc trạng thái mở
+        bằng process capability. Cửa sổ là fallback có giới hạn, không bảo đảm recall toàn bộ.
+        Requester chỉ tìm trong ticket của mình và không nhận ID ứng viên.
+        Agent/coordinator cần grant WORKSPACE_REVIEW mới được xem candidateRef.
+        Category đã duyệt chưa có trong baseline: runtime chưa phát MATCH_READY_FOR_REVIEW.
+        duplicateOf và canonicalTicketId luôn null; confidence luôn null.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [contractVersion]
+              properties:
+                contractVersion: {const: ticket-duplicate-probe@0.1.0}
+      responses:
+        '200':
+          description: Tối đa 3 ứng viên cho reviewer; không có quyền thực thi nghiệp vụ
+          content:
+            application/json:
+              schema:
+                $ref: './intelligence/ticket-duplicate-probe-v0.1.schema.json'
+        '400': {description: Request sai contract hoặc vượt 1 KiB}
+        '401': {description: Chưa đăng nhập}
+        '403': {description: Thiếu quyền hoặc grant xử lý hợp lệ}
+        '404': {description: AI tắt hoặc ticket không có quyền xem}
+        '409': {description: Ticket/ứng viên/trạng thái workflow/quyền thay đổi khi xử lý}
+components:
+  securitySchemes:
+    bearerAuth: {type: http, scheme: bearer, bearerFormat: JWT}
+  parameters:
+    Workspace:
+      name: workspace
+      in: path
+      required: true
+      schema: {type: string, minLength: 1, maxLength: 100}
+    TicketId:
+      name: id
+      in: path
+      required: true
+      schema: {type: string, format: uuid}
