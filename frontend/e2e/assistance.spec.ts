@@ -55,7 +55,7 @@ test.beforeEach(async ({ page }) => {
     }),
   );
   // Trang chi tiết tải ticket độc lập với trợ lý; 404 để không kéo theo timeline
-  await page.route("**/api/apps/servicedesk/v1/workspaces/*/tickets/*", (route) =>
+  await page.route("**/api/apps/servicedesk/v1/workspaces/*/tickets/**", (route) =>
     route.fulfill({ status: 404, json: { title: "Not Found" } }),
   );
   await page.route("**/api/core/v1/me", (route) =>

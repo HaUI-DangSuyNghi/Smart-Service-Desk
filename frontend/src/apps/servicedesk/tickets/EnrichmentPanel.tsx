@@ -18,10 +18,16 @@ interface Props {
   workspace: string;
   ticketId: string;
   onRevisionChange: (revision: number) => void;
+  managedIntake?: boolean;
 }
 
 /** Câu trả lời là dữ liệu người gửi, không phải lệnh tạm dừng hoặc phê duyệt xử lý. */
-export const EnrichmentPanel = ({ workspace, ticketId, onRevisionChange }: Props) => {
+export const EnrichmentPanel = ({
+  workspace,
+  ticketId,
+  onRevisionChange,
+  managedIntake = false,
+}: Props) => {
   const { user } = useAuth();
   const cache = useQueryClient();
   const actor = user?.profile.sub ?? "";
@@ -35,7 +41,7 @@ export const EnrichmentPanel = ({ workspace, ticketId, onRevisionChange }: Props
   const lifecycle = useQuery({
     queryKey: stateKey,
     queryFn: ({ signal }) => getEnrichmentState(workspace, ticketId, signal),
-    enabled: revision.data !== undefined && !revision.error,
+    enabled: !managedIntake && revision.data !== undefined && !revision.error,
     retry: false,
     refetchInterval: (query) =>
       query.state.data &&
@@ -75,7 +81,7 @@ export const EnrichmentPanel = ({ workspace, ticketId, onRevisionChange }: Props
       ? current.contextRevision
       : null;
   useEffect(() => {
-    if (pendingRevision === null) return;
+    if (managedIntake || pendingRevision === null) return;
     const key = `${workspace}/${ticketId}/${pendingRevision}`;
     if (evaluated.current.has(key)) return;
     // Chỉ trì hoãn command UI; deadline và nguồn sự thật vẫn ở DB.
@@ -84,7 +90,7 @@ export const EnrichmentPanel = ({ workspace, ticketId, onRevisionChange }: Props
       runEvaluation();
     }, 900);
     return () => window.clearTimeout(timer);
-  }, [pendingRevision, workspace, ticketId, runEvaluation]);
+  }, [pendingRevision, workspace, ticketId, runEvaluation, managedIntake]);
 
   const fresh = current?.contextRevision === revision.data;
   const questions = fresh ? (current?.questions ?? []) : [];
@@ -165,7 +171,8 @@ export const EnrichmentPanel = ({ workspace, ticketId, onRevisionChange }: Props
       setDrafts({});
       setCorrections({});
       await revision.refetch();
-      await lifecycle.refetch();
+      if (!managedIntake) await lifecycle.refetch();
+      await cache.invalidateQueries({ queryKey: ["servicedesk", "intake", workspace, ticketId] });
       setMessage(
         "Đã lưu bổ sung vào ticket này. Thông tin mới sẽ được kiểm tra lại trước khi sử dụng.",
       );
@@ -173,7 +180,7 @@ export const EnrichmentPanel = ({ workspace, ticketId, onRevisionChange }: Props
       if (error instanceof ApiError && error.status === 409) {
         pendingRequest.current = null;
         await revision.refetch();
-        await lifecycle.refetch();
+        if (!managedIntake) await lifecycle.refetch();
         setFormError(
           "Thông tin đã được cập nhật ở nơi khác. Nội dung của bạn vẫn được giữ; kiểm tra lại rồi gửi lại.",
         );
@@ -216,7 +223,9 @@ export const EnrichmentPanel = ({ workspace, ticketId, onRevisionChange }: Props
           </p>
         )}
         <p className="text-crm-sm text-crm-text-2">
-          Yêu cầu bổ sung không tạm dừng quy trình hoặc thay đổi hạn xử lý của ticket.
+          {managedIntake
+            ? "Thông tin bổ sung được lưu để kiểm tra trước quyết định duyệt. Nếu ticket đã được duyệt, điều phối viên sẽ xem xét thông tin mới."
+            : "Yêu cầu bổ sung không tạm dừng quy trình hoặc thay đổi hạn xử lý của ticket."}
         </p>
         {manual && (
           <p className="text-crm-sm text-crm-text-2">
@@ -327,54 +336,56 @@ export const EnrichmentPanel = ({ workspace, ticketId, onRevisionChange }: Props
           {message}
         </p>
       )}
-      <div className="space-y-3 border-t border-crm-line pt-4">
-        <Button
-          variant="outline"
-          disabled={check.isPending || evaluating}
-          onClick={() => check.mutate()}
-        >
-          {check.isPending ? "Đang kiểm tra…" : "Đánh giá từ thông tin hiện tại"}
-        </Button>
-        {check.error && (
-          <p role="alert" className="text-crm-sm text-crm-text-2">
-            Chưa thể đánh giá lại. Ticket vẫn được xử lý; bạn có thể thử lại hoặc nhờ điều phối viên
-            xem xét.
-          </p>
-        )}
-        {assessment?.ai07 && (
-          <div className="space-y-2 text-crm-sm">
-            <p className="font-medium">Gợi ý từ thông tin hiện tại — cần người kiểm tra</p>
-            <dl className="grid grid-cols-2 gap-2">
-              <dt>Loại sự cố</dt>
-              <dd>
-                {(
-                  {
-                    ACCOUNT: "Tài khoản",
-                    HARDWARE: "Phần cứng",
-                    NETWORK: "Mạng",
-                    SOFTWARE: "Phần mềm",
-                    OTHER: "Khác",
-                  } as Record<string, string>
-                )[assessment.ai07.category ?? ""] ?? "Chưa xác định"}
-              </dd>
-              <dt>Mức ưu tiên gợi ý</dt>
-              <dd>
-                {(
-                  {
-                    LOW: "Thấp",
-                    MEDIUM: "Trung bình",
-                    HIGH: "Cao",
-                    CRITICAL: "Khẩn cấp",
-                  } as Record<string, string>
-                )[assessment.ai07.priority ?? ""] ?? "Chưa đủ dữ kiện"}
-              </dd>
-            </dl>
-            <p className="text-crm-text-2">
-              Dữ kiện do người gửi cung cấp, chưa phải thông tin đã được xác minh.
+      {!managedIntake && (
+        <div className="space-y-3 border-t border-crm-line pt-4">
+          <Button
+            variant="outline"
+            disabled={check.isPending || evaluating}
+            onClick={() => check.mutate()}
+          >
+            {check.isPending ? "Đang kiểm tra…" : "Đánh giá từ thông tin hiện tại"}
+          </Button>
+          {check.error && (
+            <p role="alert" className="text-crm-sm text-crm-text-2">
+              Chưa thể đánh giá lại. Ticket vẫn được xử lý; bạn có thể thử lại hoặc nhờ điều phối
+              viên xem xét.
             </p>
-          </div>
-        )}
-      </div>
+          )}
+          {assessment?.ai07 && (
+            <div className="space-y-2 text-crm-sm">
+              <p className="font-medium">Gợi ý từ thông tin hiện tại — cần người kiểm tra</p>
+              <dl className="grid grid-cols-2 gap-2">
+                <dt>Loại sự cố</dt>
+                <dd>
+                  {(
+                    {
+                      ACCOUNT: "Tài khoản",
+                      HARDWARE: "Phần cứng",
+                      NETWORK: "Mạng",
+                      SOFTWARE: "Phần mềm",
+                      OTHER: "Khác",
+                    } as Record<string, string>
+                  )[assessment.ai07.category ?? ""] ?? "Chưa xác định"}
+                </dd>
+                <dt>Mức ưu tiên gợi ý</dt>
+                <dd>
+                  {(
+                    {
+                      LOW: "Thấp",
+                      MEDIUM: "Trung bình",
+                      HIGH: "Cao",
+                      CRITICAL: "Khẩn cấp",
+                    } as Record<string, string>
+                  )[assessment.ai07.priority ?? ""] ?? "Chưa đủ dữ kiện"}
+                </dd>
+              </dl>
+              <p className="text-crm-text-2">
+                Dữ kiện do người gửi cung cấp, chưa phải thông tin đã được xác minh.
+              </p>
+            </div>
+          )}
+        </div>
+      )}
     </section>
   );
 };

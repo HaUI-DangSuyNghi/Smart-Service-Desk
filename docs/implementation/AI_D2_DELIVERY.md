@@ -125,3 +125,21 @@ Backend full: **658 pass**, core-only: **104 pass**, second-domain: **30 pass**,
 không fail/error/skip. Sau thay đổi nhãn/hardening, chạy lại ba bộ canonical,
 true-wait và final assessment: **27 pass**. Unit test legacy được cập nhật để
 kiểm thêm lời gọi guard admission; không bỏ guard để giữ kỳ vọng cũ.
+
+## C6 — Giao diện Ticket Assistant
+
+Ticket đã enroll đọc `GET intake` và poll metadata; reload không gọi classify,
+assessment hoặc endpoint enrichment cũ. Bảng đề xuất hiển thị kết quả đã lưu,
+câu hỏi readiness, deadline và cảnh báo late context. Form bổ sung giữ cách lưu
+answer trên ticket hiện có, không khởi tạo ticket thứ hai. Legacy tiếp tục dùng
+enrichment cũ khi GET xác nhận không có admission.
+
+Coordinator độc lập có form reason/CAS để chuyển intake sang review và duyệt
+category/priority. Canonical panel yêu cầu đối chiếu root và xác nhận bằng chứng
+trước khi gửi lệnh; server vẫn kiểm policy, quyền và CAS. Worklist intake có phân
+trang; link timeline hỗ trợ cả process cũ và mới. Chưa có grant thì dùng manual.
+
+Frontend: typecheck, lint, production build pass; **83 unit tests**, **19 browser
+tests** pass. Browser test chạy Vite source ở cổng riêng 5175, không tái dùng
+frontend Docker cũ ở 5173. Các test browser dùng API/session synthetic, không
+thay thế nghiệm thu Keycloak/gateway/model thật.
