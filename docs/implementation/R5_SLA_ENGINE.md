@@ -19,7 +19,12 @@ The evidence follow-up changes documentation only; tested executable source is u
 | SLA HTTP contracts | 8 real responses, 9 negatives each |
 | Real Keycloak JWT | 10 reviewed + 12 intake-reviewed checks, PASS |
 | Whole OpenAPI versus develop | No new errors; HPDI live 3/target 1 existing errors |
-| Hosted GitHub Actions | Separate gate, not certified by local acceptance |
+| Hosted GitHub Actions | Jobs blocked before startup by account payments/spending limit; not PASS |
+
+Hosted annotations on `e6210defbfc0e4a6571d1b48c42cfb11c3803d36` explicitly
+report failed account payments or a spending limit. Matrix siblings are cancelled
+or skipped. This is an external execution blocker, not a hosted test pass;
+repository billing must be resolved and Actions rerun before merge readiness.
 
 ## AI-D2 compatibility
 

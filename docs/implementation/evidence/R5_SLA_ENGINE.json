@@ -190,8 +190,11 @@
   },
   "runtimeJarSha256": "44dfd5aef93924d43b8cef3ef31743cb0475a774938e15c93203642206a23c66",
   "hostedCI": {
-    "status": "NOT_CERTIFIED",
-    "reason": "Check GitHub Actions on published head; local results do not certify hosted CI."
+    "status": "BLOCKED_BEFORE_JOB_START",
+    "observedCommit": "e6210defbfc0e4a6571d1b48c42cfb11c3803d36",
+    "annotation": "The job was not started because recent account payments have failed or your spending limit needs to be increased. Please check the 'Billing & plans' section in your settings",
+    "exampleCheckRunId": 122308007608,
+    "reason": "Hosted checks report failure/cancelled/skipped without executing tests; account billing must be resolved and Actions rerun. Not PASS."
   },
   "limits": [
     "Direct HTTP, not Gateway E2E.",
