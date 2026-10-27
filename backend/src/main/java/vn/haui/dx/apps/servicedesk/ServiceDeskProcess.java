@@ -53,10 +53,12 @@ public class ServiceDeskProcess implements ProcessContribution {
         return List.of(new ProcessDefinition(INTAKE_KEY, Set.of("requester", "agent", "coordinator"), Set.of(),
             Map.of("intake", Set.of("ready", "duplicate"), "follower", Set.of("closed", "split"),
                 "review", Set.of("approved"), "handle", Set.of("resolved"), "confirm", Set.of("accepted", "rework")),
-            Set.of("agent", "coordinator", "assessment-worker"), Set.of("agent", "coordinator", "assessment-worker")),
+            Set.of("agent", "coordinator", "assessment-worker"), Set.of("agent", "coordinator", "assessment-worker"))
+                .withLabels(reviewLabels("Tiếp nhận và xử lý hỗ trợ CNTT", true)),
             new ProcessDefinition(REVIEWED_KEY, Set.of("requester", "agent", "coordinator"), Set.of(),
             Map.of("review", Set.of("approved"), "handle", Set.of("resolved"), "confirm", Set.of("accepted", "rework")),
-            Set.of("agent", "coordinator", "assessment-worker"), Set.of("agent", "coordinator", "assessment-worker")),
+            Set.of("agent", "coordinator", "assessment-worker"), Set.of("agent", "coordinator", "assessment-worker"))
+                .withLabels(reviewLabels("Duyệt và xử lý hỗ trợ CNTT", false)),
             new ProcessDefinition(KEY, Set.of("requester", "agent", "coordinator"), Set.of(),
             Map.of("handle", Set.of("resolved"), "confirm", Set.of("accepted", "rework")),
             Set.of("agent", "coordinator", "assessment-worker"), Set.of("coordinator", "assessment-worker"))
@@ -66,5 +68,23 @@ public class ServiceDeskProcess implements ProcessContribution {
                 .outcome("resolved", "Đã xử lý")
                 .outcome("accepted", "Chấp nhận")
                 .outcome("rework", "Yêu cầu làm lại")));
+    }
+
+    private ProcessLabels reviewLabels(String name, boolean intakeWorkflow) {
+        var labels = ProcessLabels.named(name)
+                .task("review", "Điều phối viên duyệt")
+                .task("handle", "Xử lý yêu cầu")
+                .task("confirm", "Người gửi xác nhận")
+                .outcome("approved", "Đã duyệt")
+                .outcome("resolved", "Đã xử lý")
+                .outcome("accepted", "Chấp nhận")
+                .outcome("rework", "Yêu cầu làm lại");
+        return intakeWorkflow ? labels
+                .task("intake", "Tiếp nhận thông tin")
+                .task("follower", "Theo dõi sự cố đã liên kết")
+                .outcome("ready", "Chuyển duyệt")
+                .outcome("duplicate", "Theo dõi cùng sự cố")
+                .outcome("closed", "Đã xác nhận kết quả")
+                .outcome("split", "Tách để tiếp nhận độc lập") : labels;
     }
 }

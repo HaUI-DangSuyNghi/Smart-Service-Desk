@@ -31,6 +31,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest(properties = {"serviceDesk.intake.new-tickets=true", "serviceDesk.intake.true-wait=true",
         "serviceDesk.intake.canonical-human-enabled=true", "serviceDesk.context.enabled=true", "serviceDesk.context.mode=ASSISTED", "service-desk.background.scheduled=false"})
 @AutoConfigureMockMvc
+@org.springframework.context.annotation.Import(vn.haui.dx.core.workflow.internal.WorkflowStateFixture.class)
 @EnabledIfEnvironmentVariable(named = "FILE_TEST_JDBC_URL", matches = ".+/file_storage")
 class CanonicalTicketIntegrationTest {
     private static final String BASE = "/api/apps/servicedesk/v1/workspaces/canonical-a/tickets";
@@ -38,6 +39,7 @@ class CanonicalTicketIntegrationTest {
     @Autowired MockMvc mvc;
     @Autowired ObjectMapper json;
     @Autowired JdbcTemplate jdbc;
+    @Autowired vn.haui.dx.core.workflow.internal.WorkflowStateFixture workflow;
 
     @DynamicPropertySource
     static void properties(DynamicPropertyRegistry registry) {
@@ -53,6 +55,39 @@ class CanonicalTicketIntegrationTest {
     void authorizeSyntheticData() {
         when(rights.verify(anyString(), anyString())).thenReturn("synthetic-grant");
         when(rights.verifyReadiness(anyString(), anyString(), anyString())).thenReturn("synthetic-grant");
+    }
+
+    @Test
+    void closedRowsBeyondFiftyDoNotHideAnOlderOpenRoot() throws Exception {
+        var root = root();
+        for (int index = 0; index < 51; index++) {
+            var closed = create("Synthetic canceled predecessor " + index);
+            workflow.cancel(closed.path("process").path("processInstanceId").asText());
+        }
+        var follower = create();
+        var probe = body(mvc.perform(post(path(follower) + "/intake/duplicate-preflight").with(as("coordinator", "coordinator")))
+                .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+        assertTrue(probe.path("scanned").asInt() > 50);
+        assertFalse(probe.path("candidateSetIncomplete").asBoolean());
+        assertTrue(probe.path("candidates").toString().contains(id(root).toString()));
+        link(root, follower, 200);
+    }
+
+    @Test
+    void replayCannotResurrectALinkAfterSplit() throws Exception {
+        var root = root();
+        var follower = create();
+        var command = command(root, follower);
+        for (int index = 0; index < 2; index++) {
+            mvc.perform(post(path(follower) + "/canonical").with(as("coordinator", "coordinator")).contentType("application/json")
+                    .content(json.writeValueAsString(command))).andExpect(status().isOk());
+        }
+        mvc.perform(post(path(follower) + "/canonical/split").with(as("coordinator", "coordinator")).contentType("application/json")
+                .content(json.writeValueAsString(Map.of("expectedLinkVersion", 1, "expectedContextRevision", 0,
+                        "operationId", UUID.randomUUID(), "reason", "Synthetic split")))).andExpect(status().isOk());
+        mvc.perform(post(path(follower) + "/canonical").with(as("coordinator", "coordinator")).contentType("application/json")
+                .content(json.writeValueAsString(command))).andExpect(status().isConflict());
+        assertEquals("INTAKE", getTicket(follower).path("state").asText());
     }
 
     @Test

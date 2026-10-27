@@ -226,6 +226,10 @@ public class CanonicalTicketService {
                 }));
             } catch (RuntimeException unavailable) {
                 // Keep ACTIVE for recovery; no impersonation, second process or silent closure.
+            } finally {
+                // Rotate unsuccessful work so blocked followers cannot starve later links.
+                jdbc.update("update servicedesk_canonical_link set updated_at=clock_timestamp() where follower_id=? and state='ACTIVE'",
+                        link.get("follower_id"));
             }
         }
     }
@@ -275,9 +279,15 @@ public class CanonicalTicketService {
         return id;
     }
     private boolean replayed(UUID id, UUID operation, String payload) {
-        var rows = jdbc.queryForList("select payload_digest from servicedesk_canonical_decision where follower_id=? and operation_id=?", id, operation);
+        var rows = jdbc.queryForList("select d.payload_digest,d.id,l.decision_id,l.follower_revision,t.context_revision "
+                + "from servicedesk_canonical_decision d join servicedesk_canonical_link l on l.follower_id=d.follower_id "
+                + "join servicedesk_ticket t on t.id=d.follower_id where d.follower_id=? and d.operation_id=?", id, operation);
         if (rows.isEmpty()) return false;
-        if (!payload.equals(rows.get(0).get("payload_digest"))) throw CapabilityException.conflict("Canonical operation payload changed");
+        var row = rows.get(0);
+        if (!payload.equals(row.get("payload_digest")) || !row.get("id").equals(row.get("decision_id"))
+                || !row.get("follower_revision").equals(row.get("context_revision"))) {
+            throw CapabilityException.conflict("Canonical operation payload or generation changed");
+        }
         return true;
     }
     private void notice(String workspace, UUID id, long revision, String kind) {

@@ -113,3 +113,15 @@ Kiểm chứng trên PostgreSQL/Flowable: 6 canonical cases (liên kết, redact
 thiết bị khác, root chưa duyệt, đóng theo xác nhận, late context), 6 true-wait cases,
 2 migration upgrade cases đều pass. Cùng lượt có 12 kiểm tra secret/HTTP transport
 pass; tổng **26 pass**, không skip. Bộ full regression được ghi ở cuối tài liệu.
+
+### Bổ sung độ bền và kiểm tra hồi quy
+
+Replay canonical cũ sau split bị từ chối theo decision hiện tại và revision.
+Worker xoay thứ tự follower chưa xử lý được để tránh chặn các link đến sau.
+Đã kiểm tra root đang mở vẫn được tìm thấy sau hơn 50 predecessor đã hủy.
+Nhãn intake/review/follower tiếng Việt chỉ đăng ký cho đúng process có task đó.
+
+Backend full: **658 pass**, core-only: **104 pass**, second-domain: **30 pass**,
+không fail/error/skip. Sau thay đổi nhãn/hardening, chạy lại ba bộ canonical,
+true-wait và final assessment: **27 pass**. Unit test legacy được cập nhật để
+kiểm thêm lời gọi guard admission; không bỏ guard để giữ kỳ vọng cũ.
