@@ -28,10 +28,6 @@ const SettingsPage = ({ sections }: Props) => {
         <div className="mx-auto flex max-w-3xl flex-col gap-8 px-4 py-6">
           <section className="flex flex-col gap-3">
             <h2 className="text-crm-lg font-semibold">Cấu hình chung</h2>
-            <p className="text-crm-text-3">
-              Áp dụng cho mọi workspace và mọi app, có hiệu lực với việc mới. Mỗi lần lưu đều ghi
-              nhật ký.
-            </p>
             <WorkSettingsSection />
           </section>
           {sections.map((section) => (

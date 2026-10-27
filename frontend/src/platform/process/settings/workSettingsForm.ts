@@ -52,48 +52,93 @@ export interface NumberFieldDef {
   label: string;
   /** Tỉ lệ 0–1 thì bước 0,05. */
   step?: number;
-  rule: string;
+  /** Giải thích hiện khi rê chuột vào nhãn. */
+  hint?: string;
 }
 
-export interface FieldGroup {
-  title: string;
-  fields: NumberFieldDef[];
-}
+// Nhóm ô số theo trình tự xử lý một ticket; ca trực và bảng hạn xử lý vẽ riêng
+export const ASSIGNMENT_FIELDS: readonly NumberFieldDef[] = [
+  {
+    path: "assignment.pendingLoadFactor",
+    label: "Hệ số tải việc Đang chờ",
+    step: 0.05,
+    hint: "Việc đang tạm dừng chỉ tính một phần vào tải của người đó. 0,5 nghĩa là tính một nửa phần còn lại.",
+  },
+  {
+    path: "assignment.tieThresholdMinutes",
+    label: "Ngưỡng ngang tải (phút)",
+    hint: "Hai người có tải chênh nhau dưới số phút này thì coi như bằng nhau, khi đó chọn người hôm nay nhận ít việc hơn.",
+  },
+  {
+    path: "assignment.minRemainingMinutes",
+    label: "Thời gian còn lại tối thiểu (phút)",
+    hint: "Việc Đang làm luôn tính vào tải ít nhất số phút này, kể cả khi sắp xong.",
+  },
+  {
+    path: "assignment.maxInProgress",
+    label: "Tối đa việc Đang làm mỗi người",
+    hint: "Số ticket một người được Đang làm cùng lúc.",
+  },
+];
 
-/** Nhóm ô số theo bảng mục 6; ca trực và bảng hạn xử lý vẽ riêng. */
-export const NUMBER_GROUPS: readonly FieldGroup[] = [
+export const ESTIMATE_FIELDS: readonly NumberFieldDef[] = [
   {
-    title: "Chọn người xử lý",
-    fields: [
-      { path: "assignment.pendingLoadFactor", label: "Hệ số tải của việc Đang chờ", step: 0.05, rule: "R2" },
-      { path: "assignment.tieThresholdMinutes", label: "Ngưỡng coi như bằng nhau (phút)", rule: "R2" },
-      { path: "assignment.minRemainingMinutes", label: "Phần còn lại tối thiểu (phút)", rule: "R2" },
-      { path: "assignment.maxInProgress", label: "Tối đa việc Đang làm mỗi người", rule: "R6" },
-    ],
+    path: "estimate.minSamples",
+    label: "Số mẫu tối thiểu",
+    hint: "Cần ít nhất bấy nhiêu ticket đã đóng cùng loại và ưu tiên thì mới dùng trung vị thay cho bảng mặc định.",
   },
   {
-    title: "Hạn xử lý",
-    fields: [
-      { path: "sla.escalateAfterRatio", label: "Chờ quá tỉ lệ này thì nâng 1 bậc", step: 0.05, rule: "R5" },
-      { path: "critical.autoQueueAfterMinutes", label: "Khẩn cấp tự vào hàng đợi sau (phút)", rule: "R7" },
-    ],
+    path: "estimate.windowMonths",
+    label: "Khoảng lấy mẫu (tháng)",
+    hint: "Chỉ lấy ticket đã đóng trong bấy nhiêu tháng gần nhất để tính trung vị.",
   },
   {
-    title: "Cảnh báo và tự đóng",
-    fields: [
-      { path: "alerts.warnRemainingRatio", label: "Cảnh báo khi còn lại (tỉ lệ)", step: 0.05, rule: "R8" },
-      { path: "alerts.pendingRemindDays", label: "Nhắc việc Đang chờ sau (ngày)", rule: "R8" },
-      { path: "alerts.reopenUnclaimedMinutes", label: "Cảnh báo việc mở lại chưa nhận (phút)", rule: "R11" },
-      { path: "closing.autoCloseAfterDays", label: "Tự đóng nếu không xác nhận (ngày)", rule: "R11" },
-    ],
+    path: "estimate.outlierMinMinutes",
+    label: "Bỏ mẫu dưới (phút)",
+    hint: "Thời gian làm dưới mức này thường do quên bấm Bắt đầu, nên bị bỏ khỏi mẫu.",
   },
   {
-    title: "Thời gian ước tính",
-    fields: [
-      { path: "estimate.minSamples", label: "Số việc tối thiểu để dùng trung vị", rule: "R2" },
-      { path: "estimate.windowMonths", label: "Lấy mẫu trong (tháng gần nhất)", rule: "R2" },
-      { path: "estimate.outlierMinMinutes", label: "Bỏ mẫu dưới (phút)", rule: "R2" },
-      { path: "estimate.outlierMaxMinutes", label: "Bỏ mẫu trên (phút)", rule: "R2" },
-    ],
+    path: "estimate.outlierMaxMinutes",
+    label: "Bỏ mẫu trên (phút)",
+    hint: "Thời gian làm trên mức này thường do quên bấm Tạm dừng, nên bị bỏ khỏi mẫu.",
+  },
+];
+
+export const SLA_FIELDS: readonly NumberFieldDef[] = [
+  {
+    path: "sla.escalateAfterRatio",
+    label: "Tỉ lệ chờ để nâng 1 bậc",
+    step: 0.05,
+  },
+  {
+    path: "critical.autoQueueAfterMinutes",
+    label: "Khẩn cấp tự vào hàng đợi (phút)",
+  },
+];
+
+export const ALERT_FIELDS: readonly NumberFieldDef[] = [
+  {
+    path: "alerts.warnRemainingRatio",
+    label: "Cảnh báo khi còn lại (tỉ lệ)",
+    step: 0.05,
+    hint: "Khi thời gian SLA còn lại bằng tỉ lệ này thì cảnh báo người xử lý và điều phối viên. 0,2 là còn 20%.",
+  },
+  {
+    path: "alerts.pendingRemindDays",
+    label: "Nhắc việc Đang chờ (ngày)",
+    hint: "Việc Đang chờ quá số ngày này thì nhắc kỹ thuật viên.",
+  },
+  {
+    path: "alerts.reopenUnclaimedMinutes",
+    label: "Cảnh báo mở lại chưa nhận (phút)",
+    hint: "Ticket Mở lại quá số phút này chưa ai nhận thì báo điều phối viên.",
+  },
+];
+
+export const CLOSING_FIELDS: readonly NumberFieldDef[] = [
+  {
+    path: "closing.autoCloseAfterDays",
+    label: "Tự đóng sau (ngày)",
+    hint: "Ticket Chờ xác nhận mà người yêu cầu không phản hồi sau số ngày này thì tự đóng.",
   },
 ];

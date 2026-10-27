@@ -1,3 +1,11 @@
+import {
+  IconBell,
+  IconCalendarTime,
+  IconCircleCheck,
+  IconHourglass,
+  IconRulerMeasure,
+  IconUserCheck,
+} from "@tabler/icons-react";
 import { get, useForm, type FieldErrors } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import type { Priority, WorkSettings } from "@/platform/services";
@@ -5,6 +13,7 @@ import { ApiError } from "@/platform/shared/api";
 import { formatDateTime } from "@/platform/shared/lib/format";
 import { Button } from "@/platform/shared/ui/button";
 import { ErrorState } from "@/platform/shared/ui/ErrorState";
+import { FieldGroup } from "@/platform/shared/ui/FieldGroup";
 import { FormField } from "@/platform/shared/ui/FormField";
 import { Input } from "@/platform/shared/ui/input";
 import { FieldsSkeleton } from "@/platform/shared/ui/Skeleton";
@@ -12,8 +21,13 @@ import { toast, toastError } from "@/platform/shared/ui/toast";
 import { PRIORITY_LABELS } from "../work/workLabels";
 import { useSaveWorkSettings, useWorkSettings } from "./useWorkSettings";
 import {
-  NUMBER_GROUPS,
+  ALERT_FIELDS,
+  ASSIGNMENT_FIELDS,
+  CLOSING_FIELDS,
+  ESTIMATE_FIELDS,
+  SLA_FIELDS,
   workSettingsSchema,
+  type NumberFieldDef,
   type WorkSettingsInput,
   type WorkSettingsValues,
 } from "./workSettingsForm";
@@ -33,7 +47,7 @@ const WorkSettingsForm = ({ settings }: { settings: WorkSettings }) => {
 
   const handleSubmit = form.handleSubmit((values) => {
     save.mutate(values, {
-      onSuccess: () => toast.success("Đã lưu cấu hình chung", { description: "Áp dụng cho việc mới." }),
+      onSuccess: () => toast.success("Đã lưu cấu hình chung"),
       onError: (error) =>
         toastError(
           error instanceof ApiError && error.status === 409
@@ -44,76 +58,32 @@ const WorkSettingsForm = ({ settings }: { settings: WorkSettings }) => {
     });
   });
 
-  return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-      {NUMBER_GROUPS.map((group) => (
-        <fieldset key={group.title} className="flex flex-col gap-3">
-          <legend className="mb-2 font-medium">{group.title}</legend>
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-            {group.fields.map((field) => (
-              <FormField
-                key={field.path}
-                id={field.path}
-                label={`${field.label} · ${field.rule}`}
-                error={errorOf(errors, field.path)}
-              >
-                <Input
-                  id={field.path}
-                  type="number"
-                  inputMode="decimal"
-                  step={field.step ?? 1}
-                  className="w-full sm:w-40"
-                  {...form.register(field.path)}
-                />
-              </FormField>
-            ))}
-          </div>
-        </fieldset>
-      ))}
-
-      <fieldset className="flex flex-col gap-2">
-        <legend className="mb-2 font-medium">Hạn xử lý theo mức ưu tiên (phút) · R5</legend>
-        {PRIORITIES.map((priority) => (
-          <div key={priority} className="grid grid-cols-1 gap-2 sm:grid-cols-[8rem_1fr_1fr]">
-            <span className="self-center text-crm-text-2">{PRIORITY_LABELS[priority]}</span>
-            <FormField
-              id={`sla-${priority}-start`}
-              label="Phải bắt đầu trong"
-              error={errorOf(errors, `sla.targets.${priority}.startWithinMinutes`)}
-            >
-              <Input
-                id={`sla-${priority}-start`}
-                type="number"
-                inputMode="numeric"
-                {...form.register(`sla.targets.${priority}.startWithinMinutes`)}
-              />
-            </FormField>
-            <FormField
-              id={`sla-${priority}-resolve`}
-              label="Phải xong trong"
-              error={errorOf(errors, `sla.targets.${priority}.resolveWithinMinutes`)}
-            >
-              <Input
-                id={`sla-${priority}-resolve`}
-                type="number"
-                inputMode="numeric"
-                {...form.register(`sla.targets.${priority}.resolveWithinMinutes`)}
-              />
-            </FormField>
-          </div>
-        ))}
-        <label className="mt-1 flex items-center gap-2 text-crm-text">
-          <input
-            type="checkbox"
-            className="size-4 accent-crm-accent"
-            {...form.register("sla.waitingExternalCounts")}
+  const numberFields = (fields: readonly NumberFieldDef[]) => (
+    <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      {fields.map((field) => (
+        <FormField
+          key={field.path}
+          id={field.path}
+          label={field.label}
+          hint={field.hint}
+          error={errorOf(errors, field.path)}
+        >
+          <Input
+            id={field.path}
+            type="number"
+            inputMode="decimal"
+            step={field.step ?? 1}
+            className="w-full sm:w-40"
+            {...form.register(field.path)}
           />
-          Chờ linh kiện / bên ngoài vẫn tính vào hạn
-        </label>
-      </fieldset>
+        </FormField>
+      ))}
+    </div>
+  );
 
-      <fieldset className="flex flex-col gap-2">
-        <legend className="mb-2 font-medium">Ca trực · R3</legend>
+  return (
+    <form onSubmit={handleSubmit} className="flex flex-col gap-8">
+      <FieldGroup title="Ca trực" icon={IconCalendarTime}>
         {settings.shifts.map((shift, index) => (
           <div key={shift.name} className="grid grid-cols-1 gap-2 sm:grid-cols-3">
             <FormField
@@ -147,7 +117,66 @@ const WorkSettingsForm = ({ settings }: { settings: WorkSettings }) => {
             </FormField>
           </div>
         ))}
-      </fieldset>
+      </FieldGroup>
+
+      <FieldGroup title="Phân công" icon={IconUserCheck}>
+        {numberFields(ASSIGNMENT_FIELDS)}
+      </FieldGroup>
+
+      <FieldGroup title="Ước tính" icon={IconRulerMeasure}>
+        {numberFields(ESTIMATE_FIELDS)}
+      </FieldGroup>
+
+      <FieldGroup title="Hạn xử lý" icon={IconHourglass}>
+        <div className="flex flex-col gap-2">
+          {PRIORITIES.map((priority) => (
+            <div key={priority} className="grid grid-cols-1 gap-2 sm:grid-cols-[8rem_1fr_1fr]">
+              <span className="self-center text-crm-text-2">{PRIORITY_LABELS[priority]}</span>
+              <FormField
+                id={`sla-${priority}-start`}
+                label="Bắt đầu trong (phút)"
+                error={errorOf(errors, `sla.targets.${priority}.startWithinMinutes`)}
+              >
+                <Input
+                  id={`sla-${priority}-start`}
+                  type="number"
+                  inputMode="numeric"
+                  {...form.register(`sla.targets.${priority}.startWithinMinutes`)}
+                />
+              </FormField>
+              <FormField
+                id={`sla-${priority}-resolve`}
+                label="Xong trong (phút)"
+                error={errorOf(errors, `sla.targets.${priority}.resolveWithinMinutes`)}
+              >
+                <Input
+                  id={`sla-${priority}-resolve`}
+                  type="number"
+                  inputMode="numeric"
+                  {...form.register(`sla.targets.${priority}.resolveWithinMinutes`)}
+                />
+              </FormField>
+            </div>
+          ))}
+        </div>
+        {numberFields(SLA_FIELDS)}
+        <label className="flex items-center gap-2 text-crm-text">
+          <input
+            type="checkbox"
+            className="size-4 accent-crm-accent"
+            {...form.register("sla.waitingExternalCounts")}
+          />
+          Tính cả thời gian chờ bên ngoài
+        </label>
+      </FieldGroup>
+
+      <FieldGroup title="Cảnh báo" icon={IconBell}>
+        {numberFields(ALERT_FIELDS)}
+      </FieldGroup>
+
+      <FieldGroup title="Đóng ticket" icon={IconCircleCheck}>
+        {numberFields(CLOSING_FIELDS)}
+      </FieldGroup>
 
       <div className="flex flex-wrap items-center justify-between gap-2">
         {settings.updatedAt && (
@@ -168,7 +197,8 @@ export const WorkSettingsSection = () => {
   const settings = useWorkSettings();
 
   if (settings.isPending) return <FieldsSkeleton rows={8} label="Đang tải cấu hình" />;
-  if (settings.error) return <ErrorState error={settings.error} fallback="Không tải được cấu hình." />;
+  if (settings.error)
+    return <ErrorState error={settings.error} fallback="Không tải được cấu hình." />;
   // key theo version: lưu xong hoặc người khác sửa thì form lấy giá trị mới, không cần reset bằng effect
   return <WorkSettingsForm key={settings.data.version} settings={settings.data} />;
 };

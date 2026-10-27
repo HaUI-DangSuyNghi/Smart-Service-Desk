@@ -1,3 +1,4 @@
+import { IconClockHour4, IconUsersGroup } from "@tabler/icons-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -5,6 +6,7 @@ import { PRIORITY_LABELS } from "../../../platform/process";
 import { ApiError } from "../../../platform/shared/api";
 import { Button } from "../../../platform/shared/ui/button";
 import { ErrorState } from "../../../platform/shared/ui/ErrorState";
+import { FieldGroup } from "../../../platform/shared/ui/FieldGroup";
 import { Input } from "../../../platform/shared/ui/input";
 import { FieldsSkeleton } from "../../../platform/shared/ui/Skeleton";
 import { toast, toastError } from "../../../platform/shared/ui/toast";
@@ -20,7 +22,10 @@ const minutes = z.coerce
   .max(MAX_ESTIMATE_MINUTES, `≤ ${MAX_ESTIMATE_MINUTES}`);
 const row = z.object({ LOW: minutes, MEDIUM: minutes, HIGH: minutes, CRITICAL: minutes });
 // Tên group Keycloak: chữ thường, số, gạch ngang
-const group = z.string().trim().regex(/^[a-z0-9-]{1,50}$/, "Chữ thường, số, gạch ngang");
+const group = z
+  .string()
+  .trim()
+  .regex(/^[a-z0-9-]{1,50}$/, "Chữ thường, số, gạch ngang");
 
 const schema = z.object({
   version: z.number(),
@@ -54,7 +59,13 @@ const SettingsForm = ({ settings }: { settings: ServiceDeskSettings }) => {
     resolver: zodResolver(schema),
     defaultValues: {
       ...settings,
-      categoryGroups: { ...settings.categoryGroups, OTHER: settings.categoryGroups.OTHER ?? "" },
+      categoryGroups: {
+        HARDWARE: settings.categoryGroups.HARDWARE ?? "",
+        NETWORK: settings.categoryGroups.NETWORK ?? "",
+        SOFTWARE: settings.categoryGroups.SOFTWARE ?? "",
+        ACCOUNT: settings.categoryGroups.ACCOUNT ?? "",
+        OTHER: settings.categoryGroups.OTHER ?? "",
+      },
     },
   });
   const { errors } = form.formState;
@@ -74,10 +85,12 @@ const SettingsForm = ({ settings }: { settings: ServiceDeskSettings }) => {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-6">
-      <fieldset className="flex flex-col gap-2">
-        <legend className="mb-2 font-medium">Loại sự cố → tổ xử lý (group Keycloak) · R1</legend>
+      <FieldGroup title="Tổ xử lý theo loại sự cố" icon={IconUsersGroup}>
         {CATEGORIES.map((category) => (
-          <div key={category} className="grid grid-cols-1 gap-1 sm:grid-cols-[8rem_1fr] sm:items-center">
+          <div
+            key={category}
+            className="grid grid-cols-1 gap-1 sm:grid-cols-[8rem_1fr] sm:items-center"
+          >
             <label htmlFor={`group-${category}`} className="text-crm-text-2">
               {CATEGORY_LABELS[category]}
             </label>
@@ -85,7 +98,7 @@ const SettingsForm = ({ settings }: { settings: ServiceDeskSettings }) => {
               <Input
                 id={`group-${category}`}
                 className="w-full sm:w-56"
-                placeholder={category === "OTHER" ? "Để trống: điều phối viên tự chọn" : undefined}
+                placeholder={category === "OTHER" ? "Điều phối viên tự chọn" : undefined}
                 {...form.register(`categoryGroups.${category}`)}
               />
               {errors.categoryGroups?.[category] && (
@@ -96,10 +109,9 @@ const SettingsForm = ({ settings }: { settings: ServiceDeskSettings }) => {
             </div>
           </div>
         ))}
-      </fieldset>
+      </FieldGroup>
 
-      <fieldset className="flex flex-col gap-2">
-        <legend className="mb-2 font-medium">Ước tính mặc định (phút làm) · R2</legend>
+      <FieldGroup title="Ước tính mặc định (phút)" icon={IconClockHour4}>
         {/* Bảng 5 × 4 ô: điện thoại cuộn ngang trong khung, trang không cuộn ngang */}
         <div className="overflow-x-auto">
           <table className="min-w-full border-separate border-spacing-1">
@@ -139,7 +151,7 @@ const SettingsForm = ({ settings }: { settings: ServiceDeskSettings }) => {
         {errors.estimateDefaults && (
           <p className="text-crm-sm text-crm-danger">Ô đỏ chưa hợp lệ: số nguyên từ 1 phút.</p>
         )}
-      </fieldset>
+      </FieldGroup>
 
       <div className="flex justify-end">
         <Button type="submit" size="sm" disabled={save.isPending || !form.formState.isDirty}>
@@ -155,7 +167,8 @@ export const ServiceDeskSettingsSection = () => {
   const settings = useServiceDeskSettings();
 
   if (settings.isPending) return <FieldsSkeleton rows={6} label="Đang tải cấu hình" />;
-  if (settings.error) return <ErrorState error={settings.error} fallback="Không tải được cấu hình." />;
+  if (settings.error)
+    return <ErrorState error={settings.error} fallback="Không tải được cấu hình." />;
   // key theo version: lưu xong thì form lấy giá trị mới, không reset bằng effect
   return <SettingsForm key={settings.data.version} settings={settings.data} />;
 };
