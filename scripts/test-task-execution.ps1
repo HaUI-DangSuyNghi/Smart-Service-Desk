@@ -56,7 +56,7 @@ try {
         $reports = Join-Path $evidence $container
         New-Item -ItemType Directory -Path $reports -ErrorAction Stop | Out-Null
         $arguments[3] = '/work/backend/pom.xml'
-        $command = 'tar -C /source --exclude=backend/target -cf - backend contracts docs/architecture | tar -C /work -xf -; mvn "$@"; result=$?; cp /work/backend/target/surefire-reports/TEST-*.xml /evidence/; exit $result'
+        $command = 'tar -C /source --exclude=backend/target -cf - backend contracts docs/architecture | tar -C /work -xf -; mvn "$@"; result=$?; cp /work/backend/target/surefire-reports/TEST-*.xml /evidence/; if [ -f /work/backend/target/servicedesk-http-evidence.json ]; then cp /work/backend/target/servicedesk-http-evidence.json /evidence/; fi; exit $result'
         docker run --rm --network $network -w /work/backend --mount "type=bind,source=$root,target=/source,readonly" `
             --mount "type=bind,source=$HOME/.m2/repository,target=/root/.m2/repository,readonly" `
             --mount "type=bind,source=$reports,target=/evidence" `

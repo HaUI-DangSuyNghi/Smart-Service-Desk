@@ -16,6 +16,7 @@ import vn.haui.dx.core.workflow.api.ProcessRegistration;
 @org.springframework.context.annotation.Lazy
 public class ProcessRegistry {
     private final Map<String, ProcessPolicy> policies;
+    private final Map<String, ProcessRegistration> owners = new HashMap<>();
     private final Map<String, String> definitionIds;
     private final Map<String, Set<String>> executionTasks;
 
@@ -33,6 +34,7 @@ public class ProcessRegistry {
                     throw new IllegalArgumentException("Duplicate execution policy: " + key);
             });
             for (var policy : declared) {
+                owners.put(policy.processKey(), registration);
                 if (collected.putIfAbsent(policy.processKey(), policy) != null)
                     throw new IllegalArgumentException("Duplicate process: " + policy.processKey());
                 if (policy.allowedStartVariables().stream().anyMatch(name ->
@@ -69,6 +71,10 @@ public class ProcessRegistry {
     }
 
     /** Bước duyệt: giao cho nhóm ${workspace}:role, không có assignee cố định. */
+    public void beforeComplete(String workspace, String processKey, String processId, String taskKey, String taskId, String outcome) {
+        owners.get(processKey).beforeComplete(workspace, processKey, processId, taskKey, taskId, outcome);
+    }
+
     private static boolean candidateTask(UserTask task) {
         return (task.getAssignee() == null || task.getAssignee().isBlank()) && task.getCandidateUsers().isEmpty()
             && !task.getCandidateGroups().isEmpty()

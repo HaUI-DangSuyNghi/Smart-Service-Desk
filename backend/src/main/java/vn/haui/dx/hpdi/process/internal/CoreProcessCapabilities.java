@@ -16,6 +16,7 @@ import vn.haui.dx.hpdi.process.api.ProcessSummary;
 public class CoreProcessCapabilities implements ProcessCapability, WorkInbox, WorkExecution {
     private final WorkflowService workflow;
     public CoreProcessCapabilities(WorkflowService workflow) { this.workflow = workflow; }
+    public WorkExecution.Item get(String workspace, String taskId) { return execution(workflow.execution(workspace, taskId)); }
     public WorkExecution.Item execute(String workspace, String taskId, WorkExecution.Action action, String reason, String note) {
         if (action == null) throw vn.haui.dx.hpdi.common.api.CapabilityException.validation("action is required");
         if (action == WorkExecution.Action.PAUSE) {
@@ -63,6 +64,7 @@ public class CoreProcessCapabilities implements ProcessCapability, WorkInbox, Wo
     public WorkItem assign(String workspace, String taskId, String assignee) {
         return item(workflow.assign(workspace, taskId, assignee));
     }
+    public void setPriority(String workspace, String taskId, int priority) { workflow.setPriority(workspace, taskId, priority); }
     private static Page<ProcessSummary> summaries(vn.haui.dx.core.common.Page<vn.haui.dx.core.workflow.api.ProcessSummary> result) {
         return new Page<>(result.items().stream().map(p -> new ProcessSummary(p.id(), p.processKey(), p.businessKey(),
             p.initiator(), p.startedAt(), p.endedAt(), p.activeTaskKeys())).toList(), result.page(), result.size(), result.total());

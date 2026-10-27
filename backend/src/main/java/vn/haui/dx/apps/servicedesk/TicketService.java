@@ -42,7 +42,7 @@ public class TicketService {
         text(input.title(), 200, false);
         text(input.description(), 4000, true);
         UUID id = UUID.randomUUID();
-        var process = workflow.start(workspace, ServiceDeskProcess.KEY, id.toString(), Map.of());
+        var process = workflow.start(workspace, ServiceDeskProcess.REVIEWED_KEY, id.toString(), Map.of());
         var ticket = repository.insert(id, workspace, user.subject(), input, process.processInstanceId());
         audit.record(workspace, new BusinessActivity("servicedesk.ticket.create", "servicedesk.ticket", id.toString(),
             Map.of("processInstanceId", process.processInstanceId())));
@@ -70,6 +70,14 @@ public class TicketService {
         var user = member(workspace);
         filters(query, from, to);
         return statistics.statistics(workspace, reader(user, workspace), query, from, to);
+    }
+
+    @Transactional(readOnly=true, isolation=Isolation.REPEATABLE_READ)
+    public Page<Ticket> awaitingReview(String workspace, String query, Instant from, Instant to, PageRequest page, String sort) {
+        if (!member(workspace).hasRole("coordinator")) throw CapabilityException.forbidden("Coordinator required");
+        filters(query,from,to);
+        if (sort!=null && !java.util.Set.of("createdAt","priority").contains(sort)) throw CapabilityException.validation("Invalid sort");
+        return repository.awaitingReview(workspace,query,from,to,page,"priority".equals(sort));
     }
 
     private static void filters(String query, Instant from, Instant to) {

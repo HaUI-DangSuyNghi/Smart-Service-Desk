@@ -85,6 +85,24 @@ class CoreStartIntegrationTest {
         System.out.println("START-GAP status=" + response.getStatus() + " before=" + java.util.Arrays.toString(before)
             + " after=" + java.util.Arrays.toString(counts()) + " businessKey=" + businessKey);
         assertAll(() -> assertEquals(403, response.getStatus()), () -> assertArrayEquals(before, counts()));
+        mvc.perform(post("/api/core/v1/workspaces/lab-a/processes/service-desk-reviewed/instances")
+            .header("Authorization","Bearer "+token()).contentType("application/json")
+            .content("{\"businessKey\":\""+UUID.randomUUID()+"\",\"variables\":{}}" )).andExpect(status().isForbidden());
+        mvc.perform(post("/api/hpdi/v1/workspaces/lab-a/processes/service-desk-reviewed/instances")
+            .header("Authorization","Bearer "+token()).contentType("application/json").content("{\"variables\":{}}" ))
+            .andExpect(status().isForbidden());
+        assertArrayEquals(before,counts());
+    }
+    @Test void realSignedRequesterCannotReviewQueueOrExecuteWork() throws Exception {
+        String authorization="Bearer "+token();
+        mvc.perform(get("/api/hpdi/v1/workspaces/lab-a/queue").header("Authorization",authorization)).andExpect(status().isForbidden());
+        mvc.perform(post("/api/hpdi/v1/workspaces/lab-a/tasks/unknown/start").header("Authorization",authorization)).andExpect(status().isForbidden());
+        mvc.perform(post("/api/apps/servicedesk/v1/workspaces/lab-a/tickets/"+UUID.randomUUID()+"/review")
+            .header("Authorization",authorization).contentType("application/json")
+            .content("{\"category\":\"HARDWARE\",\"priority\":\"HIGH\",\"assignee\":null,\"reason\":\"Requester cannot review\"}" ))
+            .andExpect(status().isForbidden());
+        mvc.perform(get("/api/hpdi/v1/workspaces/lab-a/queue").header("Authorization","Bearer invalid.jwt.signature"))
+            .andExpect(status().isUnauthorized());
     }
     @Test void signedUserCanStillStartSelfServiceProcess() throws Exception {
         long[] before = counts();

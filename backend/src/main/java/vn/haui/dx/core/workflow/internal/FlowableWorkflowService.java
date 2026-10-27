@@ -208,9 +208,35 @@ public final class FlowableWorkflowService implements WorkflowService {
         });
     }
 
+    @Override
+    public TaskExecution execution(String workspace, String taskId) {
+        var user = member(workspace);
+        text(taskId, 100, "taskId");
+        var task = engine.getTaskService().createTaskQuery().taskId(taskId).singleResult();
+        if (task == null) throw CoreException.notFound("Task not found");
+        var scope = readable(user, workspace, task.getProcessInstanceId());
+        if (!registry.executionTask((String) scope.get("process_key"), task.getTaskDefinitionKey()))
+            throw CoreException.conflict("Task does not support work execution");
+        return execution(task, Instant.now().toEpochMilli());
+    }
+
     private TaskExecution.State executionState(String taskId) {
         Object state = engine.getTaskService().getVariableLocal(taskId, WORK_STATE);
         return state == null ? TaskExecution.State.NOT_STARTED : TaskExecution.State.valueOf((String) state);
+    }
+
+    @Override
+    public void setPriority(String workspace, String taskId, int priority) {
+        var user = member(workspace);
+        if (priority < 0 || priority > 100) throw CoreException.validation("Invalid priority");
+        WorkspacePermissions.require(user, directory, workspace, "task:assign");
+        if (!user.hasRole(workspace, WorkspaceRole.COORDINATOR)) throw CoreException.forbidden("Coordinator required");
+        transaction.executeWithoutResult(status -> {
+            var task = lockedTask(workspace, taskId);
+            engine.getTaskService().setPriority(taskId, priority);
+            audit.record("task.priority", "task", taskId, workspace,
+                Map.of("priority", priority, "processInstanceId", task.getProcessInstanceId()));
+        });
     }
 
     private TaskExecution execution(Task task, long now) {
@@ -338,6 +364,7 @@ public final class FlowableWorkflowService implements WorkflowService {
                     throw CoreException.conflict("Start or resume work before completion");
                 closeWorkInterval(workspace, task, Instant.now().toEpochMilli());
             }
+            registry.beforeComplete(workspace, (String) scope.get("process_key"), task.getProcessInstanceId(), expectedTaskKey, taskId, outcome);
             engine.getTaskService().setVariableLocal(taskId, "outcome", outcome);
             if (comment != null) {
                 // Lưu bằng cơ chế comment của Flowable, người viết là người hoàn thành task
