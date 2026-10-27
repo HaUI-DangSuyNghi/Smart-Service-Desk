@@ -44,6 +44,16 @@ class JdbcAuditService implements AuditService {
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
     public void record(String action, String resourceType, String resourceId, String workspace, Map<String, Object> details) {
+        recordAs(access.current().sub(), action, resourceType, resourceId, workspace, details);
+    }
+
+    @Override
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void recordSystem(String action, String resourceType, String resourceId, String workspace, Map<String, Object> details) {
+        recordAs("system:workflow", action, resourceType, resourceId, workspace, details);
+    }
+
+    private void recordAs(String actor, String action, String resourceType, String resourceId, String workspace, Map<String, Object> details) {
         if (action == null || action.length() > 100 || !ACTION.matcher(action).matches())
             throw new IllegalArgumentException("Invalid audit action: " + action);
         require(resourceType, 100, "resourceType");
@@ -53,7 +63,7 @@ class JdbcAuditService implements AuditService {
         String requestId = RequestContext.requestId().orElseGet(() -> UUID.randomUUID().toString());
         jdbc.update("insert into audit_event(id,actor,action,resource_type,resource,workspace,request_id,details) "
                 + "values (?,?,?,?,?,?,?,cast(? as jsonb))",
-            UUID.randomUUID(), access.current().sub(), action, resourceType, resourceId, workspace, requestId, write(details));
+            UUID.randomUUID(), actor, action, resourceType, resourceId, workspace, requestId, write(details));
     }
 
     @Override

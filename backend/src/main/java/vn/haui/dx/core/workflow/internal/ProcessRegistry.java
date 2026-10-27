@@ -111,6 +111,11 @@ public class ProcessRegistry {
         return executionTasks.getOrDefault(processKey, Set.of()).contains(taskKey);
     }
 
+    public void afterExecution(String workspace, String processKey, String processId, String taskId,
+            vn.haui.dx.core.workflow.api.TaskExecution.Action action, String reason, java.time.Instant at) {
+        owners.get(processKey).afterExecution(workspace, processKey, processId, taskId, action, reason, at);
+    }
+
     public Map<String, Set<String>> executionTasks() { return executionTasks; }
 
     public Collection<ProcessPolicy> policies() { return policies.values(); }

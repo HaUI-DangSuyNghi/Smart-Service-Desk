@@ -21,16 +21,18 @@ public class TicketReviewService implements WorkProjection {
     private final ActivityJournal audit;
     private final Validator validator;
     private final TicketAssignmentEligibility eligibility;
+    private final TicketSlaService sla;
     private final vn.haui.dx.apps.servicedesk.intelligence.BackgroundTicketAssessment assessments;
 
     public TicketReviewService(JdbcTemplate jdbc, TicketRepository tickets, HumanContext humans, PermissionGuard permissions,
                               WorkInbox inbox, WorkExecution execution, ProcessCapability processes, ActivityJournal audit, Validator validator,
                               vn.haui.dx.apps.servicedesk.intelligence.BackgroundTicketAssessment assessments,
-                              TicketAssignmentEligibility eligibility) {
+                              TicketAssignmentEligibility eligibility, TicketSlaService sla) {
         this.jdbc=jdbc; this.tickets=tickets; this.humans=humans; this.permissions=permissions;
         this.inbox=inbox; this.execution=execution; this.processes=processes; this.audit=audit; this.validator=validator;
         this.assessments=assessments;
         this.eligibility=eligibility;
+        this.sla=sla;
     }
     @Override public String processKey() { return ServiceDeskProcess.REVIEWED_KEY; }
 
@@ -70,6 +72,7 @@ public class TicketReviewService implements WorkProjection {
         var handle = processes.timeline(workspace, ticket.process().processInstanceId()).currentTasks().stream()
             .filter(task -> "handle".equals(task.key())).findFirst().orElseThrow();
         inbox.setPriority(workspace, handle.id(), (decision.priority().ordinal() + 1) * 25);
+        sla.initialize(workspace, id, ticket.process().processInstanceId(), review.id(), handle.id(), decision.priority().name());
         if (decision.assignee() != null) inbox.assign(workspace, handle.id(), decision.assignee());
         audit.record(workspace, new BusinessActivity("servicedesk.ticket.review", "servicedesk.ticket", id.toString(),
             Map.of("processInstanceId",ticket.process().processInstanceId(),"reviewTaskId",review.id())));
@@ -96,9 +99,16 @@ public class TicketReviewService implements WorkProjection {
                 "agent","COORDINATOR",row.getString("impact"),row.getString("urgency"),row.getString("reviewed_by"),
                 row.getTimestamp("reviewed_at").toInstant()),ticket.id());
         long closedWork=jdbc.queryForObject("select worked_millis from servicedesk_ticket where id=?",Long.class,ticket.id());
+        var slaState = sla.read(workspace, ticket.id());
+        var classification = classifications.isEmpty() ? null : classifications.get(0);
+        if (classification != null && slaState != null)
+            classification = new TicketReview.Classification(classification.category(), slaState.priority().name(), slaState.base().name(),
+                slaState.priority() != slaState.base(), classification.group(), classification.source(), classification.impact(), classification.urgency(),
+                classification.reviewedBy(), classification.reviewedAt());
         return new TicketReview.View(ticket,state,task==null?null:task.id(),task==null?null:task.assignee(),
             estimates.isEmpty()?null:estimates.get(0),item==null?null:item.workState(),item==null?closedWork/60_000:item.workedMinutes(),
-            item==null?null:item.remainingMinutes(),reopened,classifications.isEmpty()?null:classifications.get(0),assessments.read(workspace,ticket.id()));
+            item==null?null:item.remainingMinutes(),reopened,classification,assessments.read(workspace,ticket.id()),
+            slaState == null ? null : slaState.project(sla.now()));
     }
 
     @Override public QueueItem project(String workspace, WorkExecution.Item execution) {
@@ -117,10 +127,16 @@ public class TicketReviewService implements WorkProjection {
             + " and t.process_instance_id in (" + String.join(",", Collections.nCopies(executions.size(), "?")) + ")", parameters.toArray());
         var byProcess = new HashMap<String,Map<String,Object>>();
         rows.forEach(row -> byProcess.put((String)row.get("process_instance_id"),row));
+        var slaStates = sla.batch(workspace, executions.stream().map(item -> item.task().id()).toList());
+        var now = sla.now();
         return executions.stream().map(item -> {
             var row = byProcess.get(item.task().processInstanceId());
             if (row == null) throw CapabilityException.conflict("Reviewed work projection required");
-            return projected(item, row);
+            var projected = projected(item, row);
+            var state = slaStates.get(item.task().id());
+            return state == null ? projected : new QueueItem(projected.task(), projected.label(), projected.workState(),
+                state.priority().name(), state.base().name(), projected.estimate(), projected.workedMinutes(), projected.remainingMinutes(),
+                projected.reopenCount(), projected.pendingReason(), projected.pendingNote(), state.project(now));
         }).toList();
     }
 

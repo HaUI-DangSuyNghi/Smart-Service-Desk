@@ -144,6 +144,8 @@ public final class FlowableWorkflowService implements WorkflowService {
             if (reason != null) details.put("reason", reason);
             if (note != null) details.put("note", note);
             audit.record("task." + action.name().toLowerCase(java.util.Locale.ROOT), "task", taskId, workspace, details);
+            registry.afterExecution(workspace, (String) reference.get("process_key"), task.getProcessInstanceId(), taskId,
+                action, reason, Instant.ofEpochMilli(now));
             return execution(task, now);
         });
     }

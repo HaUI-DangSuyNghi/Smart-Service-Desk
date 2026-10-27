@@ -1,0 +1,131 @@
+{
+  "date": "2026-10-27",
+  "timezone": "Asia/Saigon",
+  "branch": "feat/r5-sla-engine",
+  "baseline": "abdbac293531e864c03535a126e3ee5e1fb11709",
+  "countsAreNotAdditive": true,
+  "javaProfiles": {
+    "backendFull": {
+      "failures": 0,
+      "profile": "full",
+      "errors": 0,
+      "tests": 660,
+      "skipped": 0
+    },
+    "coreOnly": {
+      "failures": 0,
+      "profile": "core-only",
+      "errors": 0,
+      "tests": 106,
+      "skipped": 0
+    },
+    "secondDomain": {
+      "failures": 0,
+      "profile": "second-domain",
+      "errors": 0,
+      "tests": 33,
+      "skipped": 0
+    },
+    "slaTargetedAndMigration": {
+      "failures": 0,
+      "profile": "full",
+      "errors": 0,
+      "tests": 23,
+      "skipped": 0
+    }
+  },
+  "boundaries": {
+    "status": "PASS",
+    "source": true,
+    "archUnitInBackendFull": true,
+    "mutationTests": 43
+  },
+  "httpContracts": {
+    "status": "PASS",
+    "slaResponses": 8,
+    "negativeChecksPerSla": 9,
+    "existingExecutionChecks": 14
+  },
+  "wholeOpenApiComparison": {
+    "hpdi/openapi.yaml": {
+      "baselineErrors": 3,
+      "currentErrors": 3,
+      "regression": false
+    },
+    "hpdi/openapi-target.yaml": {
+      "baselineErrors": 1,
+      "currentErrors": 1,
+      "regression": false
+    },
+    "openapi/servicedesk.yaml": {
+      "baselineErrors": 0,
+      "currentErrors": 0,
+      "regression": false
+    },
+    "openapi/servicedesk-target.yaml": {
+      "baselineErrors": 0,
+      "currentErrors": 0,
+      "regression": false
+    }
+  },
+  "realRuntime": {
+    "stack": "PostgreSQL 16.6 / Flowable 7.1 / Keycloak 26.0.7 / signed JWT / direct HTTP, no gateway",
+    "checks": [
+      {
+        "name": "unreviewed ticket has no SLA",
+        "status": "PASS"
+      },
+      {
+        "name": "approval initializes authoritative SLA",
+        "status": "PASS"
+      },
+      {
+        "name": "START freezes response result",
+        "status": "PASS"
+      },
+      {
+        "name": "requester wait pauses SLA",
+        "status": "PASS"
+      },
+      {
+        "name": "pause and original start deadline survive backend restart",
+        "status": "PASS"
+      },
+      {
+        "name": "handle resolved stops SLA before requester confirmation",
+        "status": "PASS"
+      },
+      {
+        "name": "rework awaiting approval has no fabricated SLA",
+        "status": "PASS"
+      },
+      {
+        "name": "new round starts a fresh LOW policy with no assignment",
+        "status": "PASS"
+      },
+      {
+        "name": "scheduled worker escalates unassigned LOW once without changing base priority",
+        "status": "PASS"
+      },
+      {
+        "name": "system escalation records exactly one transactional audit",
+        "status": "PASS"
+      }
+    ],
+    "status": "PASS"
+  },
+  "gatewayAcceptance": {
+    "status": "SKIP",
+    "reason": "Runtime probe uses signed Keycloak JWT and direct HTTP, not gateway"
+  },
+  "hostedCI": {
+    "status": "PENDING",
+    "reason": "Feature branch not yet published"
+  },
+  "resolvedValidationIssues": [
+    "V16 reused the existing V11 workspace constraint instead of redeclaring it",
+    "Upgrade assertion now expects V16 instead of V15",
+    "Rollback trigger uses SQLSTATE 23514",
+    "Runtime runner refreshes Docker ephemeral port after restart and bounds readiness wait"
+  ]
+}

@@ -54,6 +54,7 @@ try {
     $env:WORKFLOW_TEST_DB_PASSWORD = $password
     $arguments = @('-B', '-o', '-f', (Join-Path $root 'backend/pom.xml'), 'clean', 'test')
     $arguments += '-Dservice-desk.background.scheduled=false'
+    $arguments += '-Dservice-desk.sla.scheduled=false'
     $arguments += '-Dspring.datasource.hikari.maximum-pool-size=3'
     if ($Test) { $arguments += "-Dtest=$Test" }
     if ($Profile -eq 'execution') { $arguments += '-Dtest=WorkflowApprovalTest,WorkflowExecutionCompatibilityTest,WorkExecutionTest' }
@@ -67,7 +68,7 @@ try {
         $reports = Join-Path $evidence $container
         New-Item -ItemType Directory -Path $reports -ErrorAction Stop | Out-Null
         $arguments[3] = '/work/backend/pom.xml'
-        $command = 'tar -C /source --exclude=backend/target --exclude=backend/.local -cf - backend contracts docs/architecture | tar -C /work -xf -; mvn "$@"; result=$?; cp /work/backend/target/surefire-reports/TEST-*.xml /evidence/; for evidence in servicedesk-http-evidence.json background-assessment-http-evidence.json r2-assignment-http-evidence.json; do if [ -f /work/backend/target/$evidence ]; then cp /work/backend/target/$evidence /evidence/; fi; done; exit $result'
+        $command = 'tar -C /source --exclude=backend/target --exclude=backend/.local -cf - backend contracts docs/architecture | tar -C /work -xf -; mvn "$@"; result=$?; cp /work/backend/target/surefire-reports/TEST-*.xml /evidence/; for evidence in servicedesk-http-evidence.json background-assessment-http-evidence.json r2-assignment-http-evidence.json r5-sla-http-evidence.json; do if [ -f /work/backend/target/$evidence ]; then cp /work/backend/target/$evidence /evidence/; fi; done; exit $result'
         docker run --rm --network $network -w /work/backend --mount "type=bind,source=$root,target=/source,readonly" `
             --mount "type=bind,source=$HOME/.m2/repository,target=/root/.m2/repository,readonly" `
             --mount "type=bind,source=$reports,target=/evidence" `

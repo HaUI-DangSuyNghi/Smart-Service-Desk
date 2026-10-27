@@ -15,7 +15,8 @@ public final class TicketReview {
     public record View(@com.fasterxml.jackson.annotation.JsonUnwrapped Ticket ticket, String state,
                        String taskId, String assignee, QueueItem.Estimate estimate,
                        String workState, Long workedMinutes, Long remainingMinutes, int reopenCount, Classification classification,
-                       vn.haui.dx.apps.servicedesk.intelligence.StoredAssessment assessment) {}
+                       vn.haui.dx.apps.servicedesk.intelligence.StoredAssessment assessment,
+                       vn.haui.dx.hpdi.process.api.Sla sla) {}
     public record Classification(String category, String priority, String basePriority, boolean escalated,
                                  String group, String source, String impact, String urgency,
                                  String reviewedBy, java.time.Instant reviewedAt) {}

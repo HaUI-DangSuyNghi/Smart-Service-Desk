@@ -878,6 +878,11 @@ components:
             enum:
             - null
 
+        sla:
+          description: Null before approval, during rework review, or for pre-R5 rounds. FE must not recalculate deadlines.
+          anyOf:
+          - $ref: '../hpdi/openapi.yaml#/components/schemas/Sla'
+          - {type: object, nullable: true, enum: [null]}
         assessment:
           description: Persisted background advice only; never assigns or reviews a ticket. Null for tickets without a stored assessment. GET does not invoke AI.
           anyOf:
