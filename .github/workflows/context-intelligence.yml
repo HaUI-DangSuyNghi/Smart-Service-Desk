@@ -42,7 +42,7 @@ jobs:
           python-version-file: intelligence/.python-version
       - name: Kiểm tra CPU, contract, ACL và PostgreSQL/Flowable thật
         working-directory: backend
-        run: mvn -B '-Dtest=Context*Test,Duplicate*Test,Enrichment*Test,TicketContextualAssessmentIntegrationTest,TicketAssessmentInputAssemblerTest' test
+        run: mvn -B '-Dtest=Context*Test,Duplicate*Test,Enrichment*Test,TicketContextualAssessmentIntegrationTest,TicketAssessmentInputAssemblerTest,ServiceDeskProcessStateTest,ServiceDeskMigrationIntegrationTest' test
       - name: Tổng hợp bằng chứng synthetic, không tuyên bố Gold
         run: python scripts/apps/servicedesk/ai08/evaluate-context.py --output .local/context-intelligence/receipt.json
       - name: Kiểm tra lifecycle, timeout và reassessment có revision

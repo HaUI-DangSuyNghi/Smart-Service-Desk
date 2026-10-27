@@ -1,7 +1,7 @@
 package vn.haui.dx.apps.servicedesk.intelligence.enrichment;
 
 import org.springframework.stereotype.Service;
-import vn.haui.dx.apps.servicedesk.ServiceDeskProcess;
+import vn.haui.dx.apps.servicedesk.ServiceDeskProcessState;
 import vn.haui.dx.apps.servicedesk.Ticket;
 import vn.haui.dx.apps.servicedesk.TicketService;
 import vn.haui.dx.apps.servicedesk.intelligence.context.ContextEvaluationGuard;
@@ -171,10 +171,7 @@ public class EnrichmentLifecycleService {
     }
 
     private static boolean open(Ticket ticket, ProcessSnapshot state) {
-        return state != null && state.historyPresent() && ticket.workspace().equals(state.workspace())
-                && ticket.creator().equals(state.owner()) && ticket.id().toString().equals(state.businessKey())
-                && ServiceDeskProcess.KEY.equals(state.processKey()) && state.endedAt() == null
-                && state.deleteReason() == null && state.tasks().size() == 1 && state.tasks().get(0).active()
-                && List.of("handle", "confirm").contains(state.tasks().get(0).key());
+        return ServiceDeskProcessState.isOpen(ticket.workspace(), ticket.id(), ticket.creator(),
+                ticket.process().processInstanceId(), state);
     }
 }

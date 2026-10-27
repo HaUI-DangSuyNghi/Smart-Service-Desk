@@ -47,6 +47,11 @@ public final class FlowableWorkflowService implements WorkflowService {
     static final int MAX_VARIABLE = 2000;
     /** Số quy trình tối đa đọc cho một lần thống kê; khoảng dài hơn nên chia nhỏ. */
     static final int MAX_STATISTICS_PROCESSES = 10_000;
+    private static final String WORK_STATE = "executionState";
+    private static final String WORK_STARTED = "executionStarted";
+    private static final String WORK_MILLIS = "executionMillis";
+    @org.springframework.beans.factory.annotation.Value("${dx.workflow.max-in-progress:1}")
+    private int maxInProgress = 1;
 
     /** Cho test giao việc: người dùng cố định và danh bạ giả. */
     public FlowableWorkflowService(ProcessEngine engine, JdbcTemplate jdbc, CurrentUser user, AuditService audit,
@@ -80,6 +85,181 @@ public final class FlowableWorkflowService implements WorkflowService {
         var task = engine.getHistoryService().createHistoricTaskInstanceQuery().taskId(taskId)
             .processInstanceId(processInstanceId).singleResult();
         if (task == null) throw CoreException.notFound("Task not found in this instance");
+    }
+
+    @Override
+    public TaskExecution execute(String workspace, String taskId, TaskExecution.Action action, String reason, String note) {
+        var user = member(workspace);
+        if (action == null) throw CoreException.validation("action is required");
+        if (note != null && note.length() > MAX_COMMENT) throw CoreException.validation("Note too long");
+        if (action == TaskExecution.Action.PAUSE) {
+            text(reason, 100, "reason");
+        } else if (reason != null || note != null) {
+            throw CoreException.validation("Only PAUSE accepts reason and note");
+        }
+        return transaction.execute(status -> {
+            var task = lockedTask(workspace, taskId);
+            var reference = scope(workspace, task.getProcessInstanceId());
+            if (!user.sub().equals(task.getAssignee())) throw CoreException.forbidden("Task assignee required");
+            WorkspacePermissions.require(user, directory, workspace, "task:handle");
+            if (user.sub().equals(reference.get("owner"))) throw CoreException.forbidden("Independent assignee required");
+            candidate(user, workspace, task);
+            if (!registry.executionTask((String) reference.get("process_key"), task.getTaskDefinitionKey()))
+                throw CoreException.conflict("Task does not support work execution");
+            if (task.isSuspended()) throw CoreException.conflict("Process is suspended");
+            var state = executionState(taskId);
+            var expected = switch (action) {
+                case START -> TaskExecution.State.NOT_STARTED;
+                case PAUSE -> TaskExecution.State.IN_PROGRESS;
+                case RESUME -> TaskExecution.State.PENDING;
+            };
+            if (state != expected) throw CoreException.conflict("Invalid execution transition");
+            var tasks = engine.getTaskService();
+            long now = Instant.now().toEpochMilli();
+            if (action == TaskExecution.Action.PAUSE) {
+                closeWorkInterval(workspace, task, now);
+                tasks.setVariableLocal(taskId, WORK_STATE, TaskExecution.State.PENDING.name());
+                tasks.setVariableLocal(taskId, "pendingReason", reason);
+                if (note == null) tasks.removeVariableLocal(taskId, "pendingNote");
+                else tasks.setVariableLocal(taskId, "pendingNote", note);
+            } else {
+                if (maxInProgress < 1 || maxInProgress > 100) throw CoreException.conflict("Invalid execution limit configuration");
+                jdbc.query("select pg_advisory_xact_lock(hashtextextended(?, 0))",
+                    (org.springframework.jdbc.core.RowCallbackHandler) row -> {}, "work-execution:" + user.sub());
+                long active = tasks.createTaskQuery().taskAssignee(user.sub())
+                    .taskVariableValueEquals(WORK_STATE, TaskExecution.State.IN_PROGRESS.name()).count();
+                if (active >= maxInProgress) throw CoreException.conflict("Active work limit reached");
+                now = Instant.now().toEpochMilli();
+                tasks.setVariableLocal(taskId, WORK_STATE, TaskExecution.State.IN_PROGRESS.name());
+                tasks.setVariableLocal(taskId, WORK_STARTED, now);
+                tasks.removeVariableLocal(taskId, "pendingReason");
+                tasks.removeVariableLocal(taskId, "pendingNote");
+            }
+            Map<String, Object> details = new HashMap<>();
+            details.put("processInstanceId", task.getProcessInstanceId());
+            details.put("taskKey", task.getTaskDefinitionKey());
+            details.put("from", state.name());
+            details.put("to", action == TaskExecution.Action.PAUSE ? "PENDING" : "IN_PROGRESS");
+            details.put("at", Instant.ofEpochMilli(now).toString());
+            if (reason != null) details.put("reason", reason);
+            if (note != null) details.put("note", note);
+            audit.record("task." + action.name().toLowerCase(java.util.Locale.ROOT), "task", taskId, workspace, details);
+            return execution(task, now);
+        });
+    }
+
+    @Override
+    public Page<TaskExecution> queue(String workspace, String assignee, PageRequest page) {
+        var user = member(workspace);
+        validPage(page);
+        String subject = assignee == null ? user.sub() : assignee;
+        text(subject, 100, "assignee");
+        WorkspacePermissions.require(user, directory, workspace, user.sub().equals(subject) ? "task:handle" : "task:assign");
+        if (!user.sub().equals(subject) && !user.hasRole(workspace, WorkspaceRole.COORDINATOR))
+            throw CoreException.forbidden("Coordinator required");
+        var predicates = new ArrayList<String>();
+        var parameters = new ArrayList<Object>();
+        parameters.add(workspace);
+        parameters.add(subject);
+        registry.executionTasks().forEach((process, keys) -> keys.forEach(key -> {
+            predicates.add("(t.proc_def_id_=? and t.task_def_key_=?)");
+            parameters.add(registry.definitionId(process));
+            parameters.add(key);
+        }));
+        if (predicates.isEmpty()) return new Page<>(List.of(), page.page(), page.size(), 0);
+        String from = " from act_ru_task t join process_scope s on s.id=t.proc_inst_id_";
+        String where = " where s.workspace=? and t.assignee_=? and s.owner<>t.assignee_ and t.suspension_state_=1 and ("
+            + String.join(" or ", predicates) + ")";
+        return transaction.execute(status -> {
+            long total = jdbc.queryForObject("select count(*)" + from + where, Long.class, parameters.toArray());
+            var paged = new ArrayList<>(parameters);
+            paged.add(page.size());
+            paged.add(page.offset());
+            long now = Instant.now().toEpochMilli();
+            var items = jdbc.query("select t.id_, t.proc_inst_id_, t.task_def_key_, t.name_, t.assignee_, t.create_time_,"
+                + " t.priority_, t.due_date_, s.process_key, s.business_key, v.text_ as execution_state,"
+                + " started.long_ as execution_started, worked.long_ as execution_millis,"
+                + " reason.text_ as pending_reason, note.text_ as pending_note,"
+                + " array(select distinct link.group_id_ from act_ru_identitylink link"
+                + " where link.task_id_=t.id_ and link.type_='candidate' and link.group_id_ is not null"
+                + " order by link.group_id_) as candidate_groups" + from
+                + " left join act_ru_variable v on v.task_id_=t.id_ and v.name_='executionState'"
+                + " left join act_ru_variable started on started.task_id_=t.id_ and started.name_='executionStarted'"
+                + " left join act_ru_variable worked on worked.task_id_=t.id_ and worked.name_='executionMillis'"
+                + " left join act_ru_variable reason on reason.task_id_=t.id_ and reason.name_='pendingReason'"
+                + " left join act_ru_variable note on note.task_id_=t.id_ and note.name_='pendingNote'" + where
+                + " order by case when v.text_='IN_PROGRESS' then 0 else 1 end, t.priority_ desc,"
+                + " t.due_date_ asc nulls last, t.create_time_ asc, t.id_ asc limit ? offset ?", (row, index) -> {
+                    var candidates = row.getArray("candidate_groups");
+                    var groups = List.of((String[]) candidates.getArray());
+                    candidates.free();
+                    var task = new TaskView(row.getString("id_"), row.getString("proc_inst_id_"), row.getString("task_def_key_"),
+                        row.getString("name_"), groups, row.getString("assignee_"), instant(row.getTimestamp("create_time_")),
+                        row.getString("process_key"), row.getString("business_key"));
+                    String storedState = row.getString("execution_state");
+                    var state = storedState == null ? TaskExecution.State.NOT_STARTED : TaskExecution.State.valueOf(storedState);
+                    Long started = row.getObject("execution_started", Long.class);
+                    long elapsed = row.getLong("execution_millis") + (started == null ? 0L : Math.max(0, now - started));
+                    return new TaskExecution(task, state, row.getInt("priority_"), instant(row.getTimestamp("due_date_")),
+                        elapsed, started == null ? null : Instant.ofEpochMilli(started),
+                        row.getString("pending_reason"), row.getString("pending_note"));
+                }, paged.toArray());
+            return new Page<>(items, page.page(), page.size(), total);
+        });
+    }
+
+    @Override
+    public TaskExecution execution(String workspace, String taskId) {
+        var user = member(workspace);
+        text(taskId, 100, "taskId");
+        var task = engine.getTaskService().createTaskQuery().taskId(taskId).singleResult();
+        if (task == null) throw CoreException.notFound("Task not found");
+        var scope = readable(user, workspace, task.getProcessInstanceId());
+        if (!registry.executionTask((String) scope.get("process_key"), task.getTaskDefinitionKey()))
+            throw CoreException.conflict("Task does not support work execution");
+        return execution(task, Instant.now().toEpochMilli());
+    }
+
+    private TaskExecution.State executionState(String taskId) {
+        Object state = engine.getTaskService().getVariableLocal(taskId, WORK_STATE);
+        return state == null ? TaskExecution.State.NOT_STARTED : TaskExecution.State.valueOf((String) state);
+    }
+
+    @Override
+    public void setPriority(String workspace, String taskId, int priority) {
+        var user = member(workspace);
+        if (priority < 0 || priority > 100) throw CoreException.validation("Invalid priority");
+        WorkspacePermissions.require(user, directory, workspace, "task:assign");
+        if (!user.hasRole(workspace, WorkspaceRole.COORDINATOR)) throw CoreException.forbidden("Coordinator required");
+        transaction.executeWithoutResult(status -> {
+            var task = lockedTask(workspace, taskId);
+            engine.getTaskService().setPriority(taskId, priority);
+            audit.record("task.priority", "task", taskId, workspace,
+                Map.of("priority", priority, "processInstanceId", task.getProcessInstanceId()));
+        });
+    }
+
+    private TaskExecution execution(Task task, long now) {
+        var variables = engine.getTaskService().getVariablesLocal(task.getId());
+        var started = (Long) variables.get(WORK_STARTED);
+        long elapsed = ((Number) variables.getOrDefault(WORK_MILLIS, 0L)).longValue();
+        if (started != null) elapsed += Math.max(0, now - started);
+        return new TaskExecution(view(task), executionState(task.getId()), task.getPriority(), instant(task.getDueDate()),
+            elapsed, started == null ? null : Instant.ofEpochMilli(started),
+            (String) variables.get("pendingReason"), (String) variables.get("pendingNote"));
+    }
+
+    private void closeWorkInterval(String workspace, Task task, long now) {
+        var tasks = engine.getTaskService();
+        var started = (Long) tasks.getVariableLocal(task.getId(), WORK_STARTED);
+        if (started == null) return;
+        var accumulated = (Number) tasks.getVariableLocal(task.getId(), WORK_MILLIS);
+        long elapsed = Math.max(0, now - started);
+        tasks.setVariableLocal(task.getId(), WORK_MILLIS, (accumulated == null ? 0L : accumulated.longValue()) + elapsed);
+        tasks.removeVariableLocal(task.getId(), WORK_STARTED);
+        audit.record("task.work-interval", "task", task.getId(), workspace,
+            Map.of("processInstanceId", task.getProcessInstanceId(), "startedAt", Instant.ofEpochMilli(started).toString(),
+                "endedAt", Instant.ofEpochMilli(now).toString(), "workedMillis", elapsed));
     }
 
     @Override
@@ -179,6 +359,12 @@ public final class FlowableWorkflowService implements WorkflowService {
             if (!task.getTaskDefinitionKey().equals(expectedTaskKey)) throw CoreException.conflict("Unexpected task key");
             var allowed = registry.require((String) scope.get("process_key")).outcomesByTask().get(expectedTaskKey);
             if (allowed == null || !allowed.contains(outcome)) throw CoreException.validation("Invalid outcome");
+            if (registry.executionTask((String) scope.get("process_key"), expectedTaskKey)) {
+                if (executionState(taskId) != TaskExecution.State.IN_PROGRESS)
+                    throw CoreException.conflict("Start or resume work before completion");
+                closeWorkInterval(workspace, task, Instant.now().toEpochMilli());
+            }
+            registry.beforeComplete(workspace, (String) scope.get("process_key"), task.getProcessInstanceId(), expectedTaskKey, taskId, outcome);
             engine.getTaskService().setVariableLocal(taskId, "outcome", outcome);
             if (comment != null) {
                 // Lưu bằng cơ chế comment của Flowable, người viết là người hoàn thành task
@@ -288,6 +474,14 @@ public final class FlowableWorkflowService implements WorkflowService {
             if (target.roles().stream().noneMatch(role -> groups.contains(workspace + ":" + role.value())))
                 throw CoreException.validation("Assignee is not in the task's candidate group");
             String previous = task.getAssignee();
+            if (previous != null && !previous.equals(assignee)
+                    && registry.executionTask((String) scope.get("process_key"), task.getTaskDefinitionKey())) {
+                if (executionState(taskId) == TaskExecution.State.IN_PROGRESS)
+                    throw CoreException.conflict("Pause active work before reassignment");
+                engine.getTaskService().setVariableLocal(taskId, WORK_STATE, TaskExecution.State.NOT_STARTED.name());
+                engine.getTaskService().removeVariableLocal(taskId, "pendingReason");
+                engine.getTaskService().removeVariableLocal(taskId, "pendingNote");
+            }
             engine.getTaskService().setAssignee(taskId, assignee);
             Map<String, Object> details = new HashMap<>();
             details.put("processInstanceId", task.getProcessInstanceId());

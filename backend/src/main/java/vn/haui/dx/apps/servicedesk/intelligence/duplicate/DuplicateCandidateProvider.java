@@ -5,7 +5,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
-import vn.haui.dx.apps.servicedesk.ServiceDeskProcess;
+import vn.haui.dx.apps.servicedesk.ServiceDeskProcessState;
 import vn.haui.dx.apps.servicedesk.TicketService;
 import vn.haui.dx.apps.servicedesk.clarification.TicketContextStore;
 import vn.haui.dx.apps.servicedesk.intelligence.context.ContextPolicyCatalog;
@@ -105,10 +105,6 @@ public class DuplicateCandidateProvider {
     }
 
     private static boolean open(String workspace, Row row, ProcessSnapshot state) {
-        return state != null && state.historyPresent() && workspace.equals(state.workspace())
-                && row.creator().equals(state.owner()) && row.id().toString().equals(state.businessKey())
-                && ServiceDeskProcess.KEY.equals(state.processKey()) && state.endedAt() == null
-                && state.deleteReason() == null && state.tasks().size() == 1 && state.tasks().get(0).active()
-                && List.of("handle", "confirm").contains(state.tasks().get(0).key());
+        return ServiceDeskProcessState.isOpen(workspace, row.id(), row.creator(), row.processId(), state);
     }
 }

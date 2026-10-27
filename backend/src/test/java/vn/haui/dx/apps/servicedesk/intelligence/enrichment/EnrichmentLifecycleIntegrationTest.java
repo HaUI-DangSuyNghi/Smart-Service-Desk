@@ -73,6 +73,8 @@ class EnrichmentLifecycleIntegrationTest {
     @Test
     void completeTicketIsReadyWithoutWaitOrWorkflowMutation() throws Exception {
         var ticket = create("Máy 15 phòng 1304 không lên nguồn");
+        assertEquals("AWAITING_REVIEW", ticket.path("state").asText());
+        assertEquals("service-desk-reviewed", ticket.path("process").path("processKey").asText());
         long[] before = Arrays.copyOf(workflow.counts(), 3);
         var state = evaluate(ticket);
         assertEquals("READY", state.path("status").asText());

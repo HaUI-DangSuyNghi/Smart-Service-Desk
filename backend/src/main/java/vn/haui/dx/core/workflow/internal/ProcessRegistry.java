@@ -16,12 +16,25 @@ import vn.haui.dx.core.workflow.api.ProcessRegistration;
 @org.springframework.context.annotation.Lazy
 public class ProcessRegistry {
     private final Map<String, ProcessPolicy> policies;
+    private final Map<String, ProcessRegistration> owners = new HashMap<>();
     private final Map<String, String> definitionIds;
+    private final Map<String, Set<String>> executionTasks;
 
     public ProcessRegistry(Collection<ProcessRegistration> registrations, RepositoryService repository) {
         Map<String, ProcessPolicy> collected = new HashMap<>();
+        Map<String, Set<String>> work = new HashMap<>();
         for (var registration : registrations) {
-            for (var policy : registration.policies()) {
+            var declared = registration.policies();
+            registration.executionTasks().forEach((key, tasks) -> {
+                var owner = declared.stream().filter(policy -> policy.processKey().equals(key)).findFirst()
+                    .orElseThrow(() -> new IllegalArgumentException("Execution policy must be declared by the process owner: " + key));
+                if (!owner.outcomesByTask().keySet().containsAll(tasks))
+                    throw new IllegalArgumentException("Unknown execution task: " + key);
+                if (work.putIfAbsent(key, Set.copyOf(tasks)) != null)
+                    throw new IllegalArgumentException("Duplicate execution policy: " + key);
+            });
+            for (var policy : declared) {
+                owners.put(policy.processKey(), registration);
                 if (collected.putIfAbsent(policy.processKey(), policy) != null)
                     throw new IllegalArgumentException("Duplicate process: " + policy.processKey());
                 if (policy.allowedStartVariables().stream().anyMatch(name ->
@@ -43,17 +56,25 @@ public class ProcessRegistry {
             if (tasks.stream().noneMatch(ProcessRegistry::candidateTask))
                 throw new IllegalArgumentException("Process needs at least one independent candidate-group step");
             var taskKeys = tasks.stream().map(UserTask::getId).collect(Collectors.toSet());
+            if (tasks.stream().anyMatch(task -> work.getOrDefault(definition.getKey(), Set.of()).contains(task.getId())
+                    && !candidateTask(task)))
+                throw new IllegalArgumentException("Execution tasks require independent candidates");
             var outcomes = collected.get(definition.getKey()).outcomesByTask();
             if (!taskKeys.equals(outcomes.keySet()) || outcomes.values().stream().anyMatch(values ->
                     values.isEmpty() || values.stream().anyMatch(value -> value.isBlank() || value.length() > 100)))
                 throw new IllegalArgumentException("Task policies and BPMN user tasks differ");
         }
         policies = Map.copyOf(collected);
+        executionTasks = Map.copyOf(work);
         definitionIds = definitions.stream().collect(Collectors.toUnmodifiableMap(
             definition -> definition.getKey(), definition -> definition.getId()));
     }
 
     /** Bước duyệt: giao cho nhóm ${workspace}:role, không có assignee cố định. */
+    public void beforeComplete(String workspace, String processKey, String processId, String taskKey, String taskId, String outcome) {
+        owners.get(processKey).beforeComplete(workspace, processKey, processId, taskKey, taskId, outcome);
+    }
+
     private static boolean candidateTask(UserTask task) {
         return (task.getAssignee() == null || task.getAssignee().isBlank()) && task.getCandidateUsers().isEmpty()
             && !task.getCandidateGroups().isEmpty()
@@ -78,6 +99,12 @@ public class ProcessRegistry {
     }
 
     public boolean supportsDefinition(String id) { return definitionIds.containsValue(id); }
+
+    public boolean executionTask(String processKey, String taskKey) {
+        return executionTasks.getOrDefault(processKey, Set.of()).contains(taskKey);
+    }
+
+    public Map<String, Set<String>> executionTasks() { return executionTasks; }
 
     public Collection<ProcessPolicy> policies() { return policies.values(); }
 }

@@ -13,6 +13,20 @@ import vn.haui.dx.core.common.PageRequest;
  * CONFLICT trùng business key, claim thua, sai bước, gửi lặp; VALIDATION_FAILED biến/outcome không hợp lệ.
  */
 public interface WorkflowService {
+    default TaskExecution execution(String workspace, String taskId) {
+        throw vn.haui.dx.core.common.CoreException.conflict("Task execution is not supported");
+    }
+    default void setPriority(String workspace, String taskId, int priority) {
+        throw vn.haui.dx.core.common.CoreException.conflict("Task priority is not supported");
+    }
+    default TaskExecution execute(String workspace, String taskId, TaskExecution.Action action, String reason, String note) {
+        throw vn.haui.dx.core.common.CoreException.conflict("Task execution is not supported by this workflow implementation");
+    }
+
+    default Page<TaskExecution> queue(String workspace, String assignee, PageRequest page) {
+        throw vn.haui.dx.core.common.CoreException.conflict("Work queue is not supported by this workflow implementation");
+    }
+
     void requireTaskInstance(String workspace, String processInstanceId, String taskId);
 
     /** Khởi tạo; {@code variables} chỉ gồm biến có trong allowedStartVariables. */
