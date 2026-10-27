@@ -20,11 +20,14 @@ public class TicketReviewService implements WorkProjection {
     private final ProcessCapability processes;
     private final ActivityJournal audit;
     private final Validator validator;
+    private final vn.haui.dx.apps.servicedesk.intelligence.BackgroundTicketAssessment assessments;
 
     public TicketReviewService(JdbcTemplate jdbc, TicketRepository tickets, HumanContext humans, PermissionGuard permissions,
-                              WorkInbox inbox, WorkExecution execution, ProcessCapability processes, ActivityJournal audit, Validator validator) {
+                              WorkInbox inbox, WorkExecution execution, ProcessCapability processes, ActivityJournal audit, Validator validator,
+                              vn.haui.dx.apps.servicedesk.intelligence.BackgroundTicketAssessment assessments) {
         this.jdbc=jdbc; this.tickets=tickets; this.humans=humans; this.permissions=permissions;
         this.inbox=inbox; this.execution=execution; this.processes=processes; this.audit=audit; this.validator=validator;
+        this.assessments=assessments;
     }
     @Override public String processKey() { return ServiceDeskProcess.REVIEWED_KEY; }
 
@@ -91,7 +94,7 @@ public class TicketReviewService implements WorkProjection {
         long closedWork=jdbc.queryForObject("select worked_millis from servicedesk_ticket where id=?",Long.class,ticket.id());
         return new TicketReview.View(ticket,state,task==null?null:task.id(),task==null?null:task.assignee(),
             estimates.isEmpty()?null:estimates.get(0),item==null?null:item.workState(),item==null?closedWork/60_000:item.workedMinutes(),
-            item==null?null:item.remainingMinutes(),reopened,classifications.isEmpty()?null:classifications.get(0));
+            item==null?null:item.remainingMinutes(),reopened,classifications.isEmpty()?null:classifications.get(0),assessments.read(workspace,ticket.id()));
     }
 
     @Override public QueueItem project(String workspace, WorkExecution.Item execution) {

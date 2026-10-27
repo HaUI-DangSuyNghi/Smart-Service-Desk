@@ -292,13 +292,62 @@ paths:
       - {$ref: '#/components/parameters/TicketId'}
     get:
       operationId: getTicket
-      description: Same visibility as list. Missing or hidden ticket returns 404. No stored status; use progress and Core inbox.
+      description: Same visibility as list. Missing or hidden ticket returns 404. Assessment is persisted background advice only; GET never calls Intelligence. PENDING may be polled; READY and DEGRADED are terminal and never block manual coordinator review.
       responses:
         '200':
           description: Persisted ticket with canonical process reference.
           content:
             application/json:
               schema: {$ref: '#/components/schemas/Ticket'}
+              examples:
+                pending:
+                  summary: Persisted ticket; background advice is not ready
+                  value: &backgroundTicketExample
+                    id: '11111111-1111-4111-8111-111111111111'
+                    workspace: lab-a
+                    creator: requester-subject
+                    clientRequestId: '22222222-2222-4222-8222-222222222222'
+                    title: wifi
+                    description: Network problem on one device; work can wait
+                    createdAt: '2026-10-27T00:00:00Z'
+                    process:
+                      processInstanceId: example-process-id
+                      processKey: service-desk-reviewed
+                      businessKey: '11111111-1111-4111-8111-111111111111'
+                      workspace: lab-a
+                    state: AWAITING_REVIEW
+                    classification: null
+                    assessment: {status: PENDING, version: 1, result: null, errorCode: null}
+                ready:
+                  summary: Illustrative persisted rules advice, not a coordinator decision
+                  value:
+                    <<: *backgroundTicketExample
+                    assessment:
+                      status: READY
+                      version: 1
+                      errorCode: null
+                      result:
+                        contractVersion: '0.1.0'
+                        profileVersion: service-desk@0.3.0
+                        engine: rules
+                        rulesVersion: '0.3.0'
+                        modelVersion: null
+                        category: NETWORK
+                        priority: LOW
+                        impact: I1
+                        urgency: U2
+                        reasonCode: CLASSIFIED
+                        evidence: [{field: title, text: wifi}]
+                        explanation:
+                          classificationReason: Network signals require coordinator confirmation.
+                          priorityReason: Low priority follows the I1/U2 policy matrix.
+                        needsReview: false
+                        nextQuestions: []
+                degraded:
+                  summary: Permanent service authorization failure; manual review remains available
+                  value:
+                    <<: *backgroundTicketExample
+                    assessment: {status: DEGRADED, version: 1, result: null, errorCode: AUTHORIZATION_REVOKED}
         '400': {$ref: 'core.yaml#/components/responses/BadRequest'}
         '401': {$ref: 'core.yaml#/components/responses/Unauthorized'}
         '403': {$ref: 'core.yaml#/components/responses/Forbidden'}
@@ -797,6 +846,68 @@ components:
             nullable: true
             enum:
             - null
+
+        assessment:
+          description: Persisted background advice only; never assigns or reviews a ticket. Null for tickets without a stored assessment. GET does not invoke AI.
+          anyOf:
+          - $ref: '#/components/schemas/StoredAssessment'
+          - {type: object, nullable: true, enum: [null]}
+
+    StoredAssessment:
+      type: object
+      additionalProperties: false
+      required: [status, version, result]
+      properties:
+        errorCode: {type: string, nullable: true, description: 'Safe machine code only; never upstream response text. May be present during a retry.'}
+        status: {type: string, enum: [PENDING, READY, DEGRADED]}
+        version: {type: integer, enum: [1]}
+        result:
+          anyOf:
+          - $ref: '#/components/schemas/StoredAssessmentResult'
+          - {type: object, nullable: true, enum: [null]}
+      oneOf:
+      - properties:
+          status: {enum: [READY]}
+          result: {$ref: '#/components/schemas/StoredAssessmentResult'}
+      - properties:
+          status: {enum: [PENDING, DEGRADED]}
+          result: {type: object, nullable: true, enum: [null]}
+
+    StoredAssessmentResult:
+      type: object
+      additionalProperties: false
+      required: [contractVersion, profileVersion, engine, rulesVersion, modelVersion, category, priority, impact, urgency, reasonCode, evidence, explanation, needsReview, nextQuestions]
+      properties:
+        contractVersion: {type: string, enum: ['0.1.0']}
+        profileVersion: {type: string, enum: ['service-desk@0.3.0']}
+        engine: {type: string, enum: [rules]}
+        rulesVersion: {type: string, enum: ['0.3.0']}
+        modelVersion: {type: string, nullable: true, enum: [null], description: No model is invoked by the current rules triage profile.}
+        category: {type: string, enum: [NETWORK, SOFTWARE, HARDWARE, ACCOUNT, OTHER]}
+        priority: {type: string, enum: [LOW, MEDIUM, HIGH, CRITICAL]}
+        impact: {type: string, nullable: true, enum: [I1, I2, I3, I4, null]}
+        urgency: {type: string, nullable: true, enum: [U1, U2, U3, U4, null]}
+        reasonCode: {type: string, enum: [CLASSIFIED, ROOT_CAUSE_CONFLICT, INSUFFICIENT_INFORMATION]}
+        evidence:
+          type: array
+          minItems: 1
+          maxItems: 16
+          items:
+            type: object
+            additionalProperties: false
+            required: [field, text]
+            properties:
+              field: {type: string, enum: [title, description]}
+              text: {type: string, minLength: 1}
+        explanation:
+          type: object
+          additionalProperties: false
+          required: [classificationReason, priorityReason]
+          properties:
+            classificationReason: {type: string}
+            priorityReason: {type: string}
+        needsReview: {type: boolean}
+        nextQuestions: {type: array, items: {type: string}}
 
     TicketPage:
       allOf:

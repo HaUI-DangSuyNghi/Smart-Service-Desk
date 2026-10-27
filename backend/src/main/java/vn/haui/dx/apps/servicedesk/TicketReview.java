@@ -14,7 +14,8 @@ public final class TicketReview {
                            @Pattern(regexp="I[1-4]") String impact, @Pattern(regexp="U[1-4]") String urgency) {}
     public record View(@com.fasterxml.jackson.annotation.JsonUnwrapped Ticket ticket, String state,
                        String taskId, String assignee, QueueItem.Estimate estimate,
-                       String workState, Long workedMinutes, Long remainingMinutes, int reopenCount, Classification classification) {}
+                       String workState, Long workedMinutes, Long remainingMinutes, int reopenCount, Classification classification,
+                       vn.haui.dx.apps.servicedesk.intelligence.StoredAssessment assessment) {}
     public record Classification(String category, String priority, String basePriority, boolean escalated,
                                  String group, String source, String impact, String urgency,
                                  String reviewedBy, java.time.Instant reviewedAt) {}

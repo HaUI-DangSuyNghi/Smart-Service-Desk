@@ -70,6 +70,12 @@ class BoundaryGuardTest(unittest.TestCase):
             with self.subTest(table=table):
                 self.mutation(JAVA + 'apps/example/Bad.java', 'String sql = """select * from ' + table + '""";', 'app-private-sql')
 
+    def test_row_lock_clause_is_not_an_update_table_but_following_updates_are_checked(self):
+        path = JAVA + 'apps/example/Query.java'
+        self.write(path, 'String sql = "select * from example_ticket t for update of t skip locked";')
+        self.assertFalse(guard.violations(self.root))
+        self.mutation(path, 'String sql = "select * from example_ticket t for update of t skip locked; update act_ru_task set name_=null";', 'app-private-sql')
+
     def test_reserved_engine_prefix_cannot_be_claimed_by_an_application_name(self):
         self.mutation(JAVA + 'apps/act/Bad.java', 'String sql = "select * from act_ru_task";', 'app-private-sql')
 

@@ -10,6 +10,8 @@ import java.util.Map;
  * Người gọi phải là thành viên workspace; Keycloak không phản hồi → {@code SERVICE_UNAVAILABLE}.
  */
 public interface WorkspaceDirectory {
+    void refresh(String workspace);
+
     /** Thành viên kèm vai trò, sắp theo username. Workspace chưa có group trong Keycloak → danh sách rỗng. */
     List<DirectoryMember> members(String workspace);
 

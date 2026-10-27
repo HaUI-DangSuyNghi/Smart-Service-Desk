@@ -77,6 +77,13 @@ class KeycloakWorkspaceDirectory implements WorkspaceDirectory {
     }
 
     @Override
+    public void refresh(String workspace) {
+        access.requireMember(workspace);
+        cache.remove(workspace);
+        snapshot(workspace);
+    }
+
+    @Override
     public List<DirectoryMember> members(String workspace) {
         access.requireMember(workspace);
         return snapshot(workspace).members();

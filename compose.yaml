@@ -51,6 +51,9 @@ services:
       JWT_JWKS: http://keycloak:8080/realms/dx-lab/protocol/openid-connect/certs
       DX_DIRECTORY_URL: http://keycloak:8080
       DX_DIRECTORY_CLIENT_SECRET: ${DIRECTORY_CLIENT_SECRET:?Run scripts/setup.ps1}
+      DX_BACKGROUND_TOKEN_URL: http://keycloak:8080/realms/dx-lab/protocol/openid-connect/token
+      DX_BACKGROUND_CLIENT_SECRET: ${BACKGROUND_CLIENT_SECRET:?Run scripts/setup.ps1}
+      SERVICE_DESK_BACKGROUND_WORKSPACES: ${SERVICE_DESK_BACKGROUND_WORKSPACES:-lab-a}
     volumes: ["files:/var/lib/dx/files"]
     depends_on:
       postgres: {condition: service_healthy}
