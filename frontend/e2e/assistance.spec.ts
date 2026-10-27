@@ -122,7 +122,9 @@ test("explicit refusal has no quote or citations", async ({ page }) => {
   await page.goto(path);
   await page.getByLabel("Bạn cần hỗ trợ điều gì?").fill("unanswerable question");
   await page.getByRole("button", { name: "Tìm hướng dẫn" }).click();
-  await expect(page.getByRole("status")).toContainText("Chưa có đủ bằng chứng");
+  await expect(
+    page.getByRole("region", { name: "Trợ lý tri thức" }).getByRole("status"),
+  ).toContainText("Chưa có đủ bằng chứng");
   await expect(page.getByRole("blockquote")).toHaveCount(0);
 });
 
@@ -143,7 +145,9 @@ for (const status of [401, 403, 404, 409, 502, 503, 504]) {
     await expect(page.getByRole("blockquote")).toBeVisible();
     await page.getByRole("button", { name: "Tìm hướng dẫn" }).click();
     await expect(page.getByRole("blockquote")).toHaveCount(0);
-    await expect(page.getByRole("status")).not.toBeEmpty();
+    await expect(
+      page.getByRole("region", { name: "Trợ lý tri thức" }).getByRole("status"),
+    ).not.toBeEmpty();
     await expect(page.getByRole("link", { name: "Về danh sách ticket" })).toBeEnabled();
   });
 }

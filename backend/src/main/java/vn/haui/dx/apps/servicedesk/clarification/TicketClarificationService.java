@@ -30,16 +30,19 @@ public class TicketClarificationService {
     private final ActivityJournal audit;
     private final ContextPolicyCatalog policy;
     private final ObjectMapper json;
+    private final org.springframework.context.ApplicationEventPublisher events;
 
     public TicketClarificationService(
             TicketService tickets, TicketContextStore store, HumanContext human,
-            ActivityJournal audit, ContextPolicyCatalog policy, ObjectMapper json) {
+            ActivityJournal audit, ContextPolicyCatalog policy, ObjectMapper json,
+            org.springframework.context.ApplicationEventPublisher events) {
         this.tickets = tickets;
         this.store = store;
         this.human = human;
         this.audit = audit;
         this.policy = policy;
         this.json = json.copy().enable(com.fasterxml.jackson.databind.SerializationFeature.ORDER_MAP_ENTRIES_BY_KEYS);
+        this.events = events;
     }
 
     @Transactional
@@ -74,6 +77,8 @@ public class TicketClarificationService {
                 "servicedesk.ticket.clarify", "servicedesk.ticket", id.toString(),
                 Map.of("answerId", event.id().toString(), "previousContextVersion", Long.toString(state.revision()),
                         "contextVersion", Long.toString(event.contextRevision()))));
+        events.publishEvent(new vn.haui.dx.apps.servicedesk.TicketContextChanged(
+                workspace, id, event.contextRevision()));
         return result(event, false);
     }
 

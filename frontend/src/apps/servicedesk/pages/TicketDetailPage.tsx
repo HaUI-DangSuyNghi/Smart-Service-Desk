@@ -1,4 +1,5 @@
 import { Link, useParams } from "react-router";
+import { useState } from "react";
 import { IconArrowLeft, IconTicket } from "@tabler/icons-react";
 import { useAuth } from "../../../platform/human/auth";
 import { useCurrentWorkspace } from "../../../platform/human/workspace";
@@ -11,6 +12,7 @@ import { askTicketAssistance, triageTicket } from "../services/ticketService";
 import { TicketProgress } from "../tickets/TicketProgress";
 import { TicketSummary } from "../tickets/TicketSummary";
 import { useTicket } from "../tickets/useTickets";
+import { EnrichmentPanel } from "../tickets/EnrichmentPanel";
 
 const WORKSPACE_PATTERN = /^[a-zA-Z0-9_-]{1,100}$/;
 const UUID_PATTERN = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
@@ -73,6 +75,7 @@ const TicketDetailPage = () => {
 
 const TicketDetail = ({ workspace, ticketId }: { workspace: string; ticketId: string }) => {
   const ticket = useTicket(workspace, ticketId);
+  const [contextRevision, setContextRevision] = useState<number | null>(null);
 
   return (
     // Màn rộng: trái là ticket + tiến độ, phải là AI; điện thoại xếp dọc
@@ -91,11 +94,18 @@ const TicketDetail = ({ workspace, ticketId }: { workspace: string; ticketId: st
         )}
       </div>
       <aside className="min-w-0 border-t border-crm-line lg:border-t-0 lg:border-l">
-        <SuggestionCard
-          fetchSuggestion={() => triageTicket(workspace, ticketId)}
-          fieldLabels={SUGGESTION_LABELS}
-          evidenceLabels={EVIDENCE_LABELS}
+        <EnrichmentPanel
+          workspace={workspace}
+          ticketId={ticketId}
+          onRevisionChange={setContextRevision}
         />
+        {contextRevision === 0 && (
+          <SuggestionCard
+            fetchSuggestion={() => triageTicket(workspace, ticketId)}
+            fieldLabels={SUGGESTION_LABELS}
+            evidenceLabels={EVIDENCE_LABELS}
+          />
+        )}
         <AssistantPanel
           ask={(question, signal) => askTicketAssistance(workspace, ticketId, question, signal)}
           subjectLabel="ticket"
