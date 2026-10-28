@@ -154,7 +154,9 @@ class CanonicalTicketIntegrationTest {
     void closureRequiresActualRootConfirmationAndThenClosesFollower(boolean automatic) throws Exception {
         var root = root();
         var follower = create();
+        statisticsState(follower, "intake");
         link(root, follower, 200);
+        statisticsState(follower, "following");
         var handle = getTicket(root).path("taskId").asText();
         mvc.perform(post(TASKS + handle + "/claim").with(as("agent", "agent"))).andExpect(status().isOk());
         mvc.perform(post(TASKS + handle + "/start").with(as("agent", "agent"))).andExpect(status().isOk());
@@ -181,10 +183,13 @@ class CanonicalTicketIntegrationTest {
             assertEquals("REQUESTER",getTicket(root).path("closedBy").asText());
         }
         var task = getTicket(follower).path("taskId").asText();
+        statisticsState(root, "closed");
+        statisticsState(follower, "following");
         mvc.perform(post(TASKS + task + "/claim").with(as("coordinator", "coordinator"))).andExpect(status().isOk());
         mvc.perform(post(TASKS + task + "/complete").with(as("coordinator", "coordinator")).contentType("application/json")
                 .content("{\"expectedTaskKey\":\"follower\",\"outcome\":\"closed\"}")).andExpect(status().is(automatic ? 409 : 204));
         assertEquals(automatic ? "FOLLOWING" : "CLOSED", getTicket(follower).path("state").asText());
+        statisticsState(follower, automatic ? "following" : "closed");
         assertEquals(automatic ? 0L : 1L, jdbc.queryForObject("select count(*) from servicedesk_canonical_link where follower_id=? and state='CLOSED'", Long.class, id(follower)));
     }
 
@@ -226,6 +231,16 @@ class CanonicalTicketIntegrationTest {
                 .content(json.writeValueAsString(Map.of("clientRequestId", UUID.randomUUID(), "title", title, "description", title))))
                 .andExpect(status().isCreated()).andReturn().getResponse().getContentAsString());
     }
+    private void statisticsState(JsonNode ticket, String field) throws Exception {
+        var created = java.time.Instant.parse(ticket.path("createdAt").asText());
+        var result = body(mvc.perform(get(BASE + "/statistics").with(as("owner", "requester"))
+            .param("from",created.toString()).param("to",created.plusNanos(1000).toString()))
+            .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+        assertEquals(1,result.path("total").asLong());
+        assertEquals(1,result.path(field).asLong(),result.toString());
+        assertEquals(result.path("completed"),result.path("closed"));
+    }
+
     private JsonNode getTicket(JsonNode ticket) throws Exception {
         return body(mvc.perform(get(path(ticket)).with(as("owner", "requester")))
                 .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());

@@ -103,7 +103,7 @@ public class TicketService {
         return repository.search(workspace, reader(user, workspace), query, from, to, page);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, isolation=Isolation.REPEATABLE_READ)
     public TicketStatistics statistics(String workspace, String query, Instant from, Instant to) {
         var user = member(workspace);
         filters(query, from, to);

@@ -38,13 +38,23 @@ public class JdbcWorkflowObservations implements WorkflowObservations {
         if (rows.isEmpty()) return List.of();
         var authorized = rows.stream().map(r -> (String) r.get("id")).toList();
         var tasks = new HashMap<String,List<ProcessSnapshot.TaskState>>();
-        jdbc.query("select proc_inst_id_,task_def_key_,suspension_state_ from act_ru_task where proc_inst_id_ in (:ids)",
+        jdbc.query("select t.proc_inst_id_,t.task_def_key_,t.suspension_state_,t.id_,coalesce(v.text_,'NOT_STARTED') as work_state"
+            + " from act_ru_task t left join act_ru_variable v on v.task_id_=t.id_ and v.name_='executionState'"
+            + " where t.proc_inst_id_ in (:ids)",
             Map.of("ids", authorized), (org.springframework.jdbc.core.RowCallbackHandler) row ->
                 tasks.computeIfAbsent(row.getString("proc_inst_id_"), key -> new ArrayList<>()).add(
-                    new ProcessSnapshot.TaskState(row.getString("task_def_key_"), row.getInt("suspension_state_")==1)));
+                    new ProcessSnapshot.TaskState(row.getString("task_def_key_"), row.getInt("suspension_state_")==1,
+                        row.getString("id_"), row.getString("work_state"))));
+        var outcomes = new HashMap<String, Map<String, String>>();
+        jdbc.query("select proc_inst_id_,name_,text_ from act_hi_varinst where proc_inst_id_ in (:ids)"
+            + " and task_id_ is null and name_ like 'outcome\\_%' escape '\\' and text_ is not null",
+            Map.of("ids", authorized), (org.springframework.jdbc.core.RowCallbackHandler) row ->
+                outcomes.computeIfAbsent(row.getString("proc_inst_id_"), key -> new HashMap<>())
+                    .put(row.getString("name_").substring("outcome_".length()), row.getString("text_")));
         return rows.stream().map(r -> new ProcessSnapshot((String)r.get("id"), (String)r.get("workspace"),
             (String)r.get("owner"), (String)r.get("process_key"), (String)r.get("business_key"),
             r.get("history_id") != null, r.get("end_time_") == null ? null : ((java.sql.Timestamp)r.get("end_time_")).toInstant(),
-            (String)r.get("delete_reason_"), (String)r.get("end_act_id_"), tasks.getOrDefault((String)r.get("id"), List.of()))).toList();
+            (String)r.get("delete_reason_"), (String)r.get("end_act_id_"), tasks.getOrDefault((String)r.get("id"), List.of()),
+            outcomes.getOrDefault((String)r.get("id"), Map.of()))).toList();
     }
 }

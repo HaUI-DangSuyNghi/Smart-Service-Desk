@@ -829,17 +829,30 @@ components:
           properties:
             code: {type: string, enum: [INTELLIGENCE_UNAVAILABLE]}
     TicketStatistics:
+      description: >
+        V2 partition: intake + following + awaitingReview + assigned + inProgress + pending + reopened + awaitingConfirmation + closed + unclassified = total.
+        Legacy awaitingHandling and completed are aliases/rollups, not additional partition members.
+        Intake and following are now classified rather than included in legacy unclassified.
       type: object
       additionalProperties: false
-      required: [workspace, visibility, total, awaitingHandling, awaitingConfirmation, completed, unclassified]
+      required: [workspace, visibility, total, awaitingHandling, awaitingConfirmation, completed, unclassified, awaitingReview, assigned, inProgress, pending, reopened, closed, overdue, intake, following]
       properties:
         workspace: {type: string}
         visibility: {type: string, enum: [own, workspace]}
         total: {type: integer, format: int64, minimum: 0}
-        awaitingHandling: {type: integer, format: int64, minimum: 0, description: Exactly one active handle task; includes claimed tasks.}
+        awaitingHandling: {type: integer, format: int64, minimum: 0, description: 'Legacy rollup of active review and handle tasks; includes awaitingReview, assigned, inProgress, pending and reopened.'}
         awaitingConfirmation: {type: integer, format: int64, minimum: 0, description: Exactly one active confirm task.}
         completed: {type: integer, format: int64, minimum: 0, description: Normal ticket completion with no remaining work; excludes cancelled processes.}
         unclassified: {type: integer, format: int64, minimum: 0, description: 'Missing or mismatched scope/history, suspended, deleted or unexpected task configuration; never assumed completed.'}
+        awaitingReview: {type: integer, format: int64, minimum: 0, description: "Active review without prior rework."}
+        assigned: {type: integer, format: int64, minimum: 0, description: "Active handle not started and without prior rework; may be unclaimed."}
+        inProgress: {type: integer, format: int64, minimum: 0, description: "Active handle with native executionState IN_PROGRESS."}
+        pending: {type: integer, format: int64, minimum: 0, description: "Active handle with native executionState PENDING."}
+        reopened: {type: integer, format: int64, minimum: 0, description: "Review or not-started handle after rework; counted once per ticket."}
+        closed: {type: integer, format: int64, minimum: 0, description: "Alias of completed, including R11 AUTO and REQUESTER closure."}
+        overdue: {type: integer, format: int64, minimum: 0, description: "Cross-cutting current unresolved handle SLA breach; excludes resolved work and historical breaches. Uses snapshotted policy and paused business clock; strict deadline comparison."}
+        intake: {type: integer, format: int64, minimum: 0, description: "Active intake task, including rework admission."}
+        following: {type: integer, format: int64, minimum: 0, description: "Active canonical follower, not yet closed."}
     Correction:
       type: object
       additionalProperties: false
