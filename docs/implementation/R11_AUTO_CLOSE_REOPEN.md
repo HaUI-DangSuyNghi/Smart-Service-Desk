@@ -103,18 +103,19 @@ R11 guard implemented:
 
 - `contracts/hpdi/openapi.yaml`: Promoted `REOPENED` and `REOPEN_UNCLAIMED` to `Alert.type` enum.
 - `contracts/openapi/servicedesk.yaml`: Promoted `closedAt`, `closedBy`, `handleResolvedAt`, `confirmStartedAt`, `confirmDeadlineAt`, `confirmGeneration`, `confirmationHistory` to `Ticket` and `TicketProgress`.
-- Verified with `OAS30Validator` against captured real HTTP traffic: 13 requests pass.
+- Verified with `OAS30Validator` against captured real HTTP traffic: 17 responses pass.
 - Verified with `test-servicedesk-execution-contract.py`: 0 new errors versus baseline.
 
 ## 10. Test Evidence
 
 | Suite / Gate | Tests | PASS | FAIL | ERROR | SKIP | Details |
 | --- | --- | --- | --- | --- | --- | --- |
-| Backend Full (Linux container, real PostgreSQL) | 814 | 814 | 0 | 0 | 0 | Includes ArchUnit tier boundaries, SLA, AI-D2, R5-R9 regressions |
+| Backend Full (Linux container, real PostgreSQL) | 823 | 823 | 0 | 0 | 0 | Includes ArchUnit tier boundaries, SLA, AI-D2, R5-R9 regressions |
+| Targeted R11/R5/R6/R7/R8/R9, Intake/Canonical and migrations | 159 | 159 | 0 | 0 | 0 | Includes legacy enrollment races, rollback, native upgrade, stale scope and 105-generation queue fairness |
 | Core-only Profile | 106 | 106 | 0 | 0 | 0 | Validates Core isolation from app dependencies |
 | Second-domain Profile | 43 | 43 | 0 | 0 | 0 | Validates Room Request without Service Desk |
-| R11 Real Runtime Probe (Keycloak JWT, Flowable, Postgres) | 12 | 12 | 0 | 0 | 0 | Validates 72h continuous clock, signed service worker, restart persistence, alert delivery |
-| OpenAPI Contract Validation | 13 | 13 | 0 | 0 | 0 | Real HTTP traffic matches OpenAPI 3.0 specification |
+| R11 Real Runtime Probe (Keycloak JWT, Flowable, Postgres) | 14 | 14 | 0 | 0 | 0 | Validates 72h continuous clock, signed service worker, restart persistence, alert delivery |
+| OpenAPI Contract Validation | 17 | 17 | 0 | 0 | 0 | Real HTTP traffic matches OpenAPI 3.0 specification |
 | Whole OpenAPI Baseline Comparison | 4 docs | 4 docs | 0 | 0 | 0 | Zero regressions vs develop baseline |
 | Tier Boundaries | 43 checks | 43 | 0 | 0 | 0 | Python architectural gates pass |
 
@@ -131,6 +132,8 @@ R11 guard implemented:
 10. `old Agent does not receive reopen events`: PASS
 11. `restart after commit preserves AUTO provenance`: PASS
 12. `restart and retries do not duplicate completion audit`: PASS
+13. `restart enrolls legacy active confirm from native task time`: PASS
+14. `overdue legacy generation stays active on manual rollout hold`: PASS
 
 ## 11. Findings And Business Decisions
 
@@ -155,3 +158,32 @@ R11 guard implemented:
 - Fairness: successfully alerted rows leave the pending query; failures/stale work rotate by checked_at,workspace,generation with a 100-row batch. Enrollment failure is isolated per process and logged, not silently accepted.
 - Migration/runtime evidence includes V27 native active confirmation, V29 empty ledger, then V30 startup/enrollment; original migration checksums and ticket state are asserted unchanged. No V1-V29 migration is edited.
 - Merge policy: Draft PR #59 only; independent review and owner decision remain required. MERGE COMMIT ONLY. Hosted CI billing remains BLOCKED, never CI PASS.
+
+
+## 14. Final Local Verification Receipt
+
+Final tested implementation SHA: `42c3c87db413c09fa85a832badca71a1cab7713c` (2026-10-28).
+A subsequent documentation-only receipt commit does not change the tested Java, SQL, contracts, acceptance script or test sources.
+
+- Backend Full: 823/823; Core-only: 106/106; Second-domain/Room Request: 43/43; targeted: 159/159. Every Maven run has 0 failures, 0 errors and 0 skipped tests. PostgreSQL 16.6, Flowable 7.1, Linux Maven/Temurin 21 runner.
+- Real runtime: 14/14 checks with signed Keycloak JWTs and a rebuilt packaged backend. Four lifecycle/restart phases include missing-ledger enrollment and overdue rollout hold. UTC offset is injected only through the test classpath; no production time-travel endpoint exists.
+- Clean migrations and V27 -> V29 -> V30 active-native-confirm upgrade pass. Existing checksums, ticket state and process instance are preserved. Only new V30 is added relative to reviewed HEAD 99dc489; V1-V29 are unchanged.
+- Queue fairness: a real PostgreSQL 105-generation backlog drains 100 then 5; the next poll never reselects the cursor-marked rows. Separate real-engine tests verify alert publication/audit/cursor rollback and exactly-once event identity.
+- Tier source boundary gate PASS; 43/43 boundary checker self-tests PASS; ArchUnit passes within Maven. OpenAPI validates 17 actual runtime responses plus the targeted MockMvc evidence and unchanged whole-document error baselines for all four promoted/target documents.
+- Local raw evidence: `.local/task-execution-full/summary.json`, `.local/task-execution-core-only/summary.json`, `.local/task-execution-second-domain/summary.json`, `.local/task-execution-full-targeted/summary.json`, `.local/r11-runtime.json`, `.local/r11-http.json`, `.local/r11-review-final-contract.log`. Logs are local artifacts, not hosted CI results.
+- P0: no confirmed issue in this follow-up. P1 legacy active-confirm gap: fixed for verified supported active generations; overdue or unverifiable history is fail-closed/manual handling, not retroactive closure. P2 repeated reopen polling: fixed with transactional persistent cursor and batch-fairness coverage.
+- Hosted CI: BLOCKED. Re-read check-run 122633977187 annotation: jobs were not started because account payments failed or spending limit must be increased. Local PASS is not hosted CI PASS.
+- Merge readiness: NOT READY. PR #59 stays Draft pending independent review and owner decision on CI/release gates and manual legacy handling. MERGE COMMIT ONLY; no merge or force-push performed.
+
+Reproduction:
+```powershell
+scripts/test-task-execution.ps1 -Profile full -BuildImage maven:3.9.11-eclipse-temurin-21
+scripts/test-task-execution.ps1 -Profile core-only -BuildImage maven:3.9.11-eclipse-temurin-21
+scripts/test-task-execution.ps1 -Profile second-domain -BuildImage maven:3.9.11-eclipse-temurin-21
+scripts/test-task-execution.ps1 -Profile full -Test 'TicketIntegrationTest,ConfirmationUpgradeIntegrationTest,ServiceDeskMigrationIntegrationTest,AgentDutyUpgradeIntegrationTest,CanonicalTicketIntegrationTest,IntakeAdmissionIntegrationTest' -BuildImage maven:3.9.11-eclipse-temurin-21
+python scripts/acceptance/r11-confirmation.py
+python scripts/check-core-contract.py .local/r11-http.json contracts/openapi/servicedesk.yaml
+python scripts/check-tier-boundaries.py
+python scripts/test-tier-boundaries.py
+```
+Runtime probe requires the full-profile packaged jar and compiled TimerRuntimeProbe test classes (build with `mvn -DskipTests package` before launching the probe). Contract scripts require the existing Python OpenAPI validator dependencies.
