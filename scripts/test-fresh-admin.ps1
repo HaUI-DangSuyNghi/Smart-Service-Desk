@@ -2,13 +2,18 @@ param(
     [string]$Maven = 'mvn',
     [string]$BuildImage,
     [string]$Tests,
+    [switch]$PackagedProof,
     [ValidateSet('focused','core-only','full','second-domain')][string]$Profile = 'focused'
 )
 $ErrorActionPreference = 'Stop'
+if ($PackagedProof -and !$BuildImage) { throw 'Packaged proof requires BuildImage' }
 $root = Split-Path $PSScriptRoot -Parent
 $name = 'fresh-admin-' + [guid]::NewGuid().ToString('N').Substring(0, 12)
 $evidence = Join-Path $root ".local/$name"
 New-Item -ItemType Directory -Path $evidence | Out-Null
+@{ sha=(git -C $root rev-parse HEAD); branch=(git -C $root branch --show-current);
+    worktree=@(git -C $root status --porcelain); profile=$Profile; tests=$Tests;
+    packaged=[bool]$PackagedProof } | ConvertTo-Json -Depth 4 | Set-Content (Join-Path $evidence 'source.json') -Encoding UTF8
 $password = [guid]::NewGuid().ToString('N')
 $secret = [guid]::NewGuid().ToString('N')
 $realm = Get-Content -LiteralPath (Join-Path $root 'infra/keycloak/realm-template.json') -Raw -Encoding UTF8 | ConvertFrom-Json
@@ -100,7 +105,12 @@ try {
         $env:WORKFLOW_TEST_DB_PASSWORD = $password
         $env:FRESH_ADMIN_TEST_URL = 'http://keycloak:8080'
         $arguments[3] = '/work/backend/pom.xml'
-        $command = 'tar -C /source --exclude=backend/target --exclude=backend/.local -cf - backend contracts docs/architecture | tar -C /work -xf -; mvn "$@"; result=$?; cp /work/backend/target/surefire-reports/TEST-*.xml /evidence/; exit $result'
+        $command = 'tar -C /source --exclude=backend/target --exclude=backend/.local -cf - backend contracts docs/architecture | tar -C /work -xf -; mvn "$@"; result=$?; cp /work/backend/target/surefire-reports/TEST-*.xml /evidence/; '
+        if ($PackagedProof) {
+            if ($Profile -ne 'full' -or $Tests) { throw 'Packaged proof requires unfiltered Full' }
+            $command += 'if [ "$result" = 0 ]; then mkdir /evidence/packaged; sha256sum /work/backend/target/dx-platform-0.1.0-SNAPSHOT.jar > /evidence/packaged/backend-jar.sha256; mvn -B -o -Dtest=SettingsHttpAcceptanceTest -Dsettings.jar=/work/backend/target/dx-platform-0.1.0-SNAPSHOT.jar test; result=$?; cp /work/backend/target/surefire-reports/TEST-vn.haui.dx.hpdi.settings.SettingsHttpAcceptanceTest.xml /evidence/packaged/; fi; '
+        }
+        $command += 'for proof in /work/backend/target/settings-http-*; do [ ! -d "$proof" ] || cp -r "$proof" /evidence/; done; exit $result'
     }
     $ErrorActionPreference = 'Continue'
     if ($BuildImage) {

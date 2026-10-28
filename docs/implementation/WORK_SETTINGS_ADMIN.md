@@ -3,9 +3,10 @@
 Date: 2026-10-28 (Asia/Saigon). Branch: `feature/work-settings-admin`.
 Runtime baseline: `246a8d6676f4030b474e0f809fbb9ce652339cb8`.
 Reviewed document: `06c3996cd159430bb4febd62b65bba780ba089f7`.
-Phase 1 design below is retained as historical/planned context. Settings APIs,
-storage and migrations were NOT_IMPLEMENTED at Phase 1. Core fresh-admin capability is
-implemented only in Phase 2 Commit 1; current evidence and limits are in section 10.
+Sections 1-9 retain the historical Phase 1 design and baseline evidence; their
+NOT_IMPLEMENTED/NOT_RUN labels are historical, not current delivery status.
+Current Phase 2 implementation, evidence and remaining limits are in sections
+10-13. Both settings APIs and V32/V33 are implemented as storage-only foundation.
 
 ## 1. Approved Scope And GAP Matrix
 
@@ -613,3 +614,130 @@ Full targeted PASS: 20 tests, zero FAIL/ERROR/SKIP;
 HTTP/CAS/concurrency/overflow/audit rollback and clean/upgrade V31->V33).
 Tier boundaries PASS after using the HPDI error response contract for 503,
 rather than a forbidden direct App-to-Core DTO reference. Full acceptance next.
+
+## 13. Phase 2 Commit 4 - Acceptance And Delivery
+
+### Current application/snapshot status
+
+| Configuration | Persistent API | New business operations | Active/snapshotted work |
+| --- | --- | --- | --- |
+| Work assignment, shifts, sla, critical, alerts, closing, estimate | V32, GET/PUT | PERSISTED_NOT_ENFORCED | Unchanged |
+| Service Desk categoryGroups, estimateDefaults | V33, GET/PUT | PERSISTED_NOT_ENFORCED | Unchanged |
+
+Administrative storage is NOT runtime truth, even for newly created work.
+Runtime SlaPolicy r5-v1, deployment properties, date-specific schedules, approved
+ET, ticket SLA/deadline snapshots, R11's continuous 72-hour confirmation policy
+and Core execution locks remain unchanged. R7 Emergency Auto-Queue is BLOCKED.
+No new runtime policy version is introduced. Foundation version is a CAS row
+version, not a ticket policy version. Future consumer wiring needs its own
+approved application point, workspace group validation and snapshot decisions;
+none are silently implemented here. BD-01 is sufficient for Foundation only.
+
+### Executed pre-commit acceptance evidence
+
+These runs are separate from the historical baseline and earlier failed runs.
+All database/runtime suites use Linux/JDK17, PostgreSQL 16.6 and real Keycloak
+26.0.8. Raw Maven log and Surefire XML are retained in each evidence directory.
+
+| Gate | PASS | FAIL | ERROR | SKIP | Evidence under .local |
+| --- | ---: | ---: | ---: | ---: | --- |
+| Backend Full, unfiltered | 953 | 0 | 0 | 0 | fresh-admin-70e8ae51b99b |
+| Packaged executable JAR HTTP/restart (separate run) | 1 | 0 | 0 | 0 | fresh-admin-70e8ae51b99b/packaged |
+| Core-only, unfiltered | 157 | 0 | 0 | 0 | fresh-admin-57cf28c0f0d9 |
+| Second-domain, unfiltered | 370 | 0 | 0 | 0 | fresh-admin-af680787f81a |
+| Targeted R3/R5/R7/R9/R11/R12 + settings + fresh auth | 324 | 0 | 0 | 0 | fresh-admin-2ac11a190eb1 |
+| Boundary source / regression checks | 43 checks + checker | 0 | 0 | 0 | scripts/check-tier-boundaries.py; scripts/test-tier-boundaries.py |
+
+Final committed-SHA reruns are reported in delivery; source.json records SHA,
+profile/filter/packaged mode and worktree state. This avoids claiming that a
+pre-commit working-tree run tested a not-yet-existing SHA. The runner records
+the executable JAR SHA-256 for the final packaged proof. No tracked source is
+changed between final commit and final verification.
+
+Reproduce: scripts/test-fresh-admin.ps1 -BuildImage dx-platform-build:0.1.0
+-Profile full -PackagedProof; repeat -Profile core-only and second-domain with
+NO -Tests filter. Targeted selection is the section 8 list plus *Settings*Test,
+KeycloakFreshAdmin*Test and JdbcAuditServiceTest, using the same runner -Tests.
+No legacy migration is modified. Migration tests assert clean install and
+explicit Full V31->V32->V33, Second-domain V31->V32 without V33, Core-only V4
+without HPDI/App resources; prior checksums/data and singleton constraints are
+preserved. Full regression migration assertions now expect V33, not obsolete
+V31; this changes test expectations only, not historical SQL or runtime policy.
+
+### Real HTTP and restart proof
+
+SettingsHttpAcceptanceTest runs production JVMs and performs actual socket HTTP
+requests, not MockMvc/JWT mocks. A bootstrap administrator creates disposable
+human/service identities in the runner's private realm. A privileged service
+account has a real dx-core-audience JWT; both API methods deny it. Both methods
+also deny actual Requester/Agent/Coordinator JWTs, disabled and revoked admin
+with the SAME previously valid JWT. Missing/invalid JWT is 401; authorization
+denial 403; unavailable fresh directory connection 503. The outage fixture
+closes a forwarding listener used only for directory reads while the real
+Keycloak issuer remains live: it tests unavailable fresh lookup, not Keycloak
+process termination or current-session validity. No grants are expanded.
+
+Successful GET/PUT, nested/read-only/duplicate/fractional validation 400, stale
+and concurrent CAS 409, audit actor/request-ID/before-after version linkage,
+injected audit INSERT failure 500 with unchanged payload/version/metadata/audit
+and successful retry are asserted. MockMvc tests additionally cover overflow
+to Long.MAX_VALUE and rejection without wrap. Reserved system audit requires
+fresh admin; both plain and encoded-colon workspace paths deny ordinary users.
+The explicit system read route permits a freshly authorized human admin.
+
+Two distinct application JVMs start against the SAME database/schema; the first
+is terminated before the second starts. Payload/version/updatedAt/updatedBy and
+audit survive exactly, without deleting/reseeding the database between starts.
+Cleanup occurs only after assertions. The additional packaged run executes the
+repackaged production JAR, twice. Application classpath runs exclude test-classes
+so sample test BPMNs cannot contaminate Second-domain's production registry.
+Raw responses.json and jvm-1.log/jvm-2.log are retained in settings-http-* below
+the evidence directory. No bearer tokens or credentials are written to responses.
+
+### OpenAPI and failures (not waived)
+
+scripts/test-settings-contract.py validates 62 non-500 settings HTTP responses
+per Full run against live schemas, checks target/live schema parity and promoted
+route references. Second-domain validates 31 and marks Service Desk absent as
+NOT_APPLICABLE, not a skipped backend test. The two expected audit-failure 500
+responses are not falsely claimed to conform to the Problem schema.
+Whole Service Desk live and target OpenAPI PASS. R12 contract checks PASS.
+
+Whole HPDI live OpenAPI remains BASELINE_FAIL: KnowledgePage has a description
+string nested under properties instead of a property schema (three validator
+diagnostics). HPDI target remains BASELINE_FAIL: the alerts unread description
+contains an unquoted comma, parsed as an extra 'cho badge' key (one diagnostic).
+Both error sets match 7dfb2be exactly; settings introduces no new spec errors.
+Their impact is whole-document tool rejection despite valid settings subsets.
+scripts/test-core-contract.py also retains its baseline FAIL: an old statistics
+fixture omits required R12 awaitingReview. Raw logs: .local/settings-core-contract.log,
+.local/settings-r12-contract.log and responses.json.contract.log alongside HTTP
+evidence. These are NOT an all-OpenAPI PASS and receive no self-issued waiver.
+
+Earlier Full acceptance had 22 FAIL (obsolete V31 migration assertions plus
+child Flowable schema isolation), zero ERROR/SKIP. Earlier Second-domain runs
+had one child fixture startup FAIL each: first Flowable schema metadata, then
+test sample BPMNs contaminating the production process registry. Fixed only
+test expectations/fixtures; production workflow and registration are untouched.
+All these failed runs remain in fresh-admin-8714b72d453d,
+fresh-admin-0130327d638b and fresh-admin-36b5172943ef, not counted as PASS.
+
+### Self-review and merge readiness
+
+Reviewed the entire branch diff against develop@246a8d6, including the accepted
+Core capability. No remaining P0/P1 found in the scoped implementation. Atomic
+CAS plus settings-row lock makes audit-before accurate under concurrency; audit
+MANDATORY joins the caller's transaction. Fresh auth precedes any settings read
+or mutation. Core imports no upper tier; HPDI imports no Service Desk; App only
+uses HPDI public APIs. Existing runtime policy/eligibility/locking source and
+V1-V31 are unchanged. Boundary source and Java ArchUnit gates pass.
+
+P2: accepted Core bounded human-search/lockout/session limitations remain;
+Foundation does not verify global specialty names exist in every workspace;
+runtime integrations and snapshot application decisions remain future scope.
+Known baseline OpenAPI/fixture failures remain explicit. Hosted CI is tracked
+on the final Draft PR and is NOT claimed PASS from local runs. Billing failure,
+if observed, is BLOCKED, never waived. Merge readiness is conditional on final
+independent review, hosted checks and explicit handling of baseline failures.
+Draft PR targets develop; MERGE COMMIT ONLY after final review. No merge,
+squash/rebase, force-push or runtime/R7 implementation is performed here.

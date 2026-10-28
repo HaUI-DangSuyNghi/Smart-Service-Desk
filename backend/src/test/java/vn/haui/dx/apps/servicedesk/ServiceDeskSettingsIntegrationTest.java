@@ -39,6 +39,40 @@ class ServiceDeskSettingsIntegrationTest {
     @Autowired ObjectMapper json;
     @Autowired JdbcTemplate jdbc;
     @MockBean FreshAdminAuthorization authorization;
+    @Autowired vn.haui.dx.hpdi.process.api.SlaPolicy policy;
+    @Test void administrativeChangesDoNotWireRuntimePoliciesEligibilityOrEstimates() throws Exception {
+        when(authorization.requirePlatformAdmin()).thenReturn("admin");
+        ObjectNode service = request();
+        ObjectNode work = (ObjectNode) json.readTree(mvc.perform(get("/api/hpdi/v1/settings/work").with(jwt()))
+            .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+        work.remove(List.of("updatedAt", "updatedBy"));
+        ObjectNode serviceChange = service.deepCopy(), workChange = work.deepCopy();
+        String policyBefore = json.writeValueAsString(policy);
+        var estimates = jdbc.queryForList("select row_to_json(r)::text from servicedesk_review r order by ticket_id");
+        var deadlines = jdbc.queryForList("select row_to_json(s)::text from servicedesk_sla s order by ticket_id,review_task_id");
+        serviceChange.withObject("categoryGroups").put("HARDWARE", "new-specialty");
+        serviceChange.withObject("estimateDefaults").withObject("HARDWARE").put("MEDIUM", 1);
+        workChange.withObject("sla").withObject("targets").withObject("LOW").put("startWithinMinutes", 1);
+        workChange.withObject("assignment").put("maxInProgress", 20);
+        workChange.withObject("closing").put("autoCloseAfterDays", 99);
+        try {
+            assertEquals(200, replace(serviceChange));
+            mvc.perform(put("/api/hpdi/v1/settings/work").with(jwt()).contentType("application/json").content(workChange.toString()))
+                .andExpect(status().isOk());
+            assertEquals(policyBefore, json.writeValueAsString(policy));
+            assertEquals(510, policy.targets().get(vn.haui.dx.hpdi.process.api.SlaPolicy.Priority.LOW).startMinutes());
+            assertEquals(60, TicketReview.defaultMinutes(TicketReview.Category.HARDWARE, TicketReview.Priority.MEDIUM));
+            assertEquals("hardware", TicketAssignmentEligibility.supportGroup(TicketReview.Category.HARDWARE));
+            assertNull(TicketAssignmentEligibility.supportGroup(TicketReview.Category.OTHER));
+            assertEquals(estimates, jdbc.queryForList("select row_to_json(r)::text from servicedesk_review r order by ticket_id"));
+            assertEquals(deadlines, jdbc.queryForList("select row_to_json(s)::text from servicedesk_sla s order by ticket_id,review_task_id"));
+        } finally {
+            service.put("version", current().path("version").asLong()); assertEquals(200, replace(service));
+            work.put("version", jdbc.queryForObject("select version from hpdi_work_settings", Long.class));
+            mvc.perform(put("/api/hpdi/v1/settings/work").with(jwt()).contentType("application/json").content(work.toString()))
+                .andExpect(status().isOk());
+        }
+    }
     private ObjectNode current() throws Exception {
         return (ObjectNode) json.readTree(mvc.perform(get(PATH).with(jwt().jwt(token -> token.subject("admin"))))
             .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());

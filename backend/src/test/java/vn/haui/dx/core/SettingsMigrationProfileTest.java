@@ -25,6 +25,11 @@ class SettingsMigrationProfileTest {
                     Flyway.configure().dataSource(source).schemas(schema).target(core ? "4" : "31").load().migrate();
                     before = jdbc.queryForList("select version,checksum from flyway_schema_history where version is not null order by installed_rank");
                     jdbc.update("insert into audit_event(id,actor,action,resource_type,resource,workspace,request_id,details) values(?, 'proof','proof.before','proof','1','lab-a','proof','{}')", UUID.randomUUID());
+                    if (!core && serviceSeed) {
+                        Flyway.configure().dataSource(source).schemas(schema).target("32").load().migrate();
+                        assertEquals(1, jdbc.queryForObject("select version from hpdi_work_settings", Integer.class));
+                        assertNull(jdbc.queryForObject("select to_regclass('servicedesk_settings')::text", String.class));
+                    }
                 }
                 var flyway = Flyway.configure().dataSource(source).schemas(schema).load();
                 flyway.migrate(); assertTrue(flyway.validateWithResult().validationSuccessful);
@@ -43,6 +48,14 @@ class SettingsMigrationProfileTest {
                     assertThrows(org.springframework.dao.DataAccessException.class, () -> jdbc.update("update hpdi_work_settings set id=2"));
                     assertThrows(org.springframework.dao.DataAccessException.class, () -> jdbc.update("update hpdi_work_settings set version=0"));
                     assertThrows(org.springframework.dao.DataAccessException.class, () -> jdbc.update("update hpdi_work_settings set payload='{}'"));
+                    if (serviceSeed) {
+                        jdbc.update("update servicedesk_settings set version=2,updated_by='persistent' where id=1");
+                        assertEquals("persistent", reconnected.queryForObject("select updated_by from servicedesk_settings", String.class));
+                        flyway.migrate(); assertEquals(2, reconnected.queryForObject("select version from servicedesk_settings", Integer.class));
+                        assertThrows(org.springframework.dao.DataAccessException.class, () -> jdbc.update("update servicedesk_settings set id=2"));
+                        assertThrows(org.springframework.dao.DataAccessException.class, () -> jdbc.update("update servicedesk_settings set version=0"));
+                        assertThrows(org.springframework.dao.DataAccessException.class, () -> jdbc.update("update servicedesk_settings set payload='{}'"));
+                    }
                 }
             } finally { new JdbcTemplate(source).execute("drop schema if exists " + schema + " cascade"); }
         }
