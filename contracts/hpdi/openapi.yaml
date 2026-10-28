@@ -7,6 +7,75 @@ info:
 security:
 - bearerAuth: []
 paths:
+  /api/hpdi/v1/workspaces/{workspace}/schedules:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+    get:
+      operationId: listAgentSchedules
+      description: Coordinator with task:assign reads the current workspace Agent roster; Agent with task:handle reads only their own schedule.
+      responses:
+        '200':
+          description: Current schedules; version zero means legacy manual duty
+          content:
+            application/json:
+              schema: {type: array, items: {$ref: '#/components/schemas/AgentSchedule'}}
+        '403': {$ref: '#/components/responses/Forbidden'}
+  /api/hpdi/v1/workspaces/{workspace}/schedules/{subject}:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+      - {name: subject, in: path, required: true, schema: {type: string, maxLength: 100}, description: Current Agent subject or me}
+    get:
+      operationId: getAgentSchedule
+      description: Coordinator with task:assign or own Agent with task:handle. Current membership required.
+      responses:
+        '200':
+          description: Current schedule
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AgentSchedule'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+    put:
+      operationId: replaceAgentSchedule
+      description: >-
+        Coordinator with task:assign replaces the complete date-specific schedule using the last read version
+        (zero for first creation). Explicit enabled=true opts into schedule enforcement; empty shifts with
+        enabled=true means no eligible shift. enabled=false restores manual-only behavior. Omit a shift
+        to cancel it. Previous shift versions and transactional audit are retained. No recurring/leave API.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [version, enabled, shifts]
+              properties:
+                version: {type: integer, format: int64, minimum: 0, maximum: 9223372036854775806}
+                enabled: {type: boolean}
+                shifts: {type: array, maxItems: 366, items: {$ref: '#/components/schemas/AgentShift'}}
+      responses:
+        '200':
+          description: Committed schedule with incremented version
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AgentSchedule'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /api/hpdi/v1/workspaces/{workspace}/schedules/{subject}/effective-duty:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+      - {name: subject, in: path, required: true, schema: {type: string, maxLength: 100}}
+    get:
+      operationId: getEffectiveDuty
+      description: Coordinator with task:assign or own Agent with task:handle; current membership required. Does not mutate manual duty or work execution.
+      responses:
+        '200':
+          description: Evaluated duty at server time; start inclusive and end exclusive
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/EffectiveDuty'}
+        '403': {$ref: '#/components/responses/Forbidden'}
   /api/hpdi/v1/workspaces/{workspace}/tasks/{id}/release:
     parameters:
       - {$ref: '#/components/parameters/Workspace'}
@@ -962,7 +1031,7 @@ components:
         onDuty: {type: boolean}
         loadMinutes: {type: integer, format: int64, minimum: 0, description: 'Other assigned execution workload, excluding only the task being considered for assignment. Preview excludes no existing handle task.'}
         assignedToday: {type: integer, format: int64, minimum: 0}
-        shiftRemainingMinutes: {type: integer, minimum: 0, nullable: true, description: Not scheduled in this release; always null.}
+        shiftRemainingMinutes: {type: integer, minimum: 0, nullable: true, description: Whole minutes until current enabled shift ends; null for manual-only or outside a shift. Compare with estimateMinutes; ESTIMATE_EXCEEDS_SHIFT in reason requires Coordinator overtime or R6 handover decision.}
         recommended: {type: boolean}
         excludedReason: {type: string, nullable: true, enum: [OFF_DUTY, IS_REQUESTER, null]}
     AssignmentSuggestion:
@@ -979,8 +1048,11 @@ components:
     DutyStatus:
       type: object
       additionalProperties: false
-      required: [subject, onDuty, note, updatedAt]
+      required: [subject, onDuty, note, updatedAt, effectiveDuty]
       properties:
+        effectiveDuty:
+          type: boolean
+          description: Manual onDuty AND current shift when schedule enforcement is enabled; otherwise manual onDuty. New assignments use this value.
         subject:
           type: string
         onDuty:
@@ -993,6 +1065,37 @@ components:
           type: string
           format: date-time
           nullable: true
+    AgentShift:
+      type: object
+      additionalProperties: false
+      required: [startsAt, endsAt]
+      properties:
+        startsAt: {type: string, format: date-time, description: Absolute instant including offset; inclusive}
+        endsAt: {type: string, format: date-time, description: Absolute instant including offset; exclusive; after start and at most 24 hours later}
+        timezone: {type: string, maxLength: 100, default: Asia/Ho_Chi_Minh, description: IANA timezone; stored with absolute instants. No implicit UTC local time conversion.}
+    AgentSchedule:
+      type: object
+      additionalProperties: false
+      required: [subject, version, enabled, shifts]
+      properties:
+        subject: {type: string}
+        version: {type: integer, format: int64, minimum: 0}
+        enabled: {type: boolean}
+        shifts: {type: array, items: {$ref: '#/components/schemas/AgentShift'}}
+    EffectiveDuty:
+      type: object
+      additionalProperties: false
+      required: [manualDuty, scheduleEnabled, scheduledDuty, onDuty, shiftStart, shiftEnd, shiftRemainingMinutes, scheduleVersion, reason]
+      properties:
+        manualDuty: {type: boolean}
+        scheduleEnabled: {type: boolean}
+        scheduledDuty: {type: boolean}
+        onDuty: {type: boolean}
+        shiftStart: {type: string, format: date-time, nullable: true}
+        shiftEnd: {type: string, format: date-time, nullable: true}
+        shiftRemainingMinutes: {type: integer, minimum: 0, nullable: true}
+        scheduleVersion: {type: integer, format: int64, minimum: 0}
+        reason: {type: string, enum: [MANUAL_OFF_DUTY, OUTSIDE_SHIFT, SCHEDULE_AND_MANUAL, LEGACY_MANUAL]}
     Priority:
       type: string
       enum:

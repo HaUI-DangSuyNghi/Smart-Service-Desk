@@ -22,16 +22,23 @@ public class TicketAssignmentEligibility {
         };
     }
     public void require(String workspace, TicketReview.Category category, String creator, String subject) {
+        require(workspace,category,creator,subject,true);
+    }
+    public void requireExisting(String workspace, TicketReview.Category category, String creator, String subject) {
+        require(workspace,category,creator,subject,false);
+    }
+    private void require(String workspace, TicketReview.Category category, String creator, String subject, boolean newAssignment) {
         if (subject == null) return;
         if (subject.equals(creator)) throw CapabilityException.forbidden("Independent agent required");
         if (directory.currentAgents(workspace, supportGroup(category)).stream().noneMatch(agent -> subject.equals(agent.subject())))
             throw CapabilityException.validation("Current support group agent membership required");
-        if (!duty.onDuty(workspace, subject)) throw CapabilityException.conflict("Agent is off duty");
+        if (!(newAssignment ? duty.onDuty(workspace,subject) : duty.manualDuty(workspace,subject)))
+            throw CapabilityException.conflict("Agent is off duty");
     }
     public void requireIncumbent(String workspace, String creator, String subject) {
         if (subject == null || subject.equals(creator)
                 || directory.currentAgents(workspace, null).stream().noneMatch(agent -> subject.equals(agent.subject())))
             throw CapabilityException.forbidden("Current independent agent required");
-        if (!duty.onDuty(workspace, subject)) throw CapabilityException.conflict("Agent is off duty");
+        if (!duty.manualDuty(workspace,subject)) throw CapabilityException.conflict("Agent is off duty");
     }
 }

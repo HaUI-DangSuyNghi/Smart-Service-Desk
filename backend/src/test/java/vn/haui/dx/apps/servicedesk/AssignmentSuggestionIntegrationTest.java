@@ -38,6 +38,7 @@ class AssignmentSuggestionIntegrationTest {
     @Autowired ObjectMapper json;
     @Autowired WorkspaceDirectory directory;
     @SpyBean WorkflowService workflow;
+    @Autowired TicketAlerts ticketAlerts;
     private String first;
     private String second;
     private String owner;
@@ -54,8 +55,10 @@ class AssignmentSuggestionIntegrationTest {
             jdbc.update("insert into hpdi_agent_duty(workspace,subject,on_duty) values('lab-a',?,true)",subject);
     }
     private void members(String... subjects) {
-        when(directory.members("lab-a")).thenReturn(Arrays.stream(subjects)
+        var roster=new ArrayList<>(Arrays.stream(subjects)
             .map(subject -> new DirectoryMember(subject,subject,null,Set.of(WorkspaceRole.AGENT))).toList());
+        roster.add(new DirectoryMember("coordinator","coordinator",null,Set.of(WorkspaceRole.COORDINATOR)));
+        when(directory.members("lab-a")).thenReturn(roster);
     }
     private JsonNode create() throws Exception {
         return json.readTree(mvc.perform(post(BASE).with(as(owner,"requester")).contentType("application/json")
@@ -113,6 +116,100 @@ class AssignmentSuggestionIntegrationTest {
     private JsonNode candidate(JsonNode response, String subject) {
         return java.util.stream.StreamSupport.stream(response.path("candidates").spliterator(),false)
             .filter(candidate -> subject.equals(candidate.path("subject").asText())).findFirst().orElseThrow();
+    }
+
+    private void schedule(String subject, long version, boolean current) throws Exception {
+        var start=java.time.Instant.now().minusSeconds(current ? 60 : 7200);
+        var body=json.createObjectNode().put("version",version).put("enabled",true);
+        body.putArray("shifts").addObject().put("startsAt",start.toString()).put("endsAt",start.plusSeconds(current ? 1260 : 3600).toString());
+        mvc.perform(put("/api/hpdi/v1/workspaces/lab-a/schedules/"+subject).with(as("coordinator","coordinator"))
+            .contentType("application/json").content(body.toString())).andExpect(status().isOk());
+    }
+
+    @Test void shiftRemainingWarnsCoordinatorAndExpiredScheduleRejectsNewAssignment() throws Exception {
+        schedule(first,0,true);
+        schedule(second,0,false);
+        var ticket=create();
+        var result=suggestion(ticket);
+        assertEquals(first,result.path("recommended").asText());
+        assertTrue(candidate(result,first).path("shiftRemainingMinutes").asInt()<=20);
+        assertTrue(result.path("reason").asText().contains("ESTIMATE_EXCEEDS_SHIFT"));
+        assertEquals("OFF_DUTY",candidate(result,second).path("excludedReason").asText());
+        String task=review(ticket,first,60).path("taskId").asText();
+        schedule(first,1,false);
+        mvc.perform(post("/api/hpdi/v1/workspaces/lab-a/tasks/"+task+"/assign").with(as("coordinator","coordinator"))
+            .contentType("application/json").content(json.writeValueAsString(Map.of("assignee",second))))
+            .andExpect(status().isConflict());
+        assertTrue(handleSuggestion(task).path("recommended").isNull());
+        assertEquals(first,jdbc.queryForObject("select assignee_ from act_ru_task where id_=?",String.class,task));
+    }
+
+    @Test void shiftEndDoesNotStopWorkAndExistingR6ReleaseKeepsProcessAndHistory() throws Exception {
+        schedule(first,0,true);
+        var ticket=create();
+        String task=review(ticket,first,60).path("taskId").asText();
+        String route="/api/hpdi/v1/workspaces/lab-a/tasks/"+task;
+        mvc.perform(post(route+"/start").with(as(first,"agent"))).andExpect(status().isOk());
+        String process=jdbc.queryForObject("select proc_inst_id_ from act_ru_task where id_=?",String.class,task);
+        schedule(first,1,false);
+        assertEquals("IN_PROGRESS",jdbc.queryForObject("select text_ from act_ru_variable where task_id_=? and name_='executionState'",String.class,task));
+        mvc.perform(post(route+"/estimate-requests").with(as(first,"agent")).contentType("application/json")
+            .content("{\"proposedMinutes\":120,\"reason\":\"Remaining diagnostics after shift\"}"))
+            .andExpect(status().isCreated());
+        mvc.perform(post(route+"/pause").with(as(first,"agent")).contentType("application/json")
+            .content("{\"reason\":\"WAITING_EXTERNAL\",\"note\":\"Handover preparation\"}")).andExpect(status().isOk());
+        mvc.perform(post(route+"/resume").with(as(first,"agent"))).andExpect(status().isOk());
+        mvc.perform(post(route+"/release").with(as(first,"agent")).contentType("application/json")
+            .content("{\"reason\":\"HANDOVER\",\"note\":\"End of shift: diagnostics complete; replacement still required\"}"))
+            .andExpect(status().isNoContent());
+        assertEquals(process,jdbc.queryForObject("select proc_inst_id_ from act_ru_task where proc_inst_id_=?",String.class,process));
+        assertEquals("review",jdbc.queryForObject("select task_def_key_ from act_ru_task where proc_inst_id_=?",String.class,process));
+        assertEquals(1,jdbc.queryForObject("select count(*) from servicedesk_work_release where task_id=?",Integer.class,task));
+        assertTrue(jdbc.queryForObject("select count(*) from servicedesk_estimate_history where ticket_id=?",Integer.class,UUID.fromString(ticket.path("id").asText()))>0);
+    }
+
+    @Test void concurrentScheduleCancellationAndAssignmentLinearizeWithoutLosingTask() throws Exception {
+        String task=review(create(),null,60).path("taskId").asText();
+        var workers=java.util.concurrent.Executors.newFixedThreadPool(2);
+        var start=new java.util.concurrent.CountDownLatch(1);
+        try {
+            var cancellation=workers.submit(() -> {
+                assertTrue(start.await(10,java.util.concurrent.TimeUnit.SECONDS));
+                return mvc.perform(put("/api/hpdi/v1/workspaces/lab-a/schedules/"+first).with(as("coordinator","coordinator"))
+                    .contentType("application/json").content("{\"version\":0,\"enabled\":true,\"shifts\":[]}"))
+                    .andReturn().getResponse().getStatus();
+            });
+            var assignment=workers.submit(() -> {
+                assertTrue(start.await(10,java.util.concurrent.TimeUnit.SECONDS));
+                return mvc.perform(post("/api/hpdi/v1/workspaces/lab-a/tasks/"+task+"/assign").with(as("coordinator","coordinator"))
+                    .contentType("application/json").content(json.writeValueAsString(Map.of("assignee",first))))
+                    .andReturn().getResponse().getStatus();
+            });
+            start.countDown();
+            assertEquals(200,cancellation.get(20,java.util.concurrent.TimeUnit.SECONDS));
+            int assigned=assignment.get(20,java.util.concurrent.TimeUnit.SECONDS);
+            assertTrue(assigned==200 || assigned==409);
+            assertEquals(1,jdbc.queryForObject("select count(*) from act_ru_task where id_=?",Integer.class,task));
+            assertEquals(assigned==200 ? first : null,jdbc.queryForObject("select assignee_ from act_ru_task where id_=?",String.class,task));
+        } finally { start.countDown(); workers.shutdownNow(); }
+    }
+
+    @Test void expiredRosterEmitsDurableDutyAlertsOnceWithoutChangingWork() throws Exception {
+        var ticket=create();
+        String task=review(ticket,first,60).path("taskId").asText();
+        String process=jdbc.queryForObject("select proc_inst_id_ from act_ru_task where id_=?",String.class,task);
+        for (String subject:List.of(first,second,owner)) schedule(subject,0,false);
+        var roster=json.readTree(mvc.perform(get("/api/hpdi/v1/workspaces/lab-a/duty").with(as("coordinator","coordinator")))
+            .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+        var effective=new HashMap<String,Boolean>();
+        roster.forEach(member -> effective.put(member.path("subject").asText(),member.path("effectiveDuty").asBoolean()));
+        assertEquals(3,effective.size());
+        assertTrue(effective.values().stream().noneMatch(Boolean.TRUE::equals));
+        for (int poll=0;poll<2;poll++) ticketAlerts.check("lab-a",process,task,effective,effective,"HARDWARE");
+        for (String type:List.of("ASSIGNEE_OFF_DUTY","NO_ONE_ON_DUTY"))
+            assertEquals(1,jdbc.queryForObject("select count(*) from hpdi_alert_event where workspace='lab-a' and task_id=? and type=?",Integer.class,task,type));
+        assertEquals(first,jdbc.queryForObject("select assignee_ from act_ru_task where id_=?",String.class,task));
+        assertEquals("handle",jdbc.queryForObject("select task_def_key_ from act_ru_task where id_=?",String.class,task));
     }
 
     @Test void reassignmentExcludesOnlyTheConsideredTaskWithoutChangingQueueOrAssignmentHistory() throws Exception {

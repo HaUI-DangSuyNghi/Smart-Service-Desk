@@ -40,8 +40,115 @@ class AgentDutyIntegrationTest {
     }
     private String agent() {
         String subject = "duty-" + UUID.randomUUID();
-        when(directory.members("lab-a")).thenReturn(List.of(new DirectoryMember(subject, subject, null, Set.of(WorkspaceRole.AGENT))));
+        when(directory.members("lab-a")).thenReturn(List.of(new DirectoryMember(subject, subject, null, Set.of(WorkspaceRole.AGENT)),
+            new DirectoryMember("coordinator","coordinator",null,Set.of(WorkspaceRole.COORDINATOR))));
         return subject;
+    }
+
+    private String schedule(String subject) { return BASE.replace("/duty","/schedules/")+subject; }
+    private String shiftChange(long version, boolean enabled) {
+        var start=java.time.Instant.now().minusSeconds(60);
+        return "{\"version\":"+version+",\"enabled\":"+enabled+",\"shifts\":[{\"startsAt\":\""+start
+            +"\",\"endsAt\":\""+start.plusSeconds(3600)+"\"}]}";
+    }
+
+    @Test void scheduleOptInBoundariesManualOverrideAndSecurity() throws Exception {
+        String subject=agent();
+        mvc.perform(put(BASE+"/me").with(as(subject,"agent")).contentType("application/json").content("{\"onDuty\":true}"))
+            .andExpect(status().isOk());
+        mvc.perform(get(schedule(subject)+"/effective-duty").with(as(subject,"agent")))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.reason").value("LEGACY_MANUAL"));
+        mvc.perform(put(schedule(subject)).with(as("coordinator","coordinator")).contentType("application/json").content(shiftChange(0,true)))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.version").value(1))
+            .andExpect(jsonPath("$.shifts[0].timezone").value("Asia/Ho_Chi_Minh"));
+        mvc.perform(get(schedule("me")+"/effective-duty").with(as(subject,"agent")))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.onDuty").value(true))
+            .andExpect(jsonPath("$.scheduledDuty").value(true)).andExpect(jsonPath("$.shiftRemainingMinutes").isNumber());
+        mvc.perform(put(BASE+"/me").with(as(subject,"agent")).contentType("application/json").content("{\"onDuty\":false}"))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.effectiveDuty").value(false));
+        mvc.perform(get(schedule(subject)+"/effective-duty").with(as(subject,"agent")))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.reason").value("MANUAL_OFF_DUTY"));
+        mvc.perform(put(schedule(subject)).with(as(subject,"agent")).contentType("application/json").content(shiftChange(1,true)))
+            .andExpect(status().isForbidden());
+        mvc.perform(get(schedule(subject)).with(as("outsider","agent"))).andExpect(status().isForbidden());
+        mvc.perform(get(schedule(subject)).with(as("requester","requester"))).andExpect(status().isForbidden());
+        mvc.perform(get(schedule(subject).replace("lab-a","lab-b")).with(as(subject,"agent"))).andExpect(status().isForbidden());
+        mvc.perform(put(schedule(subject)).with(as("coordinator","coordinator")).contentType("application/json").content(shiftChange(0,true)))
+            .andExpect(status().isConflict());
+        mvc.perform(put(schedule(subject)).with(as("coordinator","coordinator")).contentType("application/json")
+            .content("{\"version\":1,\"enabled\":true,\"shifts\":[]}"))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.version").value(2));
+        assertEquals(1,jdbc.queryForObject("select count(*) from hpdi_agent_shift where workspace='lab-a' and subject=? and version=1",Integer.class,subject));
+        mvc.perform(get(schedule(subject)+"/effective-duty").with(as(subject,"agent")))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.scheduledDuty").value(false));
+    }
+
+    @Test void revokedCoordinatorAndAgentCannotUseStaleJwtScheduleAccess() throws Exception {
+        String subject=agent();
+        mvc.perform(put(schedule(subject)).with(as("coordinator","coordinator")).contentType("application/json").content(shiftChange(0,true)))
+            .andExpect(status().isOk());
+        when(directory.members("lab-a")).thenReturn(List.of(new DirectoryMember(subject,subject,null,Set.of(WorkspaceRole.AGENT))));
+        mvc.perform(put(schedule(subject)).with(as("coordinator","coordinator")).contentType("application/json").content(shiftChange(1,true)))
+            .andExpect(status().isForbidden());
+        when(directory.members("lab-a")).thenReturn(List.of());
+        mvc.perform(get(schedule(subject)).with(as(subject,"agent"))).andExpect(status().isForbidden());
+        assertEquals(1L,jdbc.queryForObject("select version from hpdi_agent_schedule where workspace='lab-a' and subject=?",Long.class,subject));
+    }
+
+    @Test void twoCoordinatorsCannotOverwriteOneVersion() throws Exception {
+        String subject=agent();
+        var workers=java.util.concurrent.Executors.newFixedThreadPool(2);
+        var start=new java.util.concurrent.CountDownLatch(1);
+        try {
+            var results=new java.util.ArrayList<java.util.concurrent.Future<Integer>>();
+            for (int index=0;index<2;index++) results.add(workers.submit(() -> {
+                assertTrue(start.await(10,java.util.concurrent.TimeUnit.SECONDS));
+                return mvc.perform(put(schedule(subject)).with(as("coordinator","coordinator"))
+                    .contentType("application/json").content(shiftChange(0,true))).andReturn().getResponse().getStatus();
+            }));
+            start.countDown();
+            var codes=new java.util.ArrayList<Integer>();
+            for (var result:results) codes.add(result.get(20,java.util.concurrent.TimeUnit.SECONDS));
+            codes.sort(Integer::compareTo);
+            assertEquals(List.of(200,409),codes);
+            assertEquals(1,jdbc.queryForObject("select count(*) from audit_event where workspace='lab-a' and action='human.schedule.changed' and resource=?",Integer.class,subject));
+        } finally { start.countDown(); workers.shutdownNow(); }
+    }
+
+    @Test void concurrentScheduleActivationCannotUndoManualOff() throws Exception {
+        String subject=agent();
+        var workers=java.util.concurrent.Executors.newFixedThreadPool(2);
+        var start=new java.util.concurrent.CountDownLatch(1);
+        try {
+            var schedule=workers.submit(() -> {
+                assertTrue(start.await(10,java.util.concurrent.TimeUnit.SECONDS));
+                return mvc.perform(put(schedule(subject)).with(as("coordinator","coordinator"))
+                    .contentType("application/json").content(shiftChange(0,true))).andReturn().getResponse().getStatus();
+            });
+            var duty=workers.submit(() -> {
+                assertTrue(start.await(10,java.util.concurrent.TimeUnit.SECONDS));
+                return mvc.perform(put(BASE+"/me").with(as(subject,"agent"))
+                    .contentType("application/json").content("{\"onDuty\":false}")).andReturn().getResponse().getStatus();
+            });
+            start.countDown();
+            assertEquals(200,schedule.get(20,java.util.concurrent.TimeUnit.SECONDS));
+            assertEquals(200,duty.get(20,java.util.concurrent.TimeUnit.SECONDS));
+            mvc.perform(get(schedule(subject)+"/effective-duty").with(as(subject,"agent")))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.onDuty").value(false))
+                .andExpect(jsonPath("$.scheduledDuty").value(true)).andExpect(jsonPath("$.scheduleVersion").value(1));
+        } finally { start.countDown(); workers.shutdownNow(); }
+    }
+
+    @Test void scheduleAuditFailureRollsBackVersionAndShifts() throws Exception {
+        String subject=agent();
+        jdbc.execute("create function schedule_reject_audit() returns trigger language plpgsql as $$ begin if new.action='human.schedule.changed' then raise exception 'schedule rejection' using errcode='23514'; end if; return new; end $$");
+        jdbc.execute("create trigger schedule_reject before insert on audit_event for each row execute function schedule_reject_audit()");
+        try {
+            mvc.perform(put(schedule(subject)).with(as("coordinator","coordinator")).contentType("application/json").content(shiftChange(0,true)))
+                .andExpect(status().isConflict());
+            assertEquals(0,jdbc.queryForObject("select count(*) from hpdi_agent_schedule where workspace='lab-a' and subject=?",Integer.class,subject));
+            assertEquals(0,jdbc.queryForObject("select count(*) from hpdi_agent_shift where workspace='lab-a' and subject=?",Integer.class,subject));
+        } finally { jdbc.execute("drop trigger schedule_reject on audit_event"); jdbc.execute("drop function schedule_reject_audit()"); }
     }
 
     @Test void persistedSelfOnlyDutyAndCoordinatorVisibilityAreWorkspaceIsolated() throws Exception {

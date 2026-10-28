@@ -926,10 +926,12 @@ class TicketIntegrationTest {
         var request = body(mvc.perform(post(base + "tasks/" + task + "/estimate-requests").with(as(worker,"lab-a","agent"))
             .contentType("application/json").content("{\"proposedMinutes\":120,\"reason\":\"More work\"}")).andExpect(status().isCreated()));
         doReturn(false).when(duty).onDuty("lab-a",worker);
+        doReturn(false).when(duty).manualDuty("lab-a",worker);
         String route = base + "estimate-requests/" + request.path("id").asText() + "/decision";
         mvc.perform(post(route).with(as("coordinator","lab-a","coordinator")).contentType("application/json").content("{\"approved\":true}"))
             .andExpect(status().isConflict());
         doReturn(true).when(duty).onDuty("lab-a",worker);
+        doReturn(true).when(duty).manualDuty("lab-a",worker);
         when(directory.members("lab-a")).thenReturn(List.of());
         mvc.perform(post(route).with(as("coordinator","lab-a","coordinator")).contentType("application/json").content("{\"approved\":true}"))
             .andExpect(status().isForbidden());
@@ -1183,6 +1185,7 @@ class TicketIntegrationTest {
     @org.junit.jupiter.api.BeforeEach
     void availableRegressionAgents() {
         doReturn(true).when(duty).onDuty(anyString(), anyString());
+        doReturn(true).when(duty).manualDuty(anyString(), anyString());
         doAnswer(invocation ->
             directory.members(invocation.getArgument(0)).stream().map(vn.haui.dx.core.identity.api.DirectoryMember::sub)
                 .collect(java.util.stream.Collectors.toSet())).when(directory).supportGroupMembers(anyString(), anyString());
