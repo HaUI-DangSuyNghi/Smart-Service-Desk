@@ -15,6 +15,12 @@ import vn.haui.dx.hpdi.process.api.ProcessSummary;
 @Service
 public class CoreProcessCapabilities implements ProcessCapability, WorkInbox, WorkExecution {
     private final WorkflowService workflow;
+    public void release(String workspace, String taskId, String reason, String note) {
+        if (!java.util.Set.of("WRONG_GROUP", "HANDOVER", "OTHER").contains(reason == null ? "" : reason)
+                || note == null || note.isBlank() || note.length() > 1000)
+            throw vn.haui.dx.hpdi.common.api.CapabilityException.validation("Valid release reason and note required");
+        workflow.release(workspace, taskId, reason, note);
+    }
     public CoreProcessCapabilities(WorkflowService workflow) { this.workflow = workflow; }
     public WorkExecution.Item get(String workspace, String taskId) { return execution(workflow.execution(workspace, taskId)); }
     public Page<WorkExecution.Item> workspaceQueue(String workspace, PageRequest page) {

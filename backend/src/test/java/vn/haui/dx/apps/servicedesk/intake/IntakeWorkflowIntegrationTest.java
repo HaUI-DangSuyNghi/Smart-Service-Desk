@@ -195,6 +195,26 @@ class IntakeWorkflowIntegrationTest {
         return jdbc.queryForObject("select count(*) from servicedesk_sla where ticket_id=?", Long.class, id(ticket));
     }
 
+    @Test void handoverCreatesNewAdmissionGenerationWithoutBypassingIntake() throws Exception {
+        var ticket = create();
+        release(ticket, UUID.randomUUID());
+        review(ticket, state(ticket).path("version").asLong(), 200);
+        String task = getTicket(ticket).path("taskId").asText();
+        mvc.perform(post(TASKS + task + "/claim").with(as("agent","agent"))).andExpect(status().isOk());
+        long previousVersion = state(ticket).path("version").asLong();
+        mvc.perform(post(TASKS + task + "/release").with(as("agent","agent")).contentType("application/json")
+            .content("{\"reason\":\"HANDOVER\",\"note\":\"Continue checks\"}")).andExpect(status().isNoContent());
+        var returned = state(ticket);
+        assertEquals("REVIEW_RELEASED",returned.path("status").asText());
+        assertEquals(2,returned.path("reviewRound").asInt());
+        assertTrue(returned.path("version").asLong() > previousVersion);
+        assertEquals(1,jdbc.queryForObject("select count(*) from servicedesk_intake_receipt where ticket_id=? and action='HANDOVER'",Integer.class,id(ticket)));
+        review(ticket, previousVersion, 409);
+        review(ticket, returned.path("version").asLong(), 200);
+        assertNotEquals(task,getTicket(ticket).path("taskId").asText());
+        assertEquals(2,slaCount(ticket));
+    }
+
     private JsonNode create() throws Exception {
         return body(mvc.perform(post(BASE).with(as("owner", "requester")).contentType("application/json")
                 .content(json.writeValueAsString(Map.of("clientRequestId", UUID.randomUUID(), "title", "Synthetic wait " + UUID.randomUUID(), "description", "Synthetic wait"))))

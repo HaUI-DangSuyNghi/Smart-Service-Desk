@@ -206,6 +206,27 @@ class WorkAlertsIntegrationTest {
         worker.run();
         assertEquals(2, jdbc.queryForObject("select count(*) from hpdi_alert_recipient where event_id=?", Integer.class, id));
     }
+    @Test void releaseSuppressesCapturedAgentDeliveryWithoutDeletingHistory() {
+        String agent = subject + "-agent";
+        when(directory.members("lab-a")).thenReturn(List.of(
+            new DirectoryMember(subject,subject,null,Set.of(WorkspaceRole.COORDINATOR)),
+            new DirectoryMember(agent,agent,null,Set.of(WorkspaceRole.AGENT))));
+        for (boolean coordinators : List.of(false,true)) {
+            String task = "released-" + UUID.randomUUID();
+            var event = new WorkAlerts.Event("lab-a",WorkAlerts.Type.SLA_WARNING,WorkAlerts.Severity.WARNING,
+                "process-" + UUID.randomUUID(),"room-request",UUID.randomUUID().toString(),task,"generation","Historical warning",coordinators,agent);
+            UUID id = publish(event);
+            var captured = delivery.recipients("lab-a",coordinators,agent);
+            alerts.suppressAgent("lab-a",task);
+            delivery.deliver("lab-a",id,captured);
+            assertEquals(0,jdbc.queryForObject("select count(*) from hpdi_alert_recipient where event_id=? and subject=?",Integer.class,id,agent));
+            assertEquals(coordinators ? 1 : 0,jdbc.queryForObject("select count(*) from hpdi_alert_recipient where event_id=?",Integer.class,id));
+            assertEquals(agent,jdbc.queryForObject("select agent from hpdi_alert_event where id=?",String.class,id));
+        }
+        UUID historical = delivered();
+        assertEquals(1,jdbc.queryForObject("select count(*) from hpdi_alert_recipient where event_id=?",Integer.class,historical));
+    }
+
     private static class ClosingPool implements AutoCloseable {
         final ExecutorService executor = Executors.newFixedThreadPool(2);
         public void close() { executor.shutdownNow(); }

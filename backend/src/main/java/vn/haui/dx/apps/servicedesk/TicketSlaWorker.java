@@ -17,7 +17,7 @@ public class TicketSlaWorker {
     @Scheduled(fixedDelayString = "${service-desk.sla.poll-millis:60000}", initialDelayString = "${service-desk.sla.poll-millis:60000}")
     public void run() {
         if (!enabled) return;
-        for (var row : jdbc.queryForList("select workspace,process_instance_id,handle_task_id from servicedesk_sla where resolved_at is null order by checked_at,workspace,handle_task_id limit 100")) {
+        for (var row : jdbc.queryForList("select workspace,process_instance_id,handle_task_id from servicedesk_sla where resolved_at is null and released_at is null order by checked_at,workspace,handle_task_id limit 100")) {
             jdbc.update("update servicedesk_sla set checked_at=current_timestamp where workspace=? and handle_task_id=?",
                 row.get("workspace"), row.get("handle_task_id"));
             try { sla.reconcile((String) row.get("workspace"), (String) row.get("process_instance_id"), (String) row.get("handle_task_id")); }

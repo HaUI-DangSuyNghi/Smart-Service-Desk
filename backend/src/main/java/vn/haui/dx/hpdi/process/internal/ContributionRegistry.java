@@ -7,6 +7,18 @@ import vn.haui.dx.core.workflow.api.ProcessRegistration;
 import vn.haui.dx.hpdi.process.api.ProcessContribution;
 @Component
 public class ContributionRegistry implements ProcessRegistration {
+    @Override public void afterAssignmentChanged(String workspace, String taskId, String assignee, String actor) {
+        estimateLifecycle.assignmentChanged(workspace, taskId, assignee, actor);
+    }
+    public String releaseTarget(String processKey, String taskKey) {
+        return contributions.stream().filter(value -> value.definitions().stream().anyMatch(definition -> definition.processKey().equals(processKey)))
+            .findFirst().orElseThrow().releaseTarget(processKey, taskKey);
+    }
+    public void afterRelease(String workspace, String processKey, String processId, String taskId,
+            String reviewId, long workedMillis, String actor, String reason, String note) {
+        contributions.stream().filter(value -> value.definitions().stream().anyMatch(definition -> definition.processKey().equals(processKey)))
+            .findFirst().orElseThrow().afterRelease(workspace, processKey, processId, taskId, reviewId, workedMillis, actor, reason, note);
+    }
     @Override public void afterExecution(String workspace, String processKey, String processId, String taskId,
             vn.haui.dx.core.workflow.api.TaskExecution.Action action, String reason, java.time.Instant at) {
         contributions.stream().filter(contribution -> contribution.definitions().stream()
@@ -22,7 +34,9 @@ public class ContributionRegistry implements ProcessRegistration {
     private final List<ProcessPolicy> policies;
     private final List<ProcessContribution> contributions;
     private final java.util.Map<String, java.util.Set<String>> executionTasks;
-    public ContributionRegistry(List<ProcessContribution> contributions) {
+    private final EstimateRequestLifecycle estimateLifecycle;
+    public ContributionRegistry(List<ProcessContribution> contributions, EstimateRequestLifecycle estimateLifecycle) {
+        this.estimateLifecycle = estimateLifecycle;
         this.contributions = List.copyOf(contributions);
         var work = new java.util.HashMap<String, java.util.Set<String>>();
         for (var contribution : contributions) {

@@ -16,6 +16,7 @@ public interface WorkAlerts {
         public Inbox { items = List.copyOf(items); }
     }
     void publish(Event event);
+    default void suppressAgent(String workspace, String taskId) { throw new UnsupportedOperationException("Alert suppression not supported"); }
     Inbox list(String workspace, Instant since, boolean unreadOnly, PageRequest page);
     void read(String workspace, UUID id);
 }

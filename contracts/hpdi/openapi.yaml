@@ -7,6 +7,116 @@ info:
 security:
 - bearerAuth: []
 paths:
+  /api/hpdi/v1/workspaces/{workspace}/tasks/{id}/release:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+      - {name: id, in: path, required: true, schema: {type: string}}
+    post:
+      operationId: releaseWork
+      description: >-
+        Trả việc về điều phối viên (R6: sai tổ…; R3: hết ca bàn giao). Bắt buộc lý do;
+        bàn giao phải ghi đã làm đến đâu. Việc quay lại hàng chờ duyệt, thời gian đã làm được giữ.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [reason, note]
+              properties:
+                reason: {type: string, enum: [WRONG_GROUP, HANDOVER, OTHER]}
+                note: {type: string, minLength: 1, maxLength: 1000}
+      responses:
+        '204': {description: Đã trả việc}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /api/hpdi/v1/workspaces/{workspace}/tasks/{id}/estimate-requests:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+      - {name: id, in: path, required: true, schema: {type: string}}
+    post:
+      operationId: requestEstimateChange
+      description: Người đang giữ việc xin sửa ET kèm lý do. 409 nếu đã có yêu cầu đang chờ cho việc này.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [proposedMinutes, reason]
+              properties:
+                proposedMinutes: {type: integer, minimum: 1, maximum: 10080}
+                reason: {type: string, minLength: 1, maxLength: 1000}
+      responses:
+        '201':
+          description: Yêu cầu đã tạo, chờ điều phối viên
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/EstimateRequest'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /api/hpdi/v1/workspaces/{workspace}/estimate-requests:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+    get:
+      operationId: listEstimateRequests
+      description: Điều phối viên xem yêu cầu sửa ET (quyền task:assign); kỹ thuật viên chỉ thấy yêu cầu của mình. Mới nhất trước.
+      parameters:
+        - {name: status, in: query, required: false, schema: {$ref: '#/components/schemas/EstimateRequestStatus'}}
+        - {$ref: '#/components/parameters/Page'}
+        - {$ref: '#/components/parameters/Size'}
+      responses:
+        '200':
+          description: Một trang yêu cầu
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - {$ref: '#/components/schemas/PageMeta'}
+                  - type: object
+                    required: [items]
+                    properties:
+                      items: {type: array, items: {$ref: '#/components/schemas/EstimateRequest'}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+  /api/hpdi/v1/workspaces/{workspace}/estimate-requests/{requestId}/decision:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+      - {name: requestId, in: path, required: true, schema: {type: string, format: uuid}}
+    post:
+      operationId: decideEstimateRequest
+      description: Điều phối viên đồng ý (ET đổi thành proposedMinutes, nguồn COORDINATOR) hoặc từ chối. 409 nếu đã quyết.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [approved]
+              properties:
+                approved: {type: boolean}
+                note: {type: string, maxLength: 1000}
+      responses:
+        '200':
+          description: Yêu cầu sau khi quyết
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/EstimateRequest'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
   /api/hpdi/v1/workspaces/{workspace}/alerts:
     parameters:
       - {$ref: '#/components/parameters/Workspace'}
@@ -796,6 +906,32 @@ paths:
           $ref: '#/components/responses/NotFound'
 components:
   schemas:
+    EstimateRequestStatus:
+      type: string
+      enum: [PENDING, APPROVED, REJECTED, SUPERSEDED]
+      description: Assignment changes atomically supersede pending requests from the previous assignee. Terminal requests cannot be decided.
+    EstimateRequest:
+      type: object
+      additionalProperties: false
+      required: [id, taskId, processInstanceId, businessKey, label, requestedBy, currentMinutes, proposedMinutes, reason, status, createdAt]
+      properties:
+        id: {type: string, format: uuid}
+        taskId: {type: string}
+        processInstanceId: {type: string}
+        businessKey: {type: string}
+        label: {type: string}
+        requestedBy: {type: string}
+        currentMinutes: {type: integer, minimum: 1}
+        proposedMinutes: {type: integer, minimum: 1}
+        reason: {type: string}
+        status: {$ref: '#/components/schemas/EstimateRequestStatus'}
+        decidedBy: {type: string, nullable: true}
+        decidedAt: {type: string, format: date-time, nullable: true}
+        decisionNote: {type: string, nullable: true}
+        supersededBy: {type: string, nullable: true, description: Actor triggering assignment supersession; not a decision.}
+        supersededAt: {type: string, format: date-time, nullable: true}
+        supersededReason: {type: string, nullable: true, description: ASSIGNMENT_CHANGED for superseded requests; otherwise null.}
+        createdAt: {type: string, format: date-time}
     Alert:
       type: object
       additionalProperties: false

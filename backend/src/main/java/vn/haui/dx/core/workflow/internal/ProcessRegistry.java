@@ -81,6 +81,9 @@ public class ProcessRegistry {
     public void afterAssign(String workspace, String processKey, String processId, String taskKey, String subject) {
         owners.get(processKey).afterAssign(workspace, processKey, processId, taskKey, subject);
     }
+    public void afterAssignmentChanged(String workspace, String processKey, String taskId, String assignee, String actor) {
+        owners.get(processKey).afterAssignmentChanged(workspace, taskId, assignee, actor);
+    }
 
     private static boolean candidateTask(UserTask task) {
         return (task.getAssignee() == null || task.getAssignee().isBlank()) && task.getCandidateUsers().isEmpty()
@@ -106,6 +109,13 @@ public class ProcessRegistry {
     }
 
     public boolean supportsDefinition(String id) { return definitionIds.containsValue(id); }
+    public String releaseTarget(String processKey, String taskKey) {
+        return owners.get(processKey).releaseTarget(processKey, taskKey);
+    }
+    public void afterRelease(String workspace, String processKey, String processId, String taskId,
+            String reviewId, long workedMillis, String actor, String reason, String note) {
+        owners.get(processKey).afterRelease(workspace, processKey, processId, taskId, reviewId, workedMillis, actor, reason, note);
+    }
 
     public boolean executionTask(String processKey, String taskKey) {
         return executionTasks.getOrDefault(processKey, Set.of()).contains(taskKey);

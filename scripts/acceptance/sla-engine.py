@@ -14,7 +14,8 @@ from pathlib import Path
 root = Path.cwd()
 intake = '--intake' in sys.argv
 alerts = '--alerts' in sys.argv
-jar = root / ('.local/r7-r8-runtime.jar' if alerts else '.local/r5-runtime.jar')
+handover = '--handover' in sys.argv
+jar = root / ('.local/r2-r6-runtime.jar' if handover else '.local/r7-r8-runtime.jar' if alerts else '.local/r5-runtime.jar')
 suffix = uuid.uuid4().hex[:10]
 network = 'r5-e2e-' + suffix
 password = uuid.uuid4().hex
@@ -72,6 +73,10 @@ try:
                 user['credentials'] = [{'type': 'password', 'value': password, 'temporary': False}]
             if user['username'] == 'user2':
                 user['groups'].append('/support-groups/lab-a/hardware')
+        if handover:
+            replacement = json.loads(json.dumps(next(user for user in realm['users'] if user['username'] == 'user2')))
+            replacement.update(id=str(uuid.uuid4()), username='handover-agent', email='handover-agent@example.test')
+            realm['users'].append(replacement)
         seed = Path(temporary) / 'realm.json'
         seed.write_text(json.dumps(realm), encoding='utf-8')
         database = 'r5-pg-' + suffix
@@ -100,7 +105,7 @@ try:
         wait(backend + '/actuator/health')
         tokens = {user: request(keycloak + '/realms/dx-lab/protocol/openid-connect/token', 'POST',
             {'grant_type': 'password', 'client_id': 'core-probe', 'username': user, 'password': password}, form=True)['access_token']
-            for user in ('user1', 'user2', 'user3')}
+            for user in (('user1', 'user2', 'user3', 'handover-agent') if handover else ('user1', 'user2', 'user3'))}
         subject = json.loads(base64.urlsafe_b64decode(tokens['user2'].split('.')[1] + '=='))['sub']
 
         def call(path, actor='user3', method='GET', data=None):
@@ -125,6 +130,64 @@ try:
         reviewed = approve('HIGH', subject)
         check('approval initializes authoritative SLA', reviewed['sla'] is not None and reviewed['classification']['basePriority'] == 'HIGH')
         task = hpdi + '/tasks/' + reviewed['taskId']
+        if handover:
+            estimate = call(task + '/estimate-requests', 'user2', 'POST', {'proposedMinutes': 120, 'reason': 'Replace mainboard'})
+            replacement_subject = json.loads(base64.urlsafe_b64decode(tokens['handover-agent'].split('.')[1] + '=='))['sub']
+            call(hpdi + '/duty/me', 'handover-agent', 'PUT', {'onDuty': True})
+            call(task + '/assign', method='POST', data={'assignee': replacement_subject})
+            superseded = call(hpdi + '/estimate-requests?status=SUPERSEDED')['items']
+            retired = next(item for item in superseded if item['id'] == estimate['id'])
+            check('same-task reassignment supersedes with provenance not decision', retired['supersededReason'] == 'ASSIGNMENT_CHANGED'
+                and retired['supersededAt'] is not None and retired['supersededBy'] is not None and retired['decidedAt'] is None)
+            for route, actor, data, expected in (
+                (task + '/estimate-requests', 'user2', {'proposedMinutes': 180, 'reason': 'Old assignee'}, 403),
+                (hpdi + '/estimate-requests/' + estimate['id'] + '/decision', 'user3', {'approved': True}, 409)):
+                try:
+                    call(route, actor, 'POST', data)
+                    raise AssertionError('Old assignee request must not control ET')
+                except urllib.error.HTTPError as failure:
+                    check('reassignment rejects stale control ' + str(expected), failure.code == expected)
+            replacement_request = call(task + '/estimate-requests', 'handover-agent', 'POST', {'proposedMinutes': 130, 'reason': 'New assignee'})
+            check('new assignee can immediately request ET', replacement_request['status'] == 'PENDING')
+            call(task + '/assign', method='POST', data={'assignee': subject})
+            retired_ids = {item['id'] for item in call(hpdi + '/estimate-requests?status=SUPERSEDED')['items']
+                if item['taskId'] == reviewed['taskId']}
+            check('assignment cycle never revives prior request', retired_ids == {estimate['id'], replacement_request['id']})
+            report['supersededRequest'] = retired
+            estimate = call(task + '/estimate-requests', 'user2', 'POST', {'proposedMinutes': 120, 'reason': 'Replace mainboard'})
+            report['estimateRequest'] = estimate
+            check('request does not change ET', call(path)['estimate']['minutes'] == reviewed['estimate']['minutes'])
+            docker('restart', backend_name)
+            backend = 'http://' + docker('port', backend_name, '8080/tcp')
+            wait(backend + '/actuator/health')
+            pending = call(hpdi + '/estimate-requests?status=PENDING')['items']
+            check('estimate request survives real restart', any(item['id'] == estimate['id'] for item in pending))
+            report['estimateDecision'] = call(hpdi + '/estimate-requests/' + estimate['id'] + '/decision', method='POST', data={'approved': True})
+            check('approved estimate uses canonical ET storage', call(path)['estimate'] == {'minutes': 120, 'basis': 'COORDINATOR'})
+            call(task + '/start', 'user2', 'POST')
+            call(task + '/pause', 'user2', 'POST', {'reason': 'WAITING_EXTERNAL'})
+            stale = call(task + '/estimate-requests', 'user2', 'POST', {'proposedMinutes': 180, 'reason': 'More diagnostics'})
+            call(task + '/release', 'user2', 'POST', {'reason': 'HANDOVER', 'note': 'Hardware checked; continue diagnostics'})
+            docker('restart', backend_name)
+            backend = 'http://' + docker('port', backend_name, '8080/tcp')
+            wait(backend + '/actuator/health')
+            returned = call(path)
+            check('release survives real restart without closing process', returned['state'] == 'AWAITING_REVIEW' and returned['process'] == reviewed['process'])
+            try:
+                call(hpdi + '/estimate-requests/' + stale['id'] + '/decision', method='POST', data={'approved': True})
+                raise AssertionError('Stale estimate must conflict')
+            except urllib.error.HTTPError as failure:
+                check('released task estimate is stale', failure.code == 409)
+            decision = {'category': 'HARDWARE', 'priority': 'HIGH', 'assignee': subject, 'reason': 'Continue handed-over work'}
+            if intake:
+                state = call(path + '/intake')
+                check('handover advances intake generation', state['reviewRound'] == 2 and state['status'] == 'REVIEW_RELEASED')
+                decision.update(expectedContextRevision=state['contextRevision'], expectedIntakeVersion=state['version'])
+            continued = call(path + '/review', method='POST', data=decision)
+            check('handover preserves deadline and estimate', continued['sla']['resolveBy'] == reviewed['sla']['resolveBy'] and continued['estimate']['minutes'] == 120)
+            check('handover creates one fresh handle', continued['taskId'] != reviewed['taskId'] and continued['state'] == 'ASSIGNED')
+            reviewed = continued
+            task = hpdi + '/tasks/' + reviewed['taskId']
         started = call(task + '/start', 'user2', 'POST')
         check('START freezes response result', not started['sla']['startBreached'])
         paused = call(task + '/pause', 'user2', 'POST', {'reason': 'WAITING_REQUESTER'})
@@ -187,7 +250,7 @@ except Exception as error:
     report.update(status='ERROR', error=type(error).__name__ + ': ' + str(error))
     raise
 finally:
-    (root / ('.local/r7-r8-intake-runtime.json' if alerts and intake else '.local/r7-r8-real-runtime.json' if alerts else '.local/r5-intake-runtime.json' if intake else '.local/r5-real-runtime.json')).write_text(json.dumps(report, indent=2), encoding='utf-8')
+    (root / ('.local/r2-r6-intake-runtime.json' if handover and intake else '.local/r2-r6-runtime.json' if handover else '.local/r7-r8-intake-runtime.json' if alerts and intake else '.local/r7-r8-real-runtime.json' if alerts else '.local/r5-intake-runtime.json' if intake else '.local/r5-real-runtime.json')).write_text(json.dumps(report, indent=2), encoding='utf-8')
     for name in reversed(containers):
         subprocess.run(['docker', 'rm', '-f', '-v', name], capture_output=True)
     subprocess.run(['docker', 'network', 'rm', network], capture_output=True)

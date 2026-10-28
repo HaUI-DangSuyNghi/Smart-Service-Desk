@@ -23,8 +23,8 @@ public class AlertDeliveryWorker {
     public void run() {
         if (!enabled) return;
         var events = jdbc.queryForList("update hpdi_alert_event set retry_at=current_timestamp+interval '1 minute' where id in"
-            + " (select id from hpdi_alert_event where delivered_at is null and retry_at<=current_timestamp order by retry_at,id limit 100 for update skip locked)"
-            + " returning id,workspace,coordinators,agent");
+            + " (select id from hpdi_alert_event where delivered_at is null and (not agent_suppressed or coordinators) and retry_at<=current_timestamp order by retry_at,id limit 100 for update skip locked)"
+            + " returning id,workspace,coordinators,case when agent_suppressed then null else agent end as agent");
         for (var event : events) {
             String workspace = (String) event.get("workspace");
             try { processing.run(workspace, () -> delivery.deliver(workspace, (UUID) event.get("id"),

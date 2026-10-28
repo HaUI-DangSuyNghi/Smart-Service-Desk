@@ -27,6 +27,16 @@ public class ExecutionController {
 
     public record QueuePage(List<QueueItem> items, int page, int size, long total, String assignee, long loadMinutes) {}
     public record Pause(String reason, String note) {}
+    public record Release(com.fasterxml.jackson.databind.JsonNode reason, com.fasterxml.jackson.databind.JsonNode note) {}
+
+    @PostMapping("/tasks/{id}/release")
+    @ResponseStatus(org.springframework.http.HttpStatus.NO_CONTENT)
+    public void release(@PathVariable String workspace, @PathVariable String id, @RequestBody Release body) {
+        permissions.require(workspace, Permissions.TASK_HANDLE);
+        if (body.reason() == null || !body.reason().isTextual() || body.note() == null || !body.note().isTextual())
+            throw CapabilityException.validation("String release reason and note required");
+        execution.release(workspace, id, body.reason().textValue(), body.note().textValue());
+    }
 
     @GetMapping("/queue")
     @Transactional(isolation = Isolation.REPEATABLE_READ)

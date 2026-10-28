@@ -50,6 +50,22 @@ public class ServiceDeskProcess implements ProcessContribution {
 
     @Override public Map<String, Set<String>> executionTasks() { return Map.of(REVIEWED_KEY, Set.of("handle"), INTAKE_KEY, Set.of("handle")); }
 
+    @Override public String releaseTarget(String processKey, String taskKey) {
+        return reviewed(processKey) && "handle".equals(taskKey) ? "review" : null;
+    }
+    @Override public void afterRelease(String workspace, String processKey, String processId, String taskId,
+            String reviewId, long workedMillis, String actor, String reason, String note) {
+        intake.getObject().handover(workspace, processId, reviewId, actor, reason, note);
+        jdbc.update("insert into servicedesk_work_release(workspace,ticket_id,task_id,review_task_id,released_by,reason,note,worked_millis)"
+            + " select workspace,id,?,?,?,?,?,? from servicedesk_ticket where workspace=? and process_instance_id=?",
+            taskId, reviewId, actor, reason, note, workedMillis, workspace, processId);
+        jdbc.update("update servicedesk_ticket set worked_millis=worked_millis+?,awaiting_review=true where workspace=? and process_instance_id=?",
+            workedMillis, workspace, processId);
+        jdbc.update("update servicedesk_review r set assignee=null from servicedesk_ticket t where t.id=r.ticket_id and t.workspace=? and t.process_instance_id=?", workspace, processId);
+        sla.getObject().released(workspace, taskId);
+        alerts.getObject().released(workspace, taskId);
+    }
+
     @Override public void afterAssign(String workspace, String processKey, String processId, String taskKey, String subject) {
         if (!reviewed(processKey) || !"handle".equals(taskKey)) return;
         alerts.getObject().assigned(workspace, processId, subject);
