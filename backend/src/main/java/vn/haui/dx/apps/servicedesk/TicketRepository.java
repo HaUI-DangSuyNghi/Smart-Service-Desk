@@ -75,7 +75,9 @@ class TicketRepository {
         return new Page<>(items, page.page(), page.size(), total == null ? 0 : total);
     }
 
-    record ProcessLink(UUID id, String creator, String processId) {}
+    record ProcessLink(UUID id, String creator, String processId, boolean reworked, String canonicalState) {
+        ProcessLink(UUID id, String creator, String processId) { this(id, creator, processId, false, null); }
+    }
 
     Page<Ticket> awaitingReview(String workspace, String query, Instant from, Instant to, PageRequest page, boolean priority) {
         List<Object> parameters=new ArrayList<>(List.of(workspace));
@@ -97,9 +99,13 @@ class TicketRepository {
             parameters.add(after);
         }
         parameters.add(limit);
-        return jdbc.query("select t.id,t.creator,t.process_instance_id from servicedesk_ticket t" + where
+        return jdbc.query("select t.id,t.creator,t.process_instance_id,c.state as canonical_state,"
+            + " exists(select 1 from servicedesk_confirmation f where f.workspace=t.workspace"
+            + " and f.process_instance_id=t.process_instance_id and f.decision='REWORK') as reworked"
+            + " from servicedesk_ticket t left join servicedesk_canonical_link c on c.follower_id=t.id and c.workspace=t.workspace" + where
             + " order by t.id limit ?", (row, number) -> new ProcessLink(row.getObject("id", UUID.class),
-                row.getString("creator"), row.getString("process_instance_id")), parameters.toArray());
+                row.getString("creator"), row.getString("process_instance_id"), row.getBoolean("reworked"),
+                row.getString("canonical_state")), parameters.toArray());
     }
 
     private static Ticket map(ResultSet row, int rowNumber) throws SQLException {

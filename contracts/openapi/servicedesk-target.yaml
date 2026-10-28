@@ -291,18 +291,7 @@ components:
           description: Bắt buộc khi có giá trị khác gợi ý AI hoặc khác người được đề xuất
           minLength: 1
     TicketStatisticsV2:
-      allOf:
-        - {$ref: 'servicedesk.yaml#/components/schemas/TicketStatistics'}
-        - type: object
-          required: [awaitingReview, assigned, inProgress, pending, reopened, closed, overdue]
-          properties:
-            awaitingReview: {type: integer, format: int64, minimum: 0}
-            assigned: {type: integer, format: int64, minimum: 0}
-            inProgress: {type: integer, format: int64, minimum: 0}
-            pending: {type: integer, format: int64, minimum: 0}
-            reopened: {type: integer, format: int64, minimum: 0}
-            closed: {type: integer, format: int64, minimum: 0, description: Bằng completed cũ}
-            overdue: {type: integer, format: int64, minimum: 0, description: 'Quá hạn bắt đầu hoặc quá SLA; cắt ngang, không cộng vào total'}
+      $ref: 'servicedesk.yaml#/components/schemas/TicketStatistics'
     ServiceDeskSettings:
       type: object
       additionalProperties: false

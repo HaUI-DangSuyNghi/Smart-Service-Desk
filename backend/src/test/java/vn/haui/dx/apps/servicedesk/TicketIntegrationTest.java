@@ -60,6 +60,7 @@ class TicketIntegrationTest {
     @SpyBean WorkflowService workflow;
     @SpyBean TicketReviewService reviewViews;
     @SpyBean vn.haui.dx.hpdi.process.api.ProcessCapability processViews;
+    @SpyBean vn.haui.dx.hpdi.process.api.ProcessObservations statisticsObservations;
     @Autowired vn.haui.dx.core.identity.api.WorkspaceDirectory directory;
     @SpyBean vn.haui.dx.hpdi.human.api.AgentDuty duty;
     @Autowired TicketSlaService slaService;
@@ -1800,8 +1801,136 @@ class TicketIntegrationTest {
     }
 
     private JsonNode statistics(String workspace, String subject, String query, String... roles) throws Exception {
-        return body(mvc.perform(get(BASE.replace("lab-a", workspace) + "/statistics").param("q", query)
+        var result = body(mvc.perform(get(BASE.replace("lab-a", workspace) + "/statistics").param("q", query)
             .with(as(subject, workspace, roles))).andExpect(status().isOk()));
+        long partition = 0;
+        for (String field : List.of("intake", "following", "awaitingReview", "assigned", "inProgress", "pending", "reopened",
+                "awaitingConfirmation", "closed", "unclassified")) partition += result.path(field).asLong();
+        assertEquals(result.path("total").asLong(), partition);
+        assertEquals(result.path("completed"), result.path("closed"));
+        assertTrue(result.path("overdue").asLong() <= result.path("total").asLong());
+        return result;
+    }
+
+    private void r12Count(String owner, String field) throws Exception {
+        var result = statistics("lab-a", owner, null, "requester");
+        assertEquals(1, result.path("total").asLong());
+        assertEquals(1, result.path(field).asLong(), result.toString());
+    }
+
+    @Test void r12StatisticsUseOneRepeatableReadSnapshotDuringConcurrentWorkflowClosure() throws Exception {
+        String owner = "r12-snapshot-" + UUID.randomUUID();
+        var ticket = create(owner,"R12 snapshot","requester");
+        String process = ticket.path("process").path("processInstanceId").asText();
+        var once = new java.util.concurrent.atomic.AtomicBoolean();
+        doAnswer(call -> {
+            assertEquals("repeatable read",jdbc.queryForObject("show transaction_isolation",String.class));
+            if (once.compareAndSet(false,true)) {
+                var executor = Executors.newSingleThreadExecutor();
+                try { executor.submit(() -> engineState.cancel(process)).get(15,TimeUnit.SECONDS); }
+                finally { executor.shutdownNow(); }
+            }
+            return call.callRealMethod();
+        }).when(statisticsObservations).snapshots(eq("lab-a"),anySet());
+        r12Count(owner,"awaitingReview");
+        r12Count(owner,"unclassified");
+    }
+
+    @Test void r12StatisticsBatchAcrossKeysetsWithoutPerTicketTimelineOrTaskReads() throws Exception {
+        String owner = "r12-batch-" + UUID.randomUUID();
+        var ticket = create(owner,"R12 batch","requester");
+        jdbc.update("insert into process_scope(id,workspace,owner,process_key,business_key)"
+            + " select ? || item::text,'lab-a',?,?,md5(? || item::text)::uuid::text from generate_series(1,1000) item",
+            owner,owner,ServiceDeskProcess.REVIEWED_KEY,owner);
+        jdbc.update("insert into servicedesk_ticket(id,workspace,creator,client_request_id,title,description,process_instance_id,process_key)"
+            + " select md5(? || item::text)::uuid,'lab-a',?,md5('request-' || ? || item::text)::uuid,'R12 batch','Synthetic missing history',? || item::text,?"
+            + " from generate_series(1,1000) item", owner,owner,owner,
+            owner,ServiceDeskProcess.REVIEWED_KEY);
+        clearInvocations(statisticsObservations,processViews,reviewViews);
+        var result = statistics("lab-a",owner,null,"requester");
+        assertEquals(1001,result.path("total").asLong());
+        assertEquals(1000,result.path("unclassified").asLong());
+        assertEquals(1,result.path("awaitingReview").asLong());
+        verify(statisticsObservations,times(2)).snapshots(eq("lab-a"),anySet());
+        verify(processViews,never()).timeline(anyString(),anyString());
+        verify(reviewViews,never()).view(anyString(),any());
+    }
+
+    @Test void r12StatisticsTrackNativeExecutionReleaseRepeatedReworkAndRequesterClosure() throws Exception {
+        String owner = "r12-owner-" + UUID.randomUUID();
+        String worker = "r12-worker-" + UUID.randomUUID();
+        var ticket = create(owner, "R12 lifecycle", "requester");
+        r12Count(owner, "awaitingReview");
+        String task = body(review(ticket, "coordinator", worker, null).andExpect(status().isOk())).path("taskId").asText();
+        r12Count(owner, "assigned");
+        String actions = "/api/hpdi/v1/workspaces/lab-a/tasks/";
+        mvc.perform(post(actions + task + "/start").with(as(worker,"lab-a","agent"))).andExpect(status().isOk());
+        r12Count(owner, "inProgress");
+        mvc.perform(post(actions + task + "/pause").with(as(worker,"lab-a","agent")).contentType("application/json")
+            .content("{\"reason\":\"WAITING_REQUESTER\"}")).andExpect(status().isOk());
+        r12Count(owner, "pending");
+        mvc.perform(post(actions + task + "/resume").with(as(worker,"lab-a","agent"))).andExpect(status().isOk());
+        r12Count(owner, "inProgress");
+        mvc.perform(post(actions + task + "/release").with(as(worker,"lab-a","agent")).contentType("application/json")
+            .content("{\"reason\":\"HANDOVER\",\"note\":\"Continue diagnosis\"}")).andExpect(status().isNoContent());
+        r12Count(owner, "awaitingReview");
+        for (int cycle = 0; cycle < 3; cycle++) {
+            task = body(review(ticket, "coordinator", worker, null).andExpect(status().isOk())).path("taskId").asText();
+            r12Count(owner, cycle == 0 ? "assigned" : "reopened");
+            mvc.perform(post(actions + task + "/start").with(as(worker,"lab-a","agent"))).andExpect(status().isOk());
+            r12Count(owner, "inProgress");
+            mvc.perform(post(actions + task + "/complete").with(as(worker,"lab-a","agent")).contentType("application/json")
+                .content("{\"expectedTaskKey\":\"handle\",\"outcome\":\"resolved\"}")).andExpect(status().isNoContent());
+            r12Count(owner, "awaitingConfirmation");
+            var detail = body(mvc.perform(get(BASE + "/" + ticket.path("id").asText()).with(as(owner,"lab-a","requester"))).andExpect(status().isOk()));
+            String outcome = cycle == 2 ? "accepted" : "rework";
+            mvc.perform(post(actions + detail.path("taskId").asText() + "/complete").with(as(owner,"lab-a","requester")).contentType("application/json")
+                .content(json.writeValueAsString(Map.of("expectedTaskKey","confirm","outcome",outcome)))).andExpect(status().isNoContent());
+            r12Count(owner, cycle == 2 ? "closed" : "reopened");
+        }
+        long audits = jdbc.queryForObject("select count(*) from audit_event", Long.class);
+        var rows = jdbc.queryForList("select * from servicedesk_confirmation where ticket_id=?::uuid",ticket.path("id").asText());
+        r12Count(owner,"closed");
+        assertEquals(audits,jdbc.queryForObject("select count(*) from audit_event",Long.class));
+        assertEquals(rows,jdbc.queryForList("select * from servicedesk_confirmation where ticket_id=?::uuid",ticket.path("id").asText()));
+    }
+
+    @Test void r12StatisticsIncludeAutoClosureButExcludeResolvedHistoricalSlaBreach() throws Exception {
+        String owner = "r12-auto-" + UUID.randomUUID();
+        var ticket = awaitingConfirmation(owner);
+        r12Count(owner,"awaitingConfirmation");
+        jdbc.update("update servicedesk_sla set start_breached_history=true,resolve_breached_history=true where ticket_id=?::uuid",ticket.path("id").asText());
+        assertEquals(0,statistics("lab-a",owner,null,"requester").path("overdue").asLong());
+        authorizedTimerFixture(java.time.Instant.parse(ticket.path("confirmDeadlineAt").asText()));
+        evaluate(ticket);
+        r12Count(owner,"closed");
+        assertEquals(0,statistics("lab-a",owner,null,"requester").path("overdue").asLong());
+    }
+
+    @Test void r12CurrentOverdueHonorsExactBoundaryAndR9PreservedOverdueDeadline() throws Exception {
+        String owner = "r12-sla-" + UUID.randomUUID();
+        var ticket = create(owner,"R12 SLA correction","requester");
+        review(ticket,"coordinator","r12-sla-agent",null,"OTHER","HIGH").andExpect(status().isOk());
+        var id = UUID.fromString(ticket.path("id").asText());
+        var state = slaService.read("lab-a",id);
+        doReturn(state.startBy().minusSeconds(1)).when(confirmationClock).instant();
+        assertTrue(state.project(slaService.now()).warning());
+        assertEquals(0,statistics("lab-a",owner,null,"requester").path("overdue").asLong());
+        doReturn(state.startBy()).when(confirmationClock).instant();
+        assertEquals(0,statistics("lab-a",owner,null,"requester").path("overdue").asLong());
+        doReturn(state.startBy().plusSeconds(1)).when(confirmationClock).instant();
+        assertEquals(1,statistics("lab-a",owner,null,"requester").path("overdue").asLong());
+        mvc.perform(patch(BASE + "/" + id + "/classification").with(as("coordinator","lab-a","coordinator"))
+            .contentType("application/json").content("{\"priority\":\"LOW\",\"reason\":\"Reduced verified impact\"}"))
+            .andExpect(status().isOk());
+        var amended = slaService.read("lab-a",id);
+        assertTrue(amended.project(slaService.now()).startBreached());
+        assertEquals(state.startBy(),amended.startBy());
+        assertEquals(1,statistics("lab-a",owner,null,"requester").path("overdue").asLong());
+        var before = jdbc.queryForList("select * from servicedesk_sla where ticket_id=?",id);
+        var result = statistics("lab-a",owner,null,"requester");
+        assertEquals(before,jdbc.queryForList("select * from servicedesk_sla where ticket_id=?",id));
+        java.nio.file.Files.writeString(Path.of("target/r12-statistics-http-evidence.json"),json.writeValueAsString(List.of(result)));
     }
 
     private void metrics(JsonNode result, long handling, long confirming, long completed, long unclassified) {
