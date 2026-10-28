@@ -541,6 +541,8 @@ public final class FlowableWorkflowService implements WorkflowService {
             engine.getTaskService().setAssignee(taskId, assignee);
             if (!assignee.equals(previous))
                 registry.afterAssign(workspace, (String) scope.get("process_key"), task.getProcessInstanceId(), task.getTaskDefinitionKey(), assignee);
+            if (!assignee.equals(previous))
+                registry.afterAssignmentChanged(workspace, (String) scope.get("process_key"), taskId, assignee, user.sub());
             Map<String, Object> details = new HashMap<>();
             details.put("processInstanceId", task.getProcessInstanceId());
             details.put("taskKey", task.getTaskDefinitionKey());

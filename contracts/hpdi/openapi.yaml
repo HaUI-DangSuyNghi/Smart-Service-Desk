@@ -908,7 +908,8 @@ components:
   schemas:
     EstimateRequestStatus:
       type: string
-      enum: [PENDING, APPROVED, REJECTED]
+      enum: [PENDING, APPROVED, REJECTED, SUPERSEDED]
+      description: Assignment changes atomically supersede pending requests from the previous assignee. Terminal requests cannot be decided.
     EstimateRequest:
       type: object
       additionalProperties: false
@@ -927,6 +928,9 @@ components:
         decidedBy: {type: string, nullable: true}
         decidedAt: {type: string, format: date-time, nullable: true}
         decisionNote: {type: string, nullable: true}
+        supersededBy: {type: string, nullable: true, description: Actor triggering assignment supersession; not a decision.}
+        supersededAt: {type: string, format: date-time, nullable: true}
+        supersededReason: {type: string, nullable: true, description: ASSIGNMENT_CHANGED for superseded requests; otherwise null.}
         createdAt: {type: string, format: date-time}
     Alert:
       type: object

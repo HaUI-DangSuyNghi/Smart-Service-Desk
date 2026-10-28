@@ -139,6 +139,139 @@ class TicketIntegrationTest {
             .contentType("application/json").content("{\"approved\":true}")).andExpect(status().isConflict());
     }
 
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"NOT_STARTED", "PENDING"})
+    void r2ReassignmentSupersedesWithoutFakeDecisionAndNeverRevives(String state) throws Exception {
+        String worker = "old-" + UUID.randomUUID(), next = "new-" + UUID.randomUUID();
+        var ticket = create("owner-" + UUID.randomUUID(), "Reassign estimate", "requester");
+        String task = body(review(ticket,"coordinator",worker,90).andExpect(status().isOk())).path("taskId").asText();
+        estimateMembers(worker,next);
+        String base = "/api/hpdi/v1/workspaces/lab-a/";
+        String requests = base + "tasks/" + task + "/estimate-requests";
+        String payload = "{\"proposedMinutes\":120,\"reason\":\"More work\"}";
+        String request = body(mvc.perform(post(requests).with(as(worker,"lab-a","agent"))
+            .contentType("application/json").content(payload)).andExpect(status().isCreated())).path("id").asText();
+        if ("PENDING".equals(state)) {
+            mvc.perform(post(base + "tasks/" + task + "/start").with(as(worker,"lab-a","agent"))).andExpect(status().isOk());
+            mvc.perform(post(base + "tasks/" + task + "/pause").with(as(worker,"lab-a","agent"))
+                .contentType("application/json").content("{\"reason\":\"WAITING_EXTERNAL\"}")).andExpect(status().isOk());
+        }
+        var clocks = jdbc.queryForMap("select * from servicedesk_sla where handle_task_id=?",task);
+        assignEstimate(task,worker).andExpect(status().isOk());
+        assertEquals("PENDING",jdbc.queryForObject("select status from hpdi_estimate_request where id=?::uuid",String.class,request));
+        assignEstimate(task,next).andExpect(status().isOk());
+        var row = jdbc.queryForMap("select * from hpdi_estimate_request where id=?::uuid",request);
+        assertEquals("SUPERSEDED",row.get("status"));
+        assertEquals("coordinator",row.get("superseded_by"));
+        assertNotNull(row.get("superseded_at"));
+        assertEquals("ASSIGNMENT_CHANGED",row.get("superseded_reason"));
+        assertNull(row.get("decided_by")); assertNull(row.get("decided_at"));
+        assertEquals(1,jdbc.queryForObject("select count(*) from audit_event where action='estimate.supersede' and resource=?",Integer.class,task));
+        mvc.perform(get(base + "estimate-requests?status=SUPERSEDED").with(as(worker,"lab-a","agent")))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.items[0].status").value("SUPERSEDED"));
+        mvc.perform(post(requests).with(as(worker,"lab-a","agent")).contentType("application/json").content(payload)).andExpect(status().isForbidden());
+        for (boolean approved : List.of(true,false))
+            mvc.perform(post(base + "estimate-requests/" + request + "/decision").with(as("coordinator","lab-a","coordinator"))
+                .contentType("application/json").content("{\"approved\":" + approved + "}")).andExpect(status().isConflict());
+        mvc.perform(post(requests).with(as(next,"lab-a","agent")).contentType("application/json").content(payload)).andExpect(status().isCreated());
+        assignEstimate(task,worker).andExpect(status().isOk());
+        assertEquals(2,jdbc.queryForObject("select count(*) from hpdi_estimate_request where task_id=? and status='SUPERSEDED'",Integer.class,task));
+        mvc.perform(post(base + "estimate-requests/" + request + "/decision").with(as("coordinator","lab-a","coordinator"))
+            .contentType("application/json").content("{\"approved\":true}")).andExpect(status().isConflict());
+        assertEquals(clocks,jdbc.queryForMap("select * from servicedesk_sla where handle_task_id=?",task));
+        assertEquals(90,jdbc.queryForObject("select estimate_minutes from servicedesk_review where ticket_id=?::uuid",Integer.class,ticket.path("id").asText()));
+    }
+
+    @Test void r2CreationReconcilesPreUpgradeStaleAssignmentWithAudit() throws Exception {
+        String worker = "legacy-old-" + UUID.randomUUID(), next = "legacy-new-" + UUID.randomUUID();
+        var ticket = create("owner-" + UUID.randomUUID(), "Upgrade stale request", "requester");
+        String task = body(review(ticket,"coordinator",worker,90).andExpect(status().isOk())).path("taskId").asText();
+        estimateMembers(worker,next);
+        String route = "/api/hpdi/v1/workspaces/lab-a/tasks/" + task + "/estimate-requests";
+        String payload = "{\"proposedMinutes\":120,\"reason\":\"More work\"}";
+        mvc.perform(post(route).with(as(worker,"lab-a","agent")).contentType("application/json").content(payload)).andExpect(status().isCreated());
+        jdbc.update("update act_ru_task set assignee_=? where id_=?",next,task);
+        jdbc.update("update servicedesk_review set assignee=? where ticket_id=?::uuid",next,ticket.path("id").asText());
+        mvc.perform(post(route).with(as(next,"lab-a","agent")).contentType("application/json").content(payload)).andExpect(status().isCreated());
+        assertEquals(next,jdbc.queryForObject("select superseded_by from hpdi_estimate_request where task_id=? and status='SUPERSEDED'",String.class,task));
+        assertEquals(1,jdbc.queryForObject("select count(*) from audit_event where action='estimate.supersede' and resource=?",Integer.class,task));
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"CREATE_OLD", "CREATE_NEW", "APPROVE"})
+    void r2ReassignSerializesWithCreateAndApprove(String operation) throws Exception {
+        String worker = "race-old-" + UUID.randomUUID(), next = "race-new-" + UUID.randomUUID();
+        var ticket = create("owner-" + UUID.randomUUID(), "Reassign race", "requester");
+        String task = body(review(ticket,"coordinator",worker,90).andExpect(status().isOk())).path("taskId").asText();
+        estimateMembers(worker,next);
+        String base = "/api/hpdi/v1/workspaces/lab-a/";
+        String requests = base + "tasks/" + task + "/estimate-requests";
+        String payload = "{\"proposedMinutes\":120,\"reason\":\"More work\"}";
+        String request = "APPROVE".equals(operation) ? body(mvc.perform(post(requests).with(as(worker,"lab-a","agent"))
+            .contentType("application/json").content(payload)).andExpect(status().isCreated())).path("id").asText() : null;
+        var pool = Executors.newFixedThreadPool(2);
+        try {
+            var gate = new CountDownLatch(1);
+            var assignment = pool.submit(() -> { gate.await(); return assignEstimate(task,next).andReturn().getResponse().getStatus(); });
+            var mutation = pool.submit(() -> {
+                gate.await();
+                return "APPROVE".equals(operation)
+                    ? mvc.perform(post(base + "estimate-requests/" + request + "/decision").with(as("coordinator","lab-a","coordinator"))
+                        .contentType("application/json").content("{\"approved\":true}")).andReturn().getResponse().getStatus()
+                    : mvc.perform(post(requests).with(as("CREATE_OLD".equals(operation) ? worker : next,"lab-a","agent"))
+                        .contentType("application/json").content(payload)).andReturn().getResponse().getStatus();
+            });
+            gate.countDown();
+            assertEquals(200,assignment.get(20,TimeUnit.SECONDS));
+            assertTrue(("APPROVE".equals(operation) ? List.of(200,409) : List.of(201,403)).contains(mutation.get(20,TimeUnit.SECONDS)));
+        } finally { pool.shutdownNow(); }
+        assertEquals(0,jdbc.queryForObject("select count(*) from hpdi_estimate_request where task_id=? and requested_by=? and status='PENDING'",Integer.class,task,worker));
+        if (request != null) mvc.perform(post(base + "estimate-requests/" + request + "/decision").with(as("coordinator","lab-a","coordinator"))
+            .contentType("application/json").content("{\"approved\":true}")).andExpect(status().isConflict());
+        if (jdbc.queryForObject("select count(*) from hpdi_estimate_request where task_id=? and status='PENDING'",Integer.class,task) == 0)
+            mvc.perform(post(requests).with(as(next,"lab-a","agent")).contentType("application/json").content(payload)).andExpect(status().isCreated());
+        assertEquals(next,jdbc.queryForObject("select requested_by from hpdi_estimate_request where task_id=? and status='PENDING'",String.class,task));
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(booleans = {false,true})
+    void r6WrongGroupRecomputesDefaultButCarriesCoordinatorEstimate(boolean explicit) throws Exception {
+        String worker = "category-" + UUID.randomUUID();
+        var ticket = create("owner-" + UUID.randomUUID(), "Wrong category", "requester");
+        String task = body(review(ticket,"coordinator",worker,explicit ? 110 : null).andExpect(status().isOk())).path("taskId").asText();
+        String base = "/api/hpdi/v1/workspaces/lab-a/";
+        var clocks = jdbc.queryForMap("select approved_at,start_by,resolve_by from servicedesk_sla where handle_task_id=?",task);
+        mvc.perform(post(base + "tasks/" + task + "/release").with(as(worker,"lab-a","agent"))
+            .contentType("application/json").content("{\"reason\":\"WRONG_GROUP\",\"note\":\"Account issue\"}")).andExpect(status().isNoContent());
+        var changed = body(mvc.perform(post(BASE + "/" + ticket.path("id").asText() + "/review").with(as("coordinator","lab-a","coordinator"))
+            .contentType("application/json").content("{\"category\":\"ACCOUNT\",\"priority\":\"HIGH\",\"assignee\":\"" + worker + "\",\"reason\":\"Correct group\"}"))
+            .andExpect(status().isOk()));
+        int expected = explicit ? 110 : 20;
+        assertEquals(expected,changed.path("estimate").path("minutes").asInt());
+        assertEquals(explicit ? "COORDINATOR" : "DEFAULT",changed.path("estimate").path("basis").asText());
+        String nextTask = changed.path("taskId").asText();
+        assertEquals(clocks,jdbc.queryForMap("select approved_at,start_by,resolve_by from servicedesk_sla where handle_task_id=?",nextTask));
+        assertEquals(expected,jdbc.queryForObject("select minutes from servicedesk_estimate_history where ticket_id=?::uuid and review_task_id=(select review_task_id from servicedesk_review where ticket_id=?::uuid)",Integer.class,ticket.path("id").asText(),ticket.path("id").asText()));
+        assertTrue(jdbc.queryForObject("select count(*) from servicedesk_estimate_history where ticket_id=?::uuid and category='HARDWARE'",Integer.class,ticket.path("id").asText()) > 0);
+        var queue = body(mvc.perform(get(base + "queue").with(as(worker,"lab-a","agent"))).andExpect(status().isOk()));
+        var item = java.util.stream.StreamSupport.stream(queue.path("items").spliterator(),false)
+            .filter(value -> value.path("id").asText().equals(nextTask)).findFirst().orElseThrow();
+        assertEquals(expected,item.path("remainingMinutes").asInt());
+        assertEquals(expected,queue.path("loadMinutes").asInt());
+    }
+
+    private void estimateMembers(String worker, String next) {
+        when(directory.members("lab-a")).thenReturn(List.of(
+            new vn.haui.dx.core.identity.api.DirectoryMember(worker,worker,null,java.util.Set.of(new vn.haui.dx.core.identity.api.WorkspaceRole("agent"))),
+            new vn.haui.dx.core.identity.api.DirectoryMember(next,next,null,java.util.Set.of(new vn.haui.dx.core.identity.api.WorkspaceRole("agent"))),
+            new vn.haui.dx.core.identity.api.DirectoryMember("coordinator","coordinator",null,java.util.Set.of(vn.haui.dx.core.identity.api.WorkspaceRole.COORDINATOR))));
+    }
+
+    private ResultActions assignEstimate(String task, String worker) throws Exception {
+        return mvc.perform(post("/api/hpdi/v1/workspaces/lab-a/tasks/" + task + "/assign").with(as("coordinator","lab-a","coordinator"))
+            .contentType("application/json").content("{\"assignee\":\"" + worker + "\"}"));
+    }
+
     @Test void r2ConcurrentRequestsAndDecisionsHaveOneWinner() throws Exception {
         String worker = "race-" + UUID.randomUUID();
         var ticket = create("owner-" + UUID.randomUUID(),"Estimate race", "requester");
@@ -173,7 +306,7 @@ class TicketIntegrationTest {
         String base = "/api/hpdi/v1/workspaces/lab-a/";
         var request = body(mvc.perform(post(base + "tasks/" + task + "/estimate-requests").with(as(worker,"lab-a","agent"))
             .contentType("application/json").content("{\"proposedMinutes\":120,\"reason\":\"More work\"}")).andExpect(status().isCreated()));
-        jdbc.execute("create function reject_work_adjustment() returns trigger language plpgsql as $$ begin if new.action in ('estimate.decision','task.release') then raise exception 'reject adjustment' using errcode='23514'; end if; return new; end $$");
+        jdbc.execute("create function reject_work_adjustment() returns trigger language plpgsql as $$ begin if new.action in ('estimate.decision','estimate.supersede','task.release') then raise exception 'reject adjustment' using errcode='23514'; end if; return new; end $$");
         jdbc.execute("create trigger reject_work_adjustment before insert on audit_event for each row execute function reject_work_adjustment()");
         try {
             mvc.perform(post(base + "estimate-requests/" + request.path("id").asText() + "/decision").with(as("coordinator","lab-a","coordinator"))
@@ -185,6 +318,12 @@ class TicketIntegrationTest {
             assertEquals(1,jdbc.queryForObject("select count(*) from act_ru_task where id_=?",Integer.class,task));
             assertEquals(0,jdbc.queryForObject("select count(*) from servicedesk_work_release where task_id=?",Integer.class,task));
             assertNull(jdbc.queryForObject("select released_at from servicedesk_sla where handle_task_id=?",java.sql.Timestamp.class,task));
+            String next = "rollback-next-" + UUID.randomUUID();
+            estimateMembers(worker,next);
+            assignEstimate(task,next).andExpect(status().isConflict());
+            assertEquals(worker,jdbc.queryForObject("select assignee_ from act_ru_task where id_=?",String.class,task));
+            assertEquals("PENDING",jdbc.queryForObject("select status from hpdi_estimate_request where task_id=?",String.class,task));
+            assertNull(jdbc.queryForObject("select superseded_at from hpdi_estimate_request where task_id=?",java.sql.Timestamp.class,task));
         } finally {
             jdbc.execute("drop trigger reject_work_adjustment on audit_event");
             jdbc.execute("drop function reject_work_adjustment()");

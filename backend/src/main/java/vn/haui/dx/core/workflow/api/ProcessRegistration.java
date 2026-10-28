@@ -7,6 +7,7 @@ import java.util.List;
  * file BPMN không được đăng ký, hoặc hai nơi đăng ký trùng key.
  */
 public interface ProcessRegistration {
+    default void afterAssignmentChanged(String workspace, String taskId, String assignee, String actor) {}
     default String releaseTarget(String processKey, String taskKey) { return null; }
     default void afterRelease(String workspace, String processKey, String processId, String taskId,
             String reviewId, long workedMillis, String actor, String reason, String note) {}

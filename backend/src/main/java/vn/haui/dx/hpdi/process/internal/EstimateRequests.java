@@ -13,10 +13,11 @@ import vn.haui.dx.hpdi.process.api.*;
 
 @Service
 public class EstimateRequests {
-    public enum Status { PENDING, APPROVED, REJECTED }
+    public enum Status { PENDING, APPROVED, REJECTED, SUPERSEDED }
     public record Request(UUID id, String taskId, String processInstanceId, String businessKey, String label,
             String requestedBy, int currentMinutes, int proposedMinutes, String reason, Status status,
-            Instant createdAt, String decidedBy, Instant decidedAt, String decisionNote) {}
+            Instant createdAt, String decidedBy, Instant decidedAt, String decisionNote,
+            String supersededBy, Instant supersededAt, String supersededReason) {}
     private final JdbcTemplate jdbc;
     private final WorkExecution execution;
     private final WorkScheduling scheduling;
@@ -24,11 +25,14 @@ public class EstimateRequests {
     private final HumanContext humans;
     private final PermissionGuard permissions;
     private final ActivityJournal journal;
+    private final EstimateRequestLifecycle lifecycle;
 
     public EstimateRequests(JdbcTemplate jdbc, WorkExecution execution, WorkScheduling scheduling,
-            List<WorkEstimate> estimates, HumanContext humans, PermissionGuard permissions, ActivityJournal journal) {
+            List<WorkEstimate> estimates, HumanContext humans, PermissionGuard permissions, ActivityJournal journal,
+            EstimateRequestLifecycle lifecycle) {
         this.jdbc = jdbc; this.execution = execution; this.scheduling = scheduling;
         this.estimates = List.copyOf(estimates); this.humans = humans; this.permissions = permissions; this.journal = journal;
+        this.lifecycle = lifecycle;
     }
 
     @Transactional
@@ -46,6 +50,7 @@ public class EstimateRequests {
             var task = execution.get(workspace, taskId).task();
             if (!actor.subject().equals(task.assignee())) throw CapabilityException.forbidden("Task assignee required");
             var snapshot = provider(task).current(workspace, task, actor.subject());
+            lifecycle.assignmentChanged(workspace, taskId, task.assignee(), actor.subject());
             if (Boolean.TRUE.equals(jdbc.queryForObject("select exists(select 1 from hpdi_estimate_request where workspace=? and task_id=? and status='PENDING')",
                     Boolean.class, workspace, taskId))) throw CapabilityException.conflict("Pending estimate request already exists");
             jdbc.update("insert into hpdi_estimate_request(id,workspace,process_instance_id,task_id,generation,business_key,label,requested_by,current_minutes,proposed_minutes,reason)"
@@ -114,9 +119,11 @@ public class EstimateRequests {
     }
     private Request map(ResultSet row, int index) throws SQLException {
         var decided = row.getTimestamp("decided_at");
+        var superseded = row.getTimestamp("superseded_at");
         return new Request(row.getObject("id", UUID.class), row.getString("task_id"), row.getString("process_instance_id"),
             row.getString("business_key"), row.getString("label"), row.getString("requested_by"), row.getInt("current_minutes"),
             row.getInt("proposed_minutes"), row.getString("reason"), Status.valueOf(row.getString("status")),
-            row.getTimestamp("created_at").toInstant(), row.getString("decided_by"), decided == null ? null : decided.toInstant(), row.getString("decision_note"));
+            row.getTimestamp("created_at").toInstant(), row.getString("decided_by"), decided == null ? null : decided.toInstant(), row.getString("decision_note"),
+            row.getString("superseded_by"), superseded == null ? null : superseded.toInstant(), row.getString("superseded_reason"));
     }
 }

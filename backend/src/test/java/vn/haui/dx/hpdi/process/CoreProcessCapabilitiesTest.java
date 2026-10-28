@@ -44,7 +44,7 @@ class CoreProcessCapabilitiesTest {
     @Test void contributionsAcceptNewRolesWithoutEditingCapability() {
         ProcessContribution domain = () -> List.of(new ProcessDefinition("new-domain", java.util.Set.of("specialist"),
             java.util.Set.of(), java.util.Map.of("review", java.util.Set.of("accepted"))));
-        var policy = new ContributionRegistry(List.of(domain)).policies().get(0);
+        var policy = new ContributionRegistry(List.of(domain), null).policies().get(0);
         assertEquals("specialist", policy.starterRoles().iterator().next().value());
         assertEquals("new-domain", policy.processKey());
     }

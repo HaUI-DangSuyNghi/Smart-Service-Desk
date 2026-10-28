@@ -24,6 +24,7 @@ def main():
     parser.add_argument("--assessment-lifecycle", type=Path)
     parser.add_argument("--assignment-evidence", type=Path)
     parser.add_argument("--sla-evidence", type=Path)
+    parser.add_argument("--estimate-evidence", type=Path)
     parser.add_argument("--baseline", help="Git ref for whole-document OpenAPI regression comparison")
     arguments = parser.parse_args()
     import json
@@ -105,6 +106,22 @@ def main():
             assert not validator.is_valid(dict(sla, invented=True))
         print("PASS SLA HTTP contracts:", len(values), "real responses, with nine negative checks each")
     count = 0
+    if arguments.estimate_evidence:
+        runtime = json.loads(arguments.estimate_evidence.read_text(encoding="utf-8"))
+        assert runtime["status"] == "PASS"
+        for schema in ("EstimateRequestStatus", "EstimateRequest"):
+            assert hpdi["components"]["schemas"][schema] == target["components"]["schemas"][schema]
+        validator = OAS30Validator({"$ref": HPDI.as_uri() + "#/components/schemas/EstimateRequest"},
+            registry=registry, format_checker=OAS30Validator.FORMAT_CHECKER)
+        for name, status in (("estimateRequest", "PENDING"), ("estimateDecision", "APPROVED"), ("supersededRequest", "SUPERSEDED")):
+            value = runtime[name]
+            validator.validate(value)
+            assert value["status"] == status
+            assert not validator.is_valid(dict(value, status="CANCELLED"))
+        retired = runtime["supersededRequest"]
+        assert retired["supersededReason"] == "ASSIGNMENT_CHANGED" and retired["supersededBy"] and retired["supersededAt"]
+        assert retired["decidedBy"] is None and retired["decidedAt"] is None and retired["decisionNote"] is None
+        print("PASS estimate lifecycle HTTP contracts: PENDING, APPROVED, SUPERSEDED; live/target parity and negative checks")
     for name, value in evidence.items():
         document, location, schema = (app, APP, "Ticket") if name in ("created", "review") else (hpdi, HPDI, "QueuePage" if name == "queue" else "QueueItem")
         validator = OAS30Validator({"$ref": location.as_uri() + "#/components/schemas/" + schema},

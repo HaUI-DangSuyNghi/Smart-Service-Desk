@@ -79,8 +79,26 @@ basis, and appends existing estimate history. REJECTED changes only the request.
 Either decision permits a later request on the still-active task. Duplicate
 pending creation and duplicate decisions conflict. Ended/released/reworked tasks,
 changed assignment, changed generation or changed ET make a request stale.
-Stale records remain historical PENDING records: the target schema has no CANCELLED
-status; decisions return 409 rather than inventing a status or applying stale ET.
+Changing an active task's assignee atomically moves the previous assignee's PENDING
+request to SUPERSEDED under the same process-scope lock. The unique pending index
+is retained. Actor, timestamp and ASSIGNMENT_CHANGED reason are recorded separately
+from decisions, with an estimate.supersede audit. Audit failure rolls back both
+assignment and supersession. Same-assignee assignment is a no-op; A -> B -> A never
+revives an old request. B can immediately create a new request; A cannot propose
+or decide for B. Approve-before-reassign is valid; reassign-before-approve returns
+409 without changing ET. Creation also reconciles pre-upgrade pending requests
+whose requester no longer holds the task, transactionally and with audit.
+Requests on ended/released tasks remain historical PENDING and cannot be decided;
+new handles have distinct IDs and are not blocked by them.
+
+On handover reapproval, DEFAULT is recalculated from the new category and priority
+(even after WRONG_GROUP). COORDINATOR estimates carry forward unchanged, including
+across category changes, unless the reviewer explicitly replaces the estimate.
+This preserves deliberate human sizing rather than silently reinterpreting it as
+a default. Previous history is immutable; the new review records the new category,
+basis and effective estimate, which feeds queue remaining time and workload.
+Priority changes remain blocked by the existing SLA policy (409); this PR does not
+relax that guard or grant a new SLA budget.
 
 | Operation | Authorization |
 | --- | --- |
@@ -130,6 +148,8 @@ and new Coordinator-wait alert policy are intentionally outside this PR.
   PENDING task index, durable alert recipient-suppression flag.
 - Service Desk V24: handover facts with workspace/ticket FK, unique old handle
   and new review, SLA release timestamp.
+- HPDI V25: additive SUPERSEDED lifecycle and separate supersession provenance.
+  V23/V24 are unchanged; upgrade tests include populated V23/V24 request storage.
 - V1-V22 unchanged. Clean install, upgrade through V22 and repeat migrate are tested.
 - HPDI process IDs are capability references, not cross-owner foreign keys to Core
   storage (the repository's strict boundary gate prohibits such FKs). Domain-owned
@@ -155,9 +175,32 @@ promoted into the live HPDI contract; Service Desk HTTP shapes remain unchanged.
 
 ## Verification and Merge Readiness
 
-Test counts, tested commit and runtime evidence are recorded after final verification.
+PR #57's final verification comment records the exact final commit SHA, commands,
+XML-derived test counts and runtime checks. The verification matrix is:
+
+| Gate | Command / evidence |
+| --- | --- |
+| Backend full | `scripts/test-task-execution.ps1 -BuildImage dx-core-build:0.1.0 -Profile full` |
+| Core-only | Same runner with `-Profile core-only` |
+| Second-domain / Room Request | Same runner with `-Profile second-domain` |
+| R2/R6 + upgrade | Full profile, `-Test 'TicketIntegrationTest#r2*+r6*,ServiceDeskMigrationIntegrationTest,AgentDutyUpgradeIntegrationTest,IntakeWorkflowIntegrationTest#handover*'` |
+| SLA / Alerts | Full profile, `-Test 'TicketIntegrationTest#sla*,WorkAlertsIntegrationTest,SlaPolicyTest'` |
+| Real Flowable + signed JWT + restarts | `python scripts/acceptance/sla-engine.py --handover --alerts` and again with `--intake` |
+| Contract | `scripts/test-servicedesk-execution-contract.py` with real full-suite response evidence, `--estimate-evidence .local/r2-r6-runtime.json --baseline origin/develop` |
+| Tier boundaries | `python scripts/check-tier-boundaries.py` and `python scripts/test-tier-boundaries.py` |
+
+Local Maven evidence is `.local/task-execution-<profile>[-targeted]/summary.json`
+and per-run `TEST-*.xml`; real-runtime evidence is `.local/r2-r6-runtime.json`
+and `.local/r2-r6-intake-runtime.json`. Evidence is not committed or presented as
+hosted CI success. Baseline whole-document OpenAPI issues are reported separately
+from the promoted-contract regression check. Hosted CI waiver means WAIVED, not PASS.
+The implementation commit is made before the final matrix runs; no source edits
+are permitted between that verification and push without rerunning affected gates.
+
 The initial native Windows full run exposed existing POSIX permission/symlink
 test incompatibilities; final full/core/second-domain runs use disposable Linux
 containers and PostgreSQL rather than skipping those checks. Runtime probes use
 real signed Keycloak JWTs, persisted Flowable instances and actual backend restarts.
 No shared environment deployment, forced push, merge or production-ready claim.
+Use a MERGE COMMIT only (not squash or rebase merge). Draft removal and independent
+review approval remain human decisions; this agent does not merge PR #57.

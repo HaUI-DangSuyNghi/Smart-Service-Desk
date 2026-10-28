@@ -21,7 +21,7 @@ class WorkExecutionTest {
                 public java.util.Map<String, java.util.Set<String>> executionTasks() { return declaration; }
             };
             assertThrows(IllegalArgumentException.class,
-                () -> new vn.haui.dx.hpdi.process.internal.ContributionRegistry(java.util.List.of(contribution)));
+                () -> new vn.haui.dx.hpdi.process.internal.ContributionRegistry(java.util.List.of(contribution), null));
         }
     }
 
@@ -35,10 +35,10 @@ class WorkExecutionTest {
                 return java.util.Map.of("second-domain", java.util.Set.of("fulfil"));
             }
         };
-        var registry = new vn.haui.dx.hpdi.process.internal.ContributionRegistry(java.util.List.of(domain));
+        var registry = new vn.haui.dx.hpdi.process.internal.ContributionRegistry(java.util.List.of(domain), null);
         assertEquals(java.util.Set.of("fulfil"), registry.executionTasks().get("second-domain"));
         vn.haui.dx.hpdi.process.api.ProcessContribution legacy = domain::definitions;
-        assertTrue(new vn.haui.dx.hpdi.process.internal.ContributionRegistry(java.util.List.of(legacy)).executionTasks().isEmpty());
+        assertTrue(new vn.haui.dx.hpdi.process.internal.ContributionRegistry(java.util.List.of(legacy), null).executionTasks().isEmpty());
     }
 
     @Test void pauseReasonsAreHpdiPolicyAndInvalidRequestsNeverReachCore() {

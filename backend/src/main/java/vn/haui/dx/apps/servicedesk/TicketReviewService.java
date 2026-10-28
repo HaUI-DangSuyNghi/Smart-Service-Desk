@@ -62,7 +62,8 @@ public class TicketReviewService implements WorkProjection {
         int defaults = TicketReview.defaultMinutes(decision.category(), decision.priority());
         var handover = jdbc.queryForList("select r.estimate_minutes,r.estimate_basis from servicedesk_work_release h join servicedesk_review r on r.ticket_id=h.ticket_id"
             + " where h.workspace=? and h.review_task_id=?", workspace, review.id());
-        if (!handover.isEmpty()) defaults = ((Number) handover.get(0).get("estimate_minutes")).intValue();
+        if (!handover.isEmpty() && "COORDINATOR".equals(handover.get(0).get("estimate_basis")))
+            defaults = ((Number) handover.get(0).get("estimate_minutes")).intValue();
         int minutes = decision.estimateMinutes() == null ? defaults : decision.estimateMinutes();
         String basis = decision.estimateMinutes() == null ? "DEFAULT" : "COORDINATOR";
         String initialBasis = handover.isEmpty() ? "DEFAULT" : (String) handover.get(0).get("estimate_basis");
