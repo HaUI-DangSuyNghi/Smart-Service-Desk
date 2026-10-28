@@ -3,7 +3,9 @@
 Date: 2026-10-28 (Asia/Saigon). Branch: `feature/work-settings-admin`.
 Runtime baseline: `246a8d6676f4030b474e0f809fbb9ce652339cb8`.
 Reviewed document: `06c3996cd159430bb4febd62b65bba780ba089f7`.
-Documentation only: settings APIs, storage, migrations and fresh guard are NOT_IMPLEMENTED.
+Phase 1 design below is retained as historical/planned context. Settings APIs,
+storage and migrations remain NOT_IMPLEMENTED. Core fresh-admin capability is
+implemented only in Phase 2 Commit 1; current evidence and limits are in section 10.
 
 ## 1. Approved Scope And GAP Matrix
 
@@ -405,3 +407,103 @@ Documentation-only checks on 2026-10-28: git diff --check PASS; runnable inline
 assertions PASS for effective-role/disabled-account design, corrected SLA pairs
 and 510-minute arithmetic, scope approval, overflow bound, evidence separation
 and sole changed tracked file. No backend/runtime test run in this revision.
+
+## 10. Phase 2 Commit 1 - Core Fresh Admin Authorization
+
+Date: 2026-10-28 (Asia/Saigon). Base b41e013c94939d3da70018911bf4eaef5db1dbbd.
+This section supersedes NOT_IMPLEMENTED/NOT_RUN for this capability ONLY, not
+the settings, audit-namespace, migration or runtime-wiring acceptance above.
+
+Public Core API: FreshAdminAuthorization.requirePlatformAdmin() returns the
+current authenticated subject, or throws CoreException. Its only identity input
+is WorkspaceAccess.current().sub(); no caller-supplied user id, role or actor.
+KeycloakFreshAdminAuthorization uses existing dx.directory URL/realm/client/
+secret configuration. It obtains a NEW dx-directory client-credentials token
+per invocation, reads current user, rejects missing/disabled/service account,
+then reads effective realm/composite roles. No account/role/decision cache and
+no service-token cache, so no refresh/retry path is needed; service 401 fails
+closed immediately. Production HttpClient disables redirects, connects within
+2s and shares a monotonic 5s budget across token/user/role requests and body
+completion. Timeout/interruption cancels the pending request; interrupt status
+is preserved. Strict JSON rejects duplicate keys/trailing content, malformed
+account/roles and mismatched identity. Errors do not disclose tokens/secrets.
+
+401: missing authenticated subject. 403: user absent/disabled/service account
+or effective admin role absent. 503: missing configuration, dependency errors,
+invalid payload, credential/permission failures, role endpoint 404 or timeout.
+No JWT platform-admin claim is used as a grant or prerequisite. Direct,
+group-inherited, composite and nested-composite expansion is delegated to the
+real Keycloak effective-role endpoint, not reimplemented in Java.
+
+No existing endpoint, WorkspaceAccess/JWT behavior, AuditService, directory
+cache/client, Keycloak template permission, migration or Maven profile is
+modified. No HTTP settings endpoint, HPDI facade, system-audit read branch or
+V32/V33 is implemented. The current task narrows the earlier commit plan:
+reserved-scope audit enforcement remains future work. Future settings GET AND
+PUT must explicitly invoke this capability through the correct tier facade;
+there is no global interceptor changing authorization of existing APIs.
+The capability itself has no database mutation or transaction propagation.
+
+### Runnable evidence
+
+`scripts/test-fresh-admin.ps1` creates a disposable realm from the repository
+template on pinned Keycloak 26.0.8, with random ephemeral credentials; it never
+targets an existing realm or changes production grants. Directory gets exactly
+the template view-users/query-users/query-groups grants. The live test removes
+and restores view-users in its own fixture to prove dependency fail-closed.
+User/role mutations by dx-directory return 403; user/effective-role reads work.
+Test-only users/groups/composites and an unprivileged service client are created
+using bootstrap admin ONLY in the disposable test realm. No privileged roles
+are added to dx-directory. Import credential file and containers are removed
+in finally; logs/XML/summaries remain under .local/fresh-admin-* (not secrets).
+
+The live test verifies Keycloak-issued JWT signature/issuer/expiry using its
+real JWK endpoint and asserts dx-core audience before installing the caller in
+the test SecurityContext. It proves newly granted effective roles work without
+refreshing claims, then obtains an admin-bearing JWT, revokes the direct/group/
+composite/nested grant and reuses the SAME JWT to prove denial. Also tests
+disabled/deleted accounts, actual Requester/Agent/Coordinator users and a signed
+service-account JWT. This is capability integration, NOT nonexistent Settings
+HTTP/Gateway acceptance. Unit tests use a local HTTP fixture for failure status,
+strict JSON, subject encoding, no cache, time budget and interruption cases.
+
+Commands: `scripts/test-fresh-admin.ps1 -BuildImage dx-platform-build:0.1.0
+-Profile core-only` (also full / second-domain); no -Dtest filter on these
+regression profiles. Runner copies current source, clean verifies on Linux/JDK17
+with PostgreSQL 16.6 and real Keycloak on a private network. Native focused
+command: `scripts/test-fresh-admin.ps1 -Maven <mvn.cmd>`.
+
+| Current source run | Total | PASS | FAIL | ERROR | SKIP | Evidence |
+| --- | ---: | ---: | ---: | ---: | ---: | --- |
+| Native focused unit + real Keycloak | 38 | 38 | 0 | 0 | 0 | .local/fresh-admin-aa8446c608df |
+| Linux Core-only clean verify + real Keycloak | 144 | 144 | 0 | 0 | 0 | .local/fresh-admin-9bf6741cf7ad |
+| Linux Full clean verify + real Keycloak | 887 | 887 | 0 | 0 | 0 | .local/fresh-admin-0072bd573017 |
+| Linux unfiltered Second-domain clean verify + real Keycloak | 324 | 324 | 0 | 0 | 0 | .local/fresh-admin-419e68e09f30 |
+
+Tier boundary checker PASS; its regression self-checks PASS (43 tests).
+These are post-implementation working-tree runs, separate from Phase 1 baseline
+evidence. All three Linux profiles used the same final Java/script sources;
+only this evidence documentation changed afterward. Final committed-SHA focused
+proof is reported in the delivery message rather than claiming a pre-commit run
+tested a commit that did not yet exist.
+
+Earlier attempts are not hidden: first live fixture failed six tests because
+Keycloak required complete user profile; fixed fixture name/email, not realm
+security. Later one live test failed because dx-directory token lacked dx-core
+audience; fixed by creating an unprivileged test-only service client with that
+audience, without changing template or relaxing JWT validation. Legacy profile
+runner without FRESH_ADMIN_TEST_URL skipped four conditional test nodes (the
+parameterized grant test plus three methods), and its zero-skip gate failed;
+these are not counted as live PASS. New runner supplies real Keycloak for
+unfiltered regression. Container readiness/address-pool setup errors were harness
+errors, not production authorization PASS; readiness now sends explicit Host
+and cleanup targets only owned disposable containers/networks.
+
+Self-review: identity cannot come from request data; no token-claim admin bypass,
+stale grant fallback or workspace membership requirement. Core imports no HPDI/
+App source. No changes to existing endpoint security or business transactions.
+No P0/P1 found in this local diff review; independent technical review pending.
+P2/limits remain: account-enabled/effective-role checks are not login-session or
+temporary lockout validation; revocation can race an in-flight check; deployments
+must verify actual service identity grants match template. Hosted CI NOT_VERIFIED.
+Stop after Commit 1; no Commit 2, new PR, merge or force-push.
