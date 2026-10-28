@@ -1,385 +1,407 @@
-﻿# WORK SETTINGS & SERVICE DESK ADMIN SETTINGS — IMPLEMENTATION & ARCHITECTURE SPECIFICATION
+# Work Settings / Service Desk Admin - Corrected Phase 1 Design
 
-- **Date**: 2026-10-28 (Asia/Saigon)
-- **Base**: `develop@246a8d6676f4030b474e0f809fbb9ce652339cb8`
-- **Branch**: `feature/work-settings-admin`
-- **Status**: **PHASE 1 REMEDIATED — READY FOR PHASE 2 IMPLEMENTATION**
-- **Hosted CI**: **BLOCKED** (Billing/external infrastructure gate; no self-issued waiver)
+Date: 2026-10-28 (Asia/Saigon). Branch: `feature/work-settings-admin`.
+Runtime baseline: `246a8d6676f4030b474e0f809fbb9ce652339cb8`.
+Reviewed document: `06c3996cd159430bb4febd62b65bba780ba089f7`.
+Documentation only: settings APIs, storage, migrations and fresh guard are NOT_IMPLEMENTED.
 
----
+## 1. Approved Scope And GAP Matrix
 
-## 1. Executive Summary & Architecture Overview
+BD-01 is APPROVED by the owner's FINAL PHASE 1 CORRECTION request.
+Phase 2 is Settings Management Foundation only: persistent storage, REST
+GET/PUT, validation, atomic CAS, fresh platform-admin authorization,
+transactional audit and restart persistence. No runtime consumer wiring.
+PERSISTED_NOT_ENFORCED is the intended state AFTER implementation, not today's
+status. R7 emergency auto-queue remains prohibited.
 
-The system architecture partitions administrative and process functionality into three strict tiers:
-- **Tier 1 (Core)**: Workflow Engine (Flowable BPMN 2.0), Identity (Keycloak JWT validation, workspace directories), File Storage, Metadata, and Transactional Audit (`audit_event`). Core enforces process locks and task execution states.
-- **Tier 2 (HPDI)**: Common operational capabilities reusable across any process domain (Queues, Work execution lifecycle START/PAUSE/RESUME/RELEASE, Agent suggestions, Shifts/Duty rosters, SLA calculation engine, Work Alerts, and Common Work Settings). HPDI does NOT know about "tickets".
-- **Tier 3 (Service Desk & Domain Apps)**: Ticket intake, AI assessment binding, classification correction (R9), SLA policy binding (R5), Confirmation lifecycle (R11), Statistics (R12), and Service Desk specific settings.
+| Finding | Actual gap | Chosen design, not implemented |
+| --- | --- | --- |
+| P1-01 | JWT realm roles can be stale | Enabled-account + effective-role checks on BOTH methods of BOTH APIs |
+| P1-02 | Draft seed assumed 480-minute day | LOW 510/2550, MEDIUM 240/1020; preserve r5-v1 |
+| P1-03 | Persistence conflated with effective configuration | Foundation only; all consumers unwired |
+| Migrations | Full loads HPDI and App in one sequence | HPDI V32, Service Desk V33; V1-V31 untouched |
+| Audit | Workspace-oriented, JWT-only admin read bypass | Reserved scope protected by explicit fresh authorization |
+| CAS/bootstrap | Missing singleton settings | Seed version 1; guarded UPDATE + mandatory audit |
+| Core boundary | Core owns execution constraint and locks | Keep dx.workflow.max-in-progress; no Core -> HPDI dependency |
+| Evidence | Baseline is not settings acceptance | Correct historical results; new acceptance NOT_RUN |
 
-```
-+-----------------------------------------------------------------------------------+
-| Tier 3: Service Desk (/api/apps/servicedesk/v1)                                   |
-|   - ServiceDeskSettings (/settings)                                               |
-|   - categoryGroups, estimateDefaults                                              |
-+-----------------------------------------------------------------------------------+
-                                         │ depends on Tier 2
-                                         ▼
-+-----------------------------------------------------------------------------------+
-| Tier 2: HPDI (/api/hpdi/v1)                                                       |
-|   - WorkSettings (/settings/work)                                                 |
-|   - assignment, shifts, sla, critical, alerts, closing, estimate                  |
-+-----------------------------------------------------------------------------------+
-                                         │ depends on Tier 1
-                                         ▼
-+-----------------------------------------------------------------------------------+
-| Tier 1: Core (/api/core/v1)                                                       |
-|   - Workflow (Flowable), Identity (Keycloak), AuditService (audit_event)          |
-+-----------------------------------------------------------------------------------+
-```
+Routes: GET/PUT `/api/hpdi/v1/settings/work` (Tier 2), GET/PUT
+`/api/apps/servicedesk/v1/settings` (Tier 3). Both global, not workspace-selected.
+Global admin does not gain workspace ticket access.
 
----
+## 2. Fresh Authorization (P1-01)
 
-## 2. Corrected GAP Matrix
+Version-pinned Keycloak 26.0.8 primary references inspected:
 
-| Area | Target OpenAPI Specification | Baseline State (`develop@246a8d6`) | Remediated Design & Target Implementation |
-|---|---|---|---|
-| **HPDI WorkSettings Endpoint** | `GET/PUT /api/hpdi/v1/settings/work` | 404 Not Found | REST controller in Tier 2 (`vn.haui.dx.hpdi.process.web`); returns/updates complete `WorkSettings` |
-| **ServiceDeskSettings Endpoint** | `GET/PUT /api/apps/servicedesk/v1/settings` | 404 Not Found | REST controller in Tier 3 (`vn.haui.dx.apps.servicedesk`); returns/updates complete `ServiceDeskSettings` |
-| **RBAC Authorization** | Realm role `platform-admin` only. Non-admin -> 403 Forbidden | `CurrentUser.platformAdmin()` inspects JWT `realm_access.roles`. No dedicated settings guard exists | Dedicated `AdminGuard` checking caller identity; fresh revocation enforcement; 401 on unauthenticated, 403 on non-admin |
-| **Optimistic Locking & CAS** | `version` integer; PUT requires matching client version; mismatch -> 409 Conflict | Missing | Database-level atomic CAS (`UPDATE ... WHERE version = ?`). Version increments on successful update; 409 on mismatch |
-| **Transactional Audit** | Every PUT records audit in same transaction; audit failure rolls back settings | `JdbcAuditService.record` requires non-blank workspace parameter (`workspace.length() <= 100`) | Record in reserved system scope (`workspace = "system:platform"`), preventing collision with regular workspaces. Propagation `MANDATORY` |
-| **Database Migrations** | Persistent schema via Flyway migrations | Migrations end at `V31` (HPDI) and `V30` (Service Desk) | **Distinct versions**: `hpdi/V32__work_settings.sql` (HPDI) and `apps/servicedesk/V33__servicedesk_settings.sql` (Service Desk). No version 32 collision! |
-| **Bootstrap & Default Seeding** | Initial defaults available on fresh install | Missing | Migrations V32 and V33 seed default row (version 1) with OpenAPI target defaults. GET returns defaults immediately |
-| **Assignment Settings** | `pendingLoadFactor`, `tieThresholdMinutes`, `maxInProgress`, `minRemainingMinutes` | Hardcoded: tie threshold 15m in `AssignmentSuggestionController`, maxInProgress 1 in `FlowableWorkflowService` | Persisted in WorkSettings. `maxInProgress` kept as Core constraint in Phase 2; marked `PERSISTED_NOT_ENFORCED` |
-| **Shifts Settings** | Array of `Shift(name, start, end)`. Default 07:00–11:30, 13:00–17:00 | Hardcoded shift strings in `TicketSlaConfiguration` | Stored as system-wide default shift templates; active agent rosters in R3 remain authoritative |
-| **SLA Settings** | `targets` (LOW, MEDIUM, HIGH, CRITICAL), `escalateAfterRatio`, `maxEscalatedPriority`, `waitingExternalCounts` | Configured via Spring `@Value` in `TicketSlaConfiguration` | Stored in WorkSettings. SLA snapshots on active tickets (`servicedesk_sla.policy`) preserved; applies only to new reviews |
-| **Critical Settings** | `autoQueueAfterMinutes` (min 1, default 5) | R7 Emergency Auto-Queue is strictly **BLOCKED** | Stored and validated as configuration ONLY. Worker auto-queue remains disabled |
-| **Alerts Settings** | `warnRemainingRatio` (0.2), `pendingRemindDays` (3), `reopenUnclaimedMinutes` (15) | Hardcoded: 0.2 in `SlaPolicy`, 3 days in `TicketAlerts`, 15m in `TicketConfirmation` | Stored in WorkSettings. Marked `PERSISTED_NOT_ENFORCED` for live worker polling loops pending BD-01 ratification |
-| **Closing Settings** | `autoCloseAfterDays` (default 3) | 72 continuous hours (`Duration.ofHours(72)`) in `TicketConfirmation` | Preserves strict 72 continuous hours invariant (`3 * 24h`), NOT 3 business days. Active confirmation deadlines preserved |
-| **Estimate Settings** | `minSamples` (20), `windowMonths` (6), `outlierMinMinutes` (2), `outlierMaxMinutes` (480) | Documented in R2 specification | Stored in WorkSettings. Median worker integration deferred to domain task |
-| **Category Groups** | Mapping `HARDWARE`, `NETWORK`, `SOFTWARE`, `ACCOUNT`, `OTHER` (`OTHER` nullable) | Hardcoded `switch` in `TicketAssignmentEligibility.supportGroup` | Stored in ServiceDeskSettings. `OTHER = null` retains Coordinator manual selection |
-| **Estimate Defaults** | Default minutes table for 5 categories × 4 priorities | Hardcoded `switch` in `TicketReview.defaultMinutes` | Stored in ServiceDeskSettings. Approved estimates (`basis = 'COORDINATOR'`) are NEVER rewritten |
+- https://www.keycloak.org/docs-api/26.0.8/rest-api/index.html
+- https://github.com/keycloak/keycloak/blob/26.0.8/services/src/main/java/org/keycloak/services/resources/admin/RoleMapperResource.java
+- https://github.com/keycloak/keycloak/blob/26.0.8/services/src/main/java/org/keycloak/services/resources/admin/UserResource.java
+- https://github.com/keycloak/keycloak/blob/26.0.8/services/src/main/java/org/keycloak/services/resources/admin/permissions/UserPermissions.java
 
----
+`/users/{user-id}/role-mappings/realm` returns getRealmRoleMappingsStream(),
+not effective-role expansion. `/realm/composite` enumerates realm roles and
+filters through roleMapper.hasRole; its documented purpose is effective realm
+roles, recursively expanding composites. Use
+`GET /admin/realms/{realm}/users/{sub}/role-mappings/realm/composite?briefRepresentation=true`.
+Support direct, group-inherited, composite and nested-composite grants; prove
+each on real 26.0.8, not JWT mocks.
 
-## 3. Revised Migrations Specification
+Same policy for EVERY GET and PUT of BOTH settings APIs:
 
-### The Version Collision Hazard
-In the Full profile (`mvn clean test`), Flyway scans `classpath:db/migration` recursively. It loads migrations from:
-- `db/migration/` (V1–V6)
-- `db/migration/apps/roomrequest/` (V7)
-- `db/migration/apps/servicedesk/` (V8–V13, V15–V20, V22, V24, V27, V29, V30)
-- `db/migration/hpdi/` (V14, V21, V23, V25, V26, V28, V31)
+1. Authenticated: trusted issuer/audience/signature/expiry and nonblank subject;
+   missing/invalid JWT -> 401.
+2. Identity: ONLY authenticated JWT sub, path-encoded in fixed configured realm.
+   Never trust body/query/header userId, username, actor or roles. Stale JWT admin
+   claim neither overrides a live denial nor is the sole grant source.
+3. Freshly authorized: fetch `GET /admin/realms/{realm}/users/{sub}`; require
+   matching id, enabled=true, human account (no serviceAccountClientId), then
+   effective realm roles containing exact platform-admin. No positive account/
+   role cache, stale directory fallback or cross-request decision reuse.
 
-If both HPDI and Service Desk were to add a migration named `V32__...`, Flyway in the Full profile fails on bootstrap with:
-`FlywayException: Found more than one migration with version 32`.
+This checks enabled-account and role state, not current login-session validity.
+Temporary brute-force lockout, required actions and logout differ from enabled;
+the user endpoint alone does not check those. Extra account admission rules
+need explicit design/tests before claiming them. Keycloak reads and PostgreSQL
+commit are not atomic: revocation can race an in-flight check; guarantee
+next-request fresh evaluation, not distributed transactional revocation.
 
-### Corrected Numbering Strategy
-1. **Tier 2 (HPDI)**:
-   - File: `backend/src/main/resources/db/migration/hpdi/V32__work_settings.sql`
-   - Content: Creates table `hpdi_work_settings`, constraints, and seeds default row (`id = 1`, `version = 1`).
-2. **Tier 3 (Service Desk)**:
-   - File: `backend/src/main/resources/db/migration/apps/servicedesk/V33__servicedesk_settings.sql`
-   - Content: Creates table `servicedesk_settings`, constraints, and seeds default row (`id = 1`, `version = 1`).
+### Service identity and fail-closed behavior
 
-### Profile Discovery & Upgrade Behavior
-- **Backend Full**: Migrations execute sequentially: `... -> V30 -> V31 -> V32 -> V33`. Validation succeeds, zero collisions.
-- **Core-only**: Excludes all app and HPDI migrations; unaffected.
-- **Second-domain (`-Psecond-domain`)**: Excludes `db/migration/apps/servicedesk/**`. Discovers V1..V4, V7, V14, V21, V23, V25, V26, V28, V31, and `V32__work_settings.sql`. It does NOT load V33. Runs cleanly without gaps or errors.
-- **Existing Migrations (V1–V31)**: Completely untouched. Checksums remain identical.
+Local `infra/keycloak/realm-template.json` grants dx-directory the
+realm-management CLIENT roles view-users, query-users, query-groups.
+UserResource.getRoleMappings supplies auth.users().requireView(user), invoked
+by both RoleMapperResource reads. UserPermissions.canViewDefault accepts
+view-users (also manage-users, which MUST NOT be granted). Query roles alone
+are not user-view authorization. Template permissions are sufficient by source
+inspection, NOT proof of actual permissions in an already-imported realm.
 
-### DDL & Seed Blueprint
+Use confidential dx-directory client credentials, never end-user or bootstrap
+admin credentials. For by-sub reads view-users is the relevant built-in grant;
+retain query roles for existing directory use. No realm-admin, manage-users,
+impersonation or role/user mutations. Runtime verification remains NOT_RUN:
+obtain its real token, prove user/effective-role reads, prove mutations denied,
+then remove view-users in the isolated fixture and verify fail-closed behavior.
+Do not expand privileges merely to make a test pass.
+
+Chosen limits: 2s connect timeout, 5s entire authorization budget; no unbounded
+retries. Service-token 401 may invalidate cached service token and refresh once
+within budget. Service-token caching is NOT caching user authorization.
+
+| Keycloak outcome | Settings response; no read/mutation |
+| --- | --- |
+| User lookup 404, enabled=false, missing effective role | 403 |
+| Malformed response or mismatched identity | 503 |
+| Service API 401 after bounded refresh, or 403 | 503, dependency credential/permission fault |
+| Composite lookup 404 after successful user lookup | 503, cannot establish effective roles |
+| Timeout, network/TLS error, token endpoint failure, 429, 5xx | 503, never use stale grants |
+
+JWT-only TTL mode is NOT selected: it fails old-JWT revocation requirements.
+Template accessTokenLifespan=300 seconds; JWT-only revocation could lag the
+remaining lifetime plus configured clock skew. CAS/audit do not fix this.
+
+Real Keycloak acceptance (NOT_RUN): both APIs/methods, direct/group/composite/
+nested-composite grants -> 200; revoke each grant/group/child role, reuse SAME
+unexpired JWT -> 403. Also disable/delete account, deny ordinary Requester/
+Agent/Coordinator and service accounts, reject spoofed identity, test newly
+effective grants independently of stale claims, service permission removal,
+timeouts/403/404/5xx. Restore fixtures in finally. Mock JWT tests are unit-only
+evidence, never proof of fresh revocation.
+
+## 3. Runtime-Compatible SLA Defaults (P1-02)
+
+Source: `backend/src/main/java/vn/haui/dx/apps/servicedesk/TicketSlaConfiguration.java`.
+07:00-11:30 = 270 minutes; 13:00-17:00 = 240 minutes; working day = **510**.
+Runtime SlaPolicy version **r5-v1**; default Asia/Ho_Chi_Minh, Monday-Friday,
+configured holidays, escalation ratio 0.5, ceiling HIGH, external waiting counts.
+
+| Priority | startWithinMinutes | resolveWithinMinutes | Clock |
+| --- | ---: | ---: | --- |
+| LOW | 510 | 2550 | working minutes: 1 / 5 configured working days |
+| MEDIUM | 240 | 1020 | working minutes: 4h / 2 configured working days |
+| HIGH | 60 | 480 | working minutes, not a full 510-minute day |
+| CRITICAL | 15 | 120 | continuous elapsed minutes |
+
+R5 in supplied docs/ticket.md and target OpenAPI describe MEDIUM two days and
+LOW one/five days; neither authorizes replacing actual calendar with an 8-hour
+day. V32 seed/examples MUST use these pairs; no separate policy change approved.
+Customized deployment properties remain runtime truth despite Foundation seeds.
+Config row version 1 is NOT policy version r5-v1.
+
+Future regression checks: calendar sum=510, all four seed/bean pairs, continuous
+flags, weekend/holiday/pause arithmetic, R9 amendments. Foundation PUT must leave
+runtime bean and existing policy JSON/deadlines unchanged. New checks NOT_RUN.
+
+## 4. Migrations, Bootstrap, Validation And CAS
+
+Planned only: `backend/src/main/resources/db/migration/hpdi/V32__work_settings.sql`
+and `backend/src/main/resources/db/migration/apps/servicedesk/V33__servicedesk_settings.sql`.
+Never edit V1-V31. Default recursive classpath db/migration discovery shares
+one version sequence; EngineAfterMigrations orders Flowable after Flyway.
+Actual `backend/pom.xml` resource exclusions control packaged migrations.
+
+| Profile | Clean install | Upgrade fixture | Assertions |
+| --- | --- | --- | --- |
+| Full | empty -> V33 | Full history at V31 -> V32 -> V33 | Both singleton tables/seeds; unique versions; prior checksums/data unchanged |
+| Second-domain, unfiltered | empty -> V32 | Second-domain history at V31 -> V32 | HPDI V32 present; V33 and Service Desk resources/tables absent |
+| Core-only | empty -> existing Core maximum | Core-only history -> unchanged | No HPDI/App migrations/classes/settings tables; V32/V33 absent |
+
+Do not run Core-only against Full history or require V33 from Second-domain.
+Use clean builds between profiles, inspect packaged resources, Flyway history/
+validate and schema; repeat migration/restart idempotence. Expectations above
+are NOT execution results: no V32/V33 exists yet.
+
+Each table: singleton id=1 primary key CHECK(id=1); BIGINT version NOT NULL
+CHECK(version>=1); nonnull JSONB payload with object/array type constraints;
+nonnull timestamptz updated_at and nonblank updated_by <=100 characters.
+Seed complete validated defaults at version 1 in migration; bootstrap actor
+system:bootstrap denotes provenance, never a user PUT identity. GET before
+first PUT is read-only and returns seeded row. Missing singleton is an integrity
+error, not lazy reseeding. V32 SLA defaults are in section 3; other defaults
+are in section 6. V33 defaults match current category/ET tables.
+
+Full replacement request: version and all required nested fields. Separate
+server-owned response updatedAt/updatedBy; reject submitted read-only metadata,
+unknown fields at EVERY nesting depth, missing/null required values, invalid
+enums, fractional integers, numeric overflow and nonfinite ratios with 400.
+No silent coercion/ignoring; recursive @Valid plus cross-field validation.
+Ratios [0,1]; exact category/priority key sets; positive targets/days/sample/
+window counts; tie/minRemaining >=0; outlierMin>=0, max>=min and max>=1;
+shifts minItems=1, nonblank unique name <=50, strict HH:mm, start<end and no
+overlap; resolve>=start; ET 1..10080 compatible with existing review limit.
+Document extra cross-field constraints beyond target minima in live contract.
+Validate safe group names, reject reserved role groups; Foundation keeps OTHER
+null to preserve Coordinator manual choice (document contract tightening).
+No eligibility mapping changes. Future wiring requires per-workspace group
+existence validation and resolved-group snapshots; global name is not membership.
+
+Atomic mutation shape (payload is illustrative, not a forced column design):
 
 ```sql
--- V32__work_settings.sql
-CREATE TABLE hpdi_work_settings (
-    id integer PRIMARY KEY DEFAULT 1 CHECK (id = 1),
-    version bigint NOT NULL,
-    assignment jsonb NOT NULL,
-    shifts jsonb NOT NULL,
-    sla jsonb NOT NULL,
-    critical jsonb NOT NULL,
-    alerts jsonb NOT NULL,
-    closing jsonb NOT NULL,
-    estimate jsonb NOT NULL,
-    updated_at timestamptz NOT NULL DEFAULT current_timestamp,
-    updated_by varchar(100) NOT NULL
-);
-
-INSERT INTO hpdi_work_settings (id, version, assignment, shifts, sla, critical, alerts, closing, estimate, updated_at, updated_by)
-VALUES (
-    1,
-    1,
-    '{"pendingLoadFactor": 0.5, "tieThresholdMinutes": 15, "maxInProgress": 1, "minRemainingMinutes": 10}'::jsonb,
-    '[{"name": "Sáng", "start": "07:00", "end": "11:30"}, {"name": "Chiều", "start": "13:00", "end": "17:00"}]'::jsonb,
-    '{"targets": {"LOW": {"startWithinMinutes": 480, "resolveWithinMinutes": 2400}, "MEDIUM": {"startWithinMinutes": 240, "resolveWithinMinutes": 960}, "HIGH": {"startWithinMinutes": 60, "resolveWithinMinutes": 480}, "CRITICAL": {"startWithinMinutes": 15, "resolveWithinMinutes": 120}}, "escalateAfterRatio": 0.5, "maxEscalatedPriority": "HIGH", "waitingExternalCounts": true}'::jsonb,
-    '{"autoQueueAfterMinutes": 5}'::jsonb,
-    '{"warnRemainingRatio": 0.2, "pendingRemindDays": 3, "reopenUnclaimedMinutes": 15}'::jsonb,
-    '{"autoCloseAfterDays": 3}'::jsonb,
-    '{"minSamples": 20, "windowMonths": 6, "outlierMinMinutes": 2, "outlierMaxMinutes": 480}'::jsonb,
-    current_timestamp,
-    'system:bootstrap'
-);
+UPDATE <settings_table>
+SET payload=:validated_payload, version=version+1,
+    updated_at=CURRENT_TIMESTAMP, updated_by=:authenticated_sub
+WHERE id=1 AND version=:expected_version AND version<9223372036854775807
+RETURNING *;
 ```
 
-```sql
--- V33__servicedesk_settings.sql
-CREATE TABLE servicedesk_settings (
-    id integer PRIMARY KEY DEFAULT 1 CHECK (id = 1),
-    version bigint NOT NULL,
-    category_groups jsonb NOT NULL,
-    estimate_defaults jsonb NOT NULL,
-    updated_at timestamptz NOT NULL DEFAULT current_timestamp,
-    updated_by varchar(100) NOT NULL
-);
+Use Java long, versions 1..Long.MAX_VALUE, never wrap/reset. Zero rows -> 409
+(stale/exhausted version; report exhaustion explicitly). Same transaction writes
+audit; no read-then-unconditional-update or independent audit commit. Two same-
+version PUTs -> exactly one 200, one 409, one increment, one audit. Test max-1
+to max then rejection with unchanged state. Response only after commit.
 
-INSERT INTO servicedesk_settings (id, version, category_groups, estimate_defaults, updated_at, updated_by)
-VALUES (
-    1,
-    1,
-    '{"HARDWARE": "hardware", "NETWORK": "network", "SOFTWARE": "software", "ACCOUNT": "sysadmin", "OTHER": null}'::jsonb,
-    '{"HARDWARE": {"LOW": 45, "MEDIUM": 60, "HIGH": 90, "CRITICAL": 120}, "NETWORK": {"LOW": 30, "MEDIUM": 45, "HIGH": 60, "CRITICAL": 90}, "SOFTWARE": {"LOW": 30, "MEDIUM": 30, "HIGH": 45, "CRITICAL": 60}, "ACCOUNT": {"LOW": 15, "MEDIUM": 15, "HIGH": 20, "CRITICAL": 30}, "OTHER": {"LOW": 30, "MEDIUM": 45, "HIGH": 60, "CRITICAL": 90}}'::jsonb,
-    current_timestamp,
-    'system:bootstrap'
-);
-```
+## 5. Reserved System Audit Scope
 
----
+V1 audit_event.workspace is varchar(100) NOT NULL, no workspace foreign key.
+JdbcAuditService requires nonblank workspace <=100. Choose `system:platform`,
+which cannot be parsed as a workspace membership by JwtCurrentUser's
+`[a-z0-9-]{1,50}` group pattern. But Spring @PathVariable does NOT reject colons:
+neither URL syntax nor a special string constitutes authorization.
 
-## 4. Security & Role Revocation Policy
+Planned enforcement: explicit reserved-scope branch in Core audit authorization
+before the existing platformAdmin/coordinator branch. Reads of system:platform
+require the same fresh enabled-account/effective-admin check as settings; no
+JWT-only bypass. Reject reserved-scope reads through workspace mine/member
+paths. Normal workspace audit still uses its existing permissions; an ordinary
+workspace named system or global cannot see reserved events. Existing
+AuditController @RequirePermission(audit:view) is a workspace guard, not a new
+system-admin read API: do not claim a global admin can already browse the
+reserved scope. Define a protected system-read entry point or explicit
+interceptor handling in Phase 2, without bypassing other workspace checks.
 
-### Three Security States
-1. **Authenticated**: The incoming request presents a cryptographically valid, non-expired Bearer JWT signed by the trusted Keycloak realm (`dx-lab`).
-2. **Statically Authorized**: The validated JWT claims contain `realm_access.roles` including `"platform-admin"`.
-3. **Freshly Authorized**: Live authorization status verified at request processing time to detect whether the realm role was revoked after the JWT was issued.
+Core owns generic fresh-admin authorization/audit support; HPDI invokes a Core
+capability; App invokes an HPDI facade. Core never imports HPDI/App. Define the
+small capability when implementing it, not speculative production code now.
+PUT uses authenticated sub, RequestContext request ID (or generated UUID), real
+server timestamp, action hpdi.work-settings.update / servicedesk.settings.update,
+scope system:platform and before/after values + versions. AuditService.record
+remains Propagation.MANDATORY in the SAME transaction as CAS. Bootstrap system
+provenance must never replace a user actor. Do not put tokens/secrets in audit.
 
-### Fresh Revocation Design Options
+Acceptance NOT_RUN: direct and encoded colon paths; ordinary coordinators of
+system/global and forged reserved-scope memberships -> denied; stale/revoked
+admin -> denied; fresh admin -> only explicit system-read policy; real request
+ID/sub match audit. Inject audit insert failure after mutation, assert settings
+payload/version/metadata AND audit unchanged, retry same version succeeds;
+assert one audit for CAS winner, none for denied/stale/failing requests.
 
-#### Option A: Online Fresh Role Validation (Preferred Security Architecture)
-- **Mechanism**: On every administrative mutation (PUT), the backend verifies the caller's active realm roles against Keycloak Admin API using the existing backend service identity (`dx-directory`).
-- **Endpoint**: `GET /admin/realms/{realm}/users/{userId}/role-mappings/realm`.
-- **Fail-Closed Principle**: If Keycloak is unreachable, times out, or returns 5xx, the request fails closed with HTTP 503 Service Unavailable. Revoked administrators are blocked immediately, even with a valid unexpired JWT.
-- **Service Identity Scope**: Requires `dx-directory` service account to possess `view-users` / `query-users` client role on `realm-management` (already present in `realm-template.json`).
+## 6. Per-Setting Application Matrix
 
-#### Option B: Token TTL & Windowed Revocation (Standard OIDC Architecture)
-- **Mechanism**: The backend verifies authenticity and `platform-admin` presence via signed claims in `CurrentUser.platformAdmin()`. Revocation takes effect upon token expiration.
-- **Token TTL**: Keycloak default access token lifespan is 5 minutes (300 seconds).
-- **Revocation Lag**: Up to 300 seconds window where a revoked admin with an active token could mutate settings.
-- **Mitigation**: Critical settings mutations require CAS versioning and mandatory transactional audit logging, ensuring attribution to the caller's subject UUID and immediate forensic visibility.
-- **Owner Sign-off**: Requires explicit owner decision (BD-05) if online verification latency overhead (~20-50ms) is deemed undesirable for administrative endpoints.
+All rows: Storage/API today = NOT_IMPLEMENTED. Planned Foundation state =
+PERSISTED_NOT_ENFORCED; runtime consumer wired = NO; settings PUT applies to
+new operations = NO and affects active operations = NO. These facts apply to
+EVERY row, not just background workers. R7 additionally remains BLOCKED.
+Source below means CURRENT runtime truth, not the future administrative table.
+Foundation stores a separate administrative value; it is not runtime truth.
 
-### Real Keycloak Integration Test Strategy
-Unit tests mocking `Jwt` or `CurrentUser` do NOT prove real Keycloak role revocation.
-Acceptance must include integration tests against a real Keycloak instance (similar to `scripts/test-r3-runtime.py`):
-1. Obtain real JWT for `superadmin` (has `platform-admin`).
-2. Verify GET and PUT `/api/hpdi/v1/settings/work` succeed (HTTP 200).
-3. Via Keycloak Admin API, revoke `platform-admin` from test user.
-4. Attempt PUT `/api/hpdi/v1/settings/work` with the old unexpired JWT:
-   - Under Option A: Immediately returns HTTP 403 Forbidden.
-   - Under Option B: Validates that after token TTL expiry and refresh attempt, Keycloak refuses to issue `platform-admin` claim, and subsequent requests return HTTP 403 Forbidden.
-5. Restore test user roles in cleanup.
+| Field | Compatible initial default | Current source / snapshot or provenance | Decision |
+| --- | --- | --- | --- |
+| assignment.pendingLoadFactor | 0.5 | TicketReviewService.projected: (remaining+1)/2 for PENDING, ceiling rounding | Retain formula |
+| assignment.tieThresholdMinutes | 15 | AssignmentSuggestionController.rank: strict <15 band, no settings snapshot | Retain ranking |
+| assignment.maxInProgress | 1 | FlowableWorkflowService property dx.workflow.max-in-progress, global assignee advisory lock | Core unchanged |
+| assignment.minRemainingMinutes | 10 | TicketReviewService.projected Math.max(10,minutes-worked), exception for untouched NOT_STARTED | Retain projection |
+| shifts | Morning 07:00-11:30; Afternoon 13:00-17:00 | TicketSlaConfiguration calendar; R3 explicit dated Agent shifts independent | Stored templates only |
+| sla.targets.LOW | 510 / 2550 minutes | r5-v1 template then servicedesk_sla.policy snapshot | No policy change |
+| sla.targets.MEDIUM | 240 / 1020 minutes | r5-v1 template then servicedesk_sla.policy snapshot | No policy change |
+| sla.targets.HIGH | 60 / 480 minutes | r5-v1 template then servicedesk_sla.policy snapshot | No policy change |
+| sla.targets.CRITICAL | 15 / 120 continuous minutes | r5-v1 template then servicedesk_sla.policy snapshot | No policy change |
+| sla.escalateAfterRatio | 0.5 | TicketSlaConfiguration property, serialized SlaPolicy | Preserve snapshot |
+| sla.maxEscalatedPriority | HIGH | TicketSlaConfiguration property, serialized SlaPolicy | Preserve snapshot |
+| sla.waitingExternalCounts | true | TicketSlaConfiguration property, serialized SlaPolicy | Preserve snapshot |
+| critical.autoQueueAfterMinutes | 5 | No authorized auto-queue consumer | BLOCKED, storage only |
+| alerts.warnRemainingRatio | 0.2 | SlaPolicy.near hardcodes ratio, NOT a serialized configurable ratio | Do not alter existing projection |
+| alerts.pendingRemindDays | 3 | TicketAlerts.check Duration.ofDays(3), no settings snapshot | Keep worker behavior |
+| alerts.reopenUnclaimedMinutes | 15 | TicketConfirmation property serviceDesk.confirmation.reopen-minutes; persisted reopen deadline | Keep existing deadline |
+| closing.autoCloseAfterDays | 3 | TicketConfirmation +72 continuous hours; persisted deadline and r11-72h-v1 audit label | Never business days |
+| estimate.minSamples | 20 | R2 target/business requirement, no settings consumer established | Do not claim median implemented |
+| estimate.windowMonths | 6 | R2 target/business requirement, no settings consumer established | Deferred |
+| estimate.outlierMinMinutes | 2 | R2 target/business requirement, no settings consumer established | Deferred |
+| estimate.outlierMaxMinutes | 480 | R2 target/business requirement, no settings consumer established | Deferred |
+| categoryGroups.HARDWARE | hardware | TicketAssignmentEligibility.supportGroup switch | Keep eligibility |
+| categoryGroups.NETWORK | network | Same hardcoded switch | Keep eligibility |
+| categoryGroups.SOFTWARE | software | Same hardcoded switch | Keep eligibility |
+| categoryGroups.ACCOUNT | sysadmin | Same hardcoded switch | Keep eligibility |
+| categoryGroups.OTHER | null | Same switch; Coordinator manually chooses independent eligible Agent | Keep manual choice |
+| estimateDefaults.HARDWARE | LOW/MEDIUM/HIGH/CRITICAL: 45/60/90/120 | TicketReview.defaultMinutes; persisted minutes/basis/history at approval | No live wiring |
+| estimateDefaults.NETWORK | 30/45/60/90 | Same lookup and persisted review/history | No live wiring |
+| estimateDefaults.SOFTWARE | 30/30/45/60 | Same lookup and persisted review/history | No live wiring |
+| estimateDefaults.ACCOUNT | 15/15/20/30 | Same lookup and persisted review/history | No live wiring |
+| estimateDefaults.OTHER | 30/45/60/90 | Same lookup and persisted review/history | No live wiring |
 
----
+## 7. Compatibility, Provenance And Tier Boundaries
 
-## 5. System Audit Scope Specification
+TicketReviewService.review uses DEFAULT when no custom ET is supplied and
+COORDINATOR for explicit ET; TicketWorkEstimate.approve records approved manual
+ET. A review-approved DEFAULT is still persisted ET: settings changes cannot
+silently rewrite EITHER basis. R6 handover preserves prior manual ET when no
+replacement is supplied; R9 explicit correction can recalculate DEFAULT under
+its existing rules and preserves COORDINATOR. Foundation changes neither path.
 
-### The Workspace Collision Vulnerability
-In `V1__core.sql`, `audit_event` has column `workspace varchar(100) NOT NULL`.
-In `JwtCurrentUser.java`, workspace group regex is:
-`^/workspaces/([a-z0-9-]{1,50})/([a-z0-9-]{1,30})$`
-Regular workspaces consist of lowercase letters, numbers, and hyphens.
+TicketSlaService.initialize snapshots r5-v1 at approved review, NOT at ticket
+creation. R6 handover continues original policy/anchors. correctPriority uses
+state.policy(), existing pause/budget logic and amendment history; preserved
+policy does not mean legitimate R9 deadlines can never change. Settings PUT
+must not cause any such change. R11 stores confirm deadline at native confirm
+creation +72 continuous hours, including legacy enrollment; existing confirm
+and reopen deadlines are never recomputed from Foundation storage.
 
-If the audit implementation were to use `"system"` or `"global"` as the workspace identifier:
-1. An administrator could create a Keycloak workspace named `system` (`/workspaces/system/coordinator`).
-2. A coordinator of that workspace could call `GET /api/core/v1/workspaces/system/audit`.
-3. `JdbcAuditService.search` would return the system-wide platform settings audit events to that workspace coordinator, violating tenant isolation!
+Future wiring requires an independently reviewed policy boundary: snapshot
+config scope/version + effective payload/hash + policy version + application
+time at initial approved review; persist resolved group and ET provenance;
+carry snapshots across handover and explicit R9 amendments. Existing records
+without config version retain legacy provenance, never fabricated version 1.
+The mutable settings row alone is NOT historical policy proof. Preserve payload
+in the business snapshot or immutable history before claiming version provenance.
 
-### Reserved System Scope Design
-The system-level audit scope must use a reserved namespace that **cannot be formed by any valid workspace pattern**:
-- **Designated Scope**: `system:platform` (contains a colon `:`, which is strictly prohibited in workspace group regex `[a-z0-9-]{1,50}`).
-- **Validation Compliance**: `JdbcAuditService.require("system:platform", 100, "workspace")` passes (`length = 15 <= 100`).
-- **Tenant Protection**: No workspace URL `/workspaces/{workspace}/audit` can ever query `system:platform` because the path regex rejects colons.
-- **Coordinator Isolation**: No Keycloak group `/workspaces/system:platform/*` can be parsed by `JwtCurrentUser`.
-- **Administrative Query**: Only a caller with `CurrentUser.platformAdmin() == true` can query platform audit logs.
+Core execution locks and dx.workflow.max-in-progress remain unchanged in
+Foundation. If dynamic policy is later approved, define a Core-owned generic
+execution policy SPI with Core-only property fallback and an HPDI/assembly
+adapter. Preserve global assignee counting/locking across workspaces; a
+workspace-specific SPI must not silently change that scope. No SPI or Core
+locking rewrite is included now. Tier 2 must compile without Service Desk.
 
-### Audit Transactional Invariant
-- **Actor Attribution**: Real authenticated user ID (`access.current().sub()`), never synthetic `"system"`.
-- **Request Tracing**: `RequestContext.requestId()` preserves the caller's `X-Request-ID`.
-- **Mandatory Rollback**: Audit insertion uses `Propagation.MANDATORY`. If audit insertion fails (e.g., database constraint or connection drop), the entire settings update transaction rolls back. Neither settings nor audit changes persist.
+## 8. Evidence Ledger And Acceptance Gates
 
----
+Historical baseline source SHA: 246a8d6676f4030b474e0f809fbb9ce652339cb8.
+The previous report's unfiltered Second-domain 286 PASS claim was incorrect.
+Its run lacked PostgreSQL environment variables and skipped 96 tests.
 
-## 6. Settings Application Matrix
+| Historical run | Total | PASS | FAIL | ERROR | SKIP | Evidence/status |
+| --- | ---: | ---: | ---: | ---: | ---: | --- |
+| Backend Full clean test, Linux/PG | 849 | 849 | 0 | 0 | 0 | .local/task-execution-full/summary.json; baseline PASS |
+| Core-only clean test, Linux/PG | 106 | 106 | 0 | 0 | 0 | .local/task-execution-core-only/summary.json; baseline PASS |
+| Targeted rules selection, Linux/PG | 215 | 215 | 0 | 0 | 0 | .local/task-execution-full-targeted/summary.json; baseline PASS |
+| Filtered Second-domain, Linux/PG | 48 | 48 | 0 | 0 | 0 | .local/task-execution-second-domain/summary.json; NOT unfiltered acceptance |
+| Unfiltered Second-domain, no DB fixture | 286 | 190 | 0 | 0 | 96 | Historical terminal output; SKIP, NOT acceptance PASS |
+| Core-only Windows/PG attempt | 106 | 103 | 0 | 3 | 0 | Historical OS symlink/POSIX permission ERROR; superseded only by Linux run |
 
-| Setting Field | Target Default | Source of Truth | Storage/API in Phase 2 | Runtime Consumer Wired? | Applies to New Ops? | Affects Active Ops? | Snapshot & Provenance Policy | Required Decision |
-|---|---|---|---|---|---|---|---|---|
-| `assignment.pendingLoadFactor` | `0.5` | `hpdi_work_settings` | Yes | `PERSISTED_NOT_ENFORCED` | No | No | Dynamic weighting deferred to suggestions engine | BD-01 |
-| `assignment.tieThresholdMinutes`| `15` | `hpdi_work_settings` | Yes | `PERSISTED_NOT_ENFORCED` | No | No | Currently hardcoded 15m in `AssignmentSuggestionController` | BD-01 |
-| `assignment.maxInProgress` | `1` | Core `@Value` / DB | Yes | `PERSISTED_NOT_ENFORCED` | No | No | Core enforces max 1 in `FlowableWorkflowService` | BD-01 |
-| `assignment.minRemainingMinutes`| `10` | `hpdi_work_settings` | Yes | `PERSISTED_NOT_ENFORCED` | No | No | Queue filter threshold deferred | BD-01 |
-| `shifts.shifts` | Sáng/Chiều | `hpdi_work_settings` | Yes | `PERSISTED_NOT_ENFORCED` | No | No | Configures default template; R3 dated rosters authoritative | BD-04 |
-| `sla.targets.LOW` | 480m / 2400m | `servicedesk_sla` / DB | Yes | `PERSISTED_NOT_ENFORCED` | No | No | Snapshotted on ticket approval in `servicedesk_sla.policy` | BD-01 |
-| `sla.targets.MEDIUM` | 240m / 960m | `servicedesk_sla` / DB | Yes | `PERSISTED_NOT_ENFORCED` | No | No | Snapshotted on ticket approval in `servicedesk_sla.policy` | BD-01 |
-| `sla.targets.HIGH` | 60m / 480m | `servicedesk_sla` / DB | Yes | `PERSISTED_NOT_ENFORCED` | No | No | Snapshotted on ticket approval in `servicedesk_sla.policy` | BD-01 |
-| `sla.targets.CRITICAL` | 15m / 120m | `servicedesk_sla` / DB | Yes | `PERSISTED_NOT_ENFORCED` | No | No | Snapshotted on ticket approval in `servicedesk_sla.policy` | BD-01 |
-| `sla.escalateAfterRatio` | `0.5` | `servicedesk_sla` / DB | Yes | `PERSISTED_NOT_ENFORCED` | No | No | Snapshotted on ticket approval | BD-01 |
-| `sla.maxEscalatedPriority` | `HIGH` | `servicedesk_sla` / DB | Yes | `PERSISTED_NOT_ENFORCED` | No | No | Snapshotted on ticket approval | BD-01 |
-| `sla.waitingExternalCounts` | `true` | `servicedesk_sla` / DB | Yes | `PERSISTED_NOT_ENFORCED` | No | No | Snapshotted on ticket approval | BD-01 |
-| `critical.autoQueueAfterMinutes`| `5` | `hpdi_work_settings` | Yes | **BLOCKED** | No | No | Configuration ONLY. R7 auto-queue worker NOT wired | BD-02 |
-| `alerts.warnRemainingRatio` | `0.2` | `hpdi_work_settings` | Yes | `PERSISTED_NOT_ENFORCED` | No | No | Reused in `SlaPolicy.near`; worker polling kept stable | BD-01 |
-| `alerts.pendingRemindDays` | `3` | `hpdi_work_settings` | Yes | `PERSISTED_NOT_ENFORCED` | No | No | Hardcoded `Duration.ofDays(3)` in `TicketAlerts` | BD-01 |
-| `alerts.reopenUnclaimedMinutes`| `15` | `hpdi_work_settings` | Yes | `PERSISTED_NOT_ENFORCED` | No | No | Hardcoded 15m in `TicketConfirmation` | BD-01 |
-| `closing.autoCloseAfterDays` | `3` | `hpdi_work_settings` | Yes | `PERSISTED_NOT_ENFORCED` | No | No | Represents 72 continuous hours. Confirmation deadline fixed | BD-03 |
-| `estimate.minSamples` | `20` | `hpdi_work_settings` | Yes | `PERSISTED_NOT_ENFORCED` | No | No | R2 sample threshold; calculation worker not modified | BD-01 |
-| `estimate.windowMonths` | `6` | `hpdi_work_settings` | Yes | `PERSISTED_NOT_ENFORCED` | No | No | R2 sample window; calculation worker not modified | BD-01 |
-| `estimate.outlierMinMinutes` | `2` | `hpdi_work_settings` | Yes | `PERSISTED_NOT_ENFORCED` | No | No | Outlier trimming; calculation worker not modified | BD-01 |
-| `estimate.outlierMaxMinutes` | `480` | `hpdi_work_settings` | Yes | `PERSISTED_NOT_ENFORCED` | No | No | Outlier trimming; calculation worker not modified | BD-01 |
-| `categoryGroups.HARDWARE` | `hardware` | `servicedesk_settings` | Yes | `PERSISTED_NOT_ENFORCED` | No | No | Mapping category -> group. Hardcoded switch kept in Phase 2 | BD-01 |
-| `categoryGroups.NETWORK` | `network` | `servicedesk_settings` | Yes | `PERSISTED_NOT_ENFORCED` | No | No | Mapping category -> group. Hardcoded switch kept in Phase 2 | BD-01 |
-| `categoryGroups.SOFTWARE` | `software` | `servicedesk_settings` | Yes | `PERSISTED_NOT_ENFORCED` | No | No | Mapping category -> group. Hardcoded switch kept in Phase 2 | BD-01 |
-| `categoryGroups.ACCOUNT` | `sysadmin` | `servicedesk_settings` | Yes | `PERSISTED_NOT_ENFORCED` | No | No | Mapping category -> group. Hardcoded switch kept in Phase 2 | BD-01 |
-| `categoryGroups.OTHER` | `null` | `servicedesk_settings` | Yes | `PERSISTED_NOT_ENFORCED` | No | No | OTHER is nullable; Coordinator manual selection preserved | BD-01 |
-| `estimateDefaults.HARDWARE` | 45..120m | `servicedesk_settings` | Yes | `PERSISTED_NOT_ENFORCED` | No | No | Table R2 defaults. Approved estimates NEVER rewritten | BD-01 |
-| `estimateDefaults.NETWORK` | 30..90m | `servicedesk_settings` | Yes | `PERSISTED_NOT_ENFORCED` | No | No | Table R2 defaults. Approved estimates NEVER rewritten | BD-01 |
-| `estimateDefaults.SOFTWARE` | 30..60m | `servicedesk_settings` | Yes | `PERSISTED_NOT_ENFORCED` | No | No | Table R2 defaults. Approved estimates NEVER rewritten | BD-01 |
-| `estimateDefaults.ACCOUNT` | 15..30m | `servicedesk_settings` | Yes | `PERSISTED_NOT_ENFORCED` | No | No | Table R2 defaults. Approved estimates NEVER rewritten | BD-01 |
-| `estimateDefaults.OTHER` | 30..90m | `servicedesk_settings` | Yes | `PERSISTED_NOT_ENFORCED` | No | No | Table R2 defaults. Approved estimates NEVER rewritten | BD-01 |
+Historical Python boundary self-tests: 43 PASS; source boundary checker PASS;
+Service Desk target validator and R12 contract check PASS. HPDI target validator
+FAILED: unquoted description comma at alerts unread produces extra YAML key
+cho badge; test-core-contract.py FAILED because old fixture lacks R12 required
+awaitingReview. These are baseline issues, not fixed in this documentation task.
+check-core-contract.py and execution-contract script calls missing required
+arguments were invocation ERROR, not contract acceptance. Do not count those.
 
-*Note: In Phase 2, all 31 fields are fully implemented in persistence, validation, CAS updates, and REST APIs. Fields marked `PERSISTED_NOT_ENFORCED` store and serve valid administrative configuration but are intentionally not wired into background workers to prevent unauthorized disruption to verified R3/R5/R7/R9/R11/R12 workflows.*
+Summaries are local historical artifacts, not immutable source-SHA attestations;
+do not turn them into post-implementation proof. New settings migration/runtime/
+restart/audit rollback/live Keycloak revocation acceptance: **NOT_RUN**.
+This documentation revision does not rerun backend suites or claim clean
+install/upgrade success for nonexistent V32/V33. Documentation checks below
+are separate from runtime tests. Hosted CI: **NOT_VERIFIED** for this revision;
+previous BLOCKED billing statement had no inspected run evidence. If an actual
+hosted run reports billing blockage, record BLOCKED with run evidence, never
+PASS or a self-issued waiver.
 
----
+### Future exact gates (all NOT_RUN)
 
-## 7. Runtime Compatibility & Snapshot Boundaries
+1. Clean `mvn -B -o clean verify`, `mvn -B -o -Pcore-only clean verify`,
+   `mvn -B -o -Psecond-domain clean verify` on separate profile fixtures, with
+   FILE_TEST_JDBC_URL, WORKFLOW_TEST_JDBC_URL, BACKGROUND_TEST_JDBC_URL and
+   matching DB credentials where applicable. Unfiltered means NO -Dtest.
+   Parse Surefire XML PASS/FAIL/ERROR/SKIP; unexpected skips fail the gate.
+2. Targeted R3/R5/R7/R9/R11/R12: run AgentDutyIntegrationTest,
+   AgentSchedulePolicyTest, AgentScheduleMigrationTest,
+   AssignmentSuggestionIntegrationTest, AssignmentSuggestionTest,
+   TicketIntegrationTest, WorkAlertsIntegrationTest, AgentDutyUpgradeIntegrationTest,
+   ConfirmationUpgradeIntegrationTest, ServiceDeskMigrationIntegrationTest,
+   TicketAssignmentEligibilityTest, SlaPolicyTest, ClassificationSlaAmendmentTest,
+   TicketStatisticsServiceTest, CanonicalTicketIntegrationTest plus new settings
+   tests. Passing R7 fail-closed regression is NOT implementing auto-queue.
+3. Migration matrix in section 4: inspect packaged resources, clean install,
+   profile-specific upgrade, unchanged V1-V31 checksums/data, seed GET before
+   PUT, Flyway validate and restart idempotence. No cross-profile history reuse.
+4. Real Keycloak 26.0.8 issued JWTs and dx-directory permission proof per section
+   2, signed HTTP requests to packaged backend on PostgreSQL/Flowable. Both
+   settings APIs must pass the same authorization matrix. No mock substitutes.
+5. Two concurrent same-version PUTs; audit failure after CAS; version overflow;
+   malformed/unknown/nested/null/read-only fields; reserved audit scope and
+   workspace isolation; restart backend on SAME persistent DB and verify exact
+   payload/version/metadata. Record sub and request ID, never tokens/secrets.
+6. Foundation settings updates must leave reviewed ET, active SLA policies,
+   deadlines, R3 rosters, R11 confirmation/reopen deadlines, eligibility and
+   Core concurrency constraint unchanged, including NEW operations. R7 stays
+   blocked. Separate restart persistence from runtime-enforcement claims.
+7. Validate both live/target OpenAPI plus actual HTTP responses; boundary source
+   checker, its self-tests and Java TierBoundaryTest. Track baseline failures
+   explicitly; do not silently omit or waive them. Record exact tested source
+   SHA, artifact digest, commands, fixture versions and raw results for final
+   acceptance. A later documentation commit does not become tested code SHA.
 
-### 1. SLA Policy Snapshotting
-- **Creation Anchor**: When a ticket review is approved in `TicketReviewService.review`, `TicketSlaService.initialize` captures the complete active `SlaPolicy` object and serializes it as JSONB into `servicedesk_sla.policy`.
-- **Immutability Invariant**: Active tickets evaluate all deadline checks, pause intervals, and R9 amendments against their own persisted `state.policy()`.
-- **Forward Compatibility**: Updates to `WorkSettings.sla` will configure the SLA template for future reviews. They NEVER modify existing tickets, their calculated deadlines (`start_by`, `resolve_by`), or historical breach flags.
+## 9. Phase 2 Commit Plan And Decisions
 
-### 2. Work Estimates (ET) Semantics
-- **Dual Basis Model**:
-  - `basis = 'DEFAULT'`: Assigned automatically during ticket review from standard lookup tables when the Coordinator inputs no custom estimate.
-  - `basis = 'COORDINATOR'`: Set when the Coordinator explicitly provides an estimate, approves an ET adjustment request (`TicketWorkEstimate.approve`), or when modified during review.
-- **R9 Classification Correction**: If a ticket category changes, an estimate with basis `'DEFAULT'` is recalculated according to the new category defaults. An estimate with basis `'COORDINATOR'` is strictly PRESERVED.
-- **Settings Invariant**: Modifying `ServiceDeskSettings.estimateDefaults` updates the default table for subsequent reviews. It NEVER overwrites approved estimates (`COORDINATOR`).
+No Phase 2 code is authorized by this documentation-only turn. On explicit
+instruction to begin, each commit includes its focused tests:
 
-### 3. Shift Schedules
-- **Explicit R3 Rosters**: Agent shifts are stored as explicit absolute instants in `hpdi_agent_shift` (`starts_at`, `ends_at`, `timezone`).
-- **Templates vs Assignments**: `WorkSettings.shifts` defines system-wide template presets (e.g. Sáng 07:00–11:30, Chiều 13:00–17:00). Modifying `WorkSettings.shifts` does NOT alter already-created agent shifts or cancel active on-duty statuses.
+1. Generic Core fresh-admin capability + HPDI facade, bounded Keycloak client,
+   reserved system-audit authorization/entry point. Unit error matrix and real
+   26.0.8 service-identity/effective-role proof BEFORE exposing settings routes.
+2. HPDI V32 seed/schema, validated DTOs, GET/PUT, atomic CAS and mandatory audit;
+   correct SLA seeds, migration/validation/CAS/rollback tests. No workflow wiring.
+3. Service Desk V33 + GET/PUT, category/ET validation and same authorization/CAS/
+   audit; Full/Second-domain/Core-only migration-resource checks.
+4. Contract promotion with explicit Foundation semantics, packaged runtime and
+   restart proofs, full unfiltered/profile/targeted/OpenAPI/boundary acceptance,
+   exact tested SHA and evidence. Do not describe JSON as effective policy.
 
-### 4. Confirmation & Auto-Close
-- **Continuous 72-Hour Clock**: R11 establishes that confirmation deadlines expire after exactly 72 continuous UTC hours (`Duration.ofHours(72)`), NOT 3 business days.
-- **Enrollment Anchor**: `confirm_deadline_at = confirm_started_at + 72 hours` is written to `servicedesk_confirmation` when the handle task completes.
-- **In-flight Safety**: Changing `WorkSettings.closing.autoCloseAfterDays` will not recalculate or shorten the deadline of existing active confirmation tasks.
+P0: no newly identified source exploit established by this docs-only review.
+P1 design findings P1-01/P1-02/P1-03 addressed; implementation/security/migration
+acceptance remains pending, NOT a production closure or merge readiness claim.
+BD-01 scope is approved, no longer an open owner choice. Online fresh checks
+are the chosen security requirement; JWT-only TTL fallback is not an alternative
+compliant implementation. Owner already prohibited R7 and mandated compatible
+SLA defaults / 72 continuous-hour R11 behavior. P2 future decisions: runtime
+activation boundaries/version provenance, custom deployment settings bootstrap,
+per-workspace group validation and OTHER nonnull support, and any extra current-
+session/lockout admission requirement. Default: no runtime wiring, no policy
+change, OTHER null. New timeouts/cross-field validation must be documented in
+implementation contracts and tested, not presented as already enforced.
 
-### 5. R7 Emergency Auto-Queue Safeguard
-- **Blocked Status**: R7 Emergency Auto-Queue remains **BLOCKED** because independent human authorization and admission protocols are not ratified.
-- **Safe Storage**: Setting `critical.autoQueueAfterMinutes` is validated (integer >= 1) and persisted. No background timer, worker loop, or Flowable event is attached to trigger auto-queue.
+Phase 2 readiness: design ready for the owner to explicitly start Foundation;
+no runtime acceptance or merge readiness yet. Stop after documentation commit/
+push on the existing branch. No new PR, merge, force-push or Phase 2 production code.
 
----
-
-## 8. Core / HPDI Tier Boundary Design
-
-### The `maxInProgress` Boundary Problem
-In `FlowableWorkflowService.java` (Tier 1 Core):
-```java
-@org.springframework.beans.factory.annotation.Value("${dx.workflow.max-in-progress:1}")
-private int maxInProgress = 1;
-...
-long active = tasks.createTaskQuery().taskAssignee(user.sub())
-    .taskVariableValueEquals(WORK_STATE, TaskExecution.State.IN_PROGRESS.name()).count();
-if (active >= maxInProgress) throw CoreException.conflict("Active work limit reached");
-```
-
-Core sits at Tier 1. HPDI sits at Tier 2.
-- **Architectural Rule**: Strict downward dependency: `Tier 3 -> Tier 2 -> Tier 1`. Tier 1 Core MUST NOT depend on Tier 2 HPDI.
-- **Violation Risk**: If `FlowableWorkflowService` were to inject `WorkSettings` from HPDI, Core would depend directly on HPDI. This violates architectural constraints and breaks the `-Pcore-only` Maven build.
-
-### Inversion Design vs Phase 2 Safety
-- **Dependency Inversion Pattern**: To make `maxInProgress` dynamic without breaking boundaries:
-  1. Core declares an interface: `public interface WorkExecutionPolicy { int maxInProgress(String workspace); }`.
-  2. Core provides a default fallback implementation reading `@Value("${dx.workflow.max-in-progress:1}")`.
-  3. HPDI or assembly module provides an optional bean implementing `WorkExecutionPolicy` reading from `WorkSettings`.
-- **Phase 2 Safe Decision**: Modifying Core execution locking in Phase 2 introduces risk to already-accepted task execution tests. Therefore, in Phase 2:
-  - Core constraint remains unchanged (`@Value("${dx.workflow.max-in-progress:1}")` with PostgreSQL transaction advisory lock).
-  - WorkSettings field `assignment.maxInProgress` is persisted and served via API, but marked `PERSISTED_NOT_ENFORCED`.
-  - Core dependency inversion is deferred to a dedicated workflow configuration initiative.
-
----
-
-## 9. Open Business Decisions & Chosen Safe Defaults
-
-| ID | Priority | Topic | Description & Impact | Chosen Safe Default | Owner Sign-Off Status |
-|---|---|---|---|---|---|
-| **BD-01** | P1 | Storage-Only vs Dynamic Worker Wiring | Wiring settings into background workers (SLA timers, alert monitors) could alter verified R5/R7/R8/R11 runtime behavior. | **PERSISTED_NOT_ENFORCED**: Store and serve settings via REST; leave active workers on verified baselines. | Pending Owner Review |
-| **BD-02** | P1 | R7 Emergency Auto-Queue Execution | `critical.autoQueueAfterMinutes` exists in target OpenAPI, but automated ticket admission without human review is prohibited. | **BLOCKED**: Save setting to DB; do NOT activate auto-queue worker. | Ratified in ADR / Task Spec |
-| **BD-03** | P2 | Auto-Close Unit & Business Calendar | OpenAPI specifies `autoCloseAfterDays` as integer days. R11 mandates 72 continuous UTC hours. | Strictly treat `days` as `days * 24` continuous hours. Never evaluate against business calendar. | Ratified in R11 Spec |
-| **BD-04** | P2 | Shift Templates vs Dated Rosters | `WorkSettings.shifts` provides recurring time strings. R3 uses explicit dated intervals. | `WorkSettings.shifts` acts as default templates; R3 dated rosters remain authoritative for agent duty. | Ratified in R3 Spec |
-| **BD-05** | P1 | Platform-Admin Role Revocation Strategy | Choose between Option A (online Keycloak role verification per PUT, fail-closed) and Option B (token TTL windowed revocation). | Option A planned for Phase 2 implementation; fail-closed on Keycloak outage. | Awaiting Owner Ratification |
-
----
-
-## 10. Test Strategy & Exact Acceptance Gates
-
-### Baseline Test Evidence (Commit `246a8d6676f4030b474e0f809fbb9ce652339cb8`)
-Before making code changes, the baseline test suite was executed against disposable PostgreSQL 16.6 fixtures:
-
-| Test Profile / Suite | Command | Total | PASS | FAIL | ERROR | SKIP | Result |
-|---|---|---:|---:|---:|---:|---:|---|
-| **Backend Full** | `mvn -B -o clean test` (with PG16.6) | 849 | 849 | 0 | 0 | 0 | **PASS** |
-| **Core-only** | `mvn -B -o -Pcore-only clean test` | 106 | 106 | 0 | 0 | 0 | **PASS** |
-| **Targeted R3/R5/R7/R9/R11/R12** | `test-task-execution.ps1 -Profile full -Test ...` | 215 | 215 | 0 | 0 | 0 | **PASS** |
-| **Unfiltered Second-domain** | `mvn -B -o -Psecond-domain clean test` (with PG16.6) | 286 | 286 | 0 | 0 | 0 | **PASS** |
-| **Tier Source Boundaries** | `python scripts/test-tier-boundaries.py` | 43 | 43 | 0 | 0 | 0 | **PASS** |
-| **Tier Boundary Check** | `python scripts/check-tier-boundaries.py` | — | — | — | — | — | **PASS** |
-| **Target ServiceDesk Contract** | `openapi_spec_validator contracts/openapi/servicedesk-target.yaml` | — | — | — | — | — | **PASS** |
-
-### Phase 2 Acceptance Gates (Target DoD)
-Upon implementing Phase 2, the following exact gates must be satisfied with concrete execution evidence:
-1. **Migration Verification**: Clean install and upgrade from V31 -> V32 -> V33 across all three profiles (Full, Core-only, Second-domain). Zero duplicate version errors.
-2. **REST API Contract Verification**:
-   - `GET /api/hpdi/v1/settings/work` returns 200 with complete seeded `WorkSettings`.
-   - `PUT /api/hpdi/v1/settings/work` with valid version updates row, increments version, records audit.
-   - `GET /api/apps/servicedesk/v1/settings` returns 200 with complete seeded `ServiceDeskSettings`.
-   - `PUT /api/apps/servicedesk/v1/settings` with valid version updates row, increments version, records audit.
-3. **Optimistic Locking (CAS) Verification**: Two concurrent PUT requests with the same version result in exactly one HTTP 200 and one HTTP 409 Conflict.
-4. **RBAC & Fresh Revocation**:
-   - Unauthenticated request returns 401 Unauthorized.
-   - Requester, Agent, Coordinator tokens return 403 Forbidden.
-   - User with revoked `platform-admin` role returns 403 Forbidden.
-5. **Transactional Audit Rollback**: Simulating an audit failure during settings PUT rolls back database modifications (settings retain previous version and values).
-6. **Restart Persistence**: Updating settings, stopping backend, and restarting verifies updated settings persist in database.
-7. **Regression Suite**: Backend Full (849+ tests), Core-only (106+ tests), and Second-domain (286+ tests) must pass with zero failures and zero unexpected skips.
-
----
-
-## 11. Phase 2 Implementation Plan (Commit-by-Commit)
-
-The implementation of Phase 2 will proceed strictly across discrete, test-verified commits:
-
-### Commit 1: HPDI WorkSettings (Tier 2)
-- Add Flyway migration `backend/src/main/resources/db/migration/hpdi/V32__work_settings.sql`.
-- Implement `WorkSettings` record and nested records (`AssignmentSettings`, `ShiftSettings`, `SlaSettings`, `CriticalSettings`, `AlertSettings`, `ClosingSettings`, `EstimateSettings`) in `vn.haui.dx.hpdi.process.api`.
-- Implement `WorkSettingsService` and `JdbcWorkSettingsService` with atomic CAS update (`UPDATE ... WHERE version = ?`).
-- Implement `WorkSettingsController` (`GET/PUT /api/hpdi/v1/settings/work`) with `AdminGuard` role check and transactional audit to `system:platform`.
-- Add unit tests: `WorkSettingsValidationTest` and `WorkSettingsCasTest`.
-
-### Commit 2: ServiceDeskSettings (Tier 3)
-- Add Flyway migration `backend/src/main/resources/db/migration/apps/servicedesk/V33__servicedesk_settings.sql`.
-- Implement `ServiceDeskSettings` record, `CategoryGroups`, and `EstimateDefaults` in `vn.haui.dx.apps.servicedesk`.
-- Implement `ServiceDeskSettingsService` with atomic CAS update.
-- Implement `ServiceDeskSettingsController` (`GET/PUT /api/apps/servicedesk/v1/settings`) with `AdminGuard` check and transactional audit to `system:platform`.
-- Add unit tests: `ServiceDeskSettingsValidationTest` and `ServiceDeskSettingsCasTest`.
-
-### Commit 3: Integration Tests, RBAC & Runtime Verification
-- Add integration tests verifying:
-  - RBAC: 401 for anonymous, 403 for requester/agent/coordinator, 200 for platform-admin.
-  - CAS concurrency: simultaneous updates test.
-  - Audit rollback: injected audit failure test.
-  - Restart persistence: verified via containerized test harness.
-  - Migration upgrade: test upgrading from V31 through V33.
-- Run complete test suite across Backend Full, Core-only, and Second-domain.
-
-### Commit 4: OpenAPI Contract Promotion & Final Evidence
-- Promote `/api/hpdi/v1/settings/work` to `contracts/hpdi/openapi.yaml`.
-- Promote `/settings` to `contracts/openapi/servicedesk.yaml`.
-- Update `docs/implementation/WORK_SETTINGS_ADMIN.md` with final test execution logs, test counts, and tested commit SHA.
+Documentation-only checks on 2026-10-28: git diff --check PASS; runnable inline
+assertions PASS for effective-role/disabled-account design, corrected SLA pairs
+and 510-minute arithmetic, scope approval, overflow bound, evidence separation
+and sole changed tracked file. No backend/runtime test run in this revision.
