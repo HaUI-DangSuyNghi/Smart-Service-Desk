@@ -128,6 +128,69 @@ class TicketIntegrationTest {
         mvc.perform(post("/api/hpdi/v1/workspaces/lab-a/estimate-requests/"+request.path("id").asText()+"/decision")
             .with(as("coordinator","lab-a","coordinator")).contentType("application/json").content("{\"approved\":true}"))
             .andExpect(status().isConflict());
+        mvc.perform(post(tasks+task+"/estimate-requests").with(as("r9-agent","lab-a","agent"))
+            .contentType("application/json").content("{\"proposedMinutes\":150,\"reason\":\"New classification generation\"}"))
+            .andExpect(status().isCreated());
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings={"DEFAULT","MANUAL","COORDINATOR","HANDOVER"})
+    void r9DefaultEstimateUsesConfirmedPriorityAcrossEscalationAndHandover(String mode) throws Exception {
+        String worker = "r9-business-"+UUID.randomUUID();
+        var ticket = create("r9-business-owner-"+UUID.randomUUID(),"Business priority","requester");
+        UUID id = UUID.fromString(ticket.path("id").asText());
+        var reviewed = body(review(ticket,"coordinator",worker,"COORDINATOR".equals(mode) ? 77 : null,"OTHER","LOW")
+            .andExpect(status().isOk()));
+        String task = reviewed.path("taskId").asText();
+        jdbc.update("update servicedesk_sla set approved_at=approved_at-interval '10 days',start_by=start_by-interval '10 days',"
+            + "resolve_by=resolve_by-interval '10 days' where handle_task_id=?",task);
+        var initial = slaService.read("lab-a",id);
+        slaService.reconcile("lab-a",initial.processId(),task);
+        assertEquals("MEDIUM",slaService.read("lab-a",id).priority().name());
+        if ("HANDOVER".equals(mode)) mvc.perform(post("/api/hpdi/v1/workspaces/lab-a/tasks/"+task+"/start")
+            .with(as(worker,"lab-a","agent"))).andExpect(status().isOk());
+        String priority = "LOW";
+        String route = BASE+"/"+id+"/classification";
+        if ("MANUAL".equals(mode) || "COORDINATOR".equals(mode)) {
+            mvc.perform(patch(route).with(as("coordinator","lab-a","coordinator")).contentType("application/json")
+                .content("{\"priority\":\"HIGH\",\"reason\":\"Human confirmed impact\"}")).andExpect(status().isOk());
+            priority = "HIGH";
+        }
+        var corrected = body(mvc.perform(patch(route).with(as("coordinator","lab-a","coordinator"))
+            .contentType("application/json").content("{\"category\":\"NETWORK\",\"reason\":\"Confirmed category\"}"))
+            .andExpect(status().isOk()));
+        int expected = "COORDINATOR".equals(mode) ? 77
+            : TicketReview.defaultMinutes(TicketReview.Category.NETWORK,TicketReview.Priority.valueOf(priority));
+        assertEquals(expected,corrected.path("estimate").path("minutes").asInt());
+        assertEquals(priority,jdbc.queryForObject("select priority from servicedesk_review where ticket_id=?",String.class,id));
+        if ("HANDOVER".equals(mode)) mvc.perform(post("/api/hpdi/v1/workspaces/lab-a/tasks/"+task+"/release")
+            .with(as(worker,"lab-a","agent")).contentType("application/json")
+            .content("{\"reason\":\"HANDOVER\",\"note\":\"Continue after correction\"}")).andExpect(status().isOk());
+        var next = body(review(ticket,"coordinator",worker,null,"NETWORK",priority).andExpect(status().isOk()));
+        assertEquals(expected,next.path("estimate").path("minutes").asInt());
+        assertEquals(initial.approvedAt(),slaService.read("lab-a",id).approvedAt());
+        assertEquals("COORDINATOR".equals(mode) ? "COORDINATOR" : "DEFAULT",next.path("estimate").path("basis").asText());
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(booleans={false,true})
+    void r9CriticalCorrectionPublishesOneDistinctDurableCoordinatorEvent(boolean categoryChanged) throws Exception {
+        var ticket = create("r9-critical-owner-"+UUID.randomUUID(),"Critical correction","requester");
+        var reviewed = body(review(ticket,"coordinator","r9-critical-"+UUID.randomUUID(),null).andExpect(status().isOk()));
+        String task = reviewed.path("taskId").asText();
+        String route = BASE+"/"+ticket.path("id").asText()+"/classification";
+        String input = categoryChanged ? "{\"category\":\"NETWORK\",\"priority\":\"CRITICAL\",\"reason\":\"Verified\"}"
+            : "{\"priority\":\"CRITICAL\",\"reason\":\"Verified\"}";
+        mvc.perform(patch(route).with(as("coordinator","lab-a","coordinator")).contentType("application/json").content(input))
+            .andExpect(status().isOk());
+        var events = jdbc.queryForList("select * from hpdi_alert_event where task_id=? and type='CLASSIFICATION_CHANGED'",task);
+        assertEquals(1,events.size());
+        assertEquals("CRITICAL",events.get(0).get("severity"));
+        assertTrue(events.get(0).get("label").toString().contains("Priority corrected to CRITICAL"));
+        assertNull(events.get(0).get("agent"));
+        if (!categoryChanged) mvc.perform(patch(route).with(as("coordinator","lab-a","coordinator"))
+            .contentType("application/json").content(input)).andExpect(status().isConflict());
+        assertEquals(1,jdbc.queryForObject("select count(*) from hpdi_alert_event where task_id=? and type='CLASSIFICATION_CHANGED'",Integer.class,task));
     }
 
     @Test void r9NoOpValidationAndRevokedMembershipDoNotCreateHistory() throws Exception {
@@ -904,6 +967,9 @@ class TicketIntegrationTest {
             assertEquals(1,jdbc.queryForObject("select count(*) from act_ru_task where proc_inst_id_=?",Integer.class,process));
             assertTrue(jdbc.queryForObject("select count(distinct operation_id) from servicedesk_classification_correction where ticket_id=?",
                 Integer.class,UUID.fromString(ticket.path("id").asText()))<=1);
+            assertEquals(jdbc.queryForObject("select count(distinct operation_id) from servicedesk_classification_correction where ticket_id=?",
+                Integer.class,UUID.fromString(ticket.path("id").asText())),jdbc.queryForObject(
+                "select count(*) from hpdi_alert_event where task_id=? and type='CLASSIFICATION_CHANGED'",Integer.class,task));
         } finally { start.countDown(); pool.shutdownNow(); }
     }
 

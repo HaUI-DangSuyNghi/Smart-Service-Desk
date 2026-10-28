@@ -1037,8 +1037,8 @@ components:
       properties:
         startBy: {type: string, format: date-time}
         resolveBy: {type: string, format: date-time}
-        startBreached: {type: boolean}
-        resolveBreached: {type: boolean}
+        startBreached: {type: boolean, description: 'Ever breached the start SLA in this generation or its handover lineage; remains true after a priority amendment. Not a current-overdue indicator.'}
+        resolveBreached: {type: boolean, description: 'Ever breached the resolution SLA in this generation or its handover lineage; remains true after a priority amendment. Not a current-overdue indicator.'}
         warning: {type: boolean}
         clockPaused: {type: boolean}
     QueueItem:

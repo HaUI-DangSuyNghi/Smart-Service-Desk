@@ -71,7 +71,7 @@ public class TicketCorrectionService {
             String previousCategory = (String)row.get("category");
             var oldSla = sla.read(workspace, id);
             if (oldSla == null || !taskId.equals(oldSla.taskId())) throw CapabilityException.conflict("Current SLA generation required");
-            String previousPriority = oldSla.priority().name();
+            String previousPriority = (String)row.get("priority");
             String category = input.category()==null ? previousCategory : input.category().name();
             String priority = input.priority()==null ? previousPriority : input.priority().name();
             boolean categoryChanged = !category.equals(previousCategory);
@@ -99,11 +99,16 @@ public class TicketCorrectionService {
             if (groupChanged) {
                 if (!"NOT_STARTED".equals(work.workState()))
                     jdbc.update("update servicedesk_review set correction_incumbent=? where ticket_id=?", work.task().assignee(), id);
-                alerts.publish(new WorkAlerts.Event(workspace, WorkAlerts.Type.CLASSIFICATION_CHANGED, WorkAlerts.Severity.WARNING,
-                    ticket.process().processInstanceId(), ticket.process().processKey(), id.toString(), taskId,
-                    operation.toString(), "Support group changed; Coordinator review required", true, null));
-                if ("NOT_STARTED".equals(work.workState())) execution.returnForCorrection(workspace, taskId, input.reason());
             }
+            boolean criticalCorrection = priorityChanged && "CRITICAL".equals(priority);
+            if (groupChanged || criticalCorrection) {
+                alerts.publish(new WorkAlerts.Event(workspace, WorkAlerts.Type.CLASSIFICATION_CHANGED,
+                    criticalCorrection ? WorkAlerts.Severity.CRITICAL : WorkAlerts.Severity.WARNING,
+                    ticket.process().processInstanceId(), ticket.process().processKey(), id.toString(), taskId,
+                    operation.toString(), criticalCorrection ? "Priority corrected to CRITICAL; Coordinator review required"
+                        : "Support group changed; Coordinator review required", true, null));
+            }
+            if (groupChanged && "NOT_STARTED".equals(work.workState())) execution.returnForCorrection(workspace, taskId, input.reason());
             audit.record(workspace, new BusinessActivity("servicedesk.ticket.classification.correct", "servicedesk.ticket", id.toString(),
                 Map.of("operationId", operation.toString(), "processInstanceId", ticket.process().processInstanceId(),
                     "reviewTaskId", reviewId, "handleTaskId", taskId)));

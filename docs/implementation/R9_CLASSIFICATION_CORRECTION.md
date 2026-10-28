@@ -89,8 +89,9 @@ taken before a category change are discarded under the process lock.
 
 ## Priority And SLA Amendment Policy
 
-BUSINESS_DECISION_REQUIRED: the following implemented policy is proposed for
-owner review, not presented as an approved business rule.
+OWNER_APPROVED (2026-10-28): the owner explicitly selected the following amendment
+policy in the PR follow-up instruction. This is a business decision, not test
+evidence or an independent review approval.
 
 1. Keep physical base_priority, original policy JSON, approved_at,
    first_started_at, paused_at, escalated_at and all old SLA/release rows.
@@ -123,9 +124,19 @@ This is one existing SLA clock with versioned amendments, not a new two-clock SL
 engine. LOW/HIGH/CRITICAL increases and decreases, business/continuous conversion,
 pause, existing breach and repeated amendments have runnable checks.
 
+The API startBreached / resolveBreached flags mean **ever breached**, including
+the current generation's handover lineage. They are not current-overdue flags:
+an amendment cannot erase prior breach evidence. Rework follows the existing new
+generation policy. FE must render these as historical violations, never infer
+current overdue status from them. The live HPDI schema states this contract;
+there is currently no FE consumer of these fields to migrate.
+
 ## ET, History And Provenance
 
-DEFAULT estimates use the existing category/priority table. COORDINATOR estimates
+DEFAULT estimates use the existing category/human-confirmed review priority table,
+not the effective priority after automatic SLA escalation. A manual correction
+updates that confirmed priority and DEFAULT ET; history records the same basis.
+R6 handover/re-review retains this distinction. COORDINATOR estimates
 are retained, never silently overwritten. Both cases append estimate history and
 invalidate the old estimate-request generation, including requests whose minutes
 happen to remain equal. The generic lifecycle atomically marks every pending
@@ -137,7 +148,7 @@ Correction history is append-only through public APIs. Each changed field has a
 row with operation UUID, workspace/ticket/process, review and handle IDs, old/new
 value, actor, reason and common timestamp. No-op requests return 409 without a row.
 Both fields, ET, SLA, workflow and audit commit or roll back together. The previous
-authoritative classification is human-reviewed (or priority escalated), not proven
+authoritative classification is human-reviewed, not proven
 AI output: fromAi=false. Original AI final/advisory records are not rewritten.
 Ordinary Requester responses omit corrections entirely, rather than exposing an
 empty or redacted internal history. There is no public update/delete-history API.
@@ -264,12 +275,18 @@ blindly. Category correction may return AWAITING_REVIEW with a new taskId. Runni
 and pending corrections keep taskId/assignee and must not trigger a client stop.
 Render corrections only when the property is present. Read SLA from the backend;
 do not recalculate deadlines, infer AI provenance or overwrite manual ET in FE.
-CLASSIFICATION_CHANGED is a Coordinator warning, not a new-critical event.
+CLASSIFICATION_CHANGED is a Coordinator correction event, not a new-ticket event.
+A priority increase to CRITICAL emits severity CRITICAL and the distinct label
+"Priority corrected to CRITICAL; Coordinator review required", even without a
+category change. A combined group/priority change emits only one event for the
+operation UUID. Other group corrections retain WARNING. The existing transactional
+outbox commits with correction/audit, then delivers to authorized Coordinators;
+neither CRITICAL_NEW nor a direct pre-commit notification is used.
 
 ## Known Limitations And Merge Readiness
 
-- BUSINESS_DECISION_REQUIRED: ratify the amendment policy, including debt
-  conversion, sticky breached deadlines and manual escalation precedence.
+- OWNER_APPROVED: amendment policy, debt conversion, historical breach flags and
+  manual escalation precedence were selected on 2026-10-28.
 - Active canonical roots/followers fail closed until disposition-aware correction
   semantics are approved; no canonical link or Intake final assessment is changed.
 - Same-group/different-category acceptance is not representable by baseline mapping.
@@ -283,7 +300,8 @@ CLASSIFICATION_CHANGED is a Coordinator warning, not a new-critical event.
 
 - P0/P1 newly confirmed implementation defects: none remaining after the stated
   verification. This is test evidence, not a formal proof of all race orderings.
-- Merge gate: BUSINESS_DECISION_REQUIRED for the stated priority/SLA convention.
+- Business policy gate resolved by owner instruction on 2026-10-28; this does not
+  waive independent approval or hosted CI requirements.
 - Existing environment gate: default pinned PostgreSQL startup fails locally;
   isolated-image proof is not a release waiver for that image.
 - Hosted CI gate: GitHub jobs are blocked by account billing/spending limits,

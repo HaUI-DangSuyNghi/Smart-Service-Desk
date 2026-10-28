@@ -62,6 +62,9 @@ def main():
             current = call("GET", tickets + "/" + expected["id"], coordinator)
             for field in ("process", "taskId", "classification", "estimate", "corrections", "workState", "state", "assignee"):
                 assert current[field] == expected[field], (expected["id"], field)
+        inbox = call("GET", work + "/alerts?size=100", coordinator)
+        persisted = {item["id"] for item in inbox["items"]}
+        assert set(evidence["criticalCorrectionAlerts"]) <= persisted
         evidence["restartVerified"] = True
         evidence["restartResponses"] = responses
         arguments.evidence.write_text(json.dumps(evidence, indent=2), encoding="utf-8")
@@ -90,6 +93,8 @@ def main():
     assert corrected["classification"]["priority"] == "CRITICAL"
     assert corrected["estimate"]["minutes"] == 90
     assert len(corrected["corrections"]) == 1
+    call("PATCH", route, agent, correction, 409)
+    call("GET", work + "/alerts", requester, expected=403)
     queue = call("GET", work + "/queue", agent)
     queued = next(item for item in queue["items"] if item["id"] == first["taskId"])
     assert queued["priority"] == "CRITICAL"
@@ -121,14 +126,21 @@ def main():
     assert pending["workState"] == "PENDING" and pending["sla"]["clockPaused"]
     estimates = call("GET", work + "/estimate-requests?status=SUPERSEDED", coordinator)
     assert any(item["taskId"] == third["taskId"] and item["supersededReason"] == "CLASSIFICATION_CHANGED" for item in estimates["items"])
+    critical_alerts = []
     for attempt in range(15):
-        inbox = call("GET", work + "/alerts", coordinator)
-        if any(item["type"] == "CLASSIFICATION_CHANGED" and item["taskId"] == third["taskId"] for item in inbox["items"]):
+        inbox = call("GET", work + "/alerts?size=100", coordinator)
+        critical_alerts = [item for item in inbox["items"] if item["type"] == "CLASSIFICATION_CHANGED"
+                           and item["severity"] == "CRITICAL" and item["taskId"] in (first["taskId"], third["taskId"])]
+        if len(critical_alerts) == 2:
             break
         time.sleep(1)
     else:
         raise AssertionError("Durable classification event did not reach Coordinator inbox")
+    assert all("Priority corrected to CRITICAL" in item["label"] for item in critical_alerts)
+    agent_inbox = call("GET", work + "/alerts?size=100", agent)
+    assert not {item["id"] for item in critical_alerts} & {item["id"] for item in agent_inbox["items"]}
     evidence = dict(realKeycloak=True, runtimeBase=arguments.base, restartVerified=False,
+                    criticalCorrectionAlerts=[item["id"] for item in critical_alerts],
                     retained=[corrected, returned, pending], responses=responses)
     arguments.evidence.parent.mkdir(parents=True, exist_ok=True)
     arguments.evidence.write_text(json.dumps(evidence, indent=2), encoding="utf-8")
