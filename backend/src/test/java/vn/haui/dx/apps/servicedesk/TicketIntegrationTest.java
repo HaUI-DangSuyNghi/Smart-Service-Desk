@@ -298,6 +298,41 @@ class TicketIntegrationTest {
         }
     }
 
+    @Test void r11AutoCloseWorkerAndScheduleCancellationDoNotInvertLocks() throws Exception {
+        var ticket=awaitingConfirmation("r3-r11-owner-"+UUID.randomUUID());
+        String process=ticket.path("process").path("processInstanceId").asText();
+        String agent=jdbc.queryForObject("select assignee_ from act_hi_taskinst where proc_inst_id_=? and task_def_key_='handle'",String.class,process);
+        authorizedTimerFixture(java.time.Instant.parse(ticket.path("confirmDeadlineAt").asText()));
+        var executor=Executors.newSingleThreadExecutor();
+        try (var blocker=java.sql.DriverManager.getConnection(System.getenv("FILE_TEST_JDBC_URL"),"workflow",System.getenv("FILE_TEST_DB_PASSWORD"))) {
+            blocker.setAutoCommit(false);
+            int blockerPid;
+            try (var statement=blocker.createStatement(); var rows=statement.executeQuery("select pg_backend_pid()")) {
+                assertTrue(rows.next()); blockerPid=rows.getInt(1);
+            }
+            try (var statement=blocker.prepareStatement("select id from process_scope where id=? for update")) {
+                statement.setString(1,process);
+                try (var rows=statement.executeQuery()) { assertTrue(rows.next()); }
+            }
+            var worker=executor.submit(() -> new TicketConfirmationWorker(jdbc,confirmationTimers,confirmationClock,true).run());
+            int waiting=0;
+            long deadline=System.nanoTime()+TimeUnit.SECONDS.toNanos(15);
+            while (waiting==0 && System.nanoTime()<deadline) {
+                waiting=jdbc.queryForObject("select count(*) from pg_stat_activity where ?=any(pg_blocking_pids(pid))",Integer.class,blockerPid);
+                if (waiting==0) Thread.sleep(20);
+            }
+            assertTrue(waiting>0,"Real R11 worker must wait at the process row lock");
+            mvc.perform(put("/api/hpdi/v1/workspaces/lab-a/schedules/"+agent).with(as("coordinator","lab-a","coordinator"))
+                .contentType("application/json").content("{\"version\":0,\"enabled\":true,\"shifts\":[]}"))
+                .andExpect(status().isOk());
+            blocker.commit();
+            worker.get(30,TimeUnit.SECONDS);
+        } finally { executor.shutdownNow(); }
+        evaluate(ticket);
+        assertEquals("AUTO",confirmation.read("lab-a",UUID.fromString(ticket.path("id").asText())).closedBy());
+        assertEquals(1,jdbc.queryForObject("select count(*) from audit_event where action='task.timer.complete' and resource=?",Integer.class,ticket.path("confirmGeneration").asText()));
+    }
+
     @Test void r11AutoCloseDeadlineGenerationAndRepeatedWorkerAreAtomic() throws Exception {
         var ticket = awaitingConfirmation("r11-owner-" + UUID.randomUUID());
         var start = java.time.Instant.parse(ticket.path("confirmStartedAt").asText());
@@ -926,10 +961,12 @@ class TicketIntegrationTest {
         var request = body(mvc.perform(post(base + "tasks/" + task + "/estimate-requests").with(as(worker,"lab-a","agent"))
             .contentType("application/json").content("{\"proposedMinutes\":120,\"reason\":\"More work\"}")).andExpect(status().isCreated()));
         doReturn(false).when(duty).onDuty("lab-a",worker);
+        doReturn(false).when(duty).manualDuty("lab-a",worker);
         String route = base + "estimate-requests/" + request.path("id").asText() + "/decision";
         mvc.perform(post(route).with(as("coordinator","lab-a","coordinator")).contentType("application/json").content("{\"approved\":true}"))
             .andExpect(status().isConflict());
         doReturn(true).when(duty).onDuty("lab-a",worker);
+        doReturn(true).when(duty).manualDuty("lab-a",worker);
         when(directory.members("lab-a")).thenReturn(List.of());
         mvc.perform(post(route).with(as("coordinator","lab-a","coordinator")).contentType("application/json").content("{\"approved\":true}"))
             .andExpect(status().isForbidden());
@@ -1183,6 +1220,7 @@ class TicketIntegrationTest {
     @org.junit.jupiter.api.BeforeEach
     void availableRegressionAgents() {
         doReturn(true).when(duty).onDuty(anyString(), anyString());
+        doReturn(true).when(duty).manualDuty(anyString(), anyString());
         doAnswer(invocation ->
             directory.members(invocation.getArgument(0)).stream().map(vn.haui.dx.core.identity.api.DirectoryMember::sub)
                 .collect(java.util.stream.Collectors.toSet())).when(directory).supportGroupMembers(anyString(), anyString());

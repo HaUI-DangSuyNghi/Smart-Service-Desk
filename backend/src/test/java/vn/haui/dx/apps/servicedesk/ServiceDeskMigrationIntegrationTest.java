@@ -27,7 +27,7 @@ class ServiceDeskMigrationIntegrationTest {
                 + " values(?,'lab-a','process','task','review','ticket','Estimate','agent-a',90,120,'More work',?,'coordinator',clock_timestamp())",UUID.randomUUID(),status);
         var before = jdbc.queryForList("select * from " + schema + ".hpdi_estimate_request order by id");
         var upgraded = Flyway.configure().dataSource(source).schemas(schema).load();
-        assertEquals(30-version,upgraded.migrate().migrationsExecuted);
+        assertEquals(31-version,upgraded.migrate().migrationsExecuted);
         var after = jdbc.queryForList("select * from " + schema + ".hpdi_estimate_request order by id");
         if (version<25) after.forEach(row -> { row.remove("superseded_by"); row.remove("superseded_at"); row.remove("superseded_reason"); });
         assertEquals(before,after);
@@ -133,7 +133,7 @@ class ServiceDeskMigrationIntegrationTest {
                 ? jdbc.queryForList("select * from " + schema + ".servicedesk_assessment_history where ticket_id=?", ticket) : null;
 
         var upgraded = Flyway.configure().dataSource(source).schemas(schema).load();
-        assertEquals(30 - baselineVersion, upgraded.migrate().migrationsExecuted);
+        assertEquals(31 - baselineVersion, upgraded.migrate().migrationsExecuted);
         assertEquals(0L, jdbc.queryForObject("select count(*) from " + schema + ".servicedesk_sla", Long.class));
         assertEquals(0L, jdbc.queryForObject("select count(*) from " + schema + ".hpdi_alert_event", Long.class));
         assertEquals(0L, jdbc.queryForObject("select count(*) from " + schema + ".hpdi_alert_recipient", Long.class));

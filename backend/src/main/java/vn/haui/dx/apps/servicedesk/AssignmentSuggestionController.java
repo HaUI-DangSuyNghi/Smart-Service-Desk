@@ -81,7 +81,7 @@ public class AssignmentSuggestionController {
         String group=TicketAssignmentEligibility.supportGroup(category);
         var agents=directory.currentAgents(workspace,group);
         var statuses=new HashMap<String,Boolean>();
-        duty.list(workspace).forEach(status -> statuses.put(status.subject(),status.onDuty()));
+        duty.list(workspace).forEach(status -> statuses.put(status.subject(),status.effectiveDuty()));
         var loads=loads(workspace,taskId);
         var today=LocalDate.now(zone);
         var counts=new HashMap<String,Long>();
@@ -91,11 +91,11 @@ public class AssignmentSuggestionController {
             workspace,Timestamp.from(today.atStartOfDay(zone).toInstant()),Timestamp.from(today.plusDays(1).atStartOfDay(zone).toInstant()));
         var cursors=group==null ? List.<String>of() : jdbc.query("select last_subject from servicedesk_assignment_cursor"
             + " where workspace=? and support_group=?",(row,index) -> row.getString(1),workspace,group);
-        var candidates=agents.stream().map(agent -> {
+        var candidates=agents.stream().sorted(Comparator.comparing(WorkspaceMember::subject)).map(agent -> {
             boolean onDuty=statuses.getOrDefault(agent.subject(),false);
             String excluded=agent.subject().equals(ticket.creator()) ? "IS_REQUESTER" : onDuty ? null : "OFF_DUTY";
             return new Candidate(agent.subject(),agent.fullName()==null ? agent.username() : agent.fullName(),onDuty,
-                loads.getOrDefault(agent.subject(),0L),counts.getOrDefault(agent.subject(),0L),null,false,excluded);
+                loads.getOrDefault(agent.subject(),0L),counts.getOrDefault(agent.subject(),0L),duty.shiftRemainingMinutes(workspace,agent.subject()),false,excluded);
         }).toList();
         var ranked=rank(candidates,cursors.isEmpty() ? null : cursors.get(0));
         String selected=group==null || ranked.isEmpty() ? null : ranked.get(0).subject();
@@ -105,6 +105,8 @@ public class AssignmentSuggestionController {
         String reason=group==null ? "OTHER requires manual coordinator selection" : selected==null ? "No eligible on-duty agent in support group"
             : "Minimum-load band (<15 minutes from minimum; considered task excluded), then fewest assignments today, then committed-assignment round-robin; selected "
                 + selected + " with " + ranked.get(0).loadMinutes() + " load minutes and " + ranked.get(0).assignedToday() + " assignments today";
+        if (ranked.stream().anyMatch(candidate -> candidate.shiftRemainingMinutes()!=null && estimate>candidate.shiftRemainingMinutes()))
+            reason += "; ESTIMATE_EXCEEDS_SHIFT: compare estimateMinutes with each candidate shiftRemainingMinutes; Coordinator must decide overtime or R6 handover";
         return new Suggestion(taskId,group==null ? "manual" : group,estimate,selected,List.copyOf(result),reason);
     }
 
@@ -142,6 +144,6 @@ public class AssignmentSuggestionController {
 
     private static Candidate mark(Candidate candidate, String selected) {
         return new Candidate(candidate.subject(),candidate.displayName(),candidate.onDuty(),candidate.loadMinutes(),
-            candidate.assignedToday(),null,candidate.subject().equals(selected),candidate.excludedReason());
+            candidate.assignedToday(),candidate.shiftRemainingMinutes(),candidate.subject().equals(selected),candidate.excludedReason());
     }
 }

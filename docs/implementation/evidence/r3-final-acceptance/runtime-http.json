@@ -1,0 +1,963 @@
+{
+  "realKeycloak": true,
+  "packagedArtifact": true,
+  "responses": [
+    {
+      "method": "GET",
+      "path": "/actuator/health",
+      "status": 200,
+      "body": {
+        "status": "UP"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/hpdi/v1/workspaces/lab-a/schedules/b5a318c4-d38c-4acd-ab78-cc3bd7f1efc1",
+      "status": 200,
+      "body": {
+        "subject": "b5a318c4-d38c-4acd-ab78-cc3bd7f1efc1",
+        "version": 0,
+        "enabled": false,
+        "shifts": []
+      }
+    },
+    {
+      "method": "PUT",
+      "path": "/api/hpdi/v1/workspaces/lab-a/schedules/b5a318c4-d38c-4acd-ab78-cc3bd7f1efc1",
+      "status": 200,
+      "body": {
+        "subject": "b5a318c4-d38c-4acd-ab78-cc3bd7f1efc1",
+        "version": 1,
+        "enabled": true,
+        "shifts": [
+          {
+            "startsAt": "2026-10-28T08:49:54.114361Z",
+            "endsAt": "2026-10-28T09:10:54.114361Z",
+            "timezone": "Asia/Ho_Chi_Minh"
+          }
+        ]
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/hpdi/v1/workspaces/lab-a/schedules/me",
+      "status": 200,
+      "body": {
+        "subject": "b5a318c4-d38c-4acd-ab78-cc3bd7f1efc1",
+        "version": 1,
+        "enabled": true,
+        "shifts": [
+          {
+            "startsAt": "2026-10-28T08:49:54.114361Z",
+            "endsAt": "2026-10-28T09:10:54.114361Z",
+            "timezone": "Asia/Ho_Chi_Minh"
+          }
+        ]
+      }
+    },
+    {
+      "method": "PUT",
+      "path": "/api/hpdi/v1/workspaces/lab-a/schedules/b5a318c4-d38c-4acd-ab78-cc3bd7f1efc1",
+      "status": 403,
+      "body": {
+        "type": "about:blank",
+        "title": "Forbidden",
+        "status": 403,
+        "detail": "Coordinator or own agent schedule required",
+        "instance": "/api/hpdi/v1/workspaces/lab-a/schedules/b5a318c4-d38c-4acd-ab78-cc3bd7f1efc1",
+        "code": "FORBIDDEN",
+        "requestId": "fad8299a-552e-4e5b-a17f-072378239c27"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/hpdi/v1/workspaces/lab-a/schedules/b5a318c4-d38c-4acd-ab78-cc3bd7f1efc1",
+      "status": 403,
+      "body": {
+        "type": "about:blank",
+        "title": "Forbidden",
+        "status": 403,
+        "detail": "Workspace access denied",
+        "instance": "/api/hpdi/v1/workspaces/lab-a/schedules/b5a318c4-d38c-4acd-ab78-cc3bd7f1efc1",
+        "code": "FORBIDDEN",
+        "requestId": "f67acac5-7e3f-4977-9da8-efc20112c3e6"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/hpdi/v1/workspaces/lab-a/schedules/me",
+      "status": 200,
+      "body": {
+        "subject": "b5a318c4-d38c-4acd-ab78-cc3bd7f1efc1",
+        "version": 1,
+        "enabled": true,
+        "shifts": [
+          {
+            "startsAt": "2026-10-28T08:49:54.114361Z",
+            "endsAt": "2026-10-28T09:10:54.114361Z",
+            "timezone": "Asia/Ho_Chi_Minh"
+          }
+        ]
+      }
+    },
+    {
+      "method": "PUT",
+      "path": "/api/hpdi/v1/workspaces/lab-a/schedules/b5a318c4-d38c-4acd-ab78-cc3bd7f1efc1",
+      "status": 403,
+      "body": {
+        "type": "about:blank",
+        "title": "Forbidden",
+        "status": 403,
+        "detail": "Current role and permission required",
+        "instance": "/api/hpdi/v1/workspaces/lab-a/schedules/b5a318c4-d38c-4acd-ab78-cc3bd7f1efc1",
+        "code": "FORBIDDEN",
+        "requestId": "31b92ecc-caaf-44a0-a911-bf3f371475ea"
+      }
+    },
+    {
+      "method": "PUT",
+      "path": "/api/hpdi/v1/workspaces/lab-a/duty/me",
+      "status": 200,
+      "body": {
+        "subject": "b5a318c4-d38c-4acd-ab78-cc3bd7f1efc1",
+        "onDuty": true,
+        "note": null,
+        "updatedAt": "2026-10-28T08:51:03.286335Z",
+        "effectiveDuty": true
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/hpdi/v1/workspaces/lab-a/schedules/b5a318c4-d38c-4acd-ab78-cc3bd7f1efc1",
+      "status": 200,
+      "body": {
+        "subject": "b5a318c4-d38c-4acd-ab78-cc3bd7f1efc1",
+        "version": 1,
+        "enabled": true,
+        "shifts": [
+          {
+            "startsAt": "2026-10-28T08:49:54.114361Z",
+            "endsAt": "2026-10-28T09:10:54.114361Z",
+            "timezone": "Asia/Ho_Chi_Minh"
+          }
+        ]
+      }
+    },
+    {
+      "method": "PUT",
+      "path": "/api/hpdi/v1/workspaces/lab-a/schedules/b5a318c4-d38c-4acd-ab78-cc3bd7f1efc1",
+      "status": 200,
+      "body": {
+        "subject": "b5a318c4-d38c-4acd-ab78-cc3bd7f1efc1",
+        "version": 2,
+        "enabled": true,
+        "shifts": [
+          {
+            "startsAt": "2026-10-28T08:50:03.452687Z",
+            "endsAt": "2026-10-28T09:11:03.452687Z",
+            "timezone": "Asia/Ho_Chi_Minh"
+          }
+        ]
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/apps/servicedesk/v1/workspaces/lab-a/tickets",
+      "status": 201,
+      "body": {
+        "id": "819701db-8e2a-437c-938f-fdd9c15aa865",
+        "workspace": "lab-a",
+        "creator": "a8a0f1d2-0b11-4d40-9fda-4b836968d5e1",
+        "clientRequestId": "96b584eb-63de-4b63-a217-9d5c32962ffb",
+        "title": "R3 runtime acceptance",
+        "description": "Synthetic isolated R3 scheduling and handover probe",
+        "createdAt": "2026-10-28T08:51:03.625186Z",
+        "process": {
+          "processInstanceId": "b4e54c1b-d2ac-11f1-96d1-eecd9c8f1a92",
+          "processKey": "service-desk-reviewed",
+          "businessKey": "819701db-8e2a-437c-938f-fdd9c15aa865",
+          "workspace": "lab-a",
+          "id": "b4e54c1b-d2ac-11f1-96d1-eecd9c8f1a92"
+        },
+        "state": "AWAITING_REVIEW",
+        "taskId": "b4ef5e44-d2ac-11f1-96d1-eecd9c8f1a92",
+        "assignee": null,
+        "estimate": null,
+        "workState": null,
+        "workedMinutes": 0,
+        "remainingMinutes": null,
+        "reopenCount": 0,
+        "classification": null,
+        "assessment": {
+          "status": "PENDING",
+          "version": 1,
+          "result": null,
+          "errorCode": null
+        },
+        "sla": null
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/apps/servicedesk/v1/workspaces/lab-a/tickets/819701db-8e2a-437c-938f-fdd9c15aa865/assignment-suggestion?category=OTHER&priority=HIGH",
+      "status": 200,
+      "body": {
+        "taskId": "b4ef5e44-d2ac-11f1-96d1-eecd9c8f1a92",
+        "group": "manual",
+        "estimateMinutes": 60,
+        "recommended": null,
+        "candidates": [
+          {
+            "subject": "b5a318c4-d38c-4acd-ab78-cc3bd7f1efc1",
+            "displayName": "Tr\u1ea7n Th\u1ecb B\u00ecnh",
+            "onDuty": true,
+            "loadMinutes": 0,
+            "assignedToday": 0,
+            "shiftRemainingMinutes": 19,
+            "recommended": false,
+            "excludedReason": null
+          },
+          {
+            "subject": "de5017eb-1a0d-4667-aa63-f7d09f1ace16",
+            "displayName": "B\u00f9i Huy Ho\u00e0ng",
+            "onDuty": false,
+            "loadMinutes": 0,
+            "assignedToday": 0,
+            "shiftRemainingMinutes": null,
+            "recommended": false,
+            "excludedReason": "OFF_DUTY"
+          }
+        ],
+        "reason": "OTHER requires manual coordinator selection; ESTIMATE_EXCEEDS_SHIFT: compare estimateMinutes with each candidate shiftRemainingMinutes; Coordinator must decide overtime or R6 handover"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/hpdi/v1/workspaces/lab-a/schedules/b5a318c4-d38c-4acd-ab78-cc3bd7f1efc1/effective-duty",
+      "status": 200,
+      "body": {
+        "manualDuty": true,
+        "scheduleEnabled": true,
+        "scheduledDuty": true,
+        "onDuty": true,
+        "shiftStart": "2026-10-28T08:50:03.452687Z",
+        "shiftEnd": "2026-10-28T09:11:03.452687Z",
+        "shiftRemainingMinutes": 19,
+        "scheduleVersion": 2,
+        "reason": "SCHEDULE_AND_MANUAL"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/apps/servicedesk/v1/workspaces/lab-a/tickets/819701db-8e2a-437c-938f-fdd9c15aa865/review",
+      "status": 200,
+      "body": {
+        "id": "819701db-8e2a-437c-938f-fdd9c15aa865",
+        "workspace": "lab-a",
+        "creator": "a8a0f1d2-0b11-4d40-9fda-4b836968d5e1",
+        "clientRequestId": "96b584eb-63de-4b63-a217-9d5c32962ffb",
+        "title": "R3 runtime acceptance",
+        "description": "Synthetic isolated R3 scheduling and handover probe",
+        "createdAt": "2026-10-28T08:51:03.625186Z",
+        "process": {
+          "processInstanceId": "b4e54c1b-d2ac-11f1-96d1-eecd9c8f1a92",
+          "processKey": "service-desk-reviewed",
+          "businessKey": "819701db-8e2a-437c-938f-fdd9c15aa865",
+          "workspace": "lab-a",
+          "id": "b4e54c1b-d2ac-11f1-96d1-eecd9c8f1a92"
+        },
+        "state": "ASSIGNED",
+        "taskId": "b55bdbc0-d2ac-11f1-96d1-eecd9c8f1a92",
+        "assignee": "b5a318c4-d38c-4acd-ab78-cc3bd7f1efc1",
+        "estimate": {
+          "minutes": 60,
+          "basis": "COORDINATOR"
+        },
+        "workState": "NOT_STARTED",
+        "workedMinutes": 0,
+        "remainingMinutes": 60,
+        "reopenCount": 0,
+        "classification": {
+          "category": "OTHER",
+          "priority": "HIGH",
+          "basePriority": "HIGH",
+          "escalated": false,
+          "group": "agent",
+          "source": "COORDINATOR",
+          "impact": null,
+          "urgency": null,
+          "reviewedBy": "51869ca8-5450-4c47-a57d-e678475ab77a",
+          "reviewedAt": "2026-10-28T08:51:04.203771Z"
+        },
+        "assessment": {
+          "status": "PENDING",
+          "version": 1,
+          "result": null,
+          "errorCode": null
+        },
+        "sla": {
+          "startBy": "2026-10-28T09:51:04.494939Z",
+          "resolveBy": "2026-10-29T08:21:04.494939Z",
+          "startBreached": false,
+          "resolveBreached": false,
+          "warning": false,
+          "clockPaused": false
+        },
+        "corrections": []
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/apps/servicedesk/v1/workspaces/lab-a/tickets",
+      "status": 201,
+      "body": {
+        "id": "12741247-efd9-4e02-af2e-ccc5ae4b4c72",
+        "workspace": "lab-a",
+        "creator": "a8a0f1d2-0b11-4d40-9fda-4b836968d5e1",
+        "clientRequestId": "da126c9d-4ae1-4dad-96d5-4d59dcdb6a3d",
+        "title": "R3 runtime acceptance",
+        "description": "Synthetic isolated R3 scheduling and handover probe",
+        "createdAt": "2026-10-28T08:51:04.755845Z",
+        "process": {
+          "processInstanceId": "b590a765-d2ac-11f1-96d1-eecd9c8f1a92",
+          "processKey": "service-desk-reviewed",
+          "businessKey": "12741247-efd9-4e02-af2e-ccc5ae4b4c72",
+          "workspace": "lab-a",
+          "id": "b590a765-d2ac-11f1-96d1-eecd9c8f1a92"
+        },
+        "state": "AWAITING_REVIEW",
+        "taskId": "b590ce7e-d2ac-11f1-96d1-eecd9c8f1a92",
+        "assignee": null,
+        "estimate": null,
+        "workState": null,
+        "workedMinutes": 0,
+        "remainingMinutes": null,
+        "reopenCount": 0,
+        "classification": null,
+        "assessment": {
+          "status": "PENDING",
+          "version": 1,
+          "result": null,
+          "errorCode": null
+        },
+        "sla": null
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/apps/servicedesk/v1/workspaces/lab-a/tickets/12741247-efd9-4e02-af2e-ccc5ae4b4c72/review",
+      "status": 200,
+      "body": {
+        "id": "12741247-efd9-4e02-af2e-ccc5ae4b4c72",
+        "workspace": "lab-a",
+        "creator": "a8a0f1d2-0b11-4d40-9fda-4b836968d5e1",
+        "clientRequestId": "da126c9d-4ae1-4dad-96d5-4d59dcdb6a3d",
+        "title": "R3 runtime acceptance",
+        "description": "Synthetic isolated R3 scheduling and handover probe",
+        "createdAt": "2026-10-28T08:51:04.755845Z",
+        "process": {
+          "processInstanceId": "b590a765-d2ac-11f1-96d1-eecd9c8f1a92",
+          "processKey": "service-desk-reviewed",
+          "businessKey": "12741247-efd9-4e02-af2e-ccc5ae4b4c72",
+          "workspace": "lab-a",
+          "id": "b590a765-d2ac-11f1-96d1-eecd9c8f1a92"
+        },
+        "state": "ASSIGNED",
+        "taskId": "b5ab827a-d2ac-11f1-96d1-eecd9c8f1a92",
+        "assignee": null,
+        "estimate": {
+          "minutes": 60,
+          "basis": "COORDINATOR"
+        },
+        "workState": "NOT_STARTED",
+        "workedMinutes": 0,
+        "remainingMinutes": 60,
+        "reopenCount": 0,
+        "classification": {
+          "category": "OTHER",
+          "priority": "HIGH",
+          "basePriority": "HIGH",
+          "escalated": false,
+          "group": "agent",
+          "source": "COORDINATOR",
+          "impact": null,
+          "urgency": null,
+          "reviewedBy": "51869ca8-5450-4c47-a57d-e678475ab77a",
+          "reviewedAt": "2026-10-28T08:51:04.819297Z"
+        },
+        "assessment": {
+          "status": "PENDING",
+          "version": 1,
+          "result": null,
+          "errorCode": null
+        },
+        "sla": {
+          "startBy": "2026-10-28T09:51:04.987343Z",
+          "resolveBy": "2026-10-29T08:21:04.987343Z",
+          "startBreached": false,
+          "resolveBreached": false,
+          "warning": false,
+          "clockPaused": false
+        },
+        "corrections": []
+      }
+    },
+    {
+      "method": "PUT",
+      "path": "/api/hpdi/v1/workspaces/lab-a/duty/me",
+      "status": 200,
+      "body": {
+        "subject": "b5a318c4-d38c-4acd-ab78-cc3bd7f1efc1",
+        "onDuty": false,
+        "note": null,
+        "updatedAt": "2026-10-28T08:51:05.126324Z",
+        "effectiveDuty": false
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/hpdi/v1/workspaces/lab-a/schedules/b5a318c4-d38c-4acd-ab78-cc3bd7f1efc1/effective-duty",
+      "status": 200,
+      "body": {
+        "manualDuty": false,
+        "scheduleEnabled": true,
+        "scheduledDuty": true,
+        "onDuty": false,
+        "shiftStart": "2026-10-28T08:50:03.452687Z",
+        "shiftEnd": "2026-10-28T09:11:03.452687Z",
+        "shiftRemainingMinutes": 19,
+        "scheduleVersion": 2,
+        "reason": "MANUAL_OFF_DUTY"
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/hpdi/v1/workspaces/lab-a/tasks/b5ab827a-d2ac-11f1-96d1-eecd9c8f1a92/assign",
+      "status": 409,
+      "body": {
+        "type": "about:blank",
+        "title": "Conflict",
+        "status": 409,
+        "detail": "Agent is off duty",
+        "instance": "/api/hpdi/v1/workspaces/lab-a/tasks/b5ab827a-d2ac-11f1-96d1-eecd9c8f1a92/assign",
+        "code": "CONFLICT",
+        "requestId": "87eef2d7-9663-4c7a-bfce-1b29142e079b"
+      }
+    },
+    {
+      "method": "PUT",
+      "path": "/api/hpdi/v1/workspaces/lab-a/duty/me",
+      "status": 200,
+      "body": {
+        "subject": "b5a318c4-d38c-4acd-ab78-cc3bd7f1efc1",
+        "onDuty": true,
+        "note": null,
+        "updatedAt": "2026-10-28T08:51:05.339770Z",
+        "effectiveDuty": true
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/hpdi/v1/workspaces/lab-a/schedules/b5a318c4-d38c-4acd-ab78-cc3bd7f1efc1",
+      "status": 200,
+      "body": {
+        "subject": "b5a318c4-d38c-4acd-ab78-cc3bd7f1efc1",
+        "version": 2,
+        "enabled": true,
+        "shifts": [
+          {
+            "startsAt": "2026-10-28T08:50:03.452687Z",
+            "endsAt": "2026-10-28T09:11:03.452687Z",
+            "timezone": "Asia/Ho_Chi_Minh"
+          }
+        ]
+      }
+    },
+    {
+      "method": "PUT",
+      "path": "/api/hpdi/v1/workspaces/lab-a/schedules/b5a318c4-d38c-4acd-ab78-cc3bd7f1efc1",
+      "status": 200,
+      "body": {
+        "subject": "b5a318c4-d38c-4acd-ab78-cc3bd7f1efc1",
+        "version": 3,
+        "enabled": true,
+        "shifts": [
+          {
+            "startsAt": "2026-10-28T06:51:05.440810Z",
+            "endsAt": "2026-10-28T07:51:05.440810Z",
+            "timezone": "Asia/Ho_Chi_Minh"
+          }
+        ]
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/hpdi/v1/workspaces/lab-a/tasks/b5ab827a-d2ac-11f1-96d1-eecd9c8f1a92/assign",
+      "status": 409,
+      "body": {
+        "type": "about:blank",
+        "title": "Conflict",
+        "status": 409,
+        "detail": "Agent is off duty",
+        "instance": "/api/hpdi/v1/workspaces/lab-a/tasks/b5ab827a-d2ac-11f1-96d1-eecd9c8f1a92/assign",
+        "code": "CONFLICT",
+        "requestId": "a2ca9709-b6eb-4058-993b-20c4dc5dba37"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/hpdi/v1/workspaces/lab-a/schedules/b5a318c4-d38c-4acd-ab78-cc3bd7f1efc1",
+      "status": 200,
+      "body": {
+        "subject": "b5a318c4-d38c-4acd-ab78-cc3bd7f1efc1",
+        "version": 3,
+        "enabled": true,
+        "shifts": [
+          {
+            "startsAt": "2026-10-28T06:51:05.440810Z",
+            "endsAt": "2026-10-28T07:51:05.440810Z",
+            "timezone": "Asia/Ho_Chi_Minh"
+          }
+        ]
+      }
+    },
+    {
+      "method": "PUT",
+      "path": "/api/hpdi/v1/workspaces/lab-a/schedules/b5a318c4-d38c-4acd-ab78-cc3bd7f1efc1",
+      "status": 200,
+      "body": {
+        "subject": "b5a318c4-d38c-4acd-ab78-cc3bd7f1efc1",
+        "version": 4,
+        "enabled": true,
+        "shifts": [
+          {
+            "startsAt": "2026-10-28T08:50:05.741110Z",
+            "endsAt": "2026-10-28T08:51:11.741110Z",
+            "timezone": "Asia/Ho_Chi_Minh"
+          }
+        ]
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/hpdi/v1/workspaces/lab-a/tasks/b55bdbc0-d2ac-11f1-96d1-eecd9c8f1a92/start",
+      "status": 200,
+      "body": {
+        "id": "b55bdbc0-d2ac-11f1-96d1-eecd9c8f1a92",
+        "processInstanceId": "b4e54c1b-d2ac-11f1-96d1-eecd9c8f1a92",
+        "key": "handle",
+        "name": "Handle support request",
+        "candidateGroups": [
+          "lab-a:agent"
+        ],
+        "assignee": "b5a318c4-d38c-4acd-ab78-cc3bd7f1efc1",
+        "createdAt": "2026-10-28T08:51:04.409Z",
+        "processKey": "service-desk-reviewed",
+        "businessKey": "819701db-8e2a-437c-938f-fdd9c15aa865",
+        "label": "R3 runtime acceptance",
+        "workState": "IN_PROGRESS",
+        "priority": "HIGH",
+        "basePriority": "HIGH",
+        "estimate": {
+          "minutes": 60,
+          "basis": "COORDINATOR"
+        },
+        "workedMinutes": 0,
+        "remainingMinutes": 60,
+        "reopenCount": 0,
+        "pendingReason": null,
+        "pendingNote": null,
+        "sla": {
+          "startBy": "2026-10-28T09:51:04.494939Z",
+          "resolveBy": "2026-10-29T08:21:04.494939Z",
+          "startBreached": false,
+          "resolveBreached": false,
+          "warning": false,
+          "clockPaused": false
+        }
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/apps/servicedesk/v1/workspaces/lab-a/tickets/819701db-8e2a-437c-938f-fdd9c15aa865",
+      "status": 200,
+      "body": {
+        "id": "819701db-8e2a-437c-938f-fdd9c15aa865",
+        "workspace": "lab-a",
+        "creator": "a8a0f1d2-0b11-4d40-9fda-4b836968d5e1",
+        "clientRequestId": "96b584eb-63de-4b63-a217-9d5c32962ffb",
+        "title": "R3 runtime acceptance",
+        "description": "Synthetic isolated R3 scheduling and handover probe",
+        "createdAt": "2026-10-28T08:51:03.625186Z",
+        "process": {
+          "processInstanceId": "b4e54c1b-d2ac-11f1-96d1-eecd9c8f1a92",
+          "processKey": "service-desk-reviewed",
+          "businessKey": "819701db-8e2a-437c-938f-fdd9c15aa865",
+          "workspace": "lab-a",
+          "id": "b4e54c1b-d2ac-11f1-96d1-eecd9c8f1a92"
+        },
+        "state": "IN_PROGRESS",
+        "taskId": "b55bdbc0-d2ac-11f1-96d1-eecd9c8f1a92",
+        "assignee": "b5a318c4-d38c-4acd-ab78-cc3bd7f1efc1",
+        "estimate": {
+          "minutes": 60,
+          "basis": "COORDINATOR"
+        },
+        "workState": "IN_PROGRESS",
+        "workedMinutes": 0,
+        "remainingMinutes": 60,
+        "reopenCount": 0,
+        "classification": {
+          "category": "OTHER",
+          "priority": "HIGH",
+          "basePriority": "HIGH",
+          "escalated": false,
+          "group": "agent",
+          "source": "COORDINATOR",
+          "impact": null,
+          "urgency": null,
+          "reviewedBy": "51869ca8-5450-4c47-a57d-e678475ab77a",
+          "reviewedAt": "2026-10-28T08:51:04.203771Z"
+        },
+        "assessment": {
+          "status": "PENDING",
+          "version": 1,
+          "result": null,
+          "errorCode": null
+        },
+        "sla": {
+          "startBy": "2026-10-28T09:51:04.494939Z",
+          "resolveBy": "2026-10-29T08:21:04.494939Z",
+          "startBreached": false,
+          "resolveBreached": false,
+          "warning": false,
+          "clockPaused": false
+        },
+        "corrections": []
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/hpdi/v1/workspaces/lab-a/schedules/b5a318c4-d38c-4acd-ab78-cc3bd7f1efc1/effective-duty",
+      "status": 200,
+      "body": {
+        "manualDuty": true,
+        "scheduleEnabled": true,
+        "scheduledDuty": false,
+        "onDuty": false,
+        "shiftStart": null,
+        "shiftEnd": null,
+        "shiftRemainingMinutes": null,
+        "scheduleVersion": 4,
+        "reason": "OUTSIDE_SHIFT"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/hpdi/v1/workspaces/lab-a/alerts?size=100",
+      "status": 200,
+      "body": {
+        "items": [
+          {
+            "id": "a1c57efc-59bb-442b-88fc-0e6702905bcf",
+            "type": "ASSIGNEE_OFF_DUTY",
+            "severity": "WARNING",
+            "processInstanceId": "b4e54c1b-d2ac-11f1-96d1-eecd9c8f1a92",
+            "processKey": "service-desk-reviewed",
+            "businessKey": "819701db-8e2a-437c-938f-fdd9c15aa865",
+            "taskId": "b55bdbc0-d2ac-11f1-96d1-eecd9c8f1a92",
+            "label": "ASSIGNEE_OFF_DUTY",
+            "createdAt": "2026-10-28T08:51:12.766846Z",
+            "readAt": null
+          }
+        ],
+        "page": 0,
+        "size": 100,
+        "total": 1,
+        "unread": 1
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/hpdi/v1/workspaces/lab-a/alerts?size=100",
+      "status": 200,
+      "body": {
+        "items": [
+          {
+            "id": "a1c57efc-59bb-442b-88fc-0e6702905bcf",
+            "type": "ASSIGNEE_OFF_DUTY",
+            "severity": "WARNING",
+            "processInstanceId": "b4e54c1b-d2ac-11f1-96d1-eecd9c8f1a92",
+            "processKey": "service-desk-reviewed",
+            "businessKey": "819701db-8e2a-437c-938f-fdd9c15aa865",
+            "taskId": "b55bdbc0-d2ac-11f1-96d1-eecd9c8f1a92",
+            "label": "ASSIGNEE_OFF_DUTY",
+            "createdAt": "2026-10-28T08:51:12.766846Z",
+            "readAt": null
+          }
+        ],
+        "page": 0,
+        "size": 100,
+        "total": 1,
+        "unread": 1
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/hpdi/v1/workspaces/lab-a/schedules/b5a318c4-d38c-4acd-ab78-cc3bd7f1efc1",
+      "status": 200,
+      "body": {
+        "subject": "b5a318c4-d38c-4acd-ab78-cc3bd7f1efc1",
+        "version": 4,
+        "enabled": true,
+        "shifts": [
+          {
+            "startsAt": "2026-10-28T08:50:05.741110Z",
+            "endsAt": "2026-10-28T08:51:11.741110Z",
+            "timezone": "Asia/Ho_Chi_Minh"
+          }
+        ]
+      }
+    },
+    {
+      "method": "PUT",
+      "path": "/api/hpdi/v1/workspaces/lab-a/schedules/b5a318c4-d38c-4acd-ab78-cc3bd7f1efc1",
+      "status": 409,
+      "body": {
+        "type": "about:blank",
+        "title": "Conflict",
+        "status": 409,
+        "detail": "Resource already exists or violates a constraint",
+        "instance": "/api/hpdi/v1/workspaces/lab-a/schedules/b5a318c4-d38c-4acd-ab78-cc3bd7f1efc1",
+        "code": "CONFLICT",
+        "requestId": "7fad439b-d7df-45f5-8ab2-e02879edb1f2"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/hpdi/v1/workspaces/lab-a/schedules/b5a318c4-d38c-4acd-ab78-cc3bd7f1efc1",
+      "status": 200,
+      "body": {
+        "subject": "b5a318c4-d38c-4acd-ab78-cc3bd7f1efc1",
+        "version": 4,
+        "enabled": true,
+        "shifts": [
+          {
+            "startsAt": "2026-10-28T08:50:05.741110Z",
+            "endsAt": "2026-10-28T08:51:11.741110Z",
+            "timezone": "Asia/Ho_Chi_Minh"
+          }
+        ]
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/hpdi/v1/workspaces/lab-a/schedules/b5a318c4-d38c-4acd-ab78-cc3bd7f1efc1",
+      "status": 200,
+      "body": {
+        "subject": "b5a318c4-d38c-4acd-ab78-cc3bd7f1efc1",
+        "version": 4,
+        "enabled": true,
+        "shifts": [
+          {
+            "startsAt": "2026-10-28T08:50:05.741110Z",
+            "endsAt": "2026-10-28T08:51:11.741110Z",
+            "timezone": "Asia/Ho_Chi_Minh"
+          }
+        ]
+      }
+    },
+    {
+      "method": "PUT",
+      "path": "/api/hpdi/v1/workspaces/lab-a/schedules/b5a318c4-d38c-4acd-ab78-cc3bd7f1efc1",
+      "status": 200,
+      "body": {
+        "subject": "b5a318c4-d38c-4acd-ab78-cc3bd7f1efc1",
+        "version": 5,
+        "enabled": true,
+        "shifts": [
+          {
+            "startsAt": "2026-10-28T08:50:17.170943Z",
+            "endsAt": "2026-10-28T08:51:32.170943Z",
+            "timezone": "Asia/Ho_Chi_Minh"
+          }
+        ]
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/hpdi/v1/workspaces/lab-a/tasks/b5ab827a-d2ac-11f1-96d1-eecd9c8f1a92/assign",
+      "status": 200,
+      "body": {
+        "id": "b5ab827a-d2ac-11f1-96d1-eecd9c8f1a92",
+        "processInstanceId": "b590a765-d2ac-11f1-96d1-eecd9c8f1a92",
+        "key": "handle",
+        "name": "Handle support request",
+        "candidateGroups": [
+          "lab-a:agent"
+        ],
+        "assignee": "b5a318c4-d38c-4acd-ab78-cc3bd7f1efc1",
+        "createdAt": "2026-10-28T08:51:04.932Z",
+        "processKey": "service-desk-reviewed",
+        "businessKey": "12741247-efd9-4e02-af2e-ccc5ae4b4c72"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/actuator/health",
+      "status": 200,
+      "body": {
+        "status": "UP"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/hpdi/v1/workspaces/lab-a/schedules/b5a318c4-d38c-4acd-ab78-cc3bd7f1efc1",
+      "status": 200,
+      "body": {
+        "subject": "b5a318c4-d38c-4acd-ab78-cc3bd7f1efc1",
+        "version": 5,
+        "enabled": true,
+        "shifts": [
+          {
+            "startsAt": "2026-10-28T08:50:17.170943Z",
+            "endsAt": "2026-10-28T08:51:32.170943Z",
+            "timezone": "Asia/Ho_Chi_Minh"
+          }
+        ]
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/hpdi/v1/workspaces/lab-a/schedules/b5a318c4-d38c-4acd-ab78-cc3bd7f1efc1/effective-duty",
+      "status": 200,
+      "body": {
+        "manualDuty": true,
+        "scheduleEnabled": true,
+        "scheduledDuty": false,
+        "onDuty": false,
+        "shiftStart": null,
+        "shiftEnd": null,
+        "shiftRemainingMinutes": null,
+        "scheduleVersion": 5,
+        "reason": "OUTSIDE_SHIFT"
+      }
+    },
+    {
+      "method": "GET",
+      "path": "/api/hpdi/v1/workspaces/lab-a/alerts?size=100",
+      "status": 200,
+      "body": {
+        "items": [
+          {
+            "id": "e211ccb0-74a7-431b-9726-2b176bc0bbc5",
+            "type": "ASSIGNEE_OFF_DUTY",
+            "severity": "WARNING",
+            "processInstanceId": "b590a765-d2ac-11f1-96d1-eecd9c8f1a92",
+            "processKey": "service-desk-reviewed",
+            "businessKey": "12741247-efd9-4e02-af2e-ccc5ae4b4c72",
+            "taskId": "b5ab827a-d2ac-11f1-96d1-eecd9c8f1a92",
+            "label": "ASSIGNEE_OFF_DUTY",
+            "createdAt": "2026-10-28T08:51:50.681334Z",
+            "readAt": null
+          },
+          {
+            "id": "a1c57efc-59bb-442b-88fc-0e6702905bcf",
+            "type": "ASSIGNEE_OFF_DUTY",
+            "severity": "WARNING",
+            "processInstanceId": "b4e54c1b-d2ac-11f1-96d1-eecd9c8f1a92",
+            "processKey": "service-desk-reviewed",
+            "businessKey": "819701db-8e2a-437c-938f-fdd9c15aa865",
+            "taskId": "b55bdbc0-d2ac-11f1-96d1-eecd9c8f1a92",
+            "label": "ASSIGNEE_OFF_DUTY",
+            "createdAt": "2026-10-28T08:51:12.766846Z",
+            "readAt": null
+          }
+        ],
+        "page": 0,
+        "size": 100,
+        "total": 2,
+        "unread": 2
+      }
+    },
+    {
+      "method": "POST",
+      "path": "/api/hpdi/v1/workspaces/lab-a/tasks/b55bdbc0-d2ac-11f1-96d1-eecd9c8f1a92/release",
+      "status": 204,
+      "body": null
+    },
+    {
+      "method": "GET",
+      "path": "/api/apps/servicedesk/v1/workspaces/lab-a/tickets/819701db-8e2a-437c-938f-fdd9c15aa865",
+      "status": 200,
+      "body": {
+        "id": "819701db-8e2a-437c-938f-fdd9c15aa865",
+        "workspace": "lab-a",
+        "creator": "a8a0f1d2-0b11-4d40-9fda-4b836968d5e1",
+        "clientRequestId": "96b584eb-63de-4b63-a217-9d5c32962ffb",
+        "title": "R3 runtime acceptance",
+        "description": "Synthetic isolated R3 scheduling and handover probe",
+        "createdAt": "2026-10-28T08:51:03.625186Z",
+        "process": {
+          "processInstanceId": "b4e54c1b-d2ac-11f1-96d1-eecd9c8f1a92",
+          "processKey": "service-desk-reviewed",
+          "businessKey": "819701db-8e2a-437c-938f-fdd9c15aa865",
+          "workspace": "lab-a",
+          "id": "b4e54c1b-d2ac-11f1-96d1-eecd9c8f1a92"
+        },
+        "state": "AWAITING_REVIEW",
+        "taskId": "d351b108-d2ac-11f1-901b-ca30af897830",
+        "assignee": null,
+        "estimate": {
+          "minutes": 60,
+          "basis": "COORDINATOR"
+        },
+        "workState": null,
+        "workedMinutes": 0,
+        "remainingMinutes": null,
+        "reopenCount": 0,
+        "classification": {
+          "category": "OTHER",
+          "priority": "HIGH",
+          "basePriority": "HIGH",
+          "escalated": false,
+          "group": "agent",
+          "source": "COORDINATOR",
+          "impact": null,
+          "urgency": null,
+          "reviewedBy": "51869ca8-5450-4c47-a57d-e678475ab77a",
+          "reviewedAt": "2026-10-28T08:51:04.203771Z"
+        },
+        "assessment": {
+          "status": "PENDING",
+          "version": 1,
+          "result": null,
+          "errorCode": null
+        },
+        "sla": null,
+        "corrections": []
+      }
+    }
+  ],
+  "checks": [
+    "coordinator-create-agent-self-read-requester-denial-workspace-isolation",
+    "revoked-coordinator-stale-real-token-denied",
+    "manual-on-in-shift-assignment-exact-remaining-minutes-et-warning",
+    "manual-off-precedence-outside-shift-new-assignment-denied",
+    "natural-shift-expiry-does-not-stop-in-progress-work",
+    "real-service-identity-persistent-duty-alert-recipient-and-dedup",
+    "runtime-audit-failure-rolls-back-schedule-and-version",
+    "packaged-backend-restart-across-shift-boundary-persists-stores-and-replays-worker-once",
+    "r6-handover-retains-process-and-durable-history"
+  ],
+  "completed": true,
+  "postgresVersion": "16.6 (Debian 16.6-1.pgdg120+1)",
+  "flowableSchemaVersion": "7.1.0.2",
+  "persistedStoreDigests": {
+    "hpdi_agent_schedule": "aa9d64597f15ce0168b9f94eb06db4c7",
+    "hpdi_agent_shift": "94d97d277a9a04da73023d0259e259f0",
+    "hpdi_agent_duty": "52636c832f63d225a24aa167c530abc4",
+    "audit_event": "9024ce94856abbba2f62e8c7906b10e7"
+  },
+  "restartShiftBoundary": "2026-10-28T08:51:32.170943+00:00"
+}

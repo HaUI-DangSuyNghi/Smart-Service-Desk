@@ -44,6 +44,7 @@ class AgentDutyUpgradeIntegrationTest {
         var configuration = new org.flowable.spring.SpringProcessEngineConfiguration();
         configuration.setDataSource(scoped);
         configuration.setTransactionManager(new org.springframework.jdbc.datasource.DataSourceTransactionManager(scoped));
+        configuration.setDatabaseSchema(SCHEMA);
         configuration.setDatabaseSchemaUpdate("true");
         configuration.setHistory("full");
         configuration.setAsyncExecutorActivate(false);
@@ -69,6 +70,7 @@ class AgentDutyUpgradeIntegrationTest {
         properties.add("spring.datasource.username", () -> "workflow");
         properties.add("spring.datasource.password", () -> System.getenv("FILE_TEST_DB_PASSWORD"));
         properties.add("spring.flyway.schemas", () -> SCHEMA);
+        properties.add("flowable.database-schema", () -> SCHEMA);
         properties.add("spring.security.oauth2.resourceserver.jwt.jwk-set-uri", () -> "http://127.0.0.1:1/jwks");
     }
 
@@ -80,7 +82,7 @@ class AgentDutyUpgradeIntegrationTest {
 
     @Test void bootsFlowableAndServesDutyAfterUpgradingAppliedAi08WithoutChangingHistory() throws Exception {
         assertTrue(flyway.validateWithResult().validationSuccessful);
-        assertEquals("30", flyway.info().current().getVersion().toString());
+        assertEquals("31", flyway.info().current().getVersion().toString());
         assertEquals(0, jdbc.queryForObject("select count(*) from servicedesk_sla", Integer.class));
         assertEquals(checksums, jdbc.queryForList("select version,script,checksum from flyway_schema_history where version in ('11','12','13') order by installed_rank"));
         for (var snapshot : ai08.entrySet())

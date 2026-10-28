@@ -20,7 +20,6 @@ public class TicketReviewService implements WorkProjection {
     private final ProcessCapability processes;
     private final ActivityJournal audit;
     private final Validator validator;
-    private final TicketAssignmentEligibility eligibility;
     private final TicketSlaService sla;
     private final TicketAlerts alerts;
     private final TicketConfirmation confirmation;
@@ -30,13 +29,12 @@ public class TicketReviewService implements WorkProjection {
     public TicketReviewService(JdbcTemplate jdbc, TicketRepository tickets, HumanContext humans, PermissionGuard permissions,
                               WorkInbox inbox, WorkExecution execution, ProcessCapability processes, ActivityJournal audit, Validator validator,
                               vn.haui.dx.apps.servicedesk.intelligence.BackgroundTicketAssessment assessments,
-                              vn.haui.dx.apps.servicedesk.intake.IntakeAdmission intake, TicketAssignmentEligibility eligibility, TicketSlaService sla, TicketAlerts alerts,
+                              vn.haui.dx.apps.servicedesk.intake.IntakeAdmission intake, TicketSlaService sla, TicketAlerts alerts,
                               TicketConfirmation confirmation) {
         this.jdbc=jdbc; this.tickets=tickets; this.humans=humans; this.permissions=permissions;
         this.inbox=inbox; this.execution=execution; this.processes=processes; this.audit=audit; this.validator=validator;
         this.assessments=assessments;
         this.intake=intake;
-        this.eligibility=eligibility;
         this.sla=sla;
         this.alerts=alerts;
         this.confirmation=confirmation;
@@ -57,7 +55,6 @@ public class TicketReviewService implements WorkProjection {
             throw CapabilityException.conflict("Legacy ticket keeps its existing workflow");
         if (actor.subject().equals(ticket.creator())) throw CapabilityException.forbidden("Independent reviewer required");
         if (ticket.creator().equals(decision.assignee())) throw CapabilityException.forbidden("Independent agent required");
-        eligibility.require(workspace, decision.category(), ticket.creator(), decision.assignee());
         var timeline = processes.timeline(workspace, ticket.process().processInstanceId());
         var review = timeline.currentTasks().stream().filter(task -> "review".equals(task.key())).findFirst()
             .orElseThrow(() -> CapabilityException.conflict("Ticket is not awaiting review"));

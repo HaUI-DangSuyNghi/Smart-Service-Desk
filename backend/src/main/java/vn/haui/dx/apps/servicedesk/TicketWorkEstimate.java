@@ -22,7 +22,7 @@ public class TicketWorkEstimate implements WorkEstimate {
         var row = rows.get(0);
         if (!agent.equals(task.assignee())) throw CapabilityException.conflict("Current assignee required");
         if (agent.equals(row.get("correction_incumbent"))) eligibility.requireIncumbent(workspace, (String) row.get("creator"), agent);
-        else eligibility.require(workspace, TicketReview.Category.valueOf((String) row.get("category")), (String) row.get("creator"), agent);
+        else eligibility.requireExisting(workspace, TicketReview.Category.valueOf((String) row.get("category")), (String) row.get("creator"), agent);
         String generation = row.get("estimate_generation") == null ? (String) row.get("review_task_id") : (String) row.get("estimate_generation");
         return new Snapshot(generation, (String) row.get("title"), ((Number) row.get("estimate_minutes")).intValue());
     }

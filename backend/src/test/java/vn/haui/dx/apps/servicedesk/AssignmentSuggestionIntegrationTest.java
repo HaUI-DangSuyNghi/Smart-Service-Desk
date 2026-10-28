@@ -38,6 +38,8 @@ class AssignmentSuggestionIntegrationTest {
     @Autowired ObjectMapper json;
     @Autowired WorkspaceDirectory directory;
     @SpyBean WorkflowService workflow;
+    @SpyBean java.time.Clock clock;
+    @Autowired TicketAlerts ticketAlerts;
     private String first;
     private String second;
     private String owner;
@@ -54,8 +56,10 @@ class AssignmentSuggestionIntegrationTest {
             jdbc.update("insert into hpdi_agent_duty(workspace,subject,on_duty) values('lab-a',?,true)",subject);
     }
     private void members(String... subjects) {
-        when(directory.members("lab-a")).thenReturn(Arrays.stream(subjects)
+        var roster=new ArrayList<>(Arrays.stream(subjects)
             .map(subject -> new DirectoryMember(subject,subject,null,Set.of(WorkspaceRole.AGENT))).toList());
+        roster.add(new DirectoryMember("coordinator","coordinator",null,Set.of(WorkspaceRole.COORDINATOR)));
+        when(directory.members("lab-a")).thenReturn(roster);
     }
     private JsonNode create() throws Exception {
         return json.readTree(mvc.perform(post(BASE).with(as(owner,"requester")).contentType("application/json")
@@ -113,6 +117,178 @@ class AssignmentSuggestionIntegrationTest {
     private JsonNode candidate(JsonNode response, String subject) {
         return java.util.stream.StreamSupport.stream(response.path("candidates").spliterator(),false)
             .filter(candidate -> subject.equals(candidate.path("subject").asText())).findFirst().orElseThrow();
+    }
+
+    private void schedule(String subject, long version, boolean current) throws Exception {
+        var start=java.time.Instant.now().minusSeconds(current ? 60 : 7200);
+        var body=json.createObjectNode().put("version",version).put("enabled",true);
+        body.putArray("shifts").addObject().put("startsAt",start.toString()).put("endsAt",start.plusSeconds(current ? 1260 : 3600).toString());
+        mvc.perform(put("/api/hpdi/v1/workspaces/lab-a/schedules/"+subject).with(as("coordinator","coordinator"))
+            .contentType("application/json").content(body.toString())).andExpect(status().isOk());
+    }
+
+    @Test void shiftRemainingWarnsCoordinatorAndExpiredScheduleRejectsNewAssignment() throws Exception {
+        schedule(first,0,true);
+        schedule(second,0,false);
+        var ticket=create();
+        var result=suggestion(ticket);
+        assertEquals(first,result.path("recommended").asText());
+        assertTrue(candidate(result,first).path("shiftRemainingMinutes").asInt()<=20);
+        assertTrue(result.path("reason").asText().contains("ESTIMATE_EXCEEDS_SHIFT"));
+        assertEquals("OFF_DUTY",candidate(result,second).path("excludedReason").asText());
+        String task=review(ticket,first,60).path("taskId").asText();
+        schedule(first,1,false);
+        mvc.perform(post("/api/hpdi/v1/workspaces/lab-a/tasks/"+task+"/assign").with(as("coordinator","coordinator"))
+            .contentType("application/json").content(json.writeValueAsString(Map.of("assignee",second))))
+            .andExpect(status().isConflict());
+        assertTrue(handleSuggestion(task).path("recommended").isNull());
+        assertEquals(first,jdbc.queryForObject("select assignee_ from act_ru_task where id_=?",String.class,task));
+    }
+
+    @Test void shiftEndDoesNotStopWorkAndExistingR6ReleaseKeepsProcessAndHistory() throws Exception {
+        schedule(first,0,true);
+        var ticket=create();
+        String task=review(ticket,first,60).path("taskId").asText();
+        String route="/api/hpdi/v1/workspaces/lab-a/tasks/"+task;
+        mvc.perform(post(route+"/start").with(as(first,"agent"))).andExpect(status().isOk());
+        String process=jdbc.queryForObject("select proc_inst_id_ from act_ru_task where id_=?",String.class,task);
+        schedule(first,1,false);
+        assertEquals("IN_PROGRESS",jdbc.queryForObject("select text_ from act_ru_variable where task_id_=? and name_='executionState'",String.class,task));
+        mvc.perform(post(route+"/estimate-requests").with(as(first,"agent")).contentType("application/json")
+            .content("{\"proposedMinutes\":120,\"reason\":\"Remaining diagnostics after shift\"}"))
+            .andExpect(status().isCreated());
+        mvc.perform(post(route+"/pause").with(as(first,"agent")).contentType("application/json")
+            .content("{\"reason\":\"WAITING_EXTERNAL\",\"note\":\"Handover preparation\"}")).andExpect(status().isOk());
+        mvc.perform(post(route+"/resume").with(as(first,"agent"))).andExpect(status().isOk());
+        mvc.perform(post(route+"/release").with(as(first,"agent")).contentType("application/json")
+            .content("{\"reason\":\"HANDOVER\",\"note\":\"End of shift: diagnostics complete; replacement still required\"}"))
+            .andExpect(status().isNoContent());
+        assertEquals(process,jdbc.queryForObject("select proc_inst_id_ from act_ru_task where proc_inst_id_=?",String.class,process));
+        assertEquals("review",jdbc.queryForObject("select task_def_key_ from act_ru_task where proc_inst_id_=?",String.class,process));
+        assertEquals(1,jdbc.queryForObject("select count(*) from servicedesk_work_release where task_id=?",Integer.class,task));
+        assertTrue(jdbc.queryForObject("select count(*) from servicedesk_estimate_history where ticket_id=?",Integer.class,UUID.fromString(ticket.path("id").asText()))>0);
+    }
+
+    @Test void concurrentScheduleCancellationAndAssignmentLinearizeWithoutLosingTask() throws Exception {
+        String task=review(create(),null,60).path("taskId").asText();
+        var workers=java.util.concurrent.Executors.newSingleThreadExecutor();
+        try (var blocker=blockProcess(task)) {
+            var assignment=workers.submit(() -> {
+                return mvc.perform(post("/api/hpdi/v1/workspaces/lab-a/tasks/"+task+"/assign").with(as("coordinator","coordinator"))
+                    .contentType("application/json").content(json.writeValueAsString(Map.of("assignee",first))))
+                    .andReturn().getResponse().getStatus();
+            });
+            awaitBlocked(blocker,1);
+            mvc.perform(put("/api/hpdi/v1/workspaces/lab-a/schedules/"+first).with(as("coordinator","coordinator"))
+                .contentType("application/json").content("{\"version\":0,\"enabled\":true,\"shifts\":[]}"))
+                .andExpect(status().isOk());
+            blocker.commit();
+            assertEquals(409,assignment.get(20,java.util.concurrent.TimeUnit.SECONDS));
+            assertEquals(1,jdbc.queryForObject("select count(*) from act_ru_task where id_=?",Integer.class,task));
+            assertNull(jdbc.queryForObject("select assignee_ from act_ru_task where id_=?",String.class,task));
+        } finally { workers.shutdownNow(); }
+    }
+
+    private java.sql.Connection blockProcess(String task) throws Exception {
+        var connection=java.sql.DriverManager.getConnection(System.getenv("FILE_TEST_JDBC_URL"),"workflow",System.getenv("FILE_TEST_DB_PASSWORD"));
+        connection.setAutoCommit(false);
+        try (var statement=connection.prepareStatement("select id from process_scope where id=(select proc_inst_id_ from act_ru_task where id_=?) for update")) {
+            statement.setString(1,task);
+            try (var rows=statement.executeQuery()) { assertTrue(rows.next()); }
+        }
+        return connection;
+    }
+
+    private void awaitBlocked(java.sql.Connection blocker, int expected) throws Exception {
+        int blockerPid;
+        try (var statement=blocker.createStatement(); var rows=statement.executeQuery("select pg_backend_pid()")) {
+            assertTrue(rows.next()); blockerPid=rows.getInt(1);
+        }
+        int waiting=0;
+        long deadline=System.nanoTime()+java.util.concurrent.TimeUnit.SECONDS.toNanos(15);
+        while (waiting<expected && System.nanoTime()<deadline) {
+            waiting=jdbc.queryForObject("with recursive blocked(pid) as (select pid from pg_stat_activity where ?=any(pg_blocking_pids(pid))"
+                + " union select activity.pid from pg_stat_activity activity join blocked on blocked.pid=any(pg_blocking_pids(activity.pid)))"
+                + " select count(*) from blocked",Integer.class,blockerPid);
+            if (waiting<expected) Thread.sleep(20);
+        }
+        assertEquals(expected,waiting,"Operations must overlap at the real process row lock");
+    }
+
+    @Test void expiryWhileStartWaitsKeepsPreviouslyAssignedWorkStartable() throws Exception {
+        schedule(first,0,true);
+        String task=review(create(),first,60).path("taskId").asText();
+        var workers=java.util.concurrent.Executors.newSingleThreadExecutor();
+        try (var blocker=blockProcess(task)) {
+            var starting=workers.submit(() -> mvc.perform(post("/api/hpdi/v1/workspaces/lab-a/tasks/"+task+"/start")
+                .with(as(first,"agent"))).andReturn().getResponse().getStatus());
+            awaitBlocked(blocker,1);
+            doReturn(java.time.Instant.now().plusSeconds(3600)).when(clock).instant();
+            assertFalse(json.readTree(mvc.perform(get("/api/hpdi/v1/workspaces/lab-a/schedules/"+first+"/effective-duty")
+                .with(as(first,"agent"))).andExpect(status().isOk()).andReturn().getResponse().getContentAsString()).path("onDuty").asBoolean());
+            blocker.commit();
+            assertEquals(200,starting.get(20,java.util.concurrent.TimeUnit.SECONDS));
+            assertEquals("IN_PROGRESS",jdbc.queryForObject("select text_ from act_ru_variable where task_id_=? and name_='executionState'",String.class,task));
+        } finally { workers.shutdownNow(); reset(clock); }
+    }
+
+    @Test void reassignAndR6ReleaseOverlapAtProcessLockWithoutLosingOwnership() throws Exception {
+        String task=review(create(),first,60).path("taskId").asText();
+        String process=jdbc.queryForObject("select proc_inst_id_ from act_ru_task where id_=?",String.class,task);
+        String route="/api/hpdi/v1/workspaces/lab-a/tasks/"+task;
+        var workers=java.util.concurrent.Executors.newFixedThreadPool(2);
+        try (var blocker=blockProcess(task)) {
+            var release=workers.submit(() -> mvc.perform(post(route+"/release").with(as(first,"agent")).contentType("application/json")
+                .content("{\"reason\":\"HANDOVER\",\"note\":\"End of shift\"}")).andReturn().getResponse().getStatus());
+            var reassign=workers.submit(() -> mvc.perform(post(route+"/assign").with(as("coordinator","coordinator")).contentType("application/json")
+                .content(json.writeValueAsString(Map.of("assignee",second)))).andReturn().getResponse().getStatus());
+            awaitBlocked(blocker,2);
+            blocker.commit();
+            int released=release.get(20,java.util.concurrent.TimeUnit.SECONDS);
+            int assigned=reassign.get(20,java.util.concurrent.TimeUnit.SECONDS);
+            assertTrue(released==204 && assigned==409 || released==403 && assigned==200,"release="+released+", assign="+assigned);
+            assertEquals(1,jdbc.queryForObject("select count(*) from act_ru_task where proc_inst_id_=?",Integer.class,process));
+            assertEquals(released==204 ? 1 : 0,jdbc.queryForObject("select count(*) from servicedesk_work_release where task_id=?",Integer.class,task));
+            if (assigned==200) assertEquals(second,jdbc.queryForObject("select assignee_ from act_ru_task where id_=?",String.class,task));
+        } finally { workers.shutdownNow(); }
+    }
+
+    @Test void r9CorrectionWaitingOnProcessDoesNotResurrectCancelledEligibility() throws Exception {
+        schedule(first,0,true);
+        var ticket=create();
+        String task=review(ticket,first,60).path("taskId").asText();
+        var workers=java.util.concurrent.Executors.newSingleThreadExecutor();
+        try (var blocker=blockProcess(task)) {
+            var correction=workers.submit(() -> mvc.perform(patch(BASE+"/"+ticket.path("id").asText()+"/classification")
+                .with(as("coordinator","coordinator")).contentType("application/json")
+                .content("{\"category\":\"SOFTWARE\",\"reason\":\"Correct support group during shift expiry\"}"))
+                .andReturn().getResponse().getStatus());
+            awaitBlocked(blocker,1);
+            schedule(first,1,false);
+            blocker.commit();
+            assertEquals(200,correction.get(20,java.util.concurrent.TimeUnit.SECONDS));
+            assertEquals(0,jdbc.queryForObject("select count(*) from act_ru_task where id_=?",Integer.class,task));
+            assertEquals(1,jdbc.queryForObject("select count(*) from servicedesk_work_release where task_id=?",Integer.class,task));
+            assertEquals(2,jdbc.queryForObject("select version from hpdi_agent_schedule where workspace='lab-a' and subject=?",Integer.class,first));
+        } finally { workers.shutdownNow(); }
+    }
+
+    @Test void expiredRosterEmitsDurableDutyAlertsOnceWithoutChangingWork() throws Exception {
+        var ticket=create();
+        String task=review(ticket,first,60).path("taskId").asText();
+        String process=jdbc.queryForObject("select proc_inst_id_ from act_ru_task where id_=?",String.class,task);
+        for (String subject:List.of(first,second,owner)) schedule(subject,0,false);
+        var roster=json.readTree(mvc.perform(get("/api/hpdi/v1/workspaces/lab-a/duty").with(as("coordinator","coordinator")))
+            .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+        var effective=new HashMap<String,Boolean>();
+        roster.forEach(member -> effective.put(member.path("subject").asText(),member.path("effectiveDuty").asBoolean()));
+        assertEquals(3,effective.size());
+        assertTrue(effective.values().stream().noneMatch(Boolean.TRUE::equals));
+        for (int poll=0;poll<2;poll++) ticketAlerts.check("lab-a",process,task,effective,effective,"HARDWARE");
+        for (String type:List.of("ASSIGNEE_OFF_DUTY","NO_ONE_ON_DUTY"))
+            assertEquals(1,jdbc.queryForObject("select count(*) from hpdi_alert_event where workspace='lab-a' and task_id=? and type=?",Integer.class,task,type));
+        assertEquals(first,jdbc.queryForObject("select assignee_ from act_ru_task where id_=?",String.class,task));
+        assertEquals("handle",jdbc.queryForObject("select task_def_key_ from act_ru_task where id_=?",String.class,task));
     }
 
     @Test void reassignmentExcludesOnlyTheConsideredTaskWithoutChangingQueueOrAssignmentHistory() throws Exception {

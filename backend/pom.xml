@@ -74,7 +74,12 @@
         <dx.resource.migration2>db/migration/V6__decouple_servicedesk_workflow_reference.sql</dx.resource.migration2>
         <dx.resource.migration3>db/migration/apps/servicedesk/**</dx.resource.migration3>
       </properties>
-      <build><plugins>
+      <build>
+        <testResources>
+          <testResource><directory>src/test/resources</directory></testResource>
+          <testResource><directory>src/core-test/resources</directory></testResource>
+        </testResources>
+        <plugins>
         <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-compiler-plugin</artifactId><configuration>
           <excludes><exclude>vn/haui/dx/apps/servicedesk/**</exclude><exclude>vn/haui/dx/apps/samples/**</exclude></excludes>
           <testExcludes><testExclude>vn/haui/dx/apps/servicedesk/**</testExclude></testExcludes>

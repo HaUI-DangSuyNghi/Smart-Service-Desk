@@ -15,13 +15,16 @@ public class AgentDutyService implements AgentDuty {
     private final PermissionGuard permissions;
     private final AgentDirectory directory;
     private final ActivityJournal audit;
+    private final AgentScheduleService schedules;
 
     public AgentDutyService(JdbcTemplate jdbc, HumanContext humans, PermissionGuard permissions,
-                            AgentDirectory directory, ActivityJournal audit) {
+                            AgentDirectory directory, ActivityJournal audit, AgentScheduleService schedules) {
         this.jdbc = jdbc; this.humans = humans; this.permissions = permissions;
         this.directory = directory; this.audit = audit;
+        this.schedules = schedules;
     }
 
+    @Transactional(readOnly=true, isolation=org.springframework.transaction.annotation.Isolation.REPEATABLE_READ)
     public List<Status> list(String workspace) {
         var actor = humans.currentActor(workspace);
         if (actor.hasRole("coordinator")) permissions.require(workspace, Permissions.TASK_ASSIGN);
@@ -35,7 +38,10 @@ public class AgentDutyService implements AgentDuty {
             (org.springframework.jdbc.core.RowCallbackHandler) row -> statuses.put(row.getString("subject"),
                 new Status(row.getString("subject"), row.getBoolean("on_duty"), row.getString("note"), row.getTimestamp("updated_at").toInstant())), workspace);
         return agents.stream().filter(agent -> actor.hasRole("coordinator") || actor.subject().equals(agent.subject()))
-            .map(agent -> statuses.getOrDefault(agent.subject(), new Status(agent.subject(), false, null, null))).toList();
+            .map(agent -> {
+                var manual=statuses.getOrDefault(agent.subject(), new Status(agent.subject(), false, null, null));
+                return new Status(manual.subject(),manual.onDuty(),manual.note(),manual.updatedAt(),schedules.evaluate(workspace,agent.subject()).onDuty());
+            }).toList();
     }
 
     @Transactional
@@ -50,6 +56,7 @@ public class AgentDutyService implements AgentDuty {
             throw CapabilityException.validation("Invalid duty change");
         if (directory.currentAgents(workspace, null).stream().noneMatch(agent -> target.equals(agent.subject())))
             throw CapabilityException.forbidden("Current agent membership required");
+        schedules.lock(workspace,target);
         var status = jdbc.queryForObject("insert into hpdi_agent_duty(workspace,subject,on_duty,note) values(?,?,?,?)"
             + " on conflict(workspace,subject) do update set on_duty=excluded.on_duty,note=excluded.note,updated_at=clock_timestamp()"
             + " returning subject,on_duty,note,updated_at",
@@ -57,15 +64,32 @@ public class AgentDutyService implements AgentDuty {
             workspace, target, change.onDuty(), change.note());
         audit.record(workspace, new BusinessActivity("human.duty.changed", "human.agent", target,
             Map.of("subjectId", target, "dutyKey", change.onDuty() ? "on" : "off")));
-        return status;
+        return new Status(status.subject(),status.onDuty(),status.note(),status.updatedAt(),schedules.evaluate(workspace,target).onDuty());
     }
 
+    @Transactional
     public boolean onDuty(String workspace, String subject) {
-        var actor = humans.currentActor(workspace);
+        authorizeRead(workspace,subject);
+        schedules.lock(workspace,subject);
+        return schedules.evaluate(workspace,subject).onDuty();
+    }
+
+    @Transactional(readOnly=true, isolation=org.springframework.transaction.annotation.Isolation.REPEATABLE_READ)
+    public Integer shiftRemainingMinutes(String workspace, String subject) {
+        authorizeRead(workspace,subject);
+        return schedules.evaluate(workspace,subject).shiftRemainingMinutes();
+    }
+
+    public boolean manualDuty(String workspace, String subject) {
+        authorizeRead(workspace,subject);
+        return Boolean.TRUE.equals(jdbc.queryForObject("select exists(select 1 from hpdi_agent_duty where workspace=? and subject=? and on_duty)",
+            Boolean.class,workspace,subject));
+    }
+
+    private void authorizeRead(String workspace, String subject) {
+        var actor=humans.currentActor(workspace);
         if (!actor.subject().equals(subject) && !actor.hasRole("coordinator"))
             throw CapabilityException.forbidden("Coordinator required");
-        permissions.require(workspace, actor.subject().equals(subject) ? Permissions.TASK_HANDLE : Permissions.TASK_ASSIGN);
-        return Boolean.TRUE.equals(jdbc.queryForObject("select exists(select 1 from hpdi_agent_duty where workspace=? and subject=? and on_duty)",
-            Boolean.class, workspace, subject));
+        permissions.require(workspace,actor.subject().equals(subject) ? Permissions.TASK_HANDLE : Permissions.TASK_ASSIGN);
     }
 }
