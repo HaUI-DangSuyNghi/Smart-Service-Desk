@@ -448,7 +448,10 @@ public final class FlowableWorkflowService implements WorkflowService {
                 try { engine.getTaskService().addComment(taskId, task.getProcessInstanceId(), comment); }
                 finally { engine.getIdentityService().setAuthenticatedUserId(null); }
             }
+            var completed = view(task);
             engine.getTaskService().complete(taskId, Map.of("outcome_" + expectedTaskKey, outcome));
+            registry.afterComplete(workspace, (String) scope.get("process_key"), task.getProcessInstanceId(),
+                completed, outcome, currentTasks(task.getProcessInstanceId()));
             audit.record("task.complete", "task", taskId, workspace,
                 Map.of("taskKey", expectedTaskKey, "processInstanceId", task.getProcessInstanceId(), "outcome", outcome,
                     "processKey", scope.get("process_key")));

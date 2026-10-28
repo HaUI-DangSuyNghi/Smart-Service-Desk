@@ -41,6 +41,9 @@ class CanonicalTicketIntegrationTest {
     @Autowired JdbcTemplate jdbc;
     @Autowired vn.haui.dx.core.identity.api.WorkspaceDirectory directory;
     @Autowired vn.haui.dx.core.workflow.internal.WorkflowStateFixture workflow;
+    @Autowired vn.haui.dx.hpdi.process.api.ProcessTimers timers;
+    @org.springframework.boot.test.mock.mockito.SpyBean java.time.Clock timerClock;
+    @org.springframework.boot.test.mock.mockito.SpyBean vn.haui.dx.core.identity.api.ServiceIdentity timerIdentity;
 
     @DynamicPropertySource
     static void properties(DynamicPropertyRegistry registry) {
@@ -146,8 +149,9 @@ class CanonicalTicketIntegrationTest {
                 .andExpect(status().isForbidden());
     }
 
-    @Test
-    void closureRequiresActualRootConfirmationAndThenClosesFollower() throws Exception {
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(booleans = {false, true})
+    void closureRequiresActualRootConfirmationAndThenClosesFollower(boolean automatic) throws Exception {
         var root = root();
         var follower = create();
         link(root, follower, 200);
@@ -157,14 +161,31 @@ class CanonicalTicketIntegrationTest {
         mvc.perform(post(TASKS + handle + "/complete").with(as("agent", "agent")).contentType("application/json")
                 .content("{\"expectedTaskKey\":\"handle\",\"outcome\":\"resolved\"}")).andExpect(status().isNoContent());
         var confirm = getTicket(root).path("taskId").asText();
-        mvc.perform(post(TASKS + confirm + "/complete").with(as("owner", "requester")).contentType("application/json")
+        if (automatic) {
+            doReturn(java.time.Instant.parse(getTicket(root).path("confirmDeadlineAt").asText())).when(timerClock).instant();
+            doAnswer(invocation -> {
+                var previous = org.springframework.security.core.context.SecurityContextHolder.getContext();
+                var context = org.springframework.security.core.context.SecurityContextHolder.createEmptyContext();
+                context.setAuthentication(new org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationToken(
+                    org.springframework.security.oauth2.jwt.Jwt.withTokenValue("timer-test").header("alg","none").subject("timer-service")
+                        .claim("groups",List.of("/workspaces/canonical-a/workflow-timer")).build()));
+                try { org.springframework.security.core.context.SecurityContextHolder.setContext(context); ((Runnable) invocation.getArgument(2)).run(); }
+                finally { org.springframework.security.core.context.SecurityContextHolder.setContext(previous); }
+                return null;
+            }).when(timerIdentity).run(eq("canonical-a"),eq("workflow:timer"),any());
+            timers.evaluate("canonical-a",root.path("process").path("processInstanceId").asText(),confirm);
+            assertEquals("AUTO",getTicket(root).path("closedBy").asText());
+        } else {
+            mvc.perform(post(TASKS + confirm + "/complete").with(as("owner", "requester")).contentType("application/json")
                 .content("{\"expectedTaskKey\":\"confirm\",\"outcome\":\"accepted\"}")).andExpect(status().isNoContent());
+            assertEquals("REQUESTER",getTicket(root).path("closedBy").asText());
+        }
         var task = getTicket(follower).path("taskId").asText();
         mvc.perform(post(TASKS + task + "/claim").with(as("coordinator", "coordinator"))).andExpect(status().isOk());
         mvc.perform(post(TASKS + task + "/complete").with(as("coordinator", "coordinator")).contentType("application/json")
-                .content("{\"expectedTaskKey\":\"follower\",\"outcome\":\"closed\"}")).andExpect(status().isNoContent());
-        assertEquals("CLOSED", getTicket(follower).path("state").asText());
-        assertEquals(1L, jdbc.queryForObject("select count(*) from servicedesk_canonical_link where follower_id=? and state='CLOSED'", Long.class, id(follower)));
+                .content("{\"expectedTaskKey\":\"follower\",\"outcome\":\"closed\"}")).andExpect(status().is(automatic ? 409 : 204));
+        assertEquals(automatic ? "FOLLOWING" : "CLOSED", getTicket(follower).path("state").asText());
+        assertEquals(automatic ? 0L : 1L, jdbc.queryForObject("select count(*) from servicedesk_canonical_link where follower_id=? and state='CLOSED'", Long.class, id(follower)));
     }
 
     @Test

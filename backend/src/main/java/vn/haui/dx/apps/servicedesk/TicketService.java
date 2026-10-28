@@ -30,15 +30,18 @@ public class TicketService {
     private final BackgroundTicketAssessment assessments;
     private final org.springframework.beans.factory.ObjectProvider<vn.haui.dx.hpdi.intelligence.api.BackgroundProcessing> processing;
     private final boolean trueWait;
+    private final TicketConfirmation confirmation;
 
     public TicketService(TicketRepository repository, HumanContext access, ProcessCapability workflow,
                          ActivityJournal audit, Validator validator, TicketStatisticsService statistics,
                          ApplicationEventPublisher events, BackgroundTicketAssessment assessments,
                          org.springframework.beans.factory.ObjectProvider<vn.haui.dx.hpdi.intelligence.api.BackgroundProcessing> processing,
                          @org.springframework.beans.factory.annotation.Value("${serviceDesk.intake.true-wait:false}") boolean trueWait,
-                         @org.springframework.beans.factory.annotation.Value("${serviceDesk.intake.new-tickets:false}") boolean intakeEnabled) {
+                         @org.springframework.beans.factory.annotation.Value("${serviceDesk.intake.new-tickets:false}") boolean intakeEnabled,
+                         TicketConfirmation confirmation) {
         if (trueWait && !intakeEnabled) throw new IllegalArgumentException("True intake wait requires new-ticket admission");
         this.repository = repository;
+        this.confirmation = confirmation;
         this.access = access;
         this.workflow = workflow;
         this.audit = audit;
@@ -130,7 +133,7 @@ public class TicketService {
 
     @Transactional(readOnly = true)
     public TicketProgress progress(String workspace, UUID id) {
-        return TicketProgress.from(workflow.timeline(workspace, get(workspace, id).process().processInstanceId()));
+        return TicketProgress.from(workflow.timeline(workspace, get(workspace, id).process().processInstanceId()), confirmation.read(workspace, id));
     }
 
     private Actor member(String workspace) {

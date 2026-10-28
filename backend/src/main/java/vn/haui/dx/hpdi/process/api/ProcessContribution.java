@@ -2,6 +2,10 @@ package vn.haui.dx.hpdi.process.api;
 import java.util.List;
 /** App-owned definitions; the capability validates and registers them with the engine. */
 public interface ProcessContribution {
+    default void afterComplete(String workspace, String processKey, String processId, WorkItem completed,
+            String outcome, List<WorkItem> active) {}
+    default String evaluateTimer(String workspace, String processKey, String processId, String businessKey,
+            String owner, String generation, WorkItem active, java.time.Instant now) { return null; }
     default String releaseTarget(String processKey, String taskKey) { return null; }
     default void afterRelease(String workspace, String processKey, String processId, String taskId,
             String reviewId, long workedMillis, String actor, String reason, String note) {}

@@ -943,7 +943,7 @@ components:
           description: >-
             Persistent deadline, pending, duty and critical notifications. CRITICAL_NEW labels
             distinguish unapproved AI advice from a Coordinator-approved decision. No emergency auto-queue producer.
-          enum: [START_OVERDUE, SLA_WARNING, SLA_BREACHED, PENDING_TOO_LONG, CRITICAL_NEW, ASSIGNEE_OFF_DUTY, NO_ONE_ON_DUTY, CLASSIFICATION_CHANGED]
+          enum: [START_OVERDUE, SLA_WARNING, SLA_BREACHED, PENDING_TOO_LONG, CRITICAL_NEW, ASSIGNEE_OFF_DUTY, NO_ONE_ON_DUTY, CLASSIFICATION_CHANGED, REOPENED, REOPEN_UNCLAIMED]
         severity: {type: string, enum: [INFO, WARNING, CRITICAL]}
         taskId: {type: string, nullable: true}
         processInstanceId: {type: string}

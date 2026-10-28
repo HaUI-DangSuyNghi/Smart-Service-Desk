@@ -10,6 +10,7 @@
       "dx-permissions": [
         {"name": "intelligence:process", "description": "Process background assessment in assigned workspaces only"},
         {"name": "alerts:process", "description": "Deliver and evaluate alerts only; no approval, assignment or execution authority"},
+        {"name": "workflow:timer", "description": "Evaluate registered workflow timers; no generic task completion authority"},
         {"name": "request:create", "description": "Tạo yêu cầu"},
         {"name": "request:view-all", "description": "Xem mọi yêu cầu trong workspace"},
         {"name": "task:handle", "description": "Xử lý công việc"},
@@ -29,6 +30,7 @@
       {"name": "lab-a", "attributes": {"displayName": ["Phòng máy A"]}, "subGroups": [
         {"name": "assessment-worker", "clientRoles": {"dx-permissions": ["intelligence:process", "task:handle"]}},
         {"name": "alert-worker", "clientRoles": {"dx-permissions": ["alerts:process"]}},
+        {"name": "workflow-timer", "clientRoles": {"dx-permissions": ["workflow:timer"]}},
         {"name": "requester", "clientRoles": {"dx-permissions": ["request:create", "audit:view-own"]}},
         {"name": "agent", "clientRoles": {"dx-permissions": ["request:create", "task:handle", "document:view", "document:upload", "audit:view-own"]}},
         {"name": "coordinator", "clientRoles": {"dx-permissions": ["request:create", "request:view-all", "task:handle", "task:assign", "document:view", "document:upload", "member:view", "audit:view", "audit:view-own", "dashboard:view"]}}

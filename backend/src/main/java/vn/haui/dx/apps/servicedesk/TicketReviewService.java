@@ -23,13 +23,15 @@ public class TicketReviewService implements WorkProjection {
     private final TicketAssignmentEligibility eligibility;
     private final TicketSlaService sla;
     private final TicketAlerts alerts;
+    private final TicketConfirmation confirmation;
     private final vn.haui.dx.apps.servicedesk.intelligence.BackgroundTicketAssessment assessments;
     private final vn.haui.dx.apps.servicedesk.intake.IntakeAdmission intake;
 
     public TicketReviewService(JdbcTemplate jdbc, TicketRepository tickets, HumanContext humans, PermissionGuard permissions,
                               WorkInbox inbox, WorkExecution execution, ProcessCapability processes, ActivityJournal audit, Validator validator,
                               vn.haui.dx.apps.servicedesk.intelligence.BackgroundTicketAssessment assessments,
-                              vn.haui.dx.apps.servicedesk.intake.IntakeAdmission intake, TicketAssignmentEligibility eligibility, TicketSlaService sla, TicketAlerts alerts) {
+                              vn.haui.dx.apps.servicedesk.intake.IntakeAdmission intake, TicketAssignmentEligibility eligibility, TicketSlaService sla, TicketAlerts alerts,
+                              TicketConfirmation confirmation) {
         this.jdbc=jdbc; this.tickets=tickets; this.humans=humans; this.permissions=permissions;
         this.inbox=inbox; this.execution=execution; this.processes=processes; this.audit=audit; this.validator=validator;
         this.assessments=assessments;
@@ -37,6 +39,7 @@ public class TicketReviewService implements WorkProjection {
         this.eligibility=eligibility;
         this.sla=sla;
         this.alerts=alerts;
+        this.confirmation=confirmation;
     }
     @Override public String processKey() { return ServiceDeskProcess.REVIEWED_KEY; }
 
@@ -124,7 +127,7 @@ public class TicketReviewService implements WorkProjection {
         return new TicketReview.View(ticket,state,task==null?null:task.id(),task==null?null:task.assignee(),
             estimates.isEmpty()?null:estimates.get(0),item==null?null:item.workState(),item==null?closedWork/60_000:item.workedMinutes(),
             item==null?null:item.remainingMinutes(),reopened,classification,assessments.read(workspace,ticket.id()),
-            slaState == null ? null : slaState.project(sla.now()), correctionHistory(workspace, ticket));
+            slaState == null ? null : slaState.project(sla.now()), correctionHistory(workspace, ticket), confirmation.read(workspace, ticket.id()));
     }
 
     private List<TicketCorrection.History> correctionHistory(String workspace, Ticket ticket) {
