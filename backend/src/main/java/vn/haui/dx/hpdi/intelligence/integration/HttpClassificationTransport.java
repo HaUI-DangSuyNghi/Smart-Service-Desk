@@ -86,10 +86,12 @@ public class HttpClassificationTransport implements ClassificationTransport {
             payload.set("input", json.valueToTree(input.fields()));
             byte[] body = json.writeValueAsBytes(payload);
             require(body.length <= 16384);
+            String bearer = settings.bearer();
+            require(bearer != null && bearer.matches("[A-Za-z0-9._~+/-]{32,}=*"));
             var request =
                     HttpRequest.newBuilder(endpoint())
                             .timeout(Duration.ofSeconds(4))
-                            .header("Authorization", "Bearer " + settings.token())
+                            .header("Authorization", "Bearer " + bearer)
                             .header("Content-Type", "application/json")
                             .header("Accept", "application/json")
                             .POST(HttpRequest.BodyPublishers.ofByteArray(body))
@@ -162,7 +164,6 @@ public class HttpClassificationTransport implements ClassificationTransport {
                 base.getQuery() == null
                         && base.getFragment() == null
                         && (base.getPath().isEmpty() || "/".equals(base.getPath())));
-        require(settings.token() != null && settings.token().matches("[A-Za-z0-9._~+/-]{32,}=*"));
         return base.resolve("/internal/intelligence/v1/classify");
     }
 

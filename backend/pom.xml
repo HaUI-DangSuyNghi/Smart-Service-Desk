@@ -28,10 +28,14 @@
     <resources>
       <resource><directory>src/main/resources</directory><excludes>
         <exclude>${dx.resource.app1}</exclude><exclude>${dx.resource.app2}</exclude>
-        <exclude>${dx.resource.migration1}</exclude><exclude>${dx.resource.migration2}</exclude><exclude>${dx.resource.migration3}</exclude>
+        <exclude>${dx.resource.migration1}</exclude><exclude>${dx.resource.migration2}</exclude><exclude>${dx.resource.migration3}</exclude><exclude>${dx.resource.migration4}</exclude>
       </excludes></resource>
       <resource><directory>../contracts/intelligence/v1</directory><targetPath>intelligence-contract</targetPath><includes><include>triage-*.schema.json</include></includes></resource>
     </resources>
+    <testResources>
+      <testResource><directory>src/test/resources</directory></testResource>
+      <testResource><directory>../contracts/apps/servicedesk/intelligence</directory><targetPath>servicedesk-contract</targetPath><includes><include>ticket-*.schema.json</include><include>examples/ticket-assessment-v0.2.fixture.json</include></includes></testResource>
+    </testResources>
     <plugins><plugin><groupId>org.springframework.boot</groupId><artifactId>spring-boot-maven-plugin</artifactId><configuration><mainClass>vn.haui.dx.assembly.DxOsApplication</mainClass></configuration></plugin></plugins>
   </build>
   <profiles>
@@ -39,6 +43,7 @@
       <id>core-only</id>
       <properties>
         <dx.resource.app1>apps/**</dx.resource.app1>
+        <dx.resource.migration4>db/migration/hpdi/**</dx.resource.migration4>
         <dx.resource.migration1>db/migration/apps/**</dx.resource.migration1>
         <dx.resource.migration2>db/migration/V5__servicedesk_ticket.sql</dx.resource.migration2>
         <dx.resource.migration3>db/migration/V6__decouple_servicedesk_workflow_reference.sql</dx.resource.migration3>
@@ -63,11 +68,18 @@
     <profile>
       <id>second-domain</id>
       <properties>
+        <dx.resource.migration4>db/migration/apps/servicedesk/**</dx.resource.migration4>
         <dx.resource.app1>apps/servicedesk/**</dx.resource.app1><dx.resource.app2>apps/samples/**</dx.resource.app2>
         <dx.resource.migration1>db/migration/V5__servicedesk_ticket.sql</dx.resource.migration1>
         <dx.resource.migration2>db/migration/V6__decouple_servicedesk_workflow_reference.sql</dx.resource.migration2>
+        <dx.resource.migration3>db/migration/apps/servicedesk/**</dx.resource.migration3>
       </properties>
-      <build><plugins>
+      <build>
+        <testResources>
+          <testResource><directory>src/test/resources</directory></testResource>
+          <testResource><directory>src/core-test/resources</directory></testResource>
+        </testResources>
+        <plugins>
         <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-compiler-plugin</artifactId><configuration>
           <excludes><exclude>vn/haui/dx/apps/servicedesk/**</exclude><exclude>vn/haui/dx/apps/samples/**</exclude></excludes>
           <testExcludes><testExclude>vn/haui/dx/apps/servicedesk/**</testExclude></testExcludes>

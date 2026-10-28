@@ -112,9 +112,15 @@ def violations(root=ROOT):
         return 'undeclared:' + name.split('_')[0]
 
     def app_sql(path, sql, app, ctes=()):
+        # PostgreSQL row-lock modifiers are not UPDATE statements naming a table.
+        sql = re.sub(r'\bfor\s+(?:no\s+key\s+)?update\s+(?:skip\s+locked|nowait)\b', '', sql, flags=re.I)
         ctes = set(ctes) | {name.lower() for name in re.findall(r'\b(?:with|,)\s*([a-z_]\w*)\s+as\s*\(', sql, re.I)}
         for match in re.finditer(rf'\b(?:from|join|into|update|references)\s+({identifier}(?:\s*\.\s*{identifier})?)', sql, re.I):
+            if re.search(r'\bfor\s+(?:no\s+key\s+)?$', sql[:match.start()], re.I):
+                continue
             table = re.sub(r'["\s]', '', match.group(1)).lower()
+            if table == 'set' and re.search(r'\bon\s+conflict\b[^;]*\bdo\s*$', sql[:match.start()], re.I):
+                continue
             if table != 'lateral' and table not in ctes and (private_platform_table(table) or '.' in table or not table.startswith(app + '_')):
                 report(path, 'app-private-sql', table)
 

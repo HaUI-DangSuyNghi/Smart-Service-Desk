@@ -27,9 +27,14 @@ class ClassifierProcessingGateTest {
 
     private ClassifierProcessingGate gate(String workspace, boolean expired, boolean tamper)
             throws Exception {
+        return gate(workspace, expired, tamper, null);
+    }
+
+    private ClassifierProcessingGate gate(
+            String workspace, boolean expired, boolean tamper, String bundle) throws Exception {
         var json = new ObjectMapper();
-        byte[] payload =
-                json.writeValueAsBytes(
+        var fields =
+                new java.util.LinkedHashMap<String, Object>(
                         Map.of(
                                 "purpose",
                                 "AI07_ASSISTED_PROCESSING",
@@ -43,6 +48,10 @@ class ClassifierProcessingGateTest {
                                 expired ? 0L : Instant.now().getEpochSecond() + 600,
                                 "issuer",
                                 "SYNTHETIC_TEST_ONLY"));
+        if (bundle != null) {
+            fields.put("assessmentPolicyBundleDigest", bundle);
+        }
+        byte[] payload = json.writeValueAsBytes(fields);
         var mac = Mac.getInstance("HmacSHA256");
         mac.init(
                 new SecretKeySpec(
@@ -71,6 +80,24 @@ class ClassifierProcessingGateTest {
     @Test
     void verifiesScopedGrantAndDetectsReplacement() throws Exception {
         assertTrue(gate("lab-a", false, false).verify("lab-a").matches("[0-9a-f]{64}"));
+    }
+
+    @Test
+    void hierarchicalProcessingNeedsAnIndependentlySignedBundlePin() throws Exception {
+        String bundle = "c".repeat(64);
+        var legacy = gate("lab-a", false, false);
+        assertThrows(CapabilityException.class, () -> legacy.verifyAssessment("lab-a", bundle));
+        var scoped = gate("lab-a", false, false, bundle);
+        assertEquals(scoped.verify("lab-a"), scoped.verifyAssessment("lab-a", bundle));
+        assertThrows(
+                CapabilityException.class, () -> scoped.verifyAssessment("lab-a", "d".repeat(64)));
+        assertThrows(CapabilityException.class, () -> scoped.verifyAssessment("lab-b", bundle));
+        assertThrows(
+                CapabilityException.class,
+                () -> gate("lab-a", true, false, bundle).verifyAssessment("lab-a", bundle));
+        assertThrows(
+                CapabilityException.class,
+                () -> gate("lab-a", false, true, bundle).verifyAssessment("lab-a", bundle));
     }
 
     @ParameterizedTest

@@ -22,6 +22,22 @@ import static org.springframework.test.web.client.match.MockRestRequestMatchers.
 import static org.springframework.test.web.client.response.MockRestResponseCreators.*;
 
 class KeycloakWorkspaceDirectoryTest {
+    @Test void supportGroupsUseSeparateNamespaceAndIgnoreDisabledMembers() {
+        expectToken();
+        expectGet("/admin/realms/dx-lab/group-by-path/support-groups/lab-a/hardware", "{\"id\":\"support\"}");
+        expectGet("/admin/realms/dx-lab/groups/support/members?briefRepresentation=true&first=0&max=1000",
+            "[{\"id\":\"agent\"},{\"id\":\"disabled\",\"enabled\":false}]");
+        assertEquals(java.util.Set.of("agent"), directory.supportGroupMembers("lab-a", "hardware"));
+        verify(access).requireMember("lab-a");
+        server.verify();
+    }
+
+    @Test void supportGroupLookupFailsClosedAndRequiresWorkspaceMembership() {
+        doThrow(CoreException.forbidden("Workspace required")).when(access).requireMember("lab-b");
+        assertThrows(CoreException.class, () -> directory.supportGroupMembers("lab-b", "hardware"));
+        assertThrows(CoreException.class, () -> directory.supportGroupMembers("lab-a", "../agent"));
+        server.verify();
+    }
     private static final String KC = "http://kc";
     private final WorkspaceAccess access = mock(WorkspaceAccess.class);
     private MockRestServiceServer server;
@@ -136,6 +152,19 @@ class KeycloakWorkspaceDirectoryTest {
         expectGet("/admin/realms/dx-lab/groups/g/children?briefRepresentation=true&max=100", "[{\"id\":\"r\",\"name\":\"agent\"}]");
         expectGet("/admin/realms/dx-lab/groups/r/members?briefRepresentation=true&max=1000", "[]");
         expectGet("/admin/realms/dx-lab/groups/r/role-mappings", "{\"clientMappings\":{\"dx-permissions\":{\"mappings\":[" + permissions + "]}}}");
+    }
+
+    @Test void explicitRefreshSeesRevocationBeforeCacheExpiryAndFailsClosedOnOutage() {
+        expectToken();
+        expectPermissionSnapshot("{\"name\":\"task:handle\"}");
+        expectPermissionSnapshot("");
+        server.expect(requestTo(KC + "/admin/realms/dx-lab/group-by-path/workspaces/lab-a"))
+            .andRespond(withServerError());
+        assertFalse(directory.rolePermissions("lab-a").get("agent").isEmpty());
+        directory.refresh("lab-a");
+        assertTrue(directory.rolePermissions("lab-a").get("agent").isEmpty());
+        assertEquals(ErrorCode.SERVICE_UNAVAILABLE,assertThrows(CoreException.class,() -> directory.refresh("lab-a")).code());
+        server.verify();
     }
 
     @Test void membershipIsCheckedBeforeAnyLookup() {

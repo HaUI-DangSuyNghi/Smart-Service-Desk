@@ -1,7 +1,7 @@
 name: Service Desk triage bridge
 on:
   push:
-    branches: [feature/ai07-ticket-intelligence]
+    branches: [feature/ai07-ticket-intelligence, feature/ai07-hierarchical-assessment]
     paths: ['backend/**', 'contracts/**', '.github/workflows/servicedesk-triage.yml']
   pull_request:
     branches: [develop]
@@ -10,6 +10,22 @@ on:
 permissions:
   contents: read
 jobs:
+  windows-assessment-contract:
+    runs-on: windows-2022
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Hierarchy, literal evidence, grants and compatible contracts
+        run: >-
+          mvn -B -f backend/pom.xml
+          "-Dtest=FactualAssessmentTest,SubcategoryBenchmarkTest,HierarchicalPolicyTest,TicketAssessmentControllerTest,TicketAssessmentOrchestratorTest,ClassifierProcessingGateTest,TicketClassificationControllerTest,TicketClassificationOrchestratorTest,TrustedClassificationCapabilityTest"
+          test
   postgresql-regression:
     runs-on: ubuntu-24.04
     timeout-minutes: 20

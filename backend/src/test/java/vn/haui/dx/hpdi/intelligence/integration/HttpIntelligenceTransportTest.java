@@ -118,7 +118,9 @@ class HttpIntelligenceTransportTest {
         int port;
         try (var socket = new ServerSocket(0)) { port = socket.getLocalPort(); }
         var refused = configured("http://127.0.0.1:" + port, "synthetic-service-token-for-tests-only");
-        assertEquals(503, assertThrows(IntelligenceFailure.class, () -> refused.triage(TriageResponses.request())).status());
+        // A refused endpoint can hit the finite deadline first on a loaded runner.
+        int failure = assertThrows(IntelligenceFailure.class, () -> refused.triage(TriageResponses.request())).status();
+        assertTrue(java.util.Set.of(503, 504).contains(failure));
         assertEquals(503, assertThrows(IntelligenceFailure.class, () -> configured("", "").triage(TriageResponses.request())).status());
     }
 

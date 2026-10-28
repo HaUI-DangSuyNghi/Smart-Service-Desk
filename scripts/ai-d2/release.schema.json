@@ -1,0 +1,140 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:ssd:ai-d2-offline-release:1.0.0",
+  "title": "Signed AI D2 offline inventory",
+  "type": "object",
+  "required": [
+    "schemaVersion",
+    "sourceCommit",
+    "worktreeDirty",
+    "os",
+    "architecture",
+    "images",
+    "modelDigest",
+    "approvedChannel",
+    "productionApproved",
+    "files"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "ai-d2-offline-release@1.0.0"
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "sourceCommit": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{40}$"
+    },
+    "worktreeDirty": {
+      "type": "boolean"
+    },
+    "os": {
+      "const": "linux"
+    },
+    "architecture": {
+      "const": "amd64"
+    },
+    "modelDigest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "approvedChannel": {
+      "type": "string",
+      "minLength": 1
+    },
+    "productionApproved": {
+      "const": false
+    },
+    "images": {
+      "type": "object",
+      "required": [
+        "postgres",
+        "keycloak",
+        "platform",
+        "gateway",
+        "frontend",
+        "intelligence",
+        "ai07-qwen",
+        "model-code",
+        "e5-base"
+      ],
+      "minProperties": 9,
+      "maxProperties": 9,
+      "additionalProperties": {
+        "$ref": "#/$defs/image"
+      }
+    },
+    "files": {
+      "type": "object",
+      "minProperties": 1,
+      "maxProperties": 5000,
+      "additionalProperties": {
+        "type": "object",
+        "required": [
+          "sha256",
+          "size"
+        ],
+        "properties": {
+          "sha256": {
+            "type": "string",
+            "pattern": "^[0-9a-f]{64}$"
+          },
+          "size": {
+            "type": "integer",
+            "minimum": 0
+          }
+        },
+        "additionalProperties": false
+      }
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "image": {
+      "type": "object",
+      "required": [
+        "imageId",
+        "configDigest",
+        "localRef",
+        "ociRefs",
+        "os",
+        "architecture"
+      ],
+      "properties": {
+        "imageId": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "configDigest": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$"
+        },
+        "localRef": {
+          "type": "string"
+        },
+        "sourceDescriptor": {
+          "type": [
+            "object",
+            "null"
+          ]
+        },
+        "ociRefs": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "pattern": "@sha256:[0-9a-f]{64}$"
+          }
+        },
+        "os": {
+          "const": "linux"
+        },
+        "architecture": {
+          "const": "amd64"
+        }
+      },
+      "additionalProperties": false
+    }
+  }
+}

@@ -1,0 +1,13 @@
+{
+  "version": "servicedesk-duplicate-policy@0.1.0",
+  "approvalStatus": "DRAFT",
+  "candidateLimit": 50,
+  "displayLimit": 3,
+  "horizonDays": 90,
+  "maxQuestions": 3,
+  "autoMergeAllowed": false,
+  "operationalAuthority": false,
+  "requireVerifiedCategory": true,
+  "sharedObjectMappingApproved": false,
+  "decisionVersion": "rule-first-cpu@0.1.0"
+}

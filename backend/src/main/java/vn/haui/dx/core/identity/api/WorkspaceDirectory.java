@@ -10,6 +10,11 @@ import java.util.Map;
  * Người gọi phải là thành viên workspace; Keycloak không phản hồi → {@code SERVICE_UNAVAILABLE}.
  */
 public interface WorkspaceDirectory {
+    default java.util.Set<String> supportGroupMembers(String workspace, String group) {
+        throw vn.haui.dx.core.common.CoreException.unavailable("Support group directory is not configured");
+    }
+    void refresh(String workspace);
+
     /** Thành viên kèm vai trò, sắp theo username. Workspace chưa có group trong Keycloak → danh sách rỗng. */
     List<DirectoryMember> members(String workspace);
 

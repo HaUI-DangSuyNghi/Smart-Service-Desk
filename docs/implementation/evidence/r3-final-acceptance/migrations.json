@@ -1,0 +1,235 @@
+{
+  "cleanPostgres166PackagedRuntime": [
+    {
+      "installed_rank": 1,
+      "version": "1",
+      "description": "core",
+      "checksum": -1581694502,
+      "success": true
+    },
+    {
+      "installed_rank": 2,
+      "version": "2",
+      "description": "audit details",
+      "checksum": -1540193205,
+      "success": true
+    },
+    {
+      "installed_rank": 3,
+      "version": "3",
+      "description": "file original name",
+      "checksum": 2131176825,
+      "success": true
+    },
+    {
+      "installed_rank": 4,
+      "version": "4",
+      "description": "metadata file and search",
+      "checksum": 1230572921,
+      "success": true
+    },
+    {
+      "installed_rank": 5,
+      "version": "5",
+      "description": "servicedesk ticket",
+      "checksum": -919243728,
+      "success": true
+    },
+    {
+      "installed_rank": 6,
+      "version": "6",
+      "description": "decouple servicedesk workflow reference",
+      "checksum": -1974116718,
+      "success": true
+    },
+    {
+      "installed_rank": 7,
+      "version": "7",
+      "description": "roomrequest request",
+      "checksum": 661878698,
+      "success": true
+    },
+    {
+      "installed_rank": 8,
+      "version": "8",
+      "description": "servicedesk review",
+      "checksum": 634232102,
+      "success": true
+    },
+    {
+      "installed_rank": 9,
+      "version": "9",
+      "description": "servicedesk estimate history index",
+      "checksum": 1011388628,
+      "success": true
+    },
+    {
+      "installed_rank": 10,
+      "version": "10",
+      "description": "servicedesk background assessment",
+      "checksum": -520004310,
+      "success": true
+    },
+    {
+      "installed_rank": 11,
+      "version": "11",
+      "description": "servicedesk clarification",
+      "checksum": 1404072929,
+      "success": true
+    },
+    {
+      "installed_rank": 12,
+      "version": "12",
+      "description": "servicedesk enrichment lifecycle",
+      "checksum": -555264797,
+      "success": true
+    },
+    {
+      "installed_rank": 13,
+      "version": "13",
+      "description": "servicedesk contextual attempt",
+      "checksum": -617857792,
+      "success": true
+    },
+    {
+      "installed_rank": 14,
+      "version": "14",
+      "description": "agent duty",
+      "checksum": -1498821261,
+      "success": true
+    },
+    {
+      "installed_rank": 15,
+      "version": "15",
+      "description": "servicedesk assignment suggestion",
+      "checksum": -2097722880,
+      "success": true
+    },
+    {
+      "installed_rank": 16,
+      "version": "16",
+      "description": "servicedesk intake admission",
+      "checksum": 1550545579,
+      "success": true
+    },
+    {
+      "installed_rank": 17,
+      "version": "17",
+      "description": "servicedesk final assessment binding",
+      "checksum": 916948586,
+      "success": true
+    },
+    {
+      "installed_rank": 18,
+      "version": "18",
+      "description": "servicedesk intake process stage",
+      "checksum": 1765718161,
+      "success": true
+    },
+    {
+      "installed_rank": 19,
+      "version": "19",
+      "description": "servicedesk duplicate disposition",
+      "checksum": 854843018,
+      "success": true
+    },
+    {
+      "installed_rank": 20,
+      "version": "20",
+      "description": "servicedesk sla",
+      "checksum": -680898971,
+      "success": true
+    },
+    {
+      "installed_rank": 21,
+      "version": "21",
+      "description": "persistent alerts",
+      "checksum": 1494149999,
+      "success": true
+    },
+    {
+      "installed_rank": 22,
+      "version": "22",
+      "description": "servicedesk alert monitor",
+      "checksum": 1079804185,
+      "success": true
+    },
+    {
+      "installed_rank": 23,
+      "version": "23",
+      "description": "estimate requests",
+      "checksum": -1293192528,
+      "success": true
+    },
+    {
+      "installed_rank": 24,
+      "version": "24",
+      "description": "work handover",
+      "checksum": -431355541,
+      "success": true
+    },
+    {
+      "installed_rank": 25,
+      "version": "25",
+      "description": "estimate request supersession",
+      "checksum": -1283226044,
+      "success": true
+    },
+    {
+      "installed_rank": 26,
+      "version": "26",
+      "description": "classification invalidation alert",
+      "checksum": -527334207,
+      "success": true
+    },
+    {
+      "installed_rank": 27,
+      "version": "27",
+      "description": "classification corrections",
+      "checksum": 2138117048,
+      "success": true
+    },
+    {
+      "installed_rank": 28,
+      "version": "28",
+      "description": "reopen alert types",
+      "checksum": -618348601,
+      "success": true
+    },
+    {
+      "installed_rank": 29,
+      "version": "29",
+      "description": "confirmation lifecycle",
+      "checksum": -1585780813,
+      "success": true
+    },
+    {
+      "installed_rank": 30,
+      "version": "30",
+      "description": "confirmation enrollment and reopen",
+      "checksum": -1434819700,
+      "success": true
+    },
+    {
+      "installed_rank": 31,
+      "version": "31",
+      "description": "agent shift schedule",
+      "checksum": -1277182000,
+      "success": true
+    }
+  ],
+  "upgradeTestClass": "vn.haui.dx.hpdi.human.AgentScheduleMigrationTest",
+  "upgradeTestMethod": "upgradeFromPreV31PreservesDutyChecksumsAndScheduleAcrossConnections",
+  "upgradeStatus": "PASS",
+  "upgradeTrace": [
+    "2026-10-28T08:49:11.846Z  INFO [] 131 --- [           main] o.f.core.internal.command.DbMigrate      : Successfully applied 30 migrations to schema \"shift_bf0e516a522e47f6b4f8f1e41d18b264\", now at version v30 (execution time 00:00.637s)",
+    "2026-10-28T08:49:11.931Z  INFO [] 131 --- [           main] o.f.core.internal.command.DbMigrate      : Successfully applied 1 migration to schema \"shift_bf0e516a522e47f6b4f8f1e41d18b264\", now at version v31 (execution time 00:00.010s)"
+  ],
+  "upgradeAssertions": [
+    "V1-V30 checksums unchanged",
+    "Manual ON row preserved",
+    "No implicit enrollment",
+    "Schedule and shift retained across new JDBC connection"
+  ],
+  "secondDomainPriorVersion": "28: highest shared migration present below V31; no Service Desk V30 dependency"
+}

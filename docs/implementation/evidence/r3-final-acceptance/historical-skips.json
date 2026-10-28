@@ -1,0 +1,218 @@
+{
+  "historicalSkipped": 21,
+  "baseline": "a6a92845c48eeefa86e5e261e382dbd096160cdb",
+  "neverCountedAsPass": true,
+  "resolution": "Re-run Full with BACKGROUND_TEST_JDBC_URL and a fresh background_assessment database: all 21 executed and passed",
+  "tests": [
+    {
+      "testClass": "vn.haui.dx.apps.servicedesk.intelligence.BackgroundTicketAssessmentTest",
+      "method": "assessmentPrimaryKeyPreventsDuplicateJobs",
+      "reason": "Environment variable [BACKGROUND_TEST_JDBC_URL] does not exist",
+      "origin": "baseline",
+      "affected": "Service Desk background assessment and worker security; shared service identity regression coverage",
+      "directR3": false,
+      "directCore": false,
+      "directRoomRequest": false
+    },
+    {
+      "testClass": "vn.haui.dx.apps.servicedesk.intelligence.BackgroundTicketAssessmentTest",
+      "method": "workerCannotClaimOutsideConfiguredWorkspace",
+      "reason": "Environment variable [BACKGROUND_TEST_JDBC_URL] does not exist",
+      "origin": "baseline",
+      "affected": "Service Desk background assessment and worker security; shared service identity regression coverage",
+      "directR3": false,
+      "directCore": false,
+      "directRoomRequest": false
+    },
+    {
+      "testClass": "vn.haui.dx.apps.servicedesk.intelligence.BackgroundTicketAssessmentTest",
+      "method": "signedAlertWorkerRequiresAnIndependentNonBusinessGrantAndRestoresIdentity",
+      "reason": "Environment variable [BACKGROUND_TEST_JDBC_URL] does not exist",
+      "origin": "baseline",
+      "affected": "Service Desk background assessment and worker security; shared service identity regression coverage",
+      "directR3": false,
+      "directCore": false,
+      "directRoomRequest": false
+    },
+    {
+      "testClass": "vn.haui.dx.apps.servicedesk.intelligence.BackgroundTicketAssessmentTest",
+      "method": "rejectedServiceCredentialsArePermanentRatherThanIntelligenceOutages",
+      "reason": "Environment variable [BACKGROUND_TEST_JDBC_URL] does not exist",
+      "origin": "baseline",
+      "affected": "Service Desk background assessment and worker security; shared service identity regression coverage",
+      "directR3": false,
+      "directCore": false,
+      "directRoomRequest": false
+    },
+    {
+      "testClass": "vn.haui.dx.apps.servicedesk.intelligence.BackgroundTicketAssessmentTest",
+      "method": "expiredLeaseAfterRestartIsRecoverableAndLastCrashedAttemptTerminates",
+      "reason": "Environment variable [BACKGROUND_TEST_JDBC_URL] does not exist",
+      "origin": "baseline",
+      "affected": "Service Desk background assessment and worker security; shared service identity regression coverage",
+      "directR3": false,
+      "directCore": false,
+      "directRoomRequest": false
+    },
+    {
+      "testClass": "vn.haui.dx.apps.servicedesk.intelligence.BackgroundTicketAssessmentTest",
+      "method": "revokedWorkerCannotInvokeAi",
+      "reason": "Environment variable [BACKGROUND_TEST_JDBC_URL] does not exist",
+      "origin": "baseline",
+      "affected": "Service Desk background assessment and worker security; shared service identity regression coverage",
+      "directR3": false,
+      "directCore": false,
+      "directRoomRequest": false
+    },
+    {
+      "testClass": "vn.haui.dx.apps.servicedesk.intelligence.BackgroundTicketAssessmentTest",
+      "method": "staleLeaseCannotOverwriteNewerCompletedAssessment",
+      "reason": "Environment variable [BACKGROUND_TEST_JDBC_URL] does not exist",
+      "origin": "baseline",
+      "affected": "Service Desk background assessment and worker security; shared service identity regression coverage",
+      "directR3": false,
+      "directCore": false,
+      "directRoomRequest": false
+    },
+    {
+      "testClass": "vn.haui.dx.apps.servicedesk.intelligence.BackgroundTicketAssessmentTest",
+      "method": "failedReadyAuditRollsBackResultAndRetriesAtomically",
+      "reason": "Environment variable [BACKGROUND_TEST_JDBC_URL] does not exist",
+      "origin": "baseline",
+      "affected": "Service Desk background assessment and worker security; shared service identity regression coverage",
+      "directR3": false,
+      "directCore": false,
+      "directRoomRequest": false
+    },
+    {
+      "testClass": "vn.haui.dx.apps.servicedesk.intelligence.BackgroundTicketAssessmentTest",
+      "method": "signedTokenWithWrongIssuerFailsClosed",
+      "reason": "Environment variable [BACKGROUND_TEST_JDBC_URL] does not exist",
+      "origin": "baseline",
+      "affected": "Service Desk background assessment and worker security; shared service identity regression coverage",
+      "directR3": false,
+      "directCore": false,
+      "directRoomRequest": false
+    },
+    {
+      "testClass": "vn.haui.dx.apps.servicedesk.intelligence.BackgroundTicketAssessmentTest",
+      "method": "revokedCreatorAndForeignWorkspaceCannotReleaseResult",
+      "reason": "Environment variable [BACKGROUND_TEST_JDBC_URL] does not exist",
+      "origin": "baseline",
+      "affected": "Service Desk background assessment and worker security; shared service identity regression coverage",
+      "directR3": false,
+      "directCore": false,
+      "directRoomRequest": false
+    },
+    {
+      "testClass": "vn.haui.dx.apps.servicedesk.intelligence.BackgroundTicketAssessmentTest",
+      "method": "rollbackLeavesNoOrphanOutbox",
+      "reason": "Environment variable [BACKGROUND_TEST_JDBC_URL] does not exist",
+      "origin": "baseline",
+      "affected": "Service Desk background assessment and worker security; shared service identity regression coverage",
+      "directR3": false,
+      "directCore": false,
+      "directRoomRequest": false
+    },
+    {
+      "testClass": "vn.haui.dx.apps.servicedesk.intelligence.BackgroundTicketAssessmentTest",
+      "method": "futureAvailabilityAndActiveLeaseAreNotClaimed",
+      "reason": "Environment variable [BACKGROUND_TEST_JDBC_URL] does not exist",
+      "origin": "baseline",
+      "affected": "Service Desk background assessment and worker security; shared service identity regression coverage",
+      "directR3": false,
+      "directCore": false,
+      "directRoomRequest": false
+    },
+    {
+      "testClass": "vn.haui.dx.apps.servicedesk.intelligence.BackgroundTicketAssessmentTest",
+      "method": "signedTokenWithWrongAudienceFailsClosed",
+      "reason": "Environment variable [BACKGROUND_TEST_JDBC_URL] does not exist",
+      "origin": "baseline",
+      "affected": "Service Desk background assessment and worker security; shared service identity regression coverage",
+      "directR3": false,
+      "directCore": false,
+      "directRoomRequest": false
+    },
+    {
+      "testClass": "vn.haui.dx.apps.servicedesk.intelligence.BackgroundTicketAssessmentTest",
+      "method": "timeoutRetriesBackoffAndTerminalDegradedDoNotBlockReview",
+      "reason": "Environment variable [BACKGROUND_TEST_JDBC_URL] does not exist",
+      "origin": "baseline",
+      "affected": "Service Desk background assessment and worker security; shared service identity regression coverage",
+      "directR3": false,
+      "directCore": false,
+      "directRoomRequest": false
+    },
+    {
+      "testClass": "vn.haui.dx.apps.servicedesk.intelligence.BackgroundTicketAssessmentTest",
+      "method": "twoWorkersDoNotInferTwiceAndCoordinatorOverrideSurvivesLateResult",
+      "reason": "Environment variable [BACKGROUND_TEST_JDBC_URL] does not exist",
+      "origin": "baseline",
+      "affected": "Service Desk background assessment and worker security; shared service identity regression coverage",
+      "directR3": false,
+      "directCore": false,
+      "directRoomRequest": false
+    },
+    {
+      "testClass": "vn.haui.dx.apps.servicedesk.intelligence.BackgroundTicketAssessmentTest",
+      "method": "transientFailureRetriesThenSucceedsWithoutDuplicateAssessment",
+      "reason": "Environment variable [BACKGROUND_TEST_JDBC_URL] does not exist",
+      "origin": "baseline",
+      "affected": "Service Desk background assessment and worker security; shared service identity regression coverage",
+      "directR3": false,
+      "directCore": false,
+      "directRoomRequest": false
+    },
+    {
+      "testClass": "vn.haui.dx.apps.servicedesk.intelligence.BackgroundTicketAssessmentTest",
+      "method": "creationNeverInvokesAiAndGetOnlyReadsStoredReadyResult",
+      "reason": "Environment variable [BACKGROUND_TEST_JDBC_URL] does not exist",
+      "origin": "baseline",
+      "affected": "Service Desk background assessment and worker security; shared service identity regression coverage",
+      "directR3": false,
+      "directCore": false,
+      "directRoomRequest": false
+    },
+    {
+      "testClass": "vn.haui.dx.apps.servicedesk.intelligence.BackgroundTicketAssessmentTest",
+      "method": "invalidServiceJwtFailsClosedWithoutCallingAi",
+      "reason": "Environment variable [BACKGROUND_TEST_JDBC_URL] does not exist",
+      "origin": "baseline",
+      "affected": "Service Desk background assessment and worker security; shared service identity regression coverage",
+      "directR3": false,
+      "directCore": false,
+      "directRoomRequest": false
+    },
+    {
+      "testClass": "vn.haui.dx.apps.servicedesk.intelligence.BackgroundTicketAssessmentTest",
+      "method": "identityProviderOutageIsRetryable",
+      "reason": "Environment variable [BACKGROUND_TEST_JDBC_URL] does not exist",
+      "origin": "baseline",
+      "affected": "Service Desk background assessment and worker security; shared service identity regression coverage",
+      "directR3": false,
+      "directCore": false,
+      "directRoomRequest": false
+    },
+    {
+      "testClass": "vn.haui.dx.apps.servicedesk.intelligence.BackgroundTicketAssessmentTest",
+      "method": "jobIsInvisibleBeforeCommitAndImmediatelyAvailableAfterCommit",
+      "reason": "Environment variable [BACKGROUND_TEST_JDBC_URL] does not exist",
+      "origin": "baseline",
+      "affected": "Service Desk background assessment and worker security; shared service identity regression coverage",
+      "directR3": false,
+      "directCore": false,
+      "directRoomRequest": false
+    },
+    {
+      "testClass": "vn.haui.dx.apps.servicedesk.intelligence.BackgroundTicketAssessmentTest",
+      "method": "permanentContractFailureDegradesWithoutRetry",
+      "reason": "Environment variable [BACKGROUND_TEST_JDBC_URL] does not exist",
+      "origin": "baseline",
+      "affected": "Service Desk background assessment and worker security; shared service identity regression coverage",
+      "directR3": false,
+      "directCore": false,
+      "directRoomRequest": false
+    }
+  ]
+}

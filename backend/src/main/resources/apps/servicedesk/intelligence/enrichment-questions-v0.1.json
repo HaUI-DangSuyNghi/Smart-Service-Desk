@@ -1,0 +1,25 @@
+{
+  "version": "servicedesk-enrichment-questions@0.1.0",
+  "maxQuestions": 3,
+  "profiles": {
+    "R10_DUPLICATE": [
+      "location.room",
+      "device.type",
+      "device.identifier"
+    ],
+    "ASSESSMENT": [
+      "affectedScope",
+      "workBlocked",
+      "workaroundAvailable"
+    ]
+  },
+  "questions": {
+    "location.room": "Sự cố đang xảy ra ở phòng nào?",
+    "device.type": "Thiết bị hoặc dịch vụ đang gặp lỗi là gì?",
+    "device.identifier": "Thiết bị gặp lỗi có mã hoặc số máy nào?",
+    "affectedScope": "Sự cố ảnh hưởng một người, một thiết bị hay cả phòng?",
+    "workBlocked": "Sự cố có khiến công việc hiện tại bị dừng không?",
+    "workaroundAvailable": "Hiện có cách làm thay thế để tiếp tục công việc không?"
+  },
+  "conflictQuestion": "Thông tin về %s đang chưa thống nhất. Bạn có thể xác nhận giá trị đúng không?"
+}

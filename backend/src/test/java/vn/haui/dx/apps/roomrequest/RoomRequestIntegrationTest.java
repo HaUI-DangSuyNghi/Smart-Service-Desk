@@ -21,7 +21,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 @EnabledIfEnvironmentVariable(named="FILE_TEST_JDBC_URL",matches=".+/file_storage")
 class RoomRequestIntegrationTest {
-    private static final String BASE="/api/apps/roomrequest/v1/workspaces/lab-a/requests";
+    private static final String BASE="/api/apps/roomrequest/v1/workspaces/room-proof/requests";
     private static final Path STORAGE=Path.of(System.getProperty("java.io.tmpdir"),"room-proof-"+UUID.randomUUID());
     @DynamicPropertySource static void properties(DynamicPropertyRegistry p) {
         p.add("spring.datasource.url",()->System.getenv("FILE_TEST_JDBC_URL"));
@@ -36,8 +36,8 @@ class RoomRequestIntegrationTest {
     @Test void genericStartCannotBypassRoomInitialization() throws Exception {
         var tables = List.of("roomrequest_request", "process_scope", "act_hi_procinst", "act_ru_task", "audit_event");
         long[] before = tables.stream().mapToLong(table -> jdbc.queryForObject("select count(*) from " + table, Long.class)).toArray();
-        mvc.perform(post("/api/core/v1/workspaces/lab-a/processes/room-request/instances")
-            .with(as("room-owner", "lab-a", "requester")).contentType("application/json")
+        mvc.perform(post("/api/core/v1/workspaces/room-proof/processes/room-request/instances")
+            .with(as("room-owner", "room-proof", "requester")).contentType("application/json")
             .content(json.writeValueAsString(Map.of("businessKey", UUID.randomUUID().toString(), "variables", Map.of("room", "A-101")))))
             .andExpect(status().isForbidden());
         assertArrayEquals(before, tables.stream().mapToLong(table -> jdbc.queryForObject("select count(*) from " + table, Long.class)).toArray());
@@ -49,7 +49,7 @@ class RoomRequestIntegrationTest {
     }
     private JsonNode body(ResultActions action) throws Exception { return json.readTree(action.andReturn().getResponse().getContentAsByteArray()); }
     private JsonNode create() throws Exception {
-        return body(mvc.perform(post(BASE).with(as("room-owner","lab-a","requester")).contentType("application/json")
+        return body(mvc.perform(post(BASE).with(as("room-owner","room-proof","requester")).contentType("application/json")
             .content("{\"room\":\"A-101\"}")).andExpect(status().isCreated()));
     }
     @Test void requestUsesUnchangedHumanProcessInboxTimelineAndJournal() throws Exception {
@@ -58,43 +58,43 @@ class RoomRequestIntegrationTest {
             assertNull(jdbc.queryForObject("select to_regclass('servicedesk_ticket')::text",String.class));
         }
         var request=create(); String id=request.path("id").asText();
-        var progress=body(mvc.perform(get(BASE+"/"+id+"/progress").with(as("room-owner","lab-a","requester"))).andExpect(status().isOk()));
+        var progress=body(mvc.perform(get(BASE+"/"+id+"/progress").with(as("room-owner","room-proof","requester"))).andExpect(status().isOk()));
         String task=progress.path("currentTasks").get(0).path("id").asText();
-        String hpdi="/api/hpdi/v1/workspaces/lab-a";
-        mvc.perform(get(hpdi+"/inbox").with(as("room-reviewer","lab-a","coordinator")))
+        String hpdi="/api/hpdi/v1/workspaces/room-proof";
+        mvc.perform(get(hpdi+"/inbox").with(as("room-reviewer","room-proof","coordinator")))
             .andExpect(status().isOk()).andExpect(jsonPath("$.items[?(@.id == '"+task+"')].processKey").value("room-request"));
-        mvc.perform(post(hpdi+"/tasks/"+task+"/claim").with(as("room-reviewer","lab-a","coordinator")))
+        mvc.perform(post(hpdi+"/tasks/"+task+"/claim").with(as("room-reviewer","room-proof","coordinator")))
             .andExpect(status().isOk()).andExpect(jsonPath("$.businessKey").value(id));
-        mvc.perform(post(hpdi+"/tasks/"+task+"/complete").with(as("room-reviewer","lab-a","coordinator"))
+        mvc.perform(post(hpdi+"/tasks/"+task+"/complete").with(as("room-reviewer","room-proof","coordinator"))
             .contentType("application/json").content("{\"expectedTaskKey\":\"approve\",\"outcome\":\"approved\"}"))
             .andExpect(status().isNoContent());
-        mvc.perform(get(BASE+"/"+id+"/progress").with(as("room-owner","lab-a","requester")))
+        mvc.perform(get(BASE+"/"+id+"/progress").with(as("room-owner","room-proof","requester")))
             .andExpect(status().isOk()).andExpect(jsonPath("$.ended").value(true));
         assertEquals(1L,jdbc.queryForObject("select count(*) from audit_event where resource=? and action='roomrequest.request.create'",Long.class,id));
-        mvc.perform(get(BASE+"/"+id).with(as("other","lab-a","requester"))).andExpect(status().isNotFound());
+        mvc.perform(get(BASE+"/"+id).with(as("other","room-proof","requester"))).andExpect(status().isNotFound());
         mvc.perform(get(BASE+"/"+id).with(as("foreign","lab-b","coordinator"))).andExpect(status().isForbidden());
     }
     @Test void requestResolvesSharedKnowledgeAndRejectsForeignKnowledgeBeforePersistence() throws Exception {
         byte[] content="Room booking guide".getBytes(java.nio.charset.StandardCharsets.UTF_8);
-        var uploaded=body(mvc.perform(multipart("/api/core/v1/workspaces/lab-a/files")
+        var uploaded=body(mvc.perform(multipart("/api/core/v1/workspaces/room-proof/files")
             .file(new MockMultipartFile("file","room-guide.md","text/markdown",content))
-            .with(as("room-agent","lab-a","agent"))).andExpect(status().isCreated()));
-        var metadata=body(mvc.perform(post("/api/core/v1/workspaces/lab-a/metadata").with(as("room-agent","lab-a","agent"))
+            .with(as("room-agent","room-proof","agent"))).andExpect(status().isCreated()));
+        var metadata=body(mvc.perform(post("/api/core/v1/workspaces/room-proof/metadata").with(as("room-agent","room-proof","agent"))
             .contentType("application/json").content(json.writeValueAsString(Map.of("title","Room guide","source","src:room",
                 "version","v1","usageRights","CC0","fileId",uploaded.path("id").asText()))))
             .andExpect(status().isCreated()));
         String payload=json.writeValueAsString(Map.of("room","A-102","knowledgeId",metadata.path("id").asText()));
-        mvc.perform(post(BASE).with(as("room-owner","lab-a","requester")).contentType("application/json").content(payload))
+        mvc.perform(post(BASE).with(as("room-owner","room-proof","requester")).contentType("application/json").content(payload))
             .andExpect(status().isCreated()).andExpect(jsonPath("$.knowledgeId").value(metadata.path("id").asText()));
-        mvc.perform(post(BASE.replace("lab-a","lab-b")).with(as("foreign","lab-b","requester"))
+        mvc.perform(post(BASE.replace("room-proof","lab-b")).with(as("foreign","lab-b","requester"))
             .contentType("application/json").content(payload)).andExpect(status().isNotFound());
         assertEquals(0L,jdbc.queryForObject("select count(*) from roomrequest_request where workspace='lab-b'",Long.class));
     }
     @Test void intelligenceUnavailabilityIsExplicitAndCannotBypassRequestVisibility() throws Exception {
         var request=create();String route=BASE+"/"+request.path("id").asText()+"/suggestion";
-        mvc.perform(post(route).with(as("room-owner","lab-a","requester")))
+        mvc.perform(post(route).with(as("room-owner","room-proof","requester")))
             .andExpect(status().isServiceUnavailable()).andExpect(jsonPath("$.code").value("INTELLIGENCE_UNAVAILABLE"));
-        mvc.perform(post(route).with(as("other","lab-a","requester"))).andExpect(status().isNotFound());
+        mvc.perform(post(route).with(as("other","room-proof","requester"))).andExpect(status().isNotFound());
         mvc.perform(post(route)).andExpect(status().isUnauthorized());
     }
 }

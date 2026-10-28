@@ -7,6 +7,446 @@ info:
 security:
 - bearerAuth: []
 paths:
+  /api/hpdi/v1/workspaces/{workspace}/schedules:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+    get:
+      operationId: listAgentSchedules
+      description: Coordinator with task:assign reads the current workspace Agent roster; Agent with task:handle reads only their own schedule.
+      responses:
+        '200':
+          description: Current schedules; version zero means legacy manual duty
+          content:
+            application/json:
+              schema: {type: array, items: {$ref: '#/components/schemas/AgentSchedule'}}
+        '403': {$ref: '#/components/responses/Forbidden'}
+  /api/hpdi/v1/workspaces/{workspace}/schedules/{subject}:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+      - {name: subject, in: path, required: true, schema: {type: string, maxLength: 100}, description: Current Agent subject or me}
+    get:
+      operationId: getAgentSchedule
+      description: Coordinator with task:assign or own Agent with task:handle. Current membership required.
+      responses:
+        '200':
+          description: Current schedule
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AgentSchedule'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+    put:
+      operationId: replaceAgentSchedule
+      description: >-
+        Coordinator with task:assign replaces the complete date-specific schedule using the last read version
+        (zero for first creation). Explicit enabled=true opts into schedule enforcement; empty shifts with
+        enabled=true means no eligible shift. enabled=false restores manual-only behavior. Omit a shift
+        to cancel it. Previous shift versions and transactional audit are retained. No recurring/leave API.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [version, enabled, shifts]
+              properties:
+                version: {type: integer, format: int64, minimum: 0, maximum: 9223372036854775806}
+                enabled: {type: boolean}
+                shifts: {type: array, maxItems: 366, items: {$ref: '#/components/schemas/AgentShift'}}
+      responses:
+        '200':
+          description: Committed schedule with incremented version
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AgentSchedule'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /api/hpdi/v1/workspaces/{workspace}/schedules/{subject}/effective-duty:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+      - {name: subject, in: path, required: true, schema: {type: string, maxLength: 100}}
+    get:
+      operationId: getEffectiveDuty
+      description: Coordinator with task:assign or own Agent with task:handle; current membership required. Does not mutate manual duty or work execution.
+      responses:
+        '200':
+          description: Evaluated duty at server time; start inclusive and end exclusive
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/EffectiveDuty'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+  /api/hpdi/v1/workspaces/{workspace}/tasks/{id}/release:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+      - {name: id, in: path, required: true, schema: {type: string}}
+    post:
+      operationId: releaseWork
+      description: >-
+        Trả việc về điều phối viên (R6: sai tổ…; R3: hết ca bàn giao). Bắt buộc lý do;
+        bàn giao phải ghi đã làm đến đâu. Việc quay lại hàng chờ duyệt, thời gian đã làm được giữ.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [reason, note]
+              properties:
+                reason: {type: string, enum: [WRONG_GROUP, HANDOVER, OTHER]}
+                note: {type: string, minLength: 1, maxLength: 1000}
+      responses:
+        '204': {description: Đã trả việc}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /api/hpdi/v1/workspaces/{workspace}/tasks/{id}/estimate-requests:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+      - {name: id, in: path, required: true, schema: {type: string}}
+    post:
+      operationId: requestEstimateChange
+      description: Người đang giữ việc xin sửa ET kèm lý do. 409 nếu đã có yêu cầu đang chờ cho việc này.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [proposedMinutes, reason]
+              properties:
+                proposedMinutes: {type: integer, minimum: 1, maximum: 10080}
+                reason: {type: string, minLength: 1, maxLength: 1000}
+      responses:
+        '201':
+          description: Yêu cầu đã tạo, chờ điều phối viên
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/EstimateRequest'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /api/hpdi/v1/workspaces/{workspace}/estimate-requests:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+    get:
+      operationId: listEstimateRequests
+      description: Điều phối viên xem yêu cầu sửa ET (quyền task:assign); kỹ thuật viên chỉ thấy yêu cầu của mình. Mới nhất trước.
+      parameters:
+        - {name: status, in: query, required: false, schema: {$ref: '#/components/schemas/EstimateRequestStatus'}}
+        - {$ref: '#/components/parameters/Page'}
+        - {$ref: '#/components/parameters/Size'}
+      responses:
+        '200':
+          description: Một trang yêu cầu
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - {$ref: '#/components/schemas/PageMeta'}
+                  - type: object
+                    required: [items]
+                    properties:
+                      items: {type: array, items: {$ref: '#/components/schemas/EstimateRequest'}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+  /api/hpdi/v1/workspaces/{workspace}/estimate-requests/{requestId}/decision:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+      - {name: requestId, in: path, required: true, schema: {type: string, format: uuid}}
+    post:
+      operationId: decideEstimateRequest
+      description: Điều phối viên đồng ý (ET đổi thành proposedMinutes, nguồn COORDINATOR) hoặc từ chối. 409 nếu đã quyết.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [approved]
+              properties:
+                approved: {type: boolean}
+                note: {type: string, maxLength: 1000}
+      responses:
+        '200':
+          description: Yêu cầu sau khi quyết
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/EstimateRequest'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /api/hpdi/v1/workspaces/{workspace}/alerts:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+    get:
+      operationId: listAlerts
+      description: >-
+        Cảnh báo gửi cho người gọi, mới nhất trước. FE gọi định kỳ (polling); since để chỉ lấy cảnh báo mới.
+        Kỹ thuật viên nhận cảnh báo về việc mình giữ; điều phối viên nhận cảnh báo của cả workspace.
+      parameters:
+        - {name: since, in: query, required: false, schema: {type: string, format: date-time}, description: Chỉ lấy cảnh báo tạo sau mốc này}
+        - {name: unreadOnly, in: query, required: false, schema: {type: boolean, default: false}}
+        - {$ref: '#/components/parameters/Page'}
+        - {$ref: '#/components/parameters/Size'}
+      responses:
+        '200':
+          description: Một trang cảnh báo
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - {$ref: '#/components/schemas/PageMeta'}
+                  - type: object
+                    required: [items, unread]
+                    properties:
+                      unread: {type: integer, minimum: 0, description: Total visible unread alerts for the caller}
+                      items: {type: array, items: {$ref: '#/components/schemas/Alert'}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+
+  /api/hpdi/v1/workspaces/{workspace}/alerts/{alertId}/read:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+      - {name: alertId, in: path, required: true, schema: {type: string, format: uuid}}
+    post:
+      operationId: markAlertRead
+      description: Đánh dấu đã đọc; gọi lặp vẫn 204.
+      responses:
+        '204': {description: Đã đọc}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+
+  /api/hpdi/v1/workspaces/{workspace}/tasks/{id}/assignment-suggestion:
+    parameters:
+    - $ref: '#/components/parameters/Workspace'
+    - name: id
+      in: path
+      required: true
+      schema: {type: string}
+    get:
+      operationId: assignmentSuggestion
+      description: Read-only Coordinator/task:assign suggestion for an active reviewed Service Desk handle task. Available only in the Service Desk assembly. Does not reserve or assign an agent. Unsupported processes return 409. Review-time preview is an application endpoint.
+      responses:
+        '200':
+          description: Current candidates and recommendation; no eligible agent or OTHER returns null recommended.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AssignmentSuggestion'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+        '503': {$ref: '#/components/responses/ServiceUnavailable'}
+  /api/hpdi/v1/workspaces/{workspace}/duty:
+    parameters:
+    - $ref: '#/components/parameters/Workspace'
+    get:
+      operationId: listDuty
+      description: Shared HPDI human capability, available without Service Desk. Agents see their own duty; coordinators with task:assign see current workspace agents. Missing duty defaults to off. No schedules.
+      responses:
+        '200':
+          description: Current agent duty states
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DutyStatus'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /api/hpdi/v1/workspaces/{workspace}/duty/{subject}:
+    parameters:
+    - $ref: '#/components/parameters/Workspace'
+    - name: subject
+      in: path
+      required: true
+      schema:
+        type: string
+      description: Own subject or me. Changing another agent is forbidden, including for coordinators.
+    put:
+      operationId: setDuty
+      description: Agent with current membership and task:handle changes only their own persisted duty. Does not interrupt work. Audit and duty commit atomically.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [onDuty]
+              properties:
+                onDuty:
+                  type: boolean
+                note:
+                  type: string
+                  nullable: true
+                  maxLength: 500
+      responses:
+        '200':
+          description: Persisted duty status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DutyStatus'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+  /api/hpdi/v1/workspaces/{workspace}/queue:
+    parameters:
+    - $ref: '#/components/parameters/Workspace'
+    get:
+      operationId: getQueue
+      description: Own agent queue; another assignee requires coordinator and task:assign. IN_PROGRESS first, native
+        priority descending, due date then creation/id. Full-queue remaining load; no SLA/aging/shift projection.
+      parameters:
+      - name: assignee
+        in: query
+        required: false
+        schema:
+          type: string
+        description: subject; bỏ trống = chính mình
+      - $ref: '#/components/parameters/Page'
+      - $ref: '#/components/parameters/Size'
+      responses:
+        '200':
+          description: Một trang hàng đợi đã sắp xếp
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueuePage'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+  /api/hpdi/v1/workspaces/{workspace}/tasks/{id}/start:
+    parameters:
+    - $ref: '#/components/parameters/Workspace'
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 100
+    post:
+      operationId: startWork
+      description: Reviewed work only. JWT, workspace and current permissions required. No SLA, aging, duty or predicted-start
+        calculation.
+      responses:
+        '200':
+          description: Việc sau khi bắt đầu
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueueItem'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /api/hpdi/v1/workspaces/{workspace}/tasks/{id}/pause:
+    parameters:
+    - $ref: '#/components/parameters/Workspace'
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 100
+    post:
+      operationId: pauseWork
+      description: Reviewed work only. JWT, workspace and current permissions required. No SLA, aging, duty or predicted-start
+        calculation.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+              - reason
+              properties:
+                reason:
+                  $ref: '#/components/schemas/PendingReason'
+                note:
+                  type: string
+                  maxLength: 1000
+                  description: Bắt buộc khi reason = OTHER
+      responses:
+        '200':
+          description: Việc sau khi tạm dừng
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueueItem'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /api/hpdi/v1/workspaces/{workspace}/tasks/{id}/resume:
+    parameters:
+    - $ref: '#/components/parameters/Workspace'
+    - name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 100
+    post:
+      operationId: resumeWork
+      description: Reviewed work only. JWT, workspace and current permissions required. No SLA, aging, duty or predicted-start
+        calculation.
+      responses:
+        '200':
+          description: Việc sau khi tiếp tục
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QueueItem'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
   /api/hpdi/v1/workspaces/{workspace}/actor:
     parameters:
     - &id001
@@ -533,8 +973,497 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+  /api/hpdi/v1/settings/work:
+    get:
+      operationId: getWorkSettings
+      description: Fresh platform-admin only. Persistent administrative settings; PERSISTED_NOT_ENFORCED.
+        No runtime consumer wiring. R7 remains blocked.
+      responses:
+        '200':
+          description: Cấu hình hiện hành
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkSettings'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+    put:
+      operationId: updateWorkSettings
+      description: Fresh platform-admin only. Persistent administrative settings; PERSISTED_NOT_ENFORCED.
+        No runtime consumer wiring. R7 remains blocked.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkSettings'
+      responses:
+        '200':
+          description: Cấu hình sau khi lưu, version mới
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkSettings'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
 components:
   schemas:
+    WorkSettings:
+      type: object
+      additionalProperties: false
+      description: 'Storage-only foundation. SLA seed matches r5-v1: 510 working minutes/day;
+        LOW 510/2550, MEDIUM 240/1020. Closing seed 3 preserves 72 continuous hours; no
+        runtime wiring. Shifts must be nonblank/unique, ordered start<end and non-overlapping;
+        resolve>=start; outlierMax>=outlierMin. All changes are audited; PUT rejects read-only
+        metadata and unknown fields.'
+      required:
+      - version
+      - assignment
+      - shifts
+      - sla
+      - critical
+      - alerts
+      - closing
+      - estimate
+      properties:
+        version:
+          type: integer
+          minimum: 0
+          description: Tăng mỗi lần lưu; PUT phải gửi version đang xem
+          maximum: 9223372036854775807
+        updatedAt:
+          type: string
+          format: date-time
+          readOnly: true
+        updatedBy:
+          type: string
+          readOnly: true
+        assignment:
+          type: object
+          additionalProperties: false
+          required:
+          - pendingLoadFactor
+          - tieThresholdMinutes
+          - maxInProgress
+          - minRemainingMinutes
+          properties:
+            pendingLoadFactor:
+              type: number
+              minimum: 0
+              maximum: 1
+              description: Mặc định 0,5
+            tieThresholdMinutes:
+              type: integer
+              minimum: 0
+              description: Mặc định 15
+              maximum: 2147483647
+            maxInProgress:
+              type: integer
+              minimum: 1
+              description: Mặc định 1
+              maximum: 2147483647
+            minRemainingMinutes:
+              type: integer
+              minimum: 0
+              description: Phần còn lại tối thiểu của việc Đang làm, mặc định 10
+              maximum: 2147483647
+        shifts:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/Shift'
+          description: Mặc định Sáng 07:00–11:30, Chiều 13:00–17:00
+        sla:
+          type: object
+          additionalProperties: false
+          required:
+          - targets
+          - escalateAfterRatio
+          - maxEscalatedPriority
+          - waitingExternalCounts
+          properties:
+            targets:
+              type: object
+              additionalProperties: false
+              required:
+              - LOW
+              - MEDIUM
+              - HIGH
+              - CRITICAL
+              description: Working-minute targets except CRITICAL continuous minutes.
+                Seed LOW 510/2550, MEDIUM 240/1020, HIGH 60/480, CRITICAL 15/120. Runtime
+                policy remains r5-v1 and is not changed by PUT.
+              properties:
+                LOW:
+                  $ref: '#/components/schemas/SlaTarget'
+                MEDIUM:
+                  $ref: '#/components/schemas/SlaTarget'
+                HIGH:
+                  $ref: '#/components/schemas/SlaTarget'
+                CRITICAL:
+                  $ref: '#/components/schemas/SlaTarget'
+            escalateAfterRatio:
+              type: number
+              minimum: 0
+              maximum: 1
+              description: Chờ quá tỉ lệ này của hạn bắt đầu thì lên 1 bậc, mặc định 0,5
+            maxEscalatedPriority:
+              $ref: '#/components/schemas/Priority'
+            waitingExternalCounts:
+              type: boolean
+              description: Chờ linh kiện / bên ngoài có tính vào hạn, mặc định true
+        critical:
+          type: object
+          additionalProperties: false
+          required:
+          - autoQueueAfterMinutes
+          properties:
+            autoQueueAfterMinutes:
+              type: integer
+              minimum: 1
+              description: Mặc định 5
+              maximum: 2147483647
+        alerts:
+          type: object
+          additionalProperties: false
+          required:
+          - warnRemainingRatio
+          - pendingRemindDays
+          - reopenUnclaimedMinutes
+          properties:
+            warnRemainingRatio:
+              type: number
+              minimum: 0
+              maximum: 1
+              description: Mặc định 0,2
+            pendingRemindDays:
+              type: integer
+              minimum: 1
+              description: Mặc định 3
+              maximum: 2147483647
+            reopenUnclaimedMinutes:
+              type: integer
+              minimum: 1
+              description: Mặc định 15
+              maximum: 2147483647
+        closing:
+          type: object
+          additionalProperties: false
+          required:
+          - autoCloseAfterDays
+          properties:
+            autoCloseAfterDays:
+              type: integer
+              minimum: 1
+              description: Tự đóng nếu người dùng không xác nhận, mặc định 3
+              maximum: 2147483647
+        estimate:
+          type: object
+          additionalProperties: false
+          required:
+          - minSamples
+          - windowMonths
+          - outlierMinMinutes
+          - outlierMaxMinutes
+          properties:
+            minSamples:
+              type: integer
+              minimum: 1
+              description: Mặc định 20
+              maximum: 2147483647
+            windowMonths:
+              type: integer
+              minimum: 1
+              description: Mặc định 6
+              maximum: 2147483647
+            outlierMinMinutes:
+              type: integer
+              minimum: 0
+              description: Mặc định 2
+              maximum: 2147483647
+            outlierMaxMinutes:
+              type: integer
+              minimum: 1
+              description: Mặc định 480 (8 giờ)
+              maximum: 2147483647
+    Shift:
+      type: object
+      additionalProperties: false
+      required:
+      - name
+      - start
+      - end
+      properties:
+        name:
+          type: string
+          maxLength: 50
+        start:
+          type: string
+          pattern: ^([01][0-9]|2[0-3]):[0-5][0-9]$
+          example: 07:00
+        end:
+          type: string
+          pattern: ^([01][0-9]|2[0-3]):[0-5][0-9]$
+          example: '11:30'
+    SlaTarget:
+      type: object
+      additionalProperties: false
+      required:
+      - startWithinMinutes
+      - resolveWithinMinutes
+      properties:
+        startWithinMinutes:
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+        resolveWithinMinutes:
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+    EstimateRequestStatus:
+      type: string
+      enum: [PENDING, APPROVED, REJECTED, SUPERSEDED]
+      description: Assignment changes atomically supersede pending requests from the previous assignee. Terminal requests cannot be decided.
+    EstimateRequest:
+      type: object
+      additionalProperties: false
+      required: [id, taskId, processInstanceId, businessKey, label, requestedBy, currentMinutes, proposedMinutes, reason, status, createdAt]
+      properties:
+        id: {type: string, format: uuid}
+        taskId: {type: string}
+        processInstanceId: {type: string}
+        businessKey: {type: string}
+        label: {type: string}
+        requestedBy: {type: string}
+        currentMinutes: {type: integer, minimum: 1}
+        proposedMinutes: {type: integer, minimum: 1}
+        reason: {type: string}
+        status: {$ref: '#/components/schemas/EstimateRequestStatus'}
+        decidedBy: {type: string, nullable: true}
+        decidedAt: {type: string, format: date-time, nullable: true}
+        decisionNote: {type: string, nullable: true}
+        supersededBy: {type: string, nullable: true, description: Actor triggering assignment supersession; not a decision.}
+        supersededAt: {type: string, format: date-time, nullable: true}
+        supersededReason: {type: string, nullable: true, enum: [ASSIGNMENT_CHANGED, CLASSIFICATION_CHANGED, null], description: Persisted invalidation reason; null unless superseded.}
+        createdAt: {type: string, format: date-time}
+    Alert:
+      type: object
+      additionalProperties: false
+      required: [id, type, severity, processInstanceId, processKey, businessKey, label, createdAt]
+      properties:
+        id: {type: string, format: uuid}
+        type:
+          type: string
+          description: >-
+            Persistent deadline, pending, duty and critical notifications. CRITICAL_NEW labels
+            distinguish unapproved AI advice from a Coordinator-approved decision. No emergency auto-queue producer.
+          enum: [START_OVERDUE, SLA_WARNING, SLA_BREACHED, PENDING_TOO_LONG, CRITICAL_NEW, ASSIGNEE_OFF_DUTY, NO_ONE_ON_DUTY, CLASSIFICATION_CHANGED, REOPENED, REOPEN_UNCLAIMED]
+        severity: {type: string, enum: [INFO, WARNING, CRITICAL]}
+        taskId: {type: string, nullable: true}
+        processInstanceId: {type: string}
+        processKey: {type: string}
+        businessKey: {type: string}
+        label: {type: string}
+        createdAt: {type: string, format: date-time}
+        readAt: {type: string, format: date-time, nullable: true}
+    AssignmentCandidate:
+      type: object
+      additionalProperties: false
+      required: [subject, displayName, onDuty, loadMinutes, assignedToday, recommended]
+      properties:
+        subject: {type: string}
+        displayName: {type: string}
+        onDuty: {type: boolean}
+        loadMinutes: {type: integer, format: int64, minimum: 0, description: 'Other assigned execution workload, excluding only the task being considered for assignment. Preview excludes no existing handle task.'}
+        assignedToday: {type: integer, format: int64, minimum: 0}
+        shiftRemainingMinutes: {type: integer, minimum: 0, nullable: true, description: Whole minutes until current enabled shift ends; null for manual-only or outside a shift. Compare with estimateMinutes; ESTIMATE_EXCEEDS_SHIFT in reason requires Coordinator overtime or R6 handover decision.}
+        recommended: {type: boolean}
+        excludedReason: {type: string, nullable: true, enum: [OFF_DUTY, IS_REQUESTER, null]}
+    AssignmentSuggestion:
+      type: object
+      additionalProperties: false
+      required: [taskId, group, estimateMinutes, candidates, reason]
+      properties:
+        taskId: {type: string}
+        group: {type: string, description: Support group or manual for OTHER.}
+        estimateMinutes: {type: integer, minimum: 1}
+        recommended: {type: string, nullable: true}
+        reason: {type: string}
+        candidates: {type: array, items: {$ref: '#/components/schemas/AssignmentCandidate'}}
+    DutyStatus:
+      type: object
+      additionalProperties: false
+      required: [subject, onDuty, note, updatedAt, effectiveDuty]
+      properties:
+        effectiveDuty:
+          type: boolean
+          description: Manual onDuty AND current shift when schedule enforcement is enabled; otherwise manual onDuty. New assignments use this value.
+        subject:
+          type: string
+        onDuty:
+          type: boolean
+        note:
+          type: string
+          nullable: true
+          maxLength: 500
+        updatedAt:
+          type: string
+          format: date-time
+          nullable: true
+    AgentShift:
+      type: object
+      additionalProperties: false
+      required: [startsAt, endsAt]
+      properties:
+        startsAt: {type: string, format: date-time, description: Absolute instant including offset; inclusive}
+        endsAt: {type: string, format: date-time, description: Absolute instant including offset; exclusive; after start and at most 24 hours later}
+        timezone: {type: string, maxLength: 100, default: Asia/Ho_Chi_Minh, description: IANA timezone; stored with absolute instants. No implicit UTC local time conversion.}
+    AgentSchedule:
+      type: object
+      additionalProperties: false
+      required: [subject, version, enabled, shifts]
+      properties:
+        subject: {type: string}
+        version: {type: integer, format: int64, minimum: 0}
+        enabled: {type: boolean}
+        shifts: {type: array, items: {$ref: '#/components/schemas/AgentShift'}}
+    EffectiveDuty:
+      type: object
+      additionalProperties: false
+      required: [manualDuty, scheduleEnabled, scheduledDuty, onDuty, shiftStart, shiftEnd, shiftRemainingMinutes, scheduleVersion, reason]
+      properties:
+        manualDuty: {type: boolean}
+        scheduleEnabled: {type: boolean}
+        scheduledDuty: {type: boolean}
+        onDuty: {type: boolean}
+        shiftStart: {type: string, format: date-time, nullable: true}
+        shiftEnd: {type: string, format: date-time, nullable: true}
+        shiftRemainingMinutes: {type: integer, minimum: 0, nullable: true}
+        scheduleVersion: {type: integer, format: int64, minimum: 0}
+        reason: {type: string, enum: [MANUAL_OFF_DUTY, OUTSIDE_SHIFT, SCHEDULE_AND_MANUAL, LEGACY_MANUAL]}
+    Priority:
+      type: string
+      enum:
+      - LOW
+      - MEDIUM
+      - HIGH
+      - CRITICAL
+    WorkState:
+      type: string
+      enum:
+      - NOT_STARTED
+      - IN_PROGRESS
+      - PENDING
+    PendingReason:
+      type: string
+      enum:
+      - WAITING_REQUESTER
+      - WAITING_PARTS
+      - WAITING_EXTERNAL
+      - OTHER
+    Estimate:
+      type: object
+      additionalProperties: false
+      required:
+      - minutes
+      - basis
+      properties:
+        minutes:
+          type: integer
+          minimum: 1
+          maximum: 10080
+        basis:
+          type: string
+          enum:
+          - DEFAULT
+          - COORDINATOR
+    Sla:
+      type: object
+      additionalProperties: false
+      description: R5 policy snapshot from coordinator approval. UTC deadlines; CRITICAL is continuous, other priorities use the configured business calendar.
+      required: [startBy, resolveBy, startBreached, resolveBreached, warning, clockPaused]
+      properties:
+        startBy: {type: string, format: date-time}
+        resolveBy: {type: string, format: date-time}
+        startBreached: {type: boolean, description: 'Ever breached the start SLA in this generation or its handover lineage; remains true after a priority amendment. Not a current-overdue indicator.'}
+        resolveBreached: {type: boolean, description: 'Ever breached the resolution SLA in this generation or its handover lineage; remains true after a priority amendment. Not a current-overdue indicator.'}
+        warning: {type: boolean}
+        clockPaused: {type: boolean}
+    QueueItem:
+      allOf:
+      - $ref: '#/components/schemas/WorkItem'
+      - type: object
+        required:
+        - label
+        - workState
+        - priority
+        - basePriority
+        - estimate
+        - workedMinutes
+        - remainingMinutes
+        - reopenCount
+        properties:
+          label:
+            type: string
+            maxLength: 200
+          workState:
+            $ref: '#/components/schemas/WorkState'
+          priority:
+            $ref: '#/components/schemas/Priority'
+          basePriority:
+            $ref: '#/components/schemas/Priority'
+          estimate:
+            $ref: '#/components/schemas/Estimate'
+          workedMinutes:
+            type: integer
+            minimum: 0
+          remainingMinutes:
+            type: integer
+            minimum: 0
+          reopenCount:
+            type: integer
+            minimum: 0
+          pendingReason:
+            type: string
+            nullable: true
+            enum: [WAITING_REQUESTER, WAITING_PARTS, WAITING_EXTERNAL, OTHER, null]
+          pendingNote:
+            type: string
+            nullable: true
+          sla:
+            anyOf:
+            - $ref: '#/components/schemas/Sla'
+            - {type: object, nullable: true, enum: [null]}
+    QueuePage:
+      allOf:
+      - $ref: '#/components/schemas/PageMeta'
+      - type: object
+        required:
+        - items
+        - assignee
+        - loadMinutes
+        properties:
+          assignee:
+            type: string
+          loadMinutes:
+            type: integer
+            minimum: 0
+          items:
+            type: array
+            items:
+              $ref: '#/components/schemas/QueueItem'
     Problem:
       type: object
       required:
@@ -1154,7 +2083,6 @@ components:
             type: array
             items:
               $ref: '#/components/schemas/KnowledgeSummary'
-          description: Authorized exact bytes, Base64 encoded
     TriageSuggestion:
       type: object
       required:

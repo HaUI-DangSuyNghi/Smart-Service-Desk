@@ -1,0 +1,471 @@
+{
+  "version": "servicedesk-taxonomy@0.1.0",
+  "approvalStatus": "DRAFT",
+  "mainCategories": [
+    "ACCOUNT",
+    "HARDWARE",
+    "NETWORK",
+    "SOFTWARE",
+    "OTHER"
+  ],
+  "children": [
+    {
+      "id": "LOGIN_FAILURE",
+      "parent": "ACCOUNT",
+      "definition": "Login failure",
+      "positiveExamples": [
+        "không đăng nhập được",
+        "cannot log in"
+      ],
+      "counterExamples": [
+        "Mentioned as context without an observed failure"
+      ],
+      "requiredEvidence": [
+        "không đăng nhập được",
+        "cannot log in"
+      ],
+      "active": true,
+      "version": "servicedesk-taxonomy@0.1.0"
+    },
+    {
+      "id": "PASSWORD_RESET",
+      "parent": "ACCOUNT",
+      "definition": "Password reset",
+      "positiveExamples": [
+        "cần đặt lại mật khẩu",
+        "request password reset"
+      ],
+      "counterExamples": [
+        "Mentioned as context without an observed failure"
+      ],
+      "requiredEvidence": [
+        "cần đặt lại mật khẩu",
+        "request password reset"
+      ],
+      "active": true,
+      "version": "servicedesk-taxonomy@0.1.0"
+    },
+    {
+      "id": "ACCOUNT_LOCKED",
+      "parent": "ACCOUNT",
+      "definition": "Account locked",
+      "positiveExamples": [
+        "tài khoản bị khóa",
+        "account is locked"
+      ],
+      "counterExamples": [
+        "Mentioned as context without an observed failure"
+      ],
+      "requiredEvidence": [
+        "tài khoản bị khóa",
+        "account is locked"
+      ],
+      "active": true,
+      "version": "servicedesk-taxonomy@0.1.0"
+    },
+    {
+      "id": "ACCESS_PERMISSION",
+      "parent": "ACCOUNT",
+      "definition": "Access permission",
+      "positiveExamples": [
+        "bị từ chối quyền truy cập",
+        "access denied"
+      ],
+      "counterExamples": [
+        "Mentioned as context without an observed failure"
+      ],
+      "requiredEvidence": [
+        "bị từ chối quyền truy cập",
+        "access denied"
+      ],
+      "active": true,
+      "version": "servicedesk-taxonomy@0.1.0"
+    },
+    {
+      "id": "MFA_ISSUE",
+      "parent": "ACCOUNT",
+      "definition": "Mfa issue",
+      "positiveExamples": [
+        "không nhận được mã MFA",
+        "MFA failed"
+      ],
+      "counterExamples": [
+        "Mentioned as context without an observed failure"
+      ],
+      "requiredEvidence": [
+        "không nhận được mã MFA",
+        "MFA failed"
+      ],
+      "active": true,
+      "version": "servicedesk-taxonomy@0.1.0"
+    },
+    {
+      "id": "ACCOUNT_OTHER",
+      "parent": "ACCOUNT",
+      "definition": "Account other",
+      "positiveExamples": [],
+      "counterExamples": [
+        "Mentioned as context without an observed failure"
+      ],
+      "requiredEvidence": [],
+      "active": false,
+      "version": "servicedesk-taxonomy@0.1.0"
+    },
+    {
+      "id": "POWER_FAILURE",
+      "parent": "HARDWARE",
+      "definition": "Power failure",
+      "positiveExamples": [
+        "máy không lên nguồn",
+        "PC will not power on"
+      ],
+      "counterExamples": [
+        "Mentioned as context without an observed failure"
+      ],
+      "requiredEvidence": [
+        "máy không lên nguồn",
+        "PC will not power on"
+      ],
+      "active": true,
+      "version": "servicedesk-taxonomy@0.1.0"
+    },
+    {
+      "id": "DISPLAY_FAILURE",
+      "parent": "HARDWARE",
+      "definition": "Display failure",
+      "positiveExamples": [
+        "màn hình không hiển thị",
+        "display is blank"
+      ],
+      "counterExamples": [
+        "Mentioned as context without an observed failure"
+      ],
+      "requiredEvidence": [
+        "màn hình không hiển thị",
+        "display is blank"
+      ],
+      "active": true,
+      "version": "servicedesk-taxonomy@0.1.0"
+    },
+    {
+      "id": "PERIPHERAL_FAILURE",
+      "parent": "HARDWARE",
+      "definition": "Peripheral failure",
+      "positiveExamples": [
+        "bàn phím không hoạt động",
+        "keyboard is not working"
+      ],
+      "counterExamples": [
+        "Mentioned as context without an observed failure"
+      ],
+      "requiredEvidence": [
+        "bàn phím không hoạt động",
+        "keyboard is not working"
+      ],
+      "active": true,
+      "version": "servicedesk-taxonomy@0.1.0"
+    },
+    {
+      "id": "PRINTER_FAILURE",
+      "parent": "HARDWARE",
+      "definition": "Printer failure",
+      "positiveExamples": [
+        "máy in không in được",
+        "printer cannot print"
+      ],
+      "counterExamples": [
+        "Mentioned as context without an observed failure"
+      ],
+      "requiredEvidence": [
+        "máy in không in được",
+        "printer cannot print"
+      ],
+      "active": true,
+      "version": "servicedesk-taxonomy@0.1.0"
+    },
+    {
+      "id": "PROJECTOR_FAILURE",
+      "parent": "HARDWARE",
+      "definition": "Projector failure",
+      "positiveExamples": [
+        "máy chiếu không nhận tín hiệu",
+        "projector has no signal"
+      ],
+      "counterExamples": [
+        "Mentioned as context without an observed failure"
+      ],
+      "requiredEvidence": [
+        "máy chiếu không nhận tín hiệu",
+        "projector has no signal"
+      ],
+      "active": true,
+      "version": "servicedesk-taxonomy@0.1.0"
+    },
+    {
+      "id": "HARDWARE_OTHER",
+      "parent": "HARDWARE",
+      "definition": "Hardware other",
+      "positiveExamples": [],
+      "counterExamples": [
+        "Mentioned as context without an observed failure"
+      ],
+      "requiredEvidence": [],
+      "active": false,
+      "version": "servicedesk-taxonomy@0.1.0"
+    },
+    {
+      "id": "WIFI_CONNECTION",
+      "parent": "NETWORK",
+      "definition": "Wifi connection",
+      "positiveExamples": [
+        "không kết nối được Wi-Fi",
+        "mất Wi-Fi",
+        "cannot connect to Wi-Fi"
+      ],
+      "counterExamples": [
+        "Mentioned as context without an observed failure"
+      ],
+      "requiredEvidence": [
+        "không kết nối được Wi-Fi",
+        "mất Wi-Fi",
+        "cannot connect to Wi-Fi"
+      ],
+      "active": true,
+      "version": "servicedesk-taxonomy@0.1.0"
+    },
+    {
+      "id": "WIRED_CONNECTION",
+      "parent": "NETWORK",
+      "definition": "Wired connection",
+      "positiveExamples": [
+        "mất mạng dây",
+        "wired connection is down"
+      ],
+      "counterExamples": [
+        "Mentioned as context without an observed failure"
+      ],
+      "requiredEvidence": [
+        "mất mạng dây",
+        "wired connection is down"
+      ],
+      "active": true,
+      "version": "servicedesk-taxonomy@0.1.0"
+    },
+    {
+      "id": "INTERNET_ACCESS",
+      "parent": "NETWORK",
+      "definition": "Internet access",
+      "positiveExamples": [
+        "không truy cập được Internet",
+        "cannot access Internet"
+      ],
+      "counterExamples": [
+        "Mentioned as context without an observed failure"
+      ],
+      "requiredEvidence": [
+        "không truy cập được Internet",
+        "cannot access Internet"
+      ],
+      "active": true,
+      "version": "servicedesk-taxonomy@0.1.0"
+    },
+    {
+      "id": "LOCAL_NETWORK",
+      "parent": "NETWORK",
+      "definition": "Local network",
+      "positiveExamples": [
+        "không truy cập được mạng nội bộ",
+        "local network is unavailable"
+      ],
+      "counterExamples": [
+        "Mentioned as context without an observed failure"
+      ],
+      "requiredEvidence": [
+        "không truy cập được mạng nội bộ",
+        "local network is unavailable"
+      ],
+      "active": true,
+      "version": "servicedesk-taxonomy@0.1.0"
+    },
+    {
+      "id": "NETWORK_PERFORMANCE",
+      "parent": "NETWORK",
+      "definition": "Network performance",
+      "positiveExamples": [
+        "mạng rất chậm",
+        "network is very slow"
+      ],
+      "counterExamples": [
+        "Mentioned as context without an observed failure"
+      ],
+      "requiredEvidence": [
+        "mạng rất chậm",
+        "network is very slow"
+      ],
+      "active": true,
+      "version": "servicedesk-taxonomy@0.1.0"
+    },
+    {
+      "id": "NETWORK_OTHER",
+      "parent": "NETWORK",
+      "definition": "Network other",
+      "positiveExamples": [],
+      "counterExamples": [
+        "Mentioned as context without an observed failure"
+      ],
+      "requiredEvidence": [],
+      "active": false,
+      "version": "servicedesk-taxonomy@0.1.0"
+    },
+    {
+      "id": "INSTALLATION",
+      "parent": "SOFTWARE",
+      "definition": "Installation",
+      "positiveExamples": [
+        "không cài đặt được ứng dụng",
+        "cannot install application"
+      ],
+      "counterExamples": [
+        "Mentioned as context without an observed failure"
+      ],
+      "requiredEvidence": [
+        "không cài đặt được ứng dụng",
+        "cannot install application"
+      ],
+      "active": true,
+      "version": "servicedesk-taxonomy@0.1.0"
+    },
+    {
+      "id": "APPLICATION_ERROR",
+      "parent": "SOFTWARE",
+      "definition": "Application error",
+      "positiveExamples": [
+        "ứng dụng bị treo",
+        "application crashes"
+      ],
+      "counterExamples": [
+        "Mentioned as context without an observed failure"
+      ],
+      "requiredEvidence": [
+        "ứng dụng bị treo",
+        "application crashes"
+      ],
+      "active": true,
+      "version": "servicedesk-taxonomy@0.1.0"
+    },
+    {
+      "id": "UPDATE_FAILURE",
+      "parent": "SOFTWARE",
+      "definition": "Update failure",
+      "positiveExamples": [
+        "cập nhật thất bại",
+        "update failed"
+      ],
+      "counterExamples": [
+        "Mentioned as context without an observed failure"
+      ],
+      "requiredEvidence": [
+        "cập nhật thất bại",
+        "update failed"
+      ],
+      "active": true,
+      "version": "servicedesk-taxonomy@0.1.0"
+    },
+    {
+      "id": "LICENSE_ACTIVATION",
+      "parent": "SOFTWARE",
+      "definition": "License activation",
+      "positiveExamples": [
+        "không kích hoạt được bản quyền",
+        "license activation failed"
+      ],
+      "counterExamples": [
+        "Mentioned as context without an observed failure"
+      ],
+      "requiredEvidence": [
+        "không kích hoạt được bản quyền",
+        "license activation failed"
+      ],
+      "active": true,
+      "version": "servicedesk-taxonomy@0.1.0"
+    },
+    {
+      "id": "OS_ERROR",
+      "parent": "SOFTWARE",
+      "definition": "Os error",
+      "positiveExamples": [
+        "hệ điều hành không khởi động",
+        "operating system will not boot"
+      ],
+      "counterExamples": [
+        "Mentioned as context without an observed failure"
+      ],
+      "requiredEvidence": [
+        "hệ điều hành không khởi động",
+        "operating system will not boot"
+      ],
+      "active": true,
+      "version": "servicedesk-taxonomy@0.1.0"
+    },
+    {
+      "id": "SOFTWARE_OTHER",
+      "parent": "SOFTWARE",
+      "definition": "Software other",
+      "positiveExamples": [],
+      "counterExamples": [
+        "Mentioned as context without an observed failure"
+      ],
+      "requiredEvidence": [],
+      "active": false,
+      "version": "servicedesk-taxonomy@0.1.0"
+    },
+    {
+      "id": "UNCLEAR_REQUEST",
+      "parent": "OTHER",
+      "definition": "Unclear request",
+      "positiveExamples": [],
+      "counterExamples": [
+        "Mentioned as context without an observed failure"
+      ],
+      "requiredEvidence": [],
+      "active": false,
+      "version": "servicedesk-taxonomy@0.1.0"
+    },
+    {
+      "id": "MULTI_DOMAIN",
+      "parent": "OTHER",
+      "definition": "Multi domain",
+      "positiveExamples": [],
+      "counterExamples": [
+        "Mentioned as context without an observed failure"
+      ],
+      "requiredEvidence": [],
+      "active": false,
+      "version": "servicedesk-taxonomy@0.1.0"
+    },
+    {
+      "id": "OUT_OF_SCOPE",
+      "parent": "OTHER",
+      "definition": "Out of scope",
+      "positiveExamples": [],
+      "counterExamples": [
+        "Mentioned as context without an observed failure"
+      ],
+      "requiredEvidence": [],
+      "active": false,
+      "version": "servicedesk-taxonomy@0.1.0"
+    },
+    {
+      "id": "OTHER_UNSPECIFIED",
+      "parent": "OTHER",
+      "definition": "Other unspecified",
+      "positiveExamples": [],
+      "counterExamples": [
+        "Mentioned as context without an observed failure"
+      ],
+      "requiredEvidence": [],
+      "active": false,
+      "version": "servicedesk-taxonomy@0.1.0"
+    }
+  ]
+}

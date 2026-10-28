@@ -4,9 +4,11 @@ import java.util.Map;
 import java.util.UUID;
 import java.time.Instant;
 import jakarta.validation.Validator;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
+import vn.haui.dx.apps.servicedesk.intelligence.BackgroundTicketAssessment;
 import vn.haui.dx.hpdi.human.api.ActivityJournal;
 import vn.haui.dx.hpdi.human.api.BusinessActivity;
 import vn.haui.dx.hpdi.common.api.CapabilityException;
@@ -24,15 +26,31 @@ public class TicketService {
     private final ActivityJournal audit;
     private final Validator validator;
     private final TicketStatisticsService statistics;
+    private final ApplicationEventPublisher events;
+    private final BackgroundTicketAssessment assessments;
+    private final org.springframework.beans.factory.ObjectProvider<vn.haui.dx.hpdi.intelligence.api.BackgroundProcessing> processing;
+    private final boolean trueWait;
+    private final TicketConfirmation confirmation;
 
     public TicketService(TicketRepository repository, HumanContext access, ProcessCapability workflow,
-                         ActivityJournal audit, Validator validator, TicketStatisticsService statistics) {
+                         ActivityJournal audit, Validator validator, TicketStatisticsService statistics,
+                         ApplicationEventPublisher events, BackgroundTicketAssessment assessments,
+                         org.springframework.beans.factory.ObjectProvider<vn.haui.dx.hpdi.intelligence.api.BackgroundProcessing> processing,
+                         @org.springframework.beans.factory.annotation.Value("${serviceDesk.intake.true-wait:false}") boolean trueWait,
+                         @org.springframework.beans.factory.annotation.Value("${serviceDesk.intake.new-tickets:false}") boolean intakeEnabled,
+                         TicketConfirmation confirmation) {
+        if (trueWait && !intakeEnabled) throw new IllegalArgumentException("True intake wait requires new-ticket admission");
         this.repository = repository;
+        this.confirmation = confirmation;
         this.access = access;
         this.workflow = workflow;
         this.audit = audit;
         this.validator = validator;
         this.statistics = statistics;
+        this.events = events;
+        this.assessments = assessments;
+        this.processing = processing;
+        this.trueWait = trueWait;
     }
 
     @Transactional
@@ -42,10 +60,30 @@ public class TicketService {
         text(input.title(), 200, false);
         text(input.description(), 4000, true);
         UUID id = UUID.randomUUID();
-        var process = workflow.start(workspace, ServiceDeskProcess.KEY, id.toString(), Map.of());
-        var ticket = repository.insert(id, workspace, user.subject(), input, process.processInstanceId());
+        var process = workflow.start(workspace, trueWait ? ServiceDeskProcess.INTAKE_KEY : ServiceDeskProcess.REVIEWED_KEY, id.toString(), Map.of());
+        var ticket = repository.insert(id, workspace, user.subject(), input, process.processInstanceId(), process.processKey());
+        assessments.enqueue(ticket);
         audit.record(workspace, new BusinessActivity("servicedesk.ticket.create", "servicedesk.ticket", id.toString(),
             Map.of("processInstanceId", process.processInstanceId())));
+        events.publishEvent(new TicketContextChanged(workspace, id, 0));
+        return ticket;
+    }
+
+    @Transactional(readOnly = true)
+    public boolean requiresFinalAdmission(String workspace, UUID id) {
+        get(workspace, id);
+        return repository.hasIntake(workspace, id);
+    }
+
+    @Transactional(readOnly = true)
+    public Ticket getForIntelligence(String workspace, UUID id) {
+        var actor = access.currentActor(workspace);
+        if (actor == null || !workspace.equals(actor.workspace()) || !actor.hasRole("assessment-worker")) {
+            return get(workspace, id);
+        }
+        var ticket = repository.find(workspace, id, null)
+                .orElseThrow(() -> CapabilityException.notFound("Ticket not found"));
+        processing.getObject().authorize(workspace, ticket.creator());
         return ticket;
     }
 
@@ -65,11 +103,19 @@ public class TicketService {
         return repository.search(workspace, reader(user, workspace), query, from, to, page);
     }
 
-    @Transactional(readOnly = true)
+    @Transactional(readOnly = true, isolation=Isolation.REPEATABLE_READ)
     public TicketStatistics statistics(String workspace, String query, Instant from, Instant to) {
         var user = member(workspace);
         filters(query, from, to);
         return statistics.statistics(workspace, reader(user, workspace), query, from, to);
+    }
+
+    @Transactional(readOnly=true, isolation=Isolation.REPEATABLE_READ)
+    public Page<Ticket> awaitingReview(String workspace, String query, Instant from, Instant to, PageRequest page, String sort) {
+        if (!member(workspace).hasRole("coordinator")) throw CapabilityException.forbidden("Coordinator required");
+        filters(query,from,to);
+        if (sort!=null && !java.util.Set.of("createdAt","priority").contains(sort)) throw CapabilityException.validation("Invalid sort");
+        return repository.awaitingReview(workspace,query,from,to,page,"priority".equals(sort));
     }
 
     private static void filters(String query, Instant from, Instant to) {
@@ -87,7 +133,7 @@ public class TicketService {
 
     @Transactional(readOnly = true)
     public TicketProgress progress(String workspace, UUID id) {
-        return TicketProgress.from(workflow.timeline(workspace, get(workspace, id).process().processInstanceId()));
+        return TicketProgress.from(workflow.timeline(workspace, get(workspace, id).process().processInstanceId()), confirmation.read(workspace, id));
     }
 
     private Actor member(String workspace) {

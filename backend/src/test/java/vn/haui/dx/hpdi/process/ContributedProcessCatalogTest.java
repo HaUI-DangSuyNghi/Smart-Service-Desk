@@ -18,7 +18,7 @@ import static org.mockito.Mockito.*;
 class ContributedProcessCatalogTest {
     @Test void registrationPreservesGenericStartExposure() {
         ProcessContribution contribution = () -> List.of(selfService, appOwned);
-        var policies = new vn.haui.dx.hpdi.process.internal.ContributionRegistry(List.of(contribution)).policies();
+        var policies = new vn.haui.dx.hpdi.process.internal.ContributionRegistry(List.of(contribution), null).policies();
         assertTrue(policies.stream().filter(policy -> policy.processKey().equals(selfService.processKey()))
             .findFirst().orElseThrow().selfService());
         assertFalse(policies.stream().filter(policy -> policy.processKey().equals(appOwned.processKey()))

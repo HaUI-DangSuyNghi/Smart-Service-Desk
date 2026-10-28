@@ -6,7 +6,8 @@ import vn.haui.dx.hpdi.process.api.ProcessTimeline;
 
 /** Service Desk owns its REST representation, with existing wire fields preserved. */
 public record TicketProgress(String id, String processKey, String businessKey, String workspace, String initiator,
-        Instant startedAt, Instant endedAt, List<Task> currentTasks, List<Step> steps) {
+        Instant startedAt, Instant endedAt, List<Task> currentTasks, List<Step> steps,
+        @com.fasterxml.jackson.annotation.JsonUnwrapped TicketConfirmation.State confirmation) {
     public TicketProgress { currentTasks = List.copyOf(currentTasks); steps = List.copyOf(steps); }
     @com.fasterxml.jackson.annotation.JsonProperty("ended") public boolean ended() { return endedAt != null; }
     @com.fasterxml.jackson.annotation.JsonProperty("tasks") public List<Step> tasks() { return steps; }
@@ -18,11 +19,11 @@ public record TicketProgress(String id, String processKey, String businessKey, S
                        Instant startedAt, Instant claimedAt, Instant endedAt) {
         @com.fasterxml.jackson.annotation.JsonProperty("actor") public String actor() { return assignee; }
     }
-    static TicketProgress from(ProcessTimeline timeline) {
+    static TicketProgress from(ProcessTimeline timeline, TicketConfirmation.State confirmation) {
         return new TicketProgress(timeline.id(), timeline.processKey(), timeline.businessKey(), timeline.workspace(),
             timeline.initiator(), timeline.startedAt(), timeline.endedAt(), timeline.currentTasks().stream().map(task ->
                 new Task(task.id(), task.processInstanceId(), task.key(), task.name(), task.candidateGroups(), task.assignee(), task.createdAt())).toList(),
             timeline.steps().stream().map(step -> new Step(step.id(), step.key(), step.name(), step.assignee(),
-                step.outcome(), step.comment(), step.startedAt(), step.claimedAt(), step.endedAt())).toList());
+                step.outcome(), step.comment(), step.startedAt(), step.claimedAt(), step.endedAt())).toList(), confirmation);
     }
 }

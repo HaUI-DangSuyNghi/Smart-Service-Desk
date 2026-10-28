@@ -14,6 +14,6 @@ public class ProcessObservationsAdapter implements ProcessObservations {
     public List<ProcessSnapshot> snapshots(String workspace, Set<String> ids) {
         return source.snapshots(workspace, ids).stream().map(s -> new ProcessSnapshot(s.id(), s.workspace(), s.owner(),
             s.processKey(), s.businessKey(), s.historyPresent(), s.endedAt(), s.deleteReason(), s.endActivityId(),
-            s.tasks().stream().map(t -> new ProcessSnapshot.TaskState(t.key(), t.active())).toList())).toList();
+            s.tasks().stream().map(t -> new ProcessSnapshot.TaskState(t.key(), t.active(), t.id(), t.workState())).toList(), s.outcomes())).toList();
     }
 }

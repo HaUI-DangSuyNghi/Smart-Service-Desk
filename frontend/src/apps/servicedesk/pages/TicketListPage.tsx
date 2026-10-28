@@ -1,5 +1,5 @@
 import { useDeferredValue, useState } from "react";
-import { useNavigate } from "react-router";
+import { Link, useNavigate } from "react-router";
 import { IconSearch, IconTicket } from "@tabler/icons-react";
 import {
   PERMISSIONS,
@@ -19,6 +19,7 @@ import { Pagination } from "../../../platform/shared/ui/Pagination";
 import { SelectField } from "../../../platform/shared/ui/SelectField";
 import { TableSkeleton } from "../../../platform/shared/ui/Skeleton";
 import { ViewTabs } from "../../../platform/shared/ui/ViewTabs";
+import { Button } from "../../../platform/shared/ui/button";
 import type { TicketState } from "../services/ticketService";
 import { boardAccess } from "../tickets/board/boardAccess";
 import { TicketBoard } from "../tickets/board/TicketBoard";
@@ -78,7 +79,7 @@ const TicketListPage = () => {
   const navigate = useNavigate();
   const { current } = useCurrentWorkspace();
   const { can } = usePermissions();
-  const { actor } = useActor();
+  const { actor, roles } = useActor();
   const me = useMe();
   const viewer: Viewer = {
     subject: actor?.subject ?? null,
@@ -126,7 +127,16 @@ const TicketListPage = () => {
       <PageHeader
         title="Ticket"
         icon={IconTicket}
-        actions={can(PERMISSIONS.requestCreate) && <CreateTicketDialog />}
+        actions={
+          <>
+            {roles.includes("coordinator") && (
+              <Button variant="outline" asChild>
+                <Link to="/servicedesk/intake-pending">Ticket đang tiếp nhận</Link>
+              </Button>
+            )}
+            {can(PERMISSIONS.requestCreate) && <CreateTicketDialog />}
+          </>
+        }
       />
       <PageToolbar
         start={

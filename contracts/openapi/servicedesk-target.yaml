@@ -85,70 +85,6 @@ paths:
         '403': {$ref: 'core.yaml#/components/responses/Forbidden'}
         '404': {$ref: 'core.yaml#/components/responses/NotFound'}
 
-  /workspaces/{workspace}/tickets/{id}/review:
-    parameters:
-      - {$ref: 'core.yaml#/components/parameters/Workspace'}
-      - {$ref: 'servicedesk.yaml#/components/parameters/TicketId'}
-    post:
-      operationId: reviewTicket
-      description: >-
-        R4. Điều phối viên duyệt: chốt loại lỗi, mức ưu tiên, ET và người xử lý trong một lần gọi.
-        Giá trị khác gợi ý AI được ghi thành correction (R9), reason bắt buộc khi có thay đổi.
-        assignee = null nghĩa là để chờ ca sau (tổ không ai trực, R3). Không được giao cho người tạo ticket.
-        Thành công → ticket rời hàng chờ duyệt, vào hàng đợi người được giao (ASSIGNED), tính SLA.
-        409 nếu ticket không còn ở AWAITING_REVIEW (người khác đã duyệt).
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema: {$ref: '#/components/schemas/ReviewDecision'}
-      responses:
-        '200':
-          description: Ticket sau khi duyệt
-          content:
-            application/json:
-              schema: {$ref: '#/components/schemas/TicketView'}
-        '400': {$ref: 'core.yaml#/components/responses/BadRequest'}
-        '401': {$ref: 'core.yaml#/components/responses/Unauthorized'}
-        '403': {$ref: 'core.yaml#/components/responses/Forbidden'}
-        '404': {$ref: 'core.yaml#/components/responses/NotFound'}
-        '409': {$ref: 'core.yaml#/components/responses/Conflict'}
-
-  /workspaces/{workspace}/tickets/{id}/classification:
-    parameters:
-      - {$ref: 'core.yaml#/components/parameters/Workspace'}
-      - {$ref: 'servicedesk.yaml#/components/parameters/TicketId'}
-    patch:
-      operationId: correctClassification
-      description: >-
-        R9. Agent đang giữ ticket hoặc coordinator sửa loại lỗi và/hoặc mức ưu tiên, bắt buộc lý do; mọi lần sửa được lưu.
-        Đổi loại lỗi dẫn tới đổi tổ → ticket chưa bắt đầu quay về AWAITING_REVIEW để đề xuất người lại;
-        ticket đang làm thì giữ người, báo điều phối viên. Đổi mức ưu tiên tính lại SLA.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              additionalProperties: false
-              required: [reason]
-              minProperties: 2
-              properties:
-                category: {$ref: '#/components/schemas/Category'}
-                priority: {$ref: '../hpdi/openapi-target.yaml#/components/schemas/Priority'}
-                reason: {type: string, minLength: 1, maxLength: 1000}
-      responses:
-        '200':
-          description: Ticket sau khi sửa
-          content:
-            application/json:
-              schema: {$ref: '#/components/schemas/TicketView'}
-        '400': {$ref: 'core.yaml#/components/responses/BadRequest'}
-        '401': {$ref: 'core.yaml#/components/responses/Unauthorized'}
-        '403': {$ref: 'core.yaml#/components/responses/Forbidden'}
-        '404': {$ref: 'core.yaml#/components/responses/NotFound'}
-        '409': {$ref: 'core.yaml#/components/responses/Conflict'}
-
   /workspaces/{workspace}/tickets/statistics:
     parameters:
       - {$ref: 'core.yaml#/components/parameters/Workspace'}
@@ -172,35 +108,7 @@ paths:
         '403': {$ref: 'core.yaml#/components/responses/Forbidden'}
 
   /settings:
-    get:
-      operationId: getServiceDeskSettings
-      description: Mục 6, phần riêng Service Desk (platform-admin). Phần chung ở /api/hpdi/v1/settings/work.
-      responses:
-        '200':
-          description: Cấu hình hiện hành
-          content:
-            application/json:
-              schema: {$ref: '#/components/schemas/ServiceDeskSettings'}
-        '401': {$ref: 'core.yaml#/components/responses/Unauthorized'}
-        '403': {$ref: 'core.yaml#/components/responses/Forbidden'}
-    put:
-      operationId: updateServiceDeskSettings
-      description: Ghi đè toàn bộ, gửi kèm version đang xem; người khác đã sửa trước → 409. Có hiệu lực cho ticket mới.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema: {$ref: '#/components/schemas/ServiceDeskSettings'}
-      responses:
-        '200':
-          description: Cấu hình sau khi lưu
-          content:
-            application/json:
-              schema: {$ref: '#/components/schemas/ServiceDeskSettings'}
-        '400': {$ref: 'core.yaml#/components/responses/BadRequest'}
-        '401': {$ref: 'core.yaml#/components/responses/Unauthorized'}
-        '403': {$ref: 'core.yaml#/components/responses/Forbidden'}
-        '409': {$ref: 'core.yaml#/components/responses/Conflict'}
+    $ref: 'servicedesk.yaml#/paths/~1settings'
 
 components:
   securitySchemes:
@@ -222,7 +130,7 @@ components:
         IN_PROGRESS = Đang làm · PENDING = Đang chờ · AWAITING_CONFIRMATION = chờ người dùng xác nhận ·
         REOPENED = người dùng báo chưa xong, chưa bắt đầu lại · CLOSED = đã đóng ·
         UNCLASSIFIED = dữ liệu quy trình không khớp, cần kiểm tra (như thống kê cũ)
-      enum: [AWAITING_REVIEW, ASSIGNED, IN_PROGRESS, PENDING, AWAITING_CONFIRMATION, REOPENED, CLOSED, UNCLASSIFIED]
+        enum: [INTAKE, FOLLOWING, AWAITING_REVIEW, ASSIGNED, IN_PROGRESS, PENDING, AWAITING_CONFIRMATION, REOPENED, CLOSED, UNCLASSIFIED]
     Classification:
       type: object
       additionalProperties: false
@@ -314,65 +222,156 @@ components:
     ReviewDecision:
       type: object
       additionalProperties: false
-      required: [category, priority, estimateMinutes, assignee]
+      required:
+      - category
+      - priority
+      - assignee
+      - reason
       properties:
-        category: {$ref: '#/components/schemas/Category'}
-        impact: {$ref: '#/components/schemas/Impact'}
-        urgency: {$ref: '#/components/schemas/Urgency'}
-        priority: {$ref: '../hpdi/openapi-target.yaml#/components/schemas/Priority'}
-        estimateMinutes: {type: integer, minimum: 1, maximum: 10080}
-        assignee: {type: string, nullable: true, description: 'subject; null = để chờ ca sau'}
-        reason: {type: string, maxLength: 1000, description: Bắt buộc khi có giá trị khác gợi ý AI hoặc khác người được đề xuất}
+        expectedContextRevision:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Required for tickets enrolled in intake admission.
+        expectedIntakeVersion:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Compare-and-set version returned by GET intake.
+        category:
+          $ref: '#/components/schemas/Category'
+        impact:
+          $ref: '#/components/schemas/Impact'
+        urgency:
+          $ref: '#/components/schemas/Urgency'
+        priority:
+          $ref: ../hpdi/openapi.yaml#/components/schemas/Priority
+        estimateMinutes:
+          type: integer
+          minimum: 1
+          maximum: 10080
+          nullable: true
+          description: Omit/null for a frozen default estimate; an integer is a coordinator override.
+        assignee:
+          type: string
+          nullable: true
+          description: subject; null = để chờ ca sau
+          maxLength: 100
+        reason:
+          type: string
+          maxLength: 1000
+          description: Bắt buộc khi có giá trị khác gợi ý AI hoặc khác người được đề xuất
+          minLength: 1
     TicketStatisticsV2:
-      allOf:
-        - {$ref: 'servicedesk.yaml#/components/schemas/TicketStatistics'}
-        - type: object
-          required: [awaitingReview, assigned, inProgress, pending, reopened, closed, overdue]
-          properties:
-            awaitingReview: {type: integer, format: int64, minimum: 0}
-            assigned: {type: integer, format: int64, minimum: 0}
-            inProgress: {type: integer, format: int64, minimum: 0}
-            pending: {type: integer, format: int64, minimum: 0}
-            reopened: {type: integer, format: int64, minimum: 0}
-            closed: {type: integer, format: int64, minimum: 0, description: Bằng completed cũ}
-            overdue: {type: integer, format: int64, minimum: 0, description: 'Quá hạn bắt đầu hoặc quá SLA; cắt ngang, không cộng vào total'}
+      $ref: 'servicedesk.yaml#/components/schemas/TicketStatistics'
     ServiceDeskSettings:
       type: object
       additionalProperties: false
-      description: Mục 6, phần Tầng 3.
-      required: [version, categoryGroups, estimateDefaults]
+      description: Administrative storage only. PUT rejects unknown and read-only metadata
+        fields. OTHER must remain null for Coordinator selection. Specialty names must
+        match [a-z][a-z0-9-]{0,49}; role/reserved names requester, agent, coordinator,
+        platform-admin, system, global are forbidden. Group existence and per-workspace
+        membership are not asserted by this global document.
+      required:
+      - version
+      - categoryGroups
+      - estimateDefaults
       properties:
-        version: {type: integer, minimum: 0}
-        updatedAt: {type: string, format: date-time, readOnly: true}
-        updatedBy: {type: string, readOnly: true}
+        version:
+          type: integer
+          minimum: 0
+          maximum: 9223372036854775807
+        updatedAt:
+          type: string
+          format: date-time
+          readOnly: true
+        updatedBy:
+          type: string
+          readOnly: true
         categoryGroups:
           type: object
           additionalProperties: false
-          description: 'R1. Loại lỗi → tổ (tên group Keycloak trong workspace). OTHER = null: điều phối viên tự chọn'
-          required: [HARDWARE, NETWORK, SOFTWARE, ACCOUNT, OTHER]
+          description: 'R1. Loại lỗi → tổ (tên group Keycloak trong workspace). OTHER
+            = null: điều phối viên tự chọn'
+          required:
+          - HARDWARE
+          - NETWORK
+          - SOFTWARE
+          - ACCOUNT
+          - OTHER
           properties:
-            HARDWARE: {type: string, example: hardware}
-            NETWORK: {type: string, example: network}
-            SOFTWARE: {type: string, example: software}
-            ACCOUNT: {type: string, example: sysadmin}
-            OTHER: {type: string, nullable: true}
+            HARDWARE:
+              type: string
+              example: hardware
+              pattern: ^[a-z][a-z0-9-]{0,49}$
+              minLength: 1
+              maxLength: 50
+            NETWORK:
+              type: string
+              example: network
+              pattern: ^[a-z][a-z0-9-]{0,49}$
+              minLength: 1
+              maxLength: 50
+            SOFTWARE:
+              type: string
+              example: software
+              pattern: ^[a-z][a-z0-9-]{0,49}$
+              minLength: 1
+              maxLength: 50
+            ACCOUNT:
+              type: string
+              example: sysadmin
+              pattern: ^[a-z][a-z0-9-]{0,49}$
+              minLength: 1
+              maxLength: 50
+            OTHER:
+              type: string
+              nullable: true
+              enum:
+              - null
         estimateDefaults:
           type: object
           additionalProperties: false
           description: R2. Bảng ET mặc định (phút) theo loại × ưu tiên
-          required: [HARDWARE, NETWORK, SOFTWARE, ACCOUNT, OTHER]
+          required:
+          - HARDWARE
+          - NETWORK
+          - SOFTWARE
+          - ACCOUNT
+          - OTHER
           properties:
-            HARDWARE: {$ref: '#/components/schemas/EstimateRow'}
-            NETWORK: {$ref: '#/components/schemas/EstimateRow'}
-            SOFTWARE: {$ref: '#/components/schemas/EstimateRow'}
-            ACCOUNT: {$ref: '#/components/schemas/EstimateRow'}
-            OTHER: {$ref: '#/components/schemas/EstimateRow'}
+            HARDWARE:
+              $ref: '#/components/schemas/EstimateRow'
+            NETWORK:
+              $ref: '#/components/schemas/EstimateRow'
+            SOFTWARE:
+              $ref: '#/components/schemas/EstimateRow'
+            ACCOUNT:
+              $ref: '#/components/schemas/EstimateRow'
+            OTHER:
+              $ref: '#/components/schemas/EstimateRow'
     EstimateRow:
       type: object
       additionalProperties: false
-      required: [LOW, MEDIUM, HIGH, CRITICAL]
+      required:
+      - LOW
+      - MEDIUM
+      - HIGH
+      - CRITICAL
       properties:
-        LOW: {type: integer, minimum: 1}
-        MEDIUM: {type: integer, minimum: 1}
-        HIGH: {type: integer, minimum: 1}
-        CRITICAL: {type: integer, minimum: 1}
+        LOW:
+          type: integer
+          minimum: 1
+          maximum: 10080
+        MEDIUM:
+          type: integer
+          minimum: 1
+          maximum: 10080
+        HIGH:
+          type: integer
+          minimum: 1
+          maximum: 10080
+        CRITICAL:
+          type: integer
+          minimum: 1
+          maximum: 10080

@@ -13,6 +13,11 @@ JAVA = 'backend/src/main/java/vn/haui/dx/'
 
 
 class BoundaryGuardTest(unittest.TestCase):
+    def test_app_upsert_does_not_treat_set_as_a_table(self):
+        path = JAVA + 'apps/example/Duty.java'
+        self.write(path, 'String sql = "insert into example_duty(id) values(?) on conflict(id) do update set id=excluded.id";')
+        self.assertFalse(guard.violations(self.root))
+        self.mutation(path, 'String sql = "insert into example_duty(id) values(?) on conflict(id) do update set id=excluded.id; update act_ru_task set name_=null";', 'app-private-sql')
     def setUp(self):
         self.directory = tempfile.TemporaryDirectory()
         self.addCleanup(self.directory.cleanup)
@@ -38,6 +43,17 @@ class BoundaryGuardTest(unittest.TestCase):
         for package in ('apps.example.Ticket', 'hpdi.process.api.ProcessCapability'):
             with self.subTest(package=package):
                 self.mutation(JAVA + 'core/Bad.java', f'import vn.haui.dx.{package};', 'core-upper-import')
+
+    def test_owned_app_query_can_use_skip_locked_or_nowait(self):
+        for modifier in ('skip locked', 'nowait'):
+            self.write(JAVA + 'apps/example/Store.java',
+                       'class Store { String sql = "select * from example_job for update ' + modifier + '"; }')
+            self.assertFalse(guard.violations(self.root))
+
+    def test_lock_modifier_does_not_hide_private_table_access(self):
+        self.mutation(JAVA + 'apps/example/Bad.java',
+                      'class Bad { String sql = "select * from act_ru_task for update skip locked"; }',
+                      'app-private-sql')
 
     def test_hpdi_cannot_import_apps(self):
         self.mutation(JAVA + 'hpdi/process/Bad.java', 'import vn.haui.dx.apps.example.Ticket;', 'hpdi-app-import')
@@ -69,6 +85,12 @@ class BoundaryGuardTest(unittest.TestCase):
         for table in ('act_ru_task', 'process_scope', 'core.metadata', '"public"."example_ticket"', 'otherapp_ticket'):
             with self.subTest(table=table):
                 self.mutation(JAVA + 'apps/example/Bad.java', 'String sql = """select * from ' + table + '""";', 'app-private-sql')
+
+    def test_row_lock_clause_is_not_an_update_table_but_following_updates_are_checked(self):
+        path = JAVA + 'apps/example/Query.java'
+        self.write(path, 'String sql = "select * from example_ticket t for update of t skip locked";')
+        self.assertFalse(guard.violations(self.root))
+        self.mutation(path, 'String sql = "select * from example_ticket t for update of t skip locked; update act_ru_task set name_=null";', 'app-private-sql')
 
     def test_reserved_engine_prefix_cannot_be_claimed_by_an_application_name(self):
         self.mutation(JAVA + 'apps/act/Bad.java', 'String sql = "select * from act_ru_task";', 'app-private-sql')

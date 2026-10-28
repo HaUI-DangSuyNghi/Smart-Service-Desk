@@ -1,0 +1,202 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "sampleId",
+    "familyDigest",
+    "split",
+    "fields",
+    "labels"
+  ],
+  "properties": {
+    "sampleId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 100
+    },
+    "familyDigest": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
+    },
+    "split": {
+      "enum": [
+        "DEV",
+        "HOLDOUT"
+      ]
+    },
+    "fields": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "title",
+        "description"
+      ],
+      "properties": {
+        "title": {
+          "type": "string",
+          "maxLength": 200
+        },
+        "description": {
+          "type": "string",
+          "maxLength": 4000
+        }
+      }
+    },
+    "labels": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "mainCategory",
+        "subCategory",
+        "impact",
+        "urgency",
+        "riskFlags",
+        "evidence",
+        "needsClarification"
+      ],
+      "properties": {
+        "mainCategory": {
+          "enum": [
+            null,
+            "ACCOUNT",
+            "HARDWARE",
+            "NETWORK",
+            "SOFTWARE",
+            "OTHER"
+          ]
+        },
+        "subCategory": {
+          "enum": [
+            null,
+            "LOGIN_FAILURE",
+            "PASSWORD_RESET",
+            "ACCOUNT_LOCKED",
+            "ACCESS_PERMISSION",
+            "MFA_ISSUE",
+            "ACCOUNT_OTHER",
+            "POWER_FAILURE",
+            "DISPLAY_FAILURE",
+            "PERIPHERAL_FAILURE",
+            "PRINTER_FAILURE",
+            "PROJECTOR_FAILURE",
+            "HARDWARE_OTHER",
+            "WIFI_CONNECTION",
+            "WIRED_CONNECTION",
+            "INTERNET_ACCESS",
+            "LOCAL_NETWORK",
+            "NETWORK_PERFORMANCE",
+            "NETWORK_OTHER",
+            "INSTALLATION",
+            "APPLICATION_ERROR",
+            "UPDATE_FAILURE",
+            "LICENSE_ACTIVATION",
+            "OS_ERROR",
+            "SOFTWARE_OTHER",
+            "UNCLEAR_REQUEST",
+            "MULTI_DOMAIN",
+            "OUT_OF_SCOPE",
+            "OTHER_UNSPECIFIED"
+          ]
+        },
+        "impact": {
+          "enum": [
+            null,
+            "I1",
+            "I2",
+            "I3",
+            "I4"
+          ]
+        },
+        "urgency": {
+          "enum": [
+            null,
+            "U1",
+            "U2",
+            "U3",
+            "U4"
+          ]
+        },
+        "riskFlags": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "SECURITY_EXPOSURE",
+              "DATA_LOSS",
+              "SAFETY",
+              "SERVICE_CONTINUITY",
+              "WIDESPREAD_INCIDENT_POSSIBLE"
+            ]
+          },
+          "maxItems": 5,
+          "uniqueItems": true
+        },
+        "evidence": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "properties": {
+              "field": {
+                "enum": [
+                  "title",
+                  "description"
+                ]
+              },
+              "quote": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 8192
+              },
+              "start": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 8192
+              },
+              "end": {
+                "type": "integer",
+                "minimum": 1,
+                "maximum": 8192
+              },
+              "supports": {
+                "type": "array",
+                "items": {
+                  "enum": [
+                    "subCategory",
+                    "impact",
+                    "urgency",
+                    "risk"
+                  ]
+                },
+                "maxItems": 4,
+                "uniqueItems": true
+              },
+              "verification": {
+                "const": "LITERAL_SPAN"
+              },
+              "ruleId": {
+                "type": "string",
+                "minLength": 1,
+                "maxLength": 120
+              }
+            },
+            "required": [
+              "field",
+              "quote",
+              "start",
+              "end",
+              "supports",
+              "verification",
+              "ruleId"
+            ]
+          },
+          "maxItems": 64,
+          "uniqueItems": true
+        },
+        "needsClarification": {
+          "type": "boolean"
+        }
+      }
+    }
+  }
+}

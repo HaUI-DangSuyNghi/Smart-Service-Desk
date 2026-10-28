@@ -1,0 +1,275 @@
+{
+  "purpose": "OWNED_SYNTHETIC_MULTISYMPTOM_REGRESSION_NOT_GOLD",
+  "cases": [
+    {
+      "id": "mixed-01",
+      "cohort": "CROSS_PARENT_UNIQUE",
+      "parent": "NETWORK",
+      "title": "mất Wi-Fi; đồng thời ứng dụng bị treo",
+      "description": "Dữ liệu tổng hợp để kiểm tra nhiều triệu chứng, parent là đầu vào mô phỏng.",
+      "expectedChild": "WIFI_CONNECTION",
+      "expectedStatus": "SUPPORTED_BY_RULE"
+    },
+    {
+      "id": "mixed-02",
+      "cohort": "CROSS_PARENT_UNIQUE",
+      "parent": "NETWORK",
+      "title": "mất mạng dây; đồng thời tài khoản bị khóa",
+      "description": "Dữ liệu tổng hợp để kiểm tra nhiều triệu chứng, parent là đầu vào mô phỏng.",
+      "expectedChild": "WIRED_CONNECTION",
+      "expectedStatus": "SUPPORTED_BY_RULE"
+    },
+    {
+      "id": "mixed-03",
+      "cohort": "CROSS_PARENT_UNIQUE",
+      "parent": "NETWORK",
+      "title": "không truy cập được Internet; đồng thời máy in không in được",
+      "description": "Dữ liệu tổng hợp để kiểm tra nhiều triệu chứng, parent là đầu vào mô phỏng.",
+      "expectedChild": "INTERNET_ACCESS",
+      "expectedStatus": "SUPPORTED_BY_RULE"
+    },
+    {
+      "id": "mixed-04",
+      "cohort": "CROSS_PARENT_UNIQUE",
+      "parent": "NETWORK",
+      "title": "không truy cập được mạng nội bộ; đồng thời cập nhật thất bại",
+      "description": "Dữ liệu tổng hợp để kiểm tra nhiều triệu chứng, parent là đầu vào mô phỏng.",
+      "expectedChild": "LOCAL_NETWORK",
+      "expectedStatus": "SUPPORTED_BY_RULE"
+    },
+    {
+      "id": "mixed-05",
+      "cohort": "CROSS_PARENT_UNIQUE",
+      "parent": "NETWORK",
+      "title": "mạng rất chậm; đồng thời không đăng nhập được",
+      "description": "Dữ liệu tổng hợp để kiểm tra nhiều triệu chứng, parent là đầu vào mô phỏng.",
+      "expectedChild": "NETWORK_PERFORMANCE",
+      "expectedStatus": "SUPPORTED_BY_RULE"
+    },
+    {
+      "id": "mixed-06",
+      "cohort": "CROSS_PARENT_UNIQUE",
+      "parent": "ACCOUNT",
+      "title": "không đăng nhập được; đồng thời mất Wi-Fi",
+      "description": "Dữ liệu tổng hợp để kiểm tra nhiều triệu chứng, parent là đầu vào mô phỏng.",
+      "expectedChild": "LOGIN_FAILURE",
+      "expectedStatus": "SUPPORTED_BY_RULE"
+    },
+    {
+      "id": "mixed-07",
+      "cohort": "CROSS_PARENT_UNIQUE",
+      "parent": "ACCOUNT",
+      "title": "cần đặt lại mật khẩu; đồng thời máy không lên nguồn",
+      "description": "Dữ liệu tổng hợp để kiểm tra nhiều triệu chứng, parent là đầu vào mô phỏng.",
+      "expectedChild": "PASSWORD_RESET",
+      "expectedStatus": "SUPPORTED_BY_RULE"
+    },
+    {
+      "id": "mixed-08",
+      "cohort": "CROSS_PARENT_UNIQUE",
+      "parent": "ACCOUNT",
+      "title": "tài khoản bị khóa; đồng thời ứng dụng bị treo",
+      "description": "Dữ liệu tổng hợp để kiểm tra nhiều triệu chứng, parent là đầu vào mô phỏng.",
+      "expectedChild": "ACCOUNT_LOCKED",
+      "expectedStatus": "SUPPORTED_BY_RULE"
+    },
+    {
+      "id": "mixed-09",
+      "cohort": "CROSS_PARENT_UNIQUE",
+      "parent": "ACCOUNT",
+      "title": "bị từ chối quyền truy cập; đồng thời máy chiếu không nhận tín hiệu",
+      "description": "Dữ liệu tổng hợp để kiểm tra nhiều triệu chứng, parent là đầu vào mô phỏng.",
+      "expectedChild": "ACCESS_PERMISSION",
+      "expectedStatus": "SUPPORTED_BY_RULE"
+    },
+    {
+      "id": "mixed-10",
+      "cohort": "CROSS_PARENT_UNIQUE",
+      "parent": "ACCOUNT",
+      "title": "không nhận được mã MFA; đồng thời mất mạng dây",
+      "description": "Dữ liệu tổng hợp để kiểm tra nhiều triệu chứng, parent là đầu vào mô phỏng.",
+      "expectedChild": "MFA_ISSUE",
+      "expectedStatus": "SUPPORTED_BY_RULE"
+    },
+    {
+      "id": "mixed-11",
+      "cohort": "CROSS_PARENT_UNIQUE",
+      "parent": "HARDWARE",
+      "title": "máy không lên nguồn; đồng thời cập nhật thất bại",
+      "description": "Dữ liệu tổng hợp để kiểm tra nhiều triệu chứng, parent là đầu vào mô phỏng.",
+      "expectedChild": "POWER_FAILURE",
+      "expectedStatus": "SUPPORTED_BY_RULE"
+    },
+    {
+      "id": "mixed-12",
+      "cohort": "CROSS_PARENT_UNIQUE",
+      "parent": "HARDWARE",
+      "title": "màn hình không hiển thị; đồng thời mất Wi-Fi",
+      "description": "Dữ liệu tổng hợp để kiểm tra nhiều triệu chứng, parent là đầu vào mô phỏng.",
+      "expectedChild": "DISPLAY_FAILURE",
+      "expectedStatus": "SUPPORTED_BY_RULE"
+    },
+    {
+      "id": "mixed-13",
+      "cohort": "CROSS_PARENT_UNIQUE",
+      "parent": "HARDWARE",
+      "title": "bàn phím không hoạt động; đồng thời tài khoản bị khóa",
+      "description": "Dữ liệu tổng hợp để kiểm tra nhiều triệu chứng, parent là đầu vào mô phỏng.",
+      "expectedChild": "PERIPHERAL_FAILURE",
+      "expectedStatus": "SUPPORTED_BY_RULE"
+    },
+    {
+      "id": "mixed-14",
+      "cohort": "CROSS_PARENT_UNIQUE",
+      "parent": "HARDWARE",
+      "title": "máy in không in được; đồng thời không cài đặt được ứng dụng",
+      "description": "Dữ liệu tổng hợp để kiểm tra nhiều triệu chứng, parent là đầu vào mô phỏng.",
+      "expectedChild": "PRINTER_FAILURE",
+      "expectedStatus": "SUPPORTED_BY_RULE"
+    },
+    {
+      "id": "mixed-15",
+      "cohort": "CROSS_PARENT_UNIQUE",
+      "parent": "HARDWARE",
+      "title": "máy chiếu không nhận tín hiệu; đồng thời không đăng nhập được",
+      "description": "Dữ liệu tổng hợp để kiểm tra nhiều triệu chứng, parent là đầu vào mô phỏng.",
+      "expectedChild": "PROJECTOR_FAILURE",
+      "expectedStatus": "SUPPORTED_BY_RULE"
+    },
+    {
+      "id": "mixed-16",
+      "cohort": "CROSS_PARENT_UNIQUE",
+      "parent": "SOFTWARE",
+      "title": "không cài đặt được ứng dụng; đồng thời mất mạng dây",
+      "description": "Dữ liệu tổng hợp để kiểm tra nhiều triệu chứng, parent là đầu vào mô phỏng.",
+      "expectedChild": "INSTALLATION",
+      "expectedStatus": "SUPPORTED_BY_RULE"
+    },
+    {
+      "id": "mixed-17",
+      "cohort": "CROSS_PARENT_UNIQUE",
+      "parent": "SOFTWARE",
+      "title": "ứng dụng bị treo; đồng thời máy không lên nguồn",
+      "description": "Dữ liệu tổng hợp để kiểm tra nhiều triệu chứng, parent là đầu vào mô phỏng.",
+      "expectedChild": "APPLICATION_ERROR",
+      "expectedStatus": "SUPPORTED_BY_RULE"
+    },
+    {
+      "id": "mixed-18",
+      "cohort": "CROSS_PARENT_UNIQUE",
+      "parent": "SOFTWARE",
+      "title": "cập nhật thất bại; đồng thời không nhận được mã MFA",
+      "description": "Dữ liệu tổng hợp để kiểm tra nhiều triệu chứng, parent là đầu vào mô phỏng.",
+      "expectedChild": "UPDATE_FAILURE",
+      "expectedStatus": "SUPPORTED_BY_RULE"
+    },
+    {
+      "id": "mixed-19",
+      "cohort": "CROSS_PARENT_UNIQUE",
+      "parent": "SOFTWARE",
+      "title": "không kích hoạt được bản quyền; đồng thời mất Wi-Fi",
+      "description": "Dữ liệu tổng hợp để kiểm tra nhiều triệu chứng, parent là đầu vào mô phỏng.",
+      "expectedChild": "LICENSE_ACTIVATION",
+      "expectedStatus": "SUPPORTED_BY_RULE"
+    },
+    {
+      "id": "mixed-20",
+      "cohort": "CROSS_PARENT_UNIQUE",
+      "parent": "SOFTWARE",
+      "title": "hệ điều hành không khởi động; đồng thời máy chiếu không nhận tín hiệu",
+      "description": "Dữ liệu tổng hợp để kiểm tra nhiều triệu chứng, parent là đầu vào mô phỏng.",
+      "expectedChild": "OS_ERROR",
+      "expectedStatus": "SUPPORTED_BY_RULE"
+    },
+    {
+      "id": "control-01",
+      "cohort": "AMBIGUOUS_OR_UNSUPPORTED",
+      "parent": "NETWORK",
+      "title": "mất Wi-Fi; mất mạng dây; ứng dụng bị treo",
+      "description": "Dữ liệu tổng hợp thuộc dự án.",
+      "expectedChild": null,
+      "expectedStatus": "AMBIGUOUS"
+    },
+    {
+      "id": "control-02",
+      "cohort": "AMBIGUOUS_OR_UNSUPPORTED",
+      "parent": "ACCOUNT",
+      "title": "không đăng nhập được; tài khoản bị khóa; mất Wi-Fi",
+      "description": "Dữ liệu tổng hợp thuộc dự án.",
+      "expectedChild": null,
+      "expectedStatus": "AMBIGUOUS"
+    },
+    {
+      "id": "control-03",
+      "cohort": "AMBIGUOUS_OR_UNSUPPORTED",
+      "parent": "SOFTWARE",
+      "title": "cập nhật thất bại; ứng dụng bị treo; máy không lên nguồn",
+      "description": "Dữ liệu tổng hợp thuộc dự án.",
+      "expectedChild": null,
+      "expectedStatus": "AMBIGUOUS"
+    },
+    {
+      "id": "control-04",
+      "cohort": "AMBIGUOUS_OR_UNSUPPORTED",
+      "parent": "HARDWARE",
+      "title": "máy không lên nguồn; màn hình không hiển thị; mất Wi-Fi",
+      "description": "Dữ liệu tổng hợp thuộc dự án.",
+      "expectedChild": null,
+      "expectedStatus": "AMBIGUOUS"
+    },
+    {
+      "id": "control-05",
+      "cohort": "AMBIGUOUS_OR_UNSUPPORTED",
+      "parent": "HARDWARE",
+      "title": "không kết nối được Wi-Fi",
+      "description": "Dữ liệu tổng hợp thuộc dự án.",
+      "expectedChild": null,
+      "expectedStatus": "TAXONOMY_CONFLICT"
+    },
+    {
+      "id": "control-06",
+      "cohort": "AMBIGUOUS_OR_UNSUPPORTED",
+      "parent": "NETWORK",
+      "title": "ứng dụng bị treo",
+      "description": "Dữ liệu tổng hợp thuộc dự án.",
+      "expectedChild": null,
+      "expectedStatus": "TAXONOMY_CONFLICT"
+    },
+    {
+      "id": "control-07",
+      "cohort": "AMBIGUOUS_OR_UNSUPPORTED",
+      "parent": "NETWORK",
+      "title": "Wi-Fi là bối cảnh, chưa rõ triệu chứng",
+      "description": "Dữ liệu tổng hợp thuộc dự án.",
+      "expectedChild": null,
+      "expectedStatus": "INSUFFICIENT_EVIDENCE"
+    },
+    {
+      "id": "control-08",
+      "cohort": "AMBIGUOUS_OR_UNSUPPORTED",
+      "parent": "SOFTWARE",
+      "title": "ví dụ ứng dụng bị treo",
+      "description": "Dữ liệu tổng hợp thuộc dự án.",
+      "expectedChild": null,
+      "expectedStatus": "INSUFFICIENT_EVIDENCE"
+    },
+    {
+      "id": "control-09",
+      "cohort": "AMBIGUOUS_OR_UNSUPPORTED",
+      "parent": "NETWORK",
+      "title": "nếu mất Wi-Fi",
+      "description": "Dữ liệu tổng hợp thuộc dự án.",
+      "expectedChild": null,
+      "expectedStatus": "INSUFFICIENT_EVIDENCE"
+    },
+    {
+      "id": "control-10",
+      "cohort": "AMBIGUOUS_OR_UNSUPPORTED",
+      "parent": "OTHER",
+      "title": "Tôi muốn đăng ký một phòng họp",
+      "description": "Dữ liệu tổng hợp thuộc dự án.",
+      "expectedChild": null,
+      "expectedStatus": "INSUFFICIENT_EVIDENCE"
+    }
+  ]
+}

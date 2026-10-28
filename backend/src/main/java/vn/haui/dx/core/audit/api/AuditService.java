@@ -6,6 +6,9 @@ import vn.haui.dx.core.common.PageRequest;
 
 /** Nhật ký audit chỉ ghi thêm; không có sửa/xóa. */
 public interface AuditService {
+    default void recordSystem(String action, String resourceType, String resourceId, String workspace, Map<String, Object> details) {
+        throw new UnsupportedOperationException("System audit is not supported");
+    }
     /**
      * Ghi trong transaction của nơi gọi; actor, thời điểm, request ID do core tự lấy.
      * {@code action} dạng {@code <đối tượng>.<động từ>}, app thêm tiền tố riêng (ví dụ {@code servicedesk.ticket.create}).

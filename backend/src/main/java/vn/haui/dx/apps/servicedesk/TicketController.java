@@ -12,24 +12,51 @@ import static org.springframework.http.HttpStatus.CREATED;
 @RequestMapping("/api/apps/servicedesk/v1/workspaces/{workspace}/tickets")
 public class TicketController {
     private final TicketService tickets;
+    private final TicketReviewService reviews;
+    private final TicketCorrectionService corrections;
 
-    public TicketController(TicketService tickets) { this.tickets = tickets; }
+    public TicketController(TicketService tickets, TicketReviewService reviews, TicketCorrectionService corrections) {
+        this.tickets = tickets; this.reviews = reviews; this.corrections = corrections;
+    }
+
+    @PatchMapping("/{id}/classification")
+    public TicketReview.View correctClassification(@PathVariable String workspace, @PathVariable UUID id,
+            @RequestBody com.fasterxml.jackson.databind.JsonNode input) {
+        return corrections.correct(workspace, id, TicketCorrection.parse(input));
+    }
 
     @PostMapping
     @ResponseStatus(CREATED)
-    public Ticket create(@PathVariable String workspace, @Valid @RequestBody NewTicket input) {
-        return tickets.create(workspace, input);
+    @org.springframework.transaction.annotation.Transactional
+    public TicketReview.View create(@PathVariable String workspace, @Valid @RequestBody NewTicket input) {
+        return reviews.view(workspace, tickets.create(workspace, input));
     }
 
     @GetMapping("/{id}")
-    public Ticket get(@PathVariable String workspace, @PathVariable UUID id) {
-        return tickets.get(workspace, id);
+    @org.springframework.transaction.annotation.Transactional(readOnly=true, isolation=org.springframework.transaction.annotation.Isolation.REPEATABLE_READ)
+    public Object get(@PathVariable String workspace, @PathVariable UUID id) {
+        var ticket=tickets.get(workspace,id);
+        return ServiceDeskProcess.KEY.equals(ticket.process().processKey()) ? ticket : reviews.view(workspace,ticket);
+    }
+
+    @PostMapping("/{id}/review")
+    public TicketReview.View review(@PathVariable String workspace, @PathVariable UUID id,
+                                  @Valid @RequestBody TicketReview.Decision decision) {
+        return reviews.review(workspace, id, decision);
     }
 
     @GetMapping
-    public Page<Ticket> search(@PathVariable String workspace, @RequestParam(required = false) String q,
+    @org.springframework.transaction.annotation.Transactional(readOnly=true, isolation=org.springframework.transaction.annotation.Isolation.REPEATABLE_READ)
+    public Page<?> search(@PathVariable String workspace, @RequestParam(required = false) String q,
                               @RequestParam(required = false) Instant from, @RequestParam(required = false) Instant to,
+                              @RequestParam(required = false) String state, @RequestParam(required = false) String sort,
                               @RequestParam(required = false) Integer page, @RequestParam(required = false) Integer size) {
+        if (state != null) {
+            if (!"AWAITING_REVIEW".equals(state)) throw vn.haui.dx.hpdi.common.api.CapabilityException.validation("Only AWAITING_REVIEW filtering is implemented");
+            var result=tickets.awaitingReview(workspace,q,from,to,PageRequest.of(page,size),sort);
+            return new Page<>(result.items().stream().map(ticket -> reviews.view(workspace,ticket)).toList(),result.page(),result.size(),result.total());
+        }
+        if (sort!=null) throw vn.haui.dx.hpdi.common.api.CapabilityException.validation("sort requires AWAITING_REVIEW state");
         return tickets.search(workspace, q, from, to, PageRequest.of(page, size));
     }
 

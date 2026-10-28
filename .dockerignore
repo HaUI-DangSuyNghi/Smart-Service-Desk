@@ -5,6 +5,10 @@
 !contracts/intelligence/
 !contracts/intelligence/v1/
 !contracts/intelligence/v1/triage-*.schema.json
+!contracts/apps/
+!contracts/apps/servicedesk/
+!contracts/apps/servicedesk/intelligence/
+!contracts/apps/servicedesk/intelligence/**
 !docs/
 !docs/architecture/
 !docs/architecture/boundary-debt.json

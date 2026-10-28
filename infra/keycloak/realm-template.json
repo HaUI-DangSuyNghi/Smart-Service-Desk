@@ -8,6 +8,9 @@
     "realm": [{"name": "platform-admin", "description": "Platform administration; no implicit access to workspace content"}],
     "client": {
       "dx-permissions": [
+        {"name": "intelligence:process", "description": "Process background assessment in assigned workspaces only"},
+        {"name": "alerts:process", "description": "Deliver and evaluate alerts only; no approval, assignment or execution authority"},
+        {"name": "workflow:timer", "description": "Evaluate registered workflow timers; no generic task completion authority"},
         {"name": "request:create", "description": "Tạo yêu cầu"},
         {"name": "request:view-all", "description": "Xem mọi yêu cầu trong workspace"},
         {"name": "task:handle", "description": "Xử lý công việc"},
@@ -25,6 +28,9 @@
     "name": "workspaces",
     "subGroups": [
       {"name": "lab-a", "attributes": {"displayName": ["Phòng máy A"]}, "subGroups": [
+        {"name": "assessment-worker", "clientRoles": {"dx-permissions": ["intelligence:process", "task:handle"]}},
+        {"name": "alert-worker", "clientRoles": {"dx-permissions": ["alerts:process"]}},
+        {"name": "workflow-timer", "clientRoles": {"dx-permissions": ["workflow:timer"]}},
         {"name": "requester", "clientRoles": {"dx-permissions": ["request:create", "audit:view-own"]}},
         {"name": "agent", "clientRoles": {"dx-permissions": ["request:create", "task:handle", "document:view", "document:upload", "audit:view-own"]}},
         {"name": "coordinator", "clientRoles": {"dx-permissions": ["request:create", "request:view-all", "task:handle", "task:assign", "document:view", "document:upload", "member:view", "audit:view", "audit:view-own", "dashboard:view"]}}
@@ -35,8 +41,30 @@
         {"name": "coordinator", "clientRoles": {"dx-permissions": ["request:create", "request:view-all", "task:handle", "task:assign", "document:view", "document:upload", "member:view", "audit:view", "audit:view-own", "dashboard:view"]}}
       ]}
     ]
+  }, {
+    "name": "support-groups",
+    "subGroups": [
+      {"name": "lab-a", "subGroups": [{"name": "hardware"}, {"name": "network"}, {"name": "software"}, {"name": "sysadmin"}]},
+      {"name": "lab-b", "subGroups": [{"name": "hardware"}, {"name": "network"}, {"name": "software"}, {"name": "sysadmin"}]}
+    ]
   }],
   "clients": [
+    {
+      "clientId": "dx-assessment-worker",
+      "description": "Workspace-scoped assessment; secret injected by setup.ps1",
+      "publicClient": false,
+      "protocol": "openid-connect",
+      "serviceAccountsEnabled": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "secret": "set-by-setup",
+      "protocolMappers": [
+        {"name": "core-audience", "protocol": "openid-connect", "protocolMapper": "oidc-audience-mapper",
+         "config": {"included.custom.audience": "dx-core", "access.token.claim": "true"}},
+        {"name": "workspaces", "protocol": "openid-connect", "protocolMapper": "oidc-group-membership-mapper",
+         "config": {"claim.name": "groups", "full.path": "true", "access.token.claim": "true"}}
+      ]
+    },
     {
       "clientId": "dx-permissions",
       "name": "Quyền ứng dụng DX",
@@ -99,6 +127,10 @@
     }
   ],
   "users": [
+    {
+      "username": "service-account-dx-assessment-worker", "enabled": true,
+      "serviceAccountClientId": "dx-assessment-worker", "groups": ["/workspaces/lab-a/assessment-worker", "/workspaces/lab-a/alert-worker"]
+    },
     {
       "username": "service-account-dx-directory", "enabled": true, "serviceAccountClientId": "dx-directory",
       "clientRoles": {"realm-management": ["view-users", "query-users", "query-groups"]}
