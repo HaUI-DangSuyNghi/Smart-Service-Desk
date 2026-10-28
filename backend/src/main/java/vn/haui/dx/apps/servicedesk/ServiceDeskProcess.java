@@ -21,15 +21,32 @@ public class ServiceDeskProcess implements ProcessContribution {
     private final org.springframework.beans.factory.ObjectProvider<TicketAssignmentEligibility> eligibility;
     private final org.springframework.beans.factory.ObjectProvider<TicketSlaService> sla;
     private final org.springframework.beans.factory.ObjectProvider<TicketAlerts> alerts;
+    private final org.springframework.beans.factory.ObjectProvider<TicketConfirmation> confirmation;
     public ServiceDeskProcess(org.springframework.jdbc.core.JdbcTemplate jdbc,
             org.springframework.beans.factory.ObjectProvider<vn.haui.dx.hpdi.process.api.WorkExecution> execution,
             org.springframework.beans.factory.ObjectProvider<vn.haui.dx.apps.servicedesk.intake.IntakeAdmission> intake,
             org.springframework.beans.factory.ObjectProvider<vn.haui.dx.apps.servicedesk.intake.CanonicalTicketService> canonical,
             org.springframework.beans.factory.ObjectProvider<TicketAssignmentEligibility> eligibility,
             org.springframework.beans.factory.ObjectProvider<TicketSlaService> sla,
-            org.springframework.beans.factory.ObjectProvider<TicketAlerts> alerts) {
+            org.springframework.beans.factory.ObjectProvider<TicketAlerts> alerts,
+            org.springframework.beans.factory.ObjectProvider<TicketConfirmation> confirmation) {
         this.jdbc = jdbc; this.execution = execution; this.intake = intake; this.canonical = canonical; this.eligibility = eligibility; this.sla = sla;
         this.alerts = alerts;
+        this.confirmation = confirmation;
+    }
+
+    @Override public void afterComplete(String workspace, String key, String processId,
+            vn.haui.dx.hpdi.process.api.WorkItem completed, String outcome, List<vn.haui.dx.hpdi.process.api.WorkItem> active) {
+        confirmation.getObject().completed(workspace, key, processId, completed, outcome, active);
+    }
+    @Override public String evaluateTimer(String workspace, String key, String processId, String businessKey,
+            String owner, String generation, vn.haui.dx.hpdi.process.api.WorkItem active, java.time.Instant now) {
+        return confirmation.getObject().evaluate(workspace, key, processId, businessKey, owner, generation, active, now);
+    }
+
+    @Override public void enrollTimer(String workspace, String key, String processId, String businessKey,
+            String owner, String generation, java.time.Instant createdAt, String handleId, java.time.Instant resolvedAt, java.time.Instant now) {
+        confirmation.getObject().enroll(workspace, key, processId, businessKey, owner, generation, createdAt, handleId, resolvedAt, now);
     }
 
     @Override public void afterExecution(String workspace, String processKey, String processId, String taskId,
@@ -68,6 +85,7 @@ public class ServiceDeskProcess implements ProcessContribution {
 
     @Override public void afterAssign(String workspace, String processKey, String processId, String taskKey, String subject) {
         if (!reviewed(processKey) || !"handle".equals(taskKey)) return;
+        confirmation.getObject().received(workspace, processId, "ASSIGNED");
         jdbc.update("update servicedesk_review r set correction_incumbent=null from servicedesk_ticket t"
             + " where t.id=r.ticket_id and t.workspace=? and t.process_instance_id=?", workspace, processId);
         alerts.getObject().assigned(workspace, processId, subject);

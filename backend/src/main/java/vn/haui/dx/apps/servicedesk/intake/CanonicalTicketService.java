@@ -236,6 +236,8 @@ public class CanonicalTicketService {
 
     private boolean rootClosed(String workspace, Map<String, Object> link) {
         UUID rootId = (UUID) link.get("root_id"), followerId = (UUID) link.get("follower_id");
+        if (Boolean.TRUE.equals(jdbc.queryForObject("select exists(select 1 from servicedesk_confirmation"
+                + " where workspace=? and ticket_id=? and decision='AUTO')", Boolean.class, workspace, rootId))) return false;
         var root = tickets.getForIntelligence(workspace, rootId);
         var follower = admission.find(workspace, followerId);
         if (follower == null || follower.lateNotice() || follower.contextRevision() != ((Number) link.get("follower_revision")).longValue()) return false;

@@ -7,6 +7,29 @@ import vn.haui.dx.core.workflow.api.ProcessRegistration;
 import vn.haui.dx.hpdi.process.api.ProcessContribution;
 @Component
 public class ContributionRegistry implements ProcessRegistration {
+    private ProcessContribution owner(String key) {
+        return contributions.stream().filter(value -> value.definitions().stream()
+            .anyMatch(definition -> definition.processKey().equals(key))).findFirst().orElseThrow();
+    }
+    private static vn.haui.dx.hpdi.process.api.WorkItem item(vn.haui.dx.core.workflow.api.TaskView task) {
+        return new vn.haui.dx.hpdi.process.api.WorkItem(task.id(), task.processInstanceId(), task.key(), task.name(),
+            task.candidateGroups(), task.assignee(), task.createdAt(), task.processKey(), task.businessKey());
+    }
+    public void afterComplete(String workspace, String key, String processId,
+            vn.haui.dx.core.workflow.api.TaskView completed, String outcome,
+            List<vn.haui.dx.core.workflow.api.TaskView> active) {
+        owner(key).afterComplete(workspace, key, processId, item(completed), outcome,
+            active.stream().map(ContributionRegistry::item).toList());
+    }
+    public String evaluateTimer(String workspace, String key, String processId, String businessKey,
+            String initiator, String generation, vn.haui.dx.core.workflow.api.TaskView active, java.time.Instant now) {
+        return owner(key).evaluateTimer(workspace, key, processId, businessKey, initiator, generation, item(active), now);
+    }
+
+    @Override public void enrollTimer(String workspace, String key, String processId, String businessKey,
+            String owner, String generation, java.time.Instant createdAt, String handleId, java.time.Instant resolvedAt, java.time.Instant now) {
+        owner(key).enrollTimer(workspace, key, processId, businessKey, owner, generation, createdAt, handleId, resolvedAt, now);
+    }
     @Override public void afterAssignmentChanged(String workspace, String taskId, String assignee, String actor) {
         estimateLifecycle.assignmentChanged(workspace, taskId, assignee, actor);
     }

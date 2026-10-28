@@ -941,6 +941,13 @@ components:
         reopenCount:
           type: integer
           minimum: 0
+        closedAt: {type: string, format: date-time, nullable: true}
+        closedBy: {type: string, nullable: true, enum: [REQUESTER, AUTO, null]}
+        handleResolvedAt: {type: string, format: date-time}
+        confirmStartedAt: {type: string, format: date-time}
+        confirmDeadlineAt: {type: string, format: date-time, description: Confirm start plus 72 continuous hours in UTC; not business days.}
+        confirmGeneration: {type: string, description: Immutable Flowable confirm task identifier.}
+        confirmationHistory: {type: array, items: {$ref: '#/components/schemas/ConfirmationHistory'}}
         corrections:
           type: array
           description: Present for current staff only; omitted for Requester and ticket creator. Ordered by time, operation and field.
@@ -1042,6 +1049,13 @@ components:
       type: object
       required: [id, processKey, businessKey, workspace, initiator, startedAt, currentTasks, steps]
       properties:
+        closedAt: {type: string, format: date-time, nullable: true}
+        closedBy: {type: string, nullable: true, enum: [REQUESTER, AUTO, null]}
+        handleResolvedAt: {type: string, format: date-time}
+        confirmStartedAt: {type: string, format: date-time}
+        confirmDeadlineAt: {type: string, format: date-time}
+        confirmGeneration: {type: string}
+        confirmationHistory: {type: array, items: {$ref: '#/components/schemas/ConfirmationHistory'}}
         ended: {type: boolean, description: Legacy completion flag}
         tasks: {type: array, description: Legacy alias of steps, items: {$ref: '#/components/schemas/TicketStep'}}
         id: {type: string}
@@ -1053,6 +1067,23 @@ components:
         endedAt: {type: string, format: date-time, nullable: true}
         currentTasks: {type: array, items: {$ref: '#/components/schemas/TicketTask'}}
         steps: {type: array, items: {$ref: '#/components/schemas/TicketStep'}}
+
+    ConfirmationHistory:
+      type: object
+      additionalProperties: false
+      required: [generation, confirmStartedAt, deadlineAt]
+      properties:
+        generation: {type: string}
+        confirmStartedAt: {type: string, format: date-time}
+        deadlineAt: {type: string, format: date-time}
+        decision: {type: string, nullable: true, enum: [REQUESTER, AUTO, REWORK, null]}
+        decidedAt: {type: string, format: date-time, nullable: true}
+        decidedBy: {type: string, nullable: true}
+        reopenDeadlineAt: {type: string, format: date-time, nullable: true}
+        reopenReceivedAt: {type: string, format: date-time, nullable: true}
+        reopenReceivedReason: {type: string, nullable: true, enum: [ASSIGNED, CANONICAL, null]}
+        reopenAlertedAt: {type: string, format: date-time, nullable: true}
+        rolloutHold: {type: boolean, nullable: true}
 
     TicketTask:
       type: object

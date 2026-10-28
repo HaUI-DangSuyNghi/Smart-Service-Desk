@@ -128,5 +128,21 @@ public class ProcessRegistry {
 
     public Map<String, Set<String>> executionTasks() { return executionTasks; }
 
+    public void afterComplete(String workspace, String key, String processId,
+            vn.haui.dx.core.workflow.api.TaskView completed, String outcome,
+            java.util.List<vn.haui.dx.core.workflow.api.TaskView> active) {
+        owners.get(key).afterComplete(workspace, key, processId, completed, outcome, active);
+    }
+
+    public String evaluateTimer(String workspace, String key, String processId, String businessKey,
+            String owner, String generation, vn.haui.dx.core.workflow.api.TaskView active, java.time.Instant now) {
+        return owners.get(key).evaluateTimer(workspace, key, processId, businessKey, owner, generation, active, now);
+    }
+
+    public void enrollTimer(String workspace, String key, String processId, String businessKey,
+            String owner, String generation, java.time.Instant createdAt, String handleId, java.time.Instant resolvedAt, java.time.Instant now) {
+        owners.get(key).enrollTimer(workspace, key, processId, businessKey, owner, generation, createdAt, handleId, resolvedAt, now);
+    }
+
     public Collection<ProcessPolicy> policies() { return policies.values(); }
 }

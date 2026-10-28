@@ -37,7 +37,7 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
 @org.springframework.context.annotation.Import(vn.haui.dx.core.workflow.internal.WorkflowStateFixture.class)
-@SpringBootTest
+@SpringBootTest(properties = "serviceDesk.confirmation.scheduled=false")
 @AutoConfigureMockMvc
 @EnabledIfEnvironmentVariable(named = "FILE_TEST_JDBC_URL", matches = ".+/file_storage")
 class TicketIntegrationTest {
@@ -64,6 +64,291 @@ class TicketIntegrationTest {
     @SpyBean vn.haui.dx.hpdi.human.api.AgentDuty duty;
     @Autowired TicketSlaService slaService;
     @Autowired TicketAlerts ticketAlerts;
+    @Autowired vn.haui.dx.hpdi.process.api.ProcessTimers confirmationTimers;
+    @Autowired TicketConfirmation confirmation;
+    @SpyBean vn.haui.dx.core.identity.api.ServiceIdentity timerIdentity;
+    @SpyBean java.time.Clock confirmationClock;
+
+    private JsonNode awaitingConfirmation(String owner) throws Exception {
+        String worker = "r11-agent-" + UUID.randomUUID();
+        var ticket = create(owner, "R11 confirmation", "requester");
+        String task = body(review(ticket, "coordinator", worker, null).andExpect(status().isOk())).path("taskId").asText();
+        String route = "/api/hpdi/v1/workspaces/lab-a/tasks/" + task;
+        mvc.perform(post(route + "/start").with(as(worker,"lab-a","agent"))).andExpect(status().isOk());
+        mvc.perform(post(route + "/complete").with(as(worker,"lab-a","agent")).contentType("application/json")
+            .content("{\"expectedTaskKey\":\"handle\",\"outcome\":\"resolved\"}")).andExpect(status().isNoContent());
+        return body(mvc.perform(get(BASE + "/" + ticket.path("id").asText()).with(as(owner,"lab-a","requester"))).andExpect(status().isOk()));
+    }
+
+    private void authorizedTimerFixture(java.time.Instant at) {
+        doReturn(at).when(confirmationClock).instant();
+        doAnswer(invocation -> {
+            var previous = SecurityContextHolder.getContext();
+            var context = SecurityContextHolder.createEmptyContext();
+            context.setAuthentication(new JwtAuthenticationToken(Jwt.withTokenValue("timer-test").header("alg","none")
+                .subject("timer-service").claim("groups",List.of("/workspaces/lab-a/workflow-timer")).build()));
+            try { SecurityContextHolder.setContext(context); ((Runnable) invocation.getArgument(2)).run(); }
+            finally { SecurityContextHolder.setContext(previous); }
+            return null;
+        }).when(timerIdentity).run(eq("lab-a"),eq("workflow:timer"),any());
+    }
+
+    private void evaluate(JsonNode ticket) {
+        confirmationTimers.evaluate("lab-a", ticket.path("process").path("processInstanceId").asText(), ticket.path("confirmGeneration").asText());
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(booleans={false,true})
+    void r11LegacyEnrollmentIsAtomicIdempotentAndHoldsOverdue(boolean overdue) throws Exception {
+        var ticket = awaitingConfirmation("r11-legacy-" + UUID.randomUUID());
+        String generation = ticket.path("confirmGeneration").asText();
+        var before = jdbc.queryForList("select * from servicedesk_ticket where id=?::uuid", ticket.path("id").asText());
+        var start = java.time.Instant.parse(ticket.path("confirmStartedAt").asText());
+        var deadline = start.plus(Duration.ofHours(72));
+        jdbc.update("delete from servicedesk_confirmation where generation=?",generation);
+        authorizedTimerFixture(overdue ? deadline : start.plusSeconds(1));
+        var executor = Executors.newFixedThreadPool(2);
+        try {
+            var first = executor.submit(() -> confirmationTimers.enrollConfirmations());
+            var second = executor.submit(() -> confirmationTimers.enrollConfirmations());
+            first.get(30,TimeUnit.SECONDS); second.get(30,TimeUnit.SECONDS);
+        } finally { executor.shutdownNow(); }
+        confirmationTimers.enrollConfirmations();
+        var state = confirmation.read("lab-a",UUID.fromString(ticket.path("id").asText()));
+        assertNotNull(state);
+        assertEquals(start,state.confirmStartedAt());
+        assertEquals(deadline,state.confirmDeadlineAt());
+        assertEquals(overdue ? Boolean.TRUE : null,state.confirmationHistory().get(0).rolloutHold());
+        assertEquals(before,jdbc.queryForList("select * from servicedesk_ticket where id=?::uuid",ticket.path("id").asText()));
+        assertEquals(1,jdbc.queryForObject("select count(*) from audit_event where action='servicedesk.confirmation.enrolled' and resource=?",Integer.class,ticket.path("id").asText()));
+        authorizedTimerFixture(deadline);
+        evaluate(ticket);
+        assertEquals(overdue ? null : "AUTO",confirmation.read("lab-a",UUID.fromString(ticket.path("id").asText())).closedBy());
+    }
+
+    @Test void r11LegacyEnrollmentAuditFailureRollsBackAndRetries() throws Exception {
+        var ticket = awaitingConfirmation("r11-enroll-rollback-" + UUID.randomUUID());
+        String generation = ticket.path("confirmGeneration").asText();
+        jdbc.update("delete from servicedesk_confirmation where generation=?",generation);
+        authorizedTimerFixture(java.time.Instant.parse(ticket.path("confirmStartedAt").asText()).plusSeconds(1));
+        jdbc.execute("create function r11_enroll_reject() returns trigger language plpgsql as $$ begin "
+            + "if new.action='servicedesk.confirmation.enrolled' then raise exception 'test rejection'; end if; return new; end $$");
+        jdbc.execute("create trigger r11_enroll_reject before insert on audit_event for each row execute function r11_enroll_reject()");
+        try {
+            confirmationTimers.enrollConfirmations();
+            assertNull(confirmation.read("lab-a",UUID.fromString(ticket.path("id").asText())));
+        } finally {
+            jdbc.execute("drop trigger r11_enroll_reject on audit_event"); jdbc.execute("drop function r11_enroll_reject()");
+        }
+        confirmationTimers.enrollConfirmations();
+        assertNotNull(confirmation.read("lab-a",UUID.fromString(ticket.path("id").asText())));
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings={"accepted","rework"})
+    void r11LegacyEnrollmentRacesRequesterWithoutDuplicateGeneration(String outcome) throws Exception {
+        String owner = "r11-enroll-race-" + UUID.randomUUID();
+        var ticket = awaitingConfirmation(owner);
+        String generation = ticket.path("confirmGeneration").asText();
+        jdbc.update("delete from servicedesk_confirmation where generation=?",generation);
+        authorizedTimerFixture(java.time.Instant.parse(ticket.path("confirmStartedAt").asText()).plusSeconds(1));
+        var start = new CountDownLatch(1);
+        var executor = Executors.newFixedThreadPool(2);
+        try {
+            var enrollment = executor.submit(() -> { start.await(); confirmationTimers.enrollConfirmations(); return null; });
+            var requester = executor.submit(() -> {
+                start.await();
+                return mvc.perform(post("/api/hpdi/v1/workspaces/lab-a/tasks/"+generation+"/complete")
+                    .with(as(owner,"lab-a","requester")).contentType("application/json")
+                    .content("{\"expectedTaskKey\":\"confirm\",\"outcome\":\""+outcome+"\"}"))
+                    .andReturn().getResponse().getStatus();
+            });
+            start.countDown(); enrollment.get(30,TimeUnit.SECONDS);
+            assertEquals(204,requester.get(30,TimeUnit.SECONDS));
+        } finally { executor.shutdownNow(); }
+        confirmationTimers.enrollConfirmations();
+        var history = confirmation.read("lab-a",UUID.fromString(ticket.path("id").asText())).confirmationHistory();
+        assertEquals(1,history.size());
+        assertEquals("accepted".equals(outcome) ? "REQUESTER" : "REWORK",history.get(0).decision());
+    }
+
+    @Test void r11EnrollmentRejectsStaleTicketAndScopeCorrelations() throws Exception {
+        var ticket = awaitingConfirmation("r11-stale-"+UUID.randomUUID());
+        String generation = ticket.path("confirmGeneration").asText();
+        String process = ticket.path("process").path("processInstanceId").asText();
+        jdbc.update("delete from servicedesk_confirmation where generation=?",generation);
+        authorizedTimerFixture(java.time.Instant.parse(ticket.path("confirmStartedAt").asText()).plusSeconds(1));
+        jdbc.update("update process_scope set owner='stale-owner' where id=?",process);
+        confirmationTimers.enrollConfirmations();
+        assertNull(confirmation.read("lab-a",UUID.fromString(ticket.path("id").asText())));
+        jdbc.update("update process_scope set owner=? where id=?",ticket.path("creator").asText(),process);
+        jdbc.update("update servicedesk_ticket set process_key=? where id=?::uuid",ServiceDeskProcess.KEY,ticket.path("id").asText());
+        confirmationTimers.enrollConfirmations();
+        assertNull(confirmation.read("lab-a",UUID.fromString(ticket.path("id").asText())));
+        jdbc.update("update servicedesk_ticket set process_key=? where id=?::uuid",ServiceDeskProcess.REVIEWED_KEY,ticket.path("id").asText());
+        confirmationTimers.enrollConfirmations();
+        assertNotNull(confirmation.read("lab-a",UUID.fromString(ticket.path("id").asText())));
+    }
+
+    @Test void r11InvalidIdentityAndForeignWorkspaceCannotClose() throws Exception {
+        var ticket = awaitingConfirmation("r11-auth-owner-" + UUID.randomUUID());
+        assertThrows(CoreException.class, () -> evaluate(ticket));
+        authorizedTimerFixture(java.time.Instant.parse(ticket.path("confirmDeadlineAt").asText()));
+        assertThrows(CoreException.class, () -> confirmationTimers.evaluate("lab-b",
+            ticket.path("process").path("processInstanceId").asText(), ticket.path("confirmGeneration").asText()));
+        mvc.perform(post("/api/hpdi/v1/workspaces/lab-a/tasks/" + ticket.path("confirmGeneration").asText() + "/complete")
+            .with(as("not-requester","lab-a","coordinator")).contentType("application/json")
+            .content("{\"expectedTaskKey\":\"confirm\",\"outcome\":\"accepted\"}")).andExpect(status().isForbidden());
+        assertNull(confirmation.read("lab-a",UUID.fromString(ticket.path("id").asText())).closedBy());
+    }
+
+    @Test void r11SystemAuditFailureRollsBackRealEngineAndRecovers() throws Exception {
+        var ticket = awaitingConfirmation("r11-rollback-owner-" + UUID.randomUUID());
+        authorizedTimerFixture(java.time.Instant.parse(ticket.path("confirmDeadlineAt").asText()));
+        jdbc.execute("create function r11_reject_audit() returns trigger language plpgsql as $$ begin "
+            + "if new.action='task.timer.complete' then raise exception 'test rejection' using errcode='23514'; end if; return new; end $$");
+        jdbc.execute("create trigger r11_reject before insert on audit_event for each row execute function r11_reject_audit()");
+        try {
+            assertThrows(RuntimeException.class, () -> evaluate(ticket));
+            assertNull(confirmation.read("lab-a",UUID.fromString(ticket.path("id").asText())).closedBy());
+            assertEquals(0,jdbc.queryForObject("select count(*) from audit_event where action='servicedesk.confirmation.autoclosed' and resource=?",
+                Integer.class,ticket.path("id").asText()));
+        } finally {
+            jdbc.execute("drop trigger r11_reject on audit_event"); jdbc.execute("drop function r11_reject_audit()");
+        }
+        new TicketConfirmationWorker(jdbc,confirmationTimers,confirmationClock,true).run();
+        assertEquals("AUTO",confirmation.read("lab-a",UUID.fromString(ticket.path("id").asText())).closedBy());
+        new TicketConfirmationWorker(jdbc,confirmationTimers,confirmationClock,true).run();
+        assertEquals(1,jdbc.queryForObject("select count(*) from audit_event where action='task.timer.complete' and resource=?",
+            Integer.class,ticket.path("confirmGeneration").asText()));
+    }
+
+    @Test void r11ReopenMonitorIsDurableDeduplicatedAndStopsAtReviewedAssignment() throws Exception {
+        String owner = "r11-reopen-owner-" + UUID.randomUUID();
+        var ticket = awaitingConfirmation(owner);
+        mvc.perform(post("/api/hpdi/v1/workspaces/lab-a/tasks/" + ticket.path("confirmGeneration").asText() + "/complete")
+            .with(as(owner,"lab-a","requester")).contentType("application/json")
+            .content("{\"expectedTaskKey\":\"confirm\",\"outcome\":\"rework\"}")).andExpect(status().isNoContent());
+        var state = confirmation.read("lab-a",UUID.fromString(ticket.path("id").asText()));
+        authorizedTimerFixture(state.confirmationHistory().get(0).reopenDeadlineAt());
+        new TicketConfirmationWorker(jdbc,confirmationTimers,confirmationClock,true).run();
+        var alerted = confirmation.read("lab-a",UUID.fromString(ticket.path("id").asText())).confirmationHistory().get(0).reopenAlertedAt();
+        assertNotNull(alerted);
+        new TicketConfirmationWorker(jdbc,confirmationTimers,confirmationClock,true).run();
+        assertEquals(alerted,confirmation.read("lab-a",UUID.fromString(ticket.path("id").asText())).confirmationHistory().get(0).reopenAlertedAt());
+        evaluate(ticket); evaluate(ticket);
+        assertEquals(2,jdbc.queryForObject("select count(*) from hpdi_alert_event where business_key=? and type in ('REOPENED','REOPEN_UNCLAIMED')",
+            Integer.class,ticket.path("id").asText()));
+        assertNull(confirmation.read("lab-a",UUID.fromString(ticket.path("id").asText())).closedBy());
+        review(ticket,"coordinator","r11-new-agent-"+UUID.randomUUID(),null).andExpect(status().isOk());
+        assertEquals("ASSIGNED",confirmation.read("lab-a",UUID.fromString(ticket.path("id").asText())).confirmationHistory().get(0).reopenReceivedReason());
+        evaluate(ticket);
+        assertEquals(2,jdbc.queryForObject("select count(*) from hpdi_alert_event where business_key=? and type in ('REOPENED','REOPEN_UNCLAIMED')",
+            Integer.class,ticket.path("id").asText()));
+    }
+
+    @Test void r11UnclaimedPublicationAndCursorRollbackTogether() throws Exception {
+        String owner = "r11-alert-rollback-" + UUID.randomUUID();
+        var ticket = awaitingConfirmation(owner);
+        mvc.perform(post("/api/hpdi/v1/workspaces/lab-a/tasks/" + ticket.path("confirmGeneration").asText() + "/complete")
+            .with(as(owner,"lab-a","requester")).contentType("application/json")
+            .content("{\"expectedTaskKey\":\"confirm\",\"outcome\":\"rework\"}")).andExpect(status().isNoContent());
+        var id = UUID.fromString(ticket.path("id").asText());
+        authorizedTimerFixture(confirmation.read("lab-a",id).confirmationHistory().get(0).reopenDeadlineAt());
+        jdbc.execute("create function r11_alert_reject() returns trigger language plpgsql as $$ begin "
+            + "if new.action='human.alert.created' then raise exception 'test rejection'; end if; return new; end $$");
+        jdbc.execute("create trigger r11_alert_reject before insert on audit_event for each row execute function r11_alert_reject()");
+        try {
+            assertThrows(RuntimeException.class, () -> evaluate(ticket));
+            assertNull(confirmation.read("lab-a",id).confirmationHistory().get(0).reopenAlertedAt());
+            assertEquals(0,jdbc.queryForObject("select count(*) from hpdi_alert_event where business_key=? and type='REOPEN_UNCLAIMED'",Integer.class,id.toString()));
+        } finally {
+            jdbc.execute("drop trigger r11_alert_reject on audit_event"); jdbc.execute("drop function r11_alert_reject()");
+        }
+        evaluate(ticket);
+        assertNotNull(confirmation.read("lab-a",id).confirmationHistory().get(0).reopenAlertedAt());
+        assertEquals(1,jdbc.queryForObject("select count(*) from hpdi_alert_event where business_key=? and type='REOPEN_UNCLAIMED'",Integer.class,id.toString()));
+    }
+
+    @Test void r11ReopenQueueAdvancesPastOneBatchWithoutRepollingAlertedRows() throws Exception {
+        String owner = "r11-fair-"+UUID.randomUUID();
+        var ticket = awaitingConfirmation(owner);
+        String generation = ticket.path("confirmGeneration").asText();
+        mvc.perform(post("/api/hpdi/v1/workspaces/lab-a/tasks/"+generation+"/complete")
+            .with(as(owner,"lab-a","requester")).contentType("application/json")
+            .content("{\"expectedTaskKey\":\"confirm\",\"outcome\":\"rework\"}")).andExpect(status().isNoContent());
+        String prefix = "fair-"+UUID.randomUUID()+"-";
+        var due = confirmation.read("lab-a",UUID.fromString(ticket.path("id").asText())).confirmationHistory().get(0).reopenDeadlineAt();
+        var seen = new java.util.HashSet<String>();
+        vn.haui.dx.hpdi.process.api.ProcessTimers sink = (workspace, process, item) -> {
+            if (!item.startsWith(prefix)) return;
+            assertTrue(seen.add(item),"Already alerted generation selected again");
+            jdbc.update("update servicedesk_confirmation set reopen_alerted_at=? where generation=?",java.sql.Timestamp.from(due),item);
+        };
+        try {
+            jdbc.update("insert into servicedesk_confirmation(workspace,ticket_id,process_instance_id,generation,handle_task_id,handle_resolved_at,confirm_started_at,deadline_at,decision,decided_at,decided_by,reopen_deadline_at,checked_at)"
+                + " select workspace,ticket_id,process_instance_id,?||round::text,handle_task_id,handle_resolved_at,confirm_started_at,deadline_at,decision,decided_at,decided_by,reopen_deadline_at,'2000-01-01'::timestamptz"
+                + " from servicedesk_confirmation cross join generate_series(1,105) as round where generation=?",prefix,generation);
+            var worker = new TicketConfirmationWorker(jdbc,sink,java.time.Clock.fixed(due,java.time.ZoneOffset.UTC),true);
+            worker.run(); assertEquals(100,seen.size());
+            worker.run(); assertEquals(105,seen.size());
+            worker.run(); assertEquals(105,seen.size());
+        } finally {
+            jdbc.update("delete from servicedesk_confirmation where generation like ?",prefix+"%");
+        }
+    }
+
+    @Test void r11AutoCloseDeadlineGenerationAndRepeatedWorkerAreAtomic() throws Exception {
+        var ticket = awaitingConfirmation("r11-owner-" + UUID.randomUUID());
+        var start = java.time.Instant.parse(ticket.path("confirmStartedAt").asText());
+        var deadline = java.time.Instant.parse(ticket.path("confirmDeadlineAt").asText());
+        assertEquals(Duration.ofHours(72), Duration.between(start, deadline));
+        var preserved = jdbc.queryForList("select * from servicedesk_sla where ticket_id=?", UUID.fromString(ticket.path("id").asText()));
+        authorizedTimerFixture(deadline.minusMillis(1));
+        evaluate(ticket);
+        assertNull(confirmation.read("lab-a", UUID.fromString(ticket.path("id").asText())).closedBy());
+        authorizedTimerFixture(deadline);
+        confirmationTimers.evaluate("lab-a",ticket.path("process").path("processInstanceId").asText(),"stale-generation");
+        assertNull(confirmation.read("lab-a", UUID.fromString(ticket.path("id").asText())).closedBy());
+        var executor = Executors.newFixedThreadPool(2);
+        try {
+            var first = executor.submit(() -> evaluate(ticket));
+            var second = executor.submit(() -> evaluate(ticket));
+            first.get(20, TimeUnit.SECONDS); second.get(20, TimeUnit.SECONDS);
+        } finally { executor.shutdownNow(); }
+        evaluate(ticket);
+        var result = confirmation.read("lab-a", UUID.fromString(ticket.path("id").asText()));
+        assertEquals("AUTO", result.closedBy());
+        assertEquals(deadline, result.closedAt());
+        assertEquals(preserved,jdbc.queryForList("select * from servicedesk_sla where ticket_id=?", UUID.fromString(ticket.path("id").asText())));
+        assertEquals(1,jdbc.queryForObject("select count(*) from audit_event where action='task.timer.complete' and resource=?",Integer.class,ticket.path("confirmGeneration").asText()));
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings={"accepted","rework"})
+    void r11RequesterAndAutoCloseRaceHasOneDecision(String outcome) throws Exception {
+        String owner = "r11-race-owner-" + UUID.randomUUID();
+        var ticket = awaitingConfirmation(owner);
+        authorizedTimerFixture(java.time.Instant.parse(ticket.path("confirmDeadlineAt").asText()));
+        var start = new CountDownLatch(1);
+        var executor = Executors.newFixedThreadPool(2);
+        try {
+            var timer = executor.submit(() -> { start.await(); evaluate(ticket); return null; });
+            var requester = executor.submit(() -> {
+                start.await();
+                return mvc.perform(post("/api/hpdi/v1/workspaces/lab-a/tasks/" + ticket.path("confirmGeneration").asText() + "/complete")
+                    .with(as(owner,"lab-a","requester")).contentType("application/json")
+                    .content("{\"expectedTaskKey\":\"confirm\",\"outcome\":\"" + outcome + "\"}"))
+                    .andReturn().getResponse().getStatus();
+            });
+            start.countDown(); timer.get(20,TimeUnit.SECONDS);
+            int status = requester.get(20,TimeUnit.SECONDS);
+            assertTrue(status == 204 || status == 409, "Unexpected race response " + status);
+            var state = confirmation.read("lab-a",UUID.fromString(ticket.path("id").asText()));
+            assertEquals(1,state.confirmationHistory().size());
+            assertEquals(status == 409 ? "AUTO" : "accepted".equals(outcome) ? "REQUESTER" : "REWORK",state.confirmationHistory().get(0).decision());
+        } finally { executor.shutdownNow(); }
+    }
 
     @org.junit.jupiter.params.ParameterizedTest
     @org.junit.jupiter.params.provider.ValueSource(strings={"NOT_STARTED","IN_PROGRESS","PENDING"})
@@ -1214,14 +1499,14 @@ class TicketIntegrationTest {
             String task=reviewed.path("taskId").asText();
             ticketAlerts.check("lab-a", process, task, Map.of(worker, false));
             ticketAlerts.check("lab-a", process, task, Map.of(worker, false));
-            assertEquals((round + 1) * 2, jdbc.queryForObject("select count(*) from hpdi_alert_event where process_instance_id=?", Integer.class, process));
+            assertEquals((round + 1) * 2, jdbc.queryForObject("select count(*) from hpdi_alert_event where process_instance_id=? and type not in ('REOPENED','REOPEN_UNCLAIMED')", Integer.class, process));
             mvc.perform(post(hpdi+task+"/start").with(as(worker,"lab-a","agent"))).andExpect(status().isOk())
                 .andExpect(jsonPath("$.reopenCount").value(round));
             engineState.elapse(task,60_000);
             mvc.perform(post(hpdi+task+"/complete").with(as(worker,"lab-a","agent")).contentType("application/json")
                 .content("{\"expectedTaskKey\":\"handle\",\"outcome\":\"resolved\"}")).andExpect(status().isNoContent());
             ticketAlerts.check("lab-a", process, task, Map.of(worker, false));
-            assertEquals((round + 1) * 2, jdbc.queryForObject("select count(*) from hpdi_alert_event where process_instance_id=?", Integer.class, process));
+            assertEquals((round + 1) * 2, jdbc.queryForObject("select count(*) from hpdi_alert_event where process_instance_id=? and type not in ('REOPENED','REOPEN_UNCLAIMED')", Integer.class, process));
             metrics(statistics("lab-a",owner,"Repeated rework","requester"),0,1,0,0);
             String confirm=currentTask(ticket,owner);
             mvc.perform(post(hpdi+confirm+"/complete").with(as(owner,"lab-a","requester")).contentType("application/json")

@@ -42,9 +42,13 @@ def main():
         with tempfile.TemporaryDirectory(prefix="r5-openapi-") as temporary:
             baseline = Path(temporary) / "contracts"
             shutil.copytree(ROOT / "contracts", baseline)
+            fallback = ROOT / ".local/baseline-contracts"
             for relative in paths:
-                (baseline / relative).write_bytes(subprocess.check_output(
-                    ["git", "show", arguments.baseline + ":contracts/" + relative], cwd=ROOT))
+                if (fallback / relative).is_file():
+                    (baseline / relative).write_bytes((fallback / relative).read_bytes())
+                else:
+                    (baseline / relative).write_bytes(subprocess.check_output(
+                        ["git", "show", arguments.baseline + ":contracts/" + relative], cwd=ROOT))
             for relative in paths:
                 before = structural_errors(baseline / relative)
                 after = structural_errors(ROOT / "contracts" / relative)

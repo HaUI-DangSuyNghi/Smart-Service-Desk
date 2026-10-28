@@ -6,7 +6,7 @@ import java.util.UUID;
 import vn.haui.dx.hpdi.common.api.PageRequest;
 
 public interface WorkAlerts {
-    enum Type { START_OVERDUE, SLA_WARNING, SLA_BREACHED, PENDING_TOO_LONG, CRITICAL_NEW, NO_ONE_ON_DUTY, ASSIGNEE_OFF_DUTY, CLASSIFICATION_CHANGED }
+    enum Type { START_OVERDUE, SLA_WARNING, SLA_BREACHED, PENDING_TOO_LONG, CRITICAL_NEW, NO_ONE_ON_DUTY, ASSIGNEE_OFF_DUTY, CLASSIFICATION_CHANGED, REOPENED, REOPEN_UNCLAIMED }
     enum Severity { INFO, WARNING, CRITICAL }
     record Event(String workspace, Type type, Severity severity, String processInstanceId, String processKey,
                  String businessKey, String taskId, String generation, String label, boolean coordinators, String agent) {}
