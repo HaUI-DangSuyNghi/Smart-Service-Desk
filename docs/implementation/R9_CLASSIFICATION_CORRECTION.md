@@ -225,7 +225,50 @@ failure proves rollback of history, amendment, review, native return, SLA and al
 Intake's existing CAS and task-bound receipt remain authoritative; new rounds use
 a fresh receipt/version. Existing AI-D2 suites remain required.
 
-## Follow-Up Verification For Review 5677475009
+## Latest Verification For Review 5677667210
+
+Read review 5677667210 and source at c3b336d before implementation. The remaining
+P2 manual-precedence edge is fixed in
+`a9b61c918cae28159fc4dc4f37897948b518aed6`. No new P0/P1 is confirmed. This
+documentation/evidence commit changes no tested production source; all four
+profiles are rerun on this final commit before push. The exact final tested SHA,
+artifact directories and runtime request totals are recorded in the PR receipt.
+
+| Final verification | PASS | FAIL | ERROR | SKIP |
+| --- | ---: | ---: | ---: | ---: |
+| Backend Full | 807 | 0 | 0 | 0 |
+| Core-only | 106 | 0 | 0 | 0 |
+| Second-domain | 43 | 0 | 0 | 0 |
+| R2/R5/R6/R7/R8/R9 + Intake + migration targeted | 149 | 0 | 0 | 0 |
+| Python tier-boundary regression | 43 | 0 | 0 | 0 |
+
+Targeted overlaps Full. TicketIntegration now has 98 cases; upgrade coverage
+remains 21. Full and targeted passed on the implementation commit before the
+final-commit rerun. The real Flowable/PostgreSQL/Keycloak-issued JWT runtime also
+passed: actual scheduled LOW -> MEDIUM escalation, Coordinator reaffirm LOW,
+unchanged anchors/debt, retained breaches, empty field corrections, LOW queue,
+real R6 handover and manual-priority persistence. Restart verifies four retained
+tickets, two critical correction alert IDs and stored manual LOW. Runtime HTTP
+totals vary with delivery/escalation polling: use the final JSON receipt in PR,
+not an earlier run's request count as the final count. The previous c3b336d receipt
+was 29 main + 4 restart requests; its earlier 31-request run included extra polls.
+These are PR-reported local results, not an independent reviewer rerun.
+
+OpenAPI validates five real successful corrections (including reaffirmation),
+nine request checks and eight SLA responses; baseline whole-document errors stay
+HPDI live 3 / target 1 and Service Desk live/target 0. No whole-HPDI PASS claim.
+No V1-V27 migration, schema, audit safe-reference guard or overall SLA engine
+change. Runtime uses the isolated PostgreSQL 16.6 / Keycloak 26.0.7 override, not
+the broken default pinned PostgreSQL image. Local artifacts use
+.local/r9-reaffirm-* and .local/task-execution-*; no secrets are staged.
+
+Recommendation: READY FOR FINAL INDEPENDENT REVIEW; DO NOT MERGE until an actual
+independent approval (or explicit owner review-policy exception) and owner
+handling of HOSTED_CI_BLOCKED_BILLING are recorded. Owner SLA policy approval is
+not test evidence, independent approval or a CI waiver. Keep this Draft PR #58;
+MERGE COMMIT ONLY after gates are satisfied. No merge or history rewrite here.
+
+## Historical Follow-Up Verification For Review 5677475009
 
 Reviewed GitHub review 5677475009 and source at
 `3c33a99c50006204009aa91ad7d75c1beeba4b14` before changing code. The two P2 follow-ups
