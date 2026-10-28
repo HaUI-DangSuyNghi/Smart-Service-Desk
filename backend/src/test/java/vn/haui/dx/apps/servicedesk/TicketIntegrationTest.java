@@ -173,6 +173,104 @@ class TicketIntegrationTest {
     }
 
     @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings={"HANDOVER","REWORK","RECONCILE","ROLLBACK"})
+    void r9ManualReaffirmationOverridesEscalationWithoutFalseFieldHistory(String mode) throws Exception {
+        String worker = "r9-reaffirm-"+UUID.randomUUID();
+        String owner = "r9-reaffirm-owner-"+UUID.randomUUID();
+        var ticket = create(owner,"Reaffirm business priority","requester");
+        UUID id = UUID.fromString(ticket.path("id").asText());
+        var reviewed = body(review(ticket,"coordinator",worker,null,"OTHER","LOW").andExpect(status().isOk()));
+        String task = reviewed.path("taskId").asText();
+        String tasks = "/api/hpdi/v1/workspaces/lab-a/tasks/";
+        jdbc.update("update servicedesk_sla set approved_at=approved_at-interval '10 days',start_by=start_by-interval '10 days',"
+            + "resolve_by=resolve_by-interval '10 days' where handle_task_id=?",task);
+        var initial = slaService.read("lab-a",id);
+        slaService.reconcile("lab-a",initial.processId(),task);
+        assertEquals("MEDIUM",slaService.read("lab-a",id).priority().name());
+        var before = jdbc.queryForMap("select * from servicedesk_sla where handle_task_id=?",task);
+        var correction = patch(BASE+"/"+id+"/classification").with(as("coordinator","lab-a","coordinator"))
+            .contentType("application/json").content("{\"priority\":\"LOW\",\"reason\":\"Manually reaffirm LOW\"}");
+        if ("ROLLBACK".equals(mode)) {
+            jdbc.execute("create function r9_reject_override() returns trigger language plpgsql as $$ begin if new.action='servicedesk.sla.priority.overridden' then raise exception 'override audit rejection' using errcode='23514'; end if; return new; end $$");
+            jdbc.execute("create trigger r9_reject_override before insert on audit_event for each row execute function r9_reject_override()");
+            try {
+                mvc.perform(correction).andExpect(status().isConflict());
+                assertEquals(before,jdbc.queryForMap("select * from servicedesk_sla where handle_task_id=?",task));
+                assertEquals(0,jdbc.queryForObject("select count(*) from servicedesk_sla_amendment where ticket_id=?",Integer.class,id));
+                assertEquals(0,jdbc.queryForObject("select count(*) from servicedesk_classification_correction where ticket_id=?",Integer.class,id));
+            } finally {
+                jdbc.execute("drop trigger r9_reject_override on audit_event");
+                jdbc.execute("drop function r9_reject_override()");
+            }
+            return;
+        }
+        if ("RECONCILE".equals(mode)) {
+            var pool = Executors.newFixedThreadPool(2);
+            var gate = new CountDownLatch(1);
+            try {
+                var override = pool.submit(() -> { assertTrue(gate.await(15,TimeUnit.SECONDS));
+                    return mvc.perform(correction).andReturn().getResponse().getStatus(); });
+                var reconciliation = pool.submit(() -> { assertTrue(gate.await(15,TimeUnit.SECONDS));
+                    for (int attempt=0; attempt<10; attempt++) slaService.reconcile("lab-a",initial.processId(),task);
+                    return null; });
+                gate.countDown();
+                assertEquals(200,override.get(30,TimeUnit.SECONDS));
+                reconciliation.get(30,TimeUnit.SECONDS);
+            } finally { gate.countDown(); pool.shutdownNow(); }
+        } else mvc.perform(correction).andExpect(status().isOk());
+        mvc.perform(correction).andExpect(status().isConflict());
+        slaService.reconcile("lab-a",initial.processId(),task);
+        var amended = slaService.read("lab-a",id);
+        assertTrue(amended.manualPriority());
+        assertEquals("LOW",amended.priority().name());
+        assertEquals("LOW",jdbc.queryForObject("select priority from servicedesk_review where ticket_id=?",String.class,id));
+        var after = jdbc.queryForMap("select * from servicedesk_sla where handle_task_id=?",task);
+        for (var field : List.of("approved_at","start_by","resolve_by","policy","base_priority",
+                "start_budget_adjustment_millis","resolve_budget_adjustment_millis")) assertEquals(before.get(field),after.get(field),field);
+        assertEquals("LOW",after.get("manual_priority"));
+        assertTrue(amended.project(slaService.now()).startBreached());
+        assertTrue(amended.project(slaService.now()).resolveBreached());
+        assertEquals(0,jdbc.queryForObject("select count(*) from servicedesk_classification_correction where ticket_id=?",Integer.class,id));
+        assertEquals(1,jdbc.queryForObject("select count(*) from servicedesk_sla_amendment where ticket_id=? and before_state->>'priority'='MEDIUM'"
+            + " and after_state->>'manual_priority'='LOW' and after_state->>'priority'='LOW'",Integer.class,id));
+        var provenance = json.readTree(jdbc.queryForObject("select details::text from audit_event where action='servicedesk.sla.priority.overridden' and resource=?",String.class,id.toString()));
+        assertEquals("Manually reaffirm LOW",jdbc.queryForObject("select reason from servicedesk_estimate_history where id=?",String.class,
+            provenance.path("estimateHistoryId").asLong()));
+        assertEquals("MEDIUM",provenance.path("previousEffectivePriorityKey").asText());
+        assertEquals("LOW",provenance.path("manualPriorityKey").asText());
+        assertTrue(provenance.path("reaffirmedKey").asBoolean());
+        assertEquals(25,jdbc.queryForObject("select priority_ from act_ru_task where id_=?",Integer.class,task));
+        mvc.perform(get("/api/hpdi/v1/workspaces/lab-a/queue").with(as(worker,"lab-a","agent")))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.items[0].priority").value("LOW"));
+        var corrected = body(mvc.perform(get(BASE+"/"+id).with(as("coordinator","lab-a","coordinator"))).andExpect(status().isOk()));
+        assertEquals(reviewed.path("estimate"),corrected.path("estimate"));
+        assertEquals(0,corrected.path("corrections").size());
+        if ("HANDOVER".equals(mode)) {
+            mvc.perform(post(tasks+task+"/release").with(as(worker,"lab-a","agent")).contentType("application/json")
+                .content("{\"reason\":\"HANDOVER\",\"note\":\"Retain manual LOW\"}")).andExpect(status().isNoContent());
+            review(ticket,"coordinator",worker,null,"OTHER","LOW").andExpect(status().isOk());
+            var continued = slaService.read("lab-a",id);
+            assertTrue(continued.manualPriority());
+            assertEquals(amended.approvedAt(),continued.approvedAt());
+            assertEquals(amended.resolveBy(),continued.resolveBy());
+            slaService.reconcile("lab-a",continued.processId(),continued.taskId());
+            assertEquals("LOW",slaService.read("lab-a",id).priority().name());
+        } else if ("REWORK".equals(mode)) {
+            mvc.perform(post(tasks+task+"/start").with(as(worker,"lab-a","agent"))).andExpect(status().isOk());
+            mvc.perform(post(tasks+task+"/complete").with(as(worker,"lab-a","agent")).contentType("application/json")
+                .content("{\"expectedTaskKey\":\"handle\",\"outcome\":\"resolved\"}")).andExpect(status().isNoContent());
+            mvc.perform(post(tasks+currentTask(ticket,owner)+"/complete").with(as(owner,"lab-a","requester")).contentType("application/json")
+                .content("{\"expectedTaskKey\":\"confirm\",\"outcome\":\"rework\"}")).andExpect(status().isNoContent());
+            review(ticket,"coordinator",worker,null,"OTHER","LOW").andExpect(status().isOk());
+            var fresh = slaService.read("lab-a",id);
+            assertFalse(fresh.manualPriority());
+            assertTrue(fresh.approvedAt().isAfter(amended.approvedAt()));
+            assertFalse(fresh.project(slaService.now()).resolveBreached());
+            assertEquals("LOW",jdbc.queryForObject("select manual_priority from servicedesk_sla where handle_task_id=?",String.class,task));
+        }
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
     @org.junit.jupiter.params.provider.ValueSource(booleans={false,true})
     void r9CriticalCorrectionPublishesOneDistinctDurableCoordinatorEvent(boolean categoryChanged) throws Exception {
         var ticket = create("r9-critical-owner-"+UUID.randomUUID(),"Critical correction","requester");

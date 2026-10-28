@@ -16,7 +16,10 @@ paths:
       operationId: correctClassification
       description: >-
         R9. Current independent Coordinator with task:handle and task:assign, or current Agent holding
-        the active handle with task:handle. At least one actual change and a nonblank reason are required.
+        the active handle with task:handle. A nonblank reason and either an actual business classification
+        change or explicit reaffirmation of business priority against a different auto-escalated effective
+        priority are required. Reaffirmation records a manual override audit and SLA amendment, not a
+        fictitious unchanged-field correction. Repeating an already effective manual priority is a 409 no-op.
         Group change before START returns the same process to a fresh review using native Flowable state change.
         IN_PROGRESS and PENDING retain assignment and pending episode. Active canonical links fail closed.
         Priority amendments preserve policy, approval, elapsed budget and historical breach; manual priority

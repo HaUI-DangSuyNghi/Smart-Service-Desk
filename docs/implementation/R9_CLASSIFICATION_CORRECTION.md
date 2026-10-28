@@ -134,6 +134,47 @@ there is currently no FE consumer of these fields to migrate.
 
 ## ET, History And Provenance
 
+### Manual Reaffirmation After Automatic Escalation
+
+Review 5677667210 identified the LOW business / MEDIUM effective / absent manual
+priority edge case. An explicit PATCH priority LOW with a nonblank reason is now
+a valid manual override, even though the confirmed business priority stays LOW.
+Omitting priority is not reaffirmation. If business and effective priority already
+equal the supplied value, an otherwise unchanged PATCH remains a 409 no-op.
+
+The three values are distinct: servicedesk_review.priority is human-confirmed
+business priority (DEFAULT ET basis); servicedesk_sla.priority is the effective
+operational/queue priority; servicedesk_sla.manual_priority is nullable manual
+precedence for this generation and its handover lineage. Automatic escalation
+only changes effective priority. Reaffirmation sets effective/manual to LOW while
+leaving business LOW. It creates no fictitious LOW -> LOW correction field row.
+
+The existing SLA amendment ledger records operation ID and full before/after
+snapshots. Audit action servicedesk.sla.priority.overridden records actor/time,
+operationId, handleTaskId, estimateHistoryId, businessPriorityKey,
+previousEffectivePriorityKey, previousManualPriorityKey (NONE if absent),
+manualPriorityKey and reaffirmedKey. Its reason/provenance stays in the referenced
+append-only private estimate history, not arbitrary text in shared audit details;
+the existing safe-reference guard is unchanged. The generic correction audit,
+SLA amendment, estimate history/generation invalidation and queue update commit
+or roll back together. DEFAULT/COORDINATOR ET minutes/basis do not change solely
+because priority is reaffirmed.
+
+Reaffirmation uses the business-clock SLA base, not the escalated urgency, to
+retain consumed budget, original approval/deadlines and historical breaches.
+Flowable priority becomes 25 for LOW. Subsequent reconciliation respects manual
+LOW. R6 handover copies it; real rework initializes a fresh generation without
+manual precedence and retains old amendment/provenance rows. No schema or applied
+migration V1-V27 changes are needed.
+
+Runnable integration cases cover HANDOVER, REWORK, concurrent RECONCILE, and
+override-audit ROLLBACK. The optional runtime --sla-fixture-container argument
+must name an isolated test PostgreSQL container: it ages only a newly created
+synthetic LOW ticket's anchors, waits for the actual scheduled worker to escalate
+MEDIUM, then uses real Coordinator JWT HTTP PATCH LOW and real R6 handover.
+It never directly sets escalation/manual/queue priority. Restart proof checks
+the retained manual LOW in storage as well as ticket projections.
+
 DEFAULT estimates use the existing category/human-confirmed review priority table,
 not the effective priority after automatic SLA escalation. A manual correction
 updates that confirmed priority and DEFAULT ET; history records the same basis.
@@ -207,7 +248,7 @@ push; its exact tested SHA and check receipt are recorded in PR #58.
 | Second-domain | 43 | 0 | 0 | 0 |
 | R2/R5/R6/R7/R8/R9 + Intake + migration targeted | 145 | 0 | 0 | 0 |
 | Python tier-boundary tests | 43 | 0 | 0 | 0 |
-| Real Keycloak JWT HTTP runtime | 31 requests | 0 | 0 | 0 |
+| Real Keycloak JWT HTTP runtime | Initial run 31; final c3b336d run 29 + 4 restart requests | 0 | 0 | 0 |
 | Actual application restart | 3 tickets + 2 critical correction alerts | 0 | 0 | 0 |
 | Isolated smoke | 88 PASS lines | 0 | 0 | 0 |
 | DB consistency | 5 zero-violation queries | 0 | 0 | 0 |

@@ -76,13 +76,15 @@ public class TicketCorrectionService {
             String priority = input.priority()==null ? previousPriority : input.priority().name();
             boolean categoryChanged = !category.equals(previousCategory);
             boolean priorityChanged = !priority.equals(previousPriority);
-            if (!categoryChanged && !priorityChanged) throw CapabilityException.conflict("Classification is unchanged");
+            boolean priorityReaffirmed = input.priority()!=null && !priorityChanged && !priority.equals(oldSla.priority().name());
+            if (!categoryChanged && !priorityChanged && !priorityReaffirmed) throw CapabilityException.conflict("Classification is unchanged");
             var operation = UUID.randomUUID();
             var at = Timestamp.from(sla.now());
             String reviewId = (String)row.get("review_task_id");
             if (categoryChanged) history(operation, workspace, id, ticket, reviewId, taskId, "category", previousCategory, category, actor.subject(), input.reason(), at);
-            if (priorityChanged) {
+            if (priorityChanged)
                 history(operation, workspace, id, ticket, reviewId, taskId, "priority", previousPriority, priority, actor.subject(), input.reason(), at);
+            if (priorityChanged || priorityReaffirmed) {
                 sla.correctPriority(workspace, id, taskId, priority, operation);
             }
             int minutes = "DEFAULT".equals(row.get("estimate_basis"))
@@ -91,8 +93,14 @@ public class TicketCorrectionService {
             jdbc.update("update servicedesk_review set category=?,priority=?,estimate_minutes=?,estimate_generation=? where ticket_id=?",
                 category, input.priority()==null ? row.get("priority") : priority, minutes, operation.toString(), id);
             jdbc.update("update servicedesk_alert_monitor set category=? where workspace=? and handle_task_id=?", category, workspace, taskId);
-            jdbc.update("insert into servicedesk_estimate_history(ticket_id,review_task_id,category,priority,assignee,minutes,basis,changed_by,reason)"
-                + " values(?,?,?,?,?,?,?,?,?)", id, reviewId, category, priority, work.task().assignee(), minutes, row.get("estimate_basis"), actor.subject(), input.reason());
+            var estimateHistoryId = jdbc.queryForObject("insert into servicedesk_estimate_history(ticket_id,review_task_id,category,priority,assignee,minutes,basis,changed_by,reason)"
+                + " values(?,?,?,?,?,?,?,?,?) returning id", Long.class, id, reviewId, category, priority, work.task().assignee(), minutes, row.get("estimate_basis"), actor.subject(), input.reason());
+            if (priorityChanged || priorityReaffirmed)
+                audit.record(workspace, new BusinessActivity("servicedesk.sla.priority.overridden", "servicedesk.ticket", id.toString(),
+                    Map.of("operationId", operation.toString(), "handleTaskId", taskId, "estimateHistoryId", estimateHistoryId.toString(),
+                        "businessPriorityKey", priority, "previousEffectivePriorityKey", oldSla.priority().name(),
+                        "previousManualPriorityKey", oldSla.manualPriority() ? oldSla.base().name() : "NONE",
+                        "manualPriorityKey", priority, "reaffirmedKey", Boolean.toString(priorityReaffirmed))));
             estimates.classificationChanged(workspace, taskId, actor.subject());
             boolean groupChanged = categoryChanged && !Objects.equals(TicketAssignmentEligibility.supportGroup(TicketReview.Category.valueOf(previousCategory)),
                 TicketAssignmentEligibility.supportGroup(TicketReview.Category.valueOf(category)));

@@ -3,6 +3,7 @@ import argparse
 import base64
 import json
 import os
+import subprocess
 from pathlib import Path
 import time
 import urllib.error
@@ -17,6 +18,7 @@ def main():
     parser.add_argument("--keycloak", default="http://localhost:8081")
     parser.add_argument("--evidence", type=Path, default=Path(".local/r9-runtime-evidence.json"))
     parser.add_argument("--verify-restart", action="store_true")
+    parser.add_argument("--sla-fixture-container", help="Isolated test PostgreSQL container only; ages one synthetic ticket for real worker escalation")
     arguments = parser.parse_args()
     root = Path(__file__).resolve().parents[1]
     settings = dict(line.split("=", 1) for line in (root / ".env").read_text(encoding="utf-8-sig").splitlines()
@@ -56,6 +58,12 @@ def main():
 
     tickets = "/api/apps/servicedesk/v1/workspaces/lab-a/tickets"
     work = "/api/hpdi/v1/workspaces/lab-a"
+
+    def fixture_sql(statement):
+        return subprocess.run(["docker", "exec", "-i", arguments.sla_fixture_container,
+                               "psql", "-U", "core", "-d", "core", "-At", "-v", "ON_ERROR_STOP=1"],
+                              input=statement, text=True, capture_output=True, check=True).stdout.strip()
+
     if arguments.verify_restart:
         evidence = json.loads(arguments.evidence.read_text(encoding="utf-8"))
         for expected in evidence["retained"]:
@@ -65,6 +73,11 @@ def main():
         inbox = call("GET", work + "/alerts?size=100", coordinator)
         persisted = {item["id"] for item in inbox["items"]}
         assert set(evidence["criticalCorrectionAlerts"]) <= persisted
+        if "reaffirmedTicket" in evidence:
+            assert arguments.sla_fixture_container, "Same isolated SLA fixture container required for restart proof"
+            ticket_id = str(uuid.UUID(evidence["reaffirmedTicket"]))
+            assert fixture_sql("select manual_priority from servicedesk_sla where ticket_id='" + ticket_id
+                               + "' and released_at is null") == "LOW"
         evidence["restartVerified"] = True
         evidence["restartResponses"] = responses
         arguments.evidence.write_text(json.dumps(evidence, indent=2), encoding="utf-8")
@@ -73,11 +86,11 @@ def main():
 
     call("PUT", work + "/duty/me", agent, {"onDuty": True})
 
-    def reviewed():
+    def reviewed(priority="HIGH"):
         created = call("POST", tickets, requester, dict(clientRequestId=str(uuid.uuid4()), title="R9 runtime " + str(uuid.uuid4()),
                                                        description="Synthetic R9 runtime acceptance."), 201)
         result = call("POST", tickets + "/" + created["id"] + "/review", coordinator,
-                      dict(category="OTHER", priority="HIGH", assignee=agent_id, reason="Independent runtime review"))
+                      dict(category="OTHER", priority=priority, assignee=agent_id, reason="Independent runtime review"))
         return result
 
     first = reviewed()
@@ -142,6 +155,39 @@ def main():
     evidence = dict(realKeycloak=True, runtimeBase=arguments.base, restartVerified=False,
                     criticalCorrectionAlerts=[item["id"] for item in critical_alerts],
                     retained=[corrected, returned, pending], responses=responses)
+    if arguments.sla_fixture_container:
+        fourth = reviewed("LOW")
+        ticket_id = str(uuid.UUID(fourth["id"]))
+        fixture_sql("update servicedesk_sla set approved_at=approved_at-interval '10 days',"
+                    "start_by=start_by-interval '10 days',resolve_by=resolve_by-interval '10 days' "
+                    "where ticket_id='" + ticket_id + "'")
+        for attempt in range(45):
+            escalated = call("GET", tickets + "/" + ticket_id, coordinator)
+            if escalated["classification"]["priority"] == "MEDIUM":
+                break
+            time.sleep(2)
+        else:
+            raise AssertionError("Actual scheduled SLA worker did not escalate LOW to MEDIUM")
+        before = json.loads(fixture_sql("select row_to_json(s) from servicedesk_sla s where ticket_id='" + ticket_id + "'"))
+        reaffirmed = call("PATCH", tickets + "/" + ticket_id + "/classification", coordinator,
+                          dict(priority="LOW", reason="Manually reaffirm LOW after automatic escalation"))
+        assert reaffirmed["classification"]["priority"] == "LOW" and not reaffirmed["classification"]["escalated"]
+        assert reaffirmed["corrections"] == [] and reaffirmed["estimate"] == fourth["estimate"]
+        after = json.loads(fixture_sql("select row_to_json(s) from servicedesk_sla s where ticket_id='" + ticket_id + "'"))
+        for field in ("approved_at", "start_by", "resolve_by", "start_budget_adjustment_millis", "resolve_budget_adjustment_millis"):
+            assert before[field] == after[field], field
+        assert after["manual_priority"] == "LOW" and after["start_breached_history"] and after["resolve_breached_history"]
+        queue = call("GET", work + "/queue?size=100", agent)
+        assert next(item for item in queue["items"] if item["id"] == fourth["taskId"])["priority"] == "LOW"
+        call("POST", work + "/tasks/" + fourth["taskId"] + "/release", agent,
+             dict(reason="HANDOVER", note="Preserve manual reaffirmation"), 204)
+        continued = call("POST", tickets + "/" + ticket_id + "/review", coordinator,
+                         dict(category="OTHER", priority="LOW", assignee=agent_id, reason="Continue manual LOW"))
+        assert continued["classification"]["priority"] == "LOW"
+        assert fixture_sql("select manual_priority from servicedesk_sla where ticket_id='" + ticket_id
+                           + "' and released_at is null") == "LOW"
+        evidence["reaffirmedTicket"] = ticket_id
+        evidence["retained"].append(continued)
     arguments.evidence.parent.mkdir(parents=True, exist_ok=True)
     arguments.evidence.write_text(json.dumps(evidence, indent=2), encoding="utf-8")
     print("PASS R9 runtime:", len(responses), "real HTTP requests; Keycloak-issued JWTs")
