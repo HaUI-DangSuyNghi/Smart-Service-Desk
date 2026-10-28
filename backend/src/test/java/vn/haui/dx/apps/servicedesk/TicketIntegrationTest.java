@@ -165,7 +165,7 @@ class TicketIntegrationTest {
         assertEquals(priority,jdbc.queryForObject("select priority from servicedesk_review where ticket_id=?",String.class,id));
         if ("HANDOVER".equals(mode)) mvc.perform(post("/api/hpdi/v1/workspaces/lab-a/tasks/"+task+"/release")
             .with(as(worker,"lab-a","agent")).contentType("application/json")
-            .content("{\"reason\":\"HANDOVER\",\"note\":\"Continue after correction\"}")).andExpect(status().isOk());
+            .content("{\"reason\":\"HANDOVER\",\"note\":\"Continue after correction\"}")).andExpect(status().isNoContent());
         var next = body(review(ticket,"coordinator",worker,null,"NETWORK",priority).andExpect(status().isOk()));
         assertEquals(expected,next.path("estimate").path("minutes").asInt());
         assertEquals(initial.approvedAt(),slaService.read("lab-a",id).approvedAt());
