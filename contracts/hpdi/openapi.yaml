@@ -973,8 +973,265 @@ paths:
           $ref: '#/components/responses/Forbidden'
         '404':
           $ref: '#/components/responses/NotFound'
+  /api/hpdi/v1/settings/work:
+    get:
+      operationId: getWorkSettings
+      description: Fresh platform-admin only. Persistent administrative settings; PERSISTED_NOT_ENFORCED.
+        No runtime consumer wiring. R7 remains blocked.
+      responses:
+        '200':
+          description: Cấu hình hiện hành
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkSettings'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
+    put:
+      operationId: updateWorkSettings
+      description: Fresh platform-admin only. Persistent administrative settings; PERSISTED_NOT_ENFORCED.
+        No runtime consumer wiring. R7 remains blocked.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WorkSettings'
+      responses:
+        '200':
+          description: Cấu hình sau khi lưu, version mới
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WorkSettings'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '503':
+          $ref: '#/components/responses/ServiceUnavailable'
 components:
   schemas:
+    WorkSettings:
+      type: object
+      additionalProperties: false
+      description: 'Storage-only foundation. SLA seed matches r5-v1: 510 working minutes/day;
+        LOW 510/2550, MEDIUM 240/1020. Closing seed 3 preserves 72 continuous hours; no
+        runtime wiring. Shifts must be nonblank/unique, ordered start<end and non-overlapping;
+        resolve>=start; outlierMax>=outlierMin. All changes are audited; PUT rejects read-only
+        metadata and unknown fields.'
+      required:
+      - version
+      - assignment
+      - shifts
+      - sla
+      - critical
+      - alerts
+      - closing
+      - estimate
+      properties:
+        version:
+          type: integer
+          minimum: 0
+          description: Tăng mỗi lần lưu; PUT phải gửi version đang xem
+          maximum: 9223372036854775807
+        updatedAt:
+          type: string
+          format: date-time
+          readOnly: true
+        updatedBy:
+          type: string
+          readOnly: true
+        assignment:
+          type: object
+          additionalProperties: false
+          required:
+          - pendingLoadFactor
+          - tieThresholdMinutes
+          - maxInProgress
+          - minRemainingMinutes
+          properties:
+            pendingLoadFactor:
+              type: number
+              minimum: 0
+              maximum: 1
+              description: Mặc định 0,5
+            tieThresholdMinutes:
+              type: integer
+              minimum: 0
+              description: Mặc định 15
+              maximum: 2147483647
+            maxInProgress:
+              type: integer
+              minimum: 1
+              description: Mặc định 1
+              maximum: 2147483647
+            minRemainingMinutes:
+              type: integer
+              minimum: 0
+              description: Phần còn lại tối thiểu của việc Đang làm, mặc định 10
+              maximum: 2147483647
+        shifts:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/Shift'
+          description: Mặc định Sáng 07:00–11:30, Chiều 13:00–17:00
+        sla:
+          type: object
+          additionalProperties: false
+          required:
+          - targets
+          - escalateAfterRatio
+          - maxEscalatedPriority
+          - waitingExternalCounts
+          properties:
+            targets:
+              type: object
+              additionalProperties: false
+              required:
+              - LOW
+              - MEDIUM
+              - HIGH
+              - CRITICAL
+              description: Working-minute targets except CRITICAL continuous minutes.
+                Seed LOW 510/2550, MEDIUM 240/1020, HIGH 60/480, CRITICAL 15/120. Runtime
+                policy remains r5-v1 and is not changed by PUT.
+              properties:
+                LOW:
+                  $ref: '#/components/schemas/SlaTarget'
+                MEDIUM:
+                  $ref: '#/components/schemas/SlaTarget'
+                HIGH:
+                  $ref: '#/components/schemas/SlaTarget'
+                CRITICAL:
+                  $ref: '#/components/schemas/SlaTarget'
+            escalateAfterRatio:
+              type: number
+              minimum: 0
+              maximum: 1
+              description: Chờ quá tỉ lệ này của hạn bắt đầu thì lên 1 bậc, mặc định 0,5
+            maxEscalatedPriority:
+              $ref: '#/components/schemas/Priority'
+            waitingExternalCounts:
+              type: boolean
+              description: Chờ linh kiện / bên ngoài có tính vào hạn, mặc định true
+        critical:
+          type: object
+          additionalProperties: false
+          required:
+          - autoQueueAfterMinutes
+          properties:
+            autoQueueAfterMinutes:
+              type: integer
+              minimum: 1
+              description: Mặc định 5
+              maximum: 2147483647
+        alerts:
+          type: object
+          additionalProperties: false
+          required:
+          - warnRemainingRatio
+          - pendingRemindDays
+          - reopenUnclaimedMinutes
+          properties:
+            warnRemainingRatio:
+              type: number
+              minimum: 0
+              maximum: 1
+              description: Mặc định 0,2
+            pendingRemindDays:
+              type: integer
+              minimum: 1
+              description: Mặc định 3
+              maximum: 2147483647
+            reopenUnclaimedMinutes:
+              type: integer
+              minimum: 1
+              description: Mặc định 15
+              maximum: 2147483647
+        closing:
+          type: object
+          additionalProperties: false
+          required:
+          - autoCloseAfterDays
+          properties:
+            autoCloseAfterDays:
+              type: integer
+              minimum: 1
+              description: Tự đóng nếu người dùng không xác nhận, mặc định 3
+              maximum: 2147483647
+        estimate:
+          type: object
+          additionalProperties: false
+          required:
+          - minSamples
+          - windowMonths
+          - outlierMinMinutes
+          - outlierMaxMinutes
+          properties:
+            minSamples:
+              type: integer
+              minimum: 1
+              description: Mặc định 20
+              maximum: 2147483647
+            windowMonths:
+              type: integer
+              minimum: 1
+              description: Mặc định 6
+              maximum: 2147483647
+            outlierMinMinutes:
+              type: integer
+              minimum: 0
+              description: Mặc định 2
+              maximum: 2147483647
+            outlierMaxMinutes:
+              type: integer
+              minimum: 1
+              description: Mặc định 480 (8 giờ)
+              maximum: 2147483647
+    Shift:
+      type: object
+      additionalProperties: false
+      required:
+      - name
+      - start
+      - end
+      properties:
+        name:
+          type: string
+          maxLength: 50
+        start:
+          type: string
+          pattern: ^([01][0-9]|2[0-3]):[0-5][0-9]$
+          example: 07:00
+        end:
+          type: string
+          pattern: ^([01][0-9]|2[0-3]):[0-5][0-9]$
+          example: '11:30'
+    SlaTarget:
+      type: object
+      additionalProperties: false
+      required:
+      - startWithinMinutes
+      - resolveWithinMinutes
+      properties:
+        startWithinMinutes:
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+        resolveWithinMinutes:
+          type: integer
+          minimum: 1
+          maximum: 2147483647
     EstimateRequestStatus:
       type: string
       enum: [PENDING, APPROVED, REJECTED, SUPERSEDED]
@@ -1826,7 +2083,6 @@ components:
             type: array
             items:
               $ref: '#/components/schemas/KnowledgeSummary'
-          description: Authorized exact bytes, Base64 encoded
     TriageSuggestion:
       type: object
       required:

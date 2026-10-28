@@ -11,7 +11,9 @@ ticket = dict(id=ticket_id, workspace="lab-a", creator="requester", clientReques
               process=dict(processInstanceId="process-1", processKey="service-desk",
                            businessKey=ticket_id, workspace="lab-a"))
 stats = dict(workspace="lab-a", visibility="own", total=1, awaitingHandling=1,
-             awaitingConfirmation=0, completed=0, unclassified=0)
+             awaitingConfirmation=0, awaitingReview=0, completed=0, unclassified=0,
+             assigned=1, inProgress=0, pending=0, reopened=0, closed=0, overdue=0,
+             intake=0, following=0)
 captures = [dict(method="GET", path="/workspaces/lab-a/tickets/" + suffix,
                  status=200, bodyJson=json.dumps(body))
             for suffix, body in (("statistics", stats), (ticket_id, ticket))]

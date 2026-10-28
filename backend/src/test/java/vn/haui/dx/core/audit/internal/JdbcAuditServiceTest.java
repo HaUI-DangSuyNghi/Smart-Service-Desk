@@ -21,6 +21,22 @@ import static org.mockito.Mockito.*;
 import static vn.haui.dx.core.identity.api.WorkspaceRole.*;
 
 class JdbcAuditServiceTest {
+    @Test void reservedScopeAlwaysUsesFreshAuthorizationEvenForJwtAdminOrForgedCoordinator() {
+        var access = mock(WorkspaceAccess.class);
+        var admin = mock(vn.haui.dx.core.identity.api.FreshAdminAuthorization.class);
+        var audit = new JdbcAuditService(jdbc, access, new ObjectMapper(), admin);
+        doThrow(CoreException.forbidden("revoked")).when(admin).requirePlatformAdmin();
+        assertThrows(CoreException.class, () -> audit.search("system:platform", new AuditQuery(null,null,null,null), PageRequest.of(0,10)));
+        assertThrows(CoreException.class, () -> audit.mine("system:platform", new AuditQuery(null,null,null,null), PageRequest.of(0,10)));
+        verifyNoInteractions(access, jdbc);
+    }
+    @Test void reservedScopeFreshAdminCanReadWithoutWorkspaceMembership() {
+        var access = mock(WorkspaceAccess.class);
+        var admin = mock(vn.haui.dx.core.identity.api.FreshAdminAuthorization.class);
+        new JdbcAuditService(jdbc, access, new ObjectMapper(), admin)
+            .search("system:platform", new AuditQuery(null,null,null,null), PageRequest.of(0,10));
+        verify(admin).requirePlatformAdmin(); verifyNoInteractions(access); searched();
+    }
     private final JdbcTemplate jdbc = mock(JdbcTemplate.class);
 
     /** Người dùng giả với membership cố định. */
@@ -38,7 +54,7 @@ class JdbcAuditServiceTest {
         WorkspaceAccess access = mock(WorkspaceAccess.class);
         when(access.current()).thenReturn(user);
         when(jdbc.queryForObject(anyString(), eq(Long.class), any(Object[].class))).thenReturn(0L);
-        return new JdbcAuditService(jdbc, access, new ObjectMapper());
+        return new JdbcAuditService(jdbc, access, new ObjectMapper(), mock(vn.haui.dx.core.identity.api.FreshAdminAuthorization.class));
     }
 
     @SuppressWarnings("unchecked")
@@ -65,7 +81,7 @@ class JdbcAuditServiceTest {
     @Test void mineRequiresWorkspaceMembershipBeforeQuerying() {
         WorkspaceAccess access = mock(WorkspaceAccess.class);
         doThrow(CoreException.forbidden("Workspace membership required")).when(access).requireMember("lab-a");
-        var denied = new JdbcAuditService(jdbc, access, new ObjectMapper());
+        var denied = new JdbcAuditService(jdbc, access, new ObjectMapper(), mock(vn.haui.dx.core.identity.api.FreshAdminAuthorization.class));
         assertThrows(CoreException.class,
             () -> denied.mine("lab-a", new AuditQuery(null, null, null, null), PageRequest.of(null, null)));
         verifyNoInteractions(jdbc);
