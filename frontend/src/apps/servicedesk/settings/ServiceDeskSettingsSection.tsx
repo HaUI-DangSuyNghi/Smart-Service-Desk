@@ -21,11 +21,14 @@ const minutes = z.coerce
   .min(1, "≥ 1")
   .max(MAX_ESTIMATE_MINUTES, `≤ ${MAX_ESTIMATE_MINUTES}`);
 const row = z.object({ LOW: minutes, MEDIUM: minutes, HIGH: minutes, CRITICAL: minutes });
-// Tên group Keycloak: chữ thường, số, gạch ngang
+// Tên group Keycloak (khớp backend): bắt đầu bằng chữ thường, rồi chữ thường, số, gạch ngang;
+// không trùng tên vai trò
+const RESERVED_GROUPS = ["requester", "agent", "coordinator", "platform-admin", "system", "global"];
 const group = z
   .string()
   .trim()
-  .regex(/^[a-z0-9-]{1,50}$/, "Chữ thường, số, gạch ngang");
+  .regex(/^[a-z][a-z0-9-]{0,49}$/, "Bắt đầu bằng chữ thường; chỉ chữ thường, số, gạch ngang")
+  .refine((value) => !RESERVED_GROUPS.includes(value), "Trùng tên vai trò, chọn tên khác");
 
 const schema = z.object({
   version: z.number(),
@@ -34,12 +37,8 @@ const schema = z.object({
     NETWORK: group,
     SOFTWARE: group,
     ACCOUNT: group,
-    // OTHER để trống: điều phối viên tự chọn tổ
-    OTHER: z
-      .string()
-      .trim()
-      .transform((value) => value || null)
-      .nullable(),
+    // Loại Khác luôn do điều phối viên tự chọn người (backend chỉ nhận null)
+    OTHER: z.null(),
   }),
   estimateDefaults: z.object({
     HARDWARE: row,
@@ -64,7 +63,7 @@ const SettingsForm = ({ settings }: { settings: ServiceDeskSettings }) => {
         NETWORK: settings.categoryGroups.NETWORK ?? "",
         SOFTWARE: settings.categoryGroups.SOFTWARE ?? "",
         ACCOUNT: settings.categoryGroups.ACCOUNT ?? "",
-        OTHER: settings.categoryGroups.OTHER ?? "",
+        OTHER: null,
       },
     },
   });
@@ -85,7 +84,14 @@ const SettingsForm = ({ settings }: { settings: ServiceDeskSettings }) => {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+      <p className="text-crm-sm text-crm-text-2">
+        Lưu xong áp dụng ngay cho lần duyệt và giao việc sau đó; ticket đã duyệt giữ ước tính cũ.
+      </p>
       <FieldGroup title="Tổ xử lý theo loại sự cố" icon={IconUsersGroup}>
+        <p className="text-crm-sm text-crm-text-3">
+          Tên tổ là group con trong workspace ở Keycloak (cùng cấp với agent). Chỉ kỹ thuật viên
+          thuộc tổ mới được đề xuất và giao việc loại đó.
+        </p>
         {CATEGORIES.map((category) => (
           <div
             key={category}
@@ -95,13 +101,22 @@ const SettingsForm = ({ settings }: { settings: ServiceDeskSettings }) => {
               {CATEGORY_LABELS[category]}
             </label>
             <div className="flex flex-col gap-1">
-              <Input
-                id={`group-${category}`}
-                className="w-full sm:w-56"
-                placeholder={category === "OTHER" ? "Điều phối viên tự chọn" : undefined}
-                {...form.register(`categoryGroups.${category}`)}
-              />
-              {errors.categoryGroups?.[category] && (
+              {category === "OTHER" ? (
+                <Input
+                  id="group-OTHER"
+                  className="w-full sm:w-56"
+                  value="Điều phối viên tự chọn"
+                  disabled
+                  readOnly
+                />
+              ) : (
+                <Input
+                  id={`group-${category}`}
+                  className="w-full sm:w-56"
+                  {...form.register(`categoryGroups.${category}`)}
+                />
+              )}
+              {category !== "OTHER" && errors.categoryGroups?.[category] && (
                 <p className="text-crm-sm text-crm-danger">
                   {errors.categoryGroups[category]?.message}
                 </p>
@@ -112,6 +127,10 @@ const SettingsForm = ({ settings }: { settings: ServiceDeskSettings }) => {
       </FieldGroup>
 
       <FieldGroup title="Ước tính mặc định (phút)" icon={IconClockHour4}>
+        <p className="text-crm-sm text-crm-text-3">
+          Dùng khi chưa đủ việc đã đóng cùng loại và ưu tiên để tính trung vị (số mẫu tối thiểu ở
+          phần Cấu hình chung).
+        </p>
         {/* Bảng 5 × 4 ô: điện thoại cuộn ngang trong khung, trang không cuộn ngang */}
         <div className="overflow-x-auto">
           <table className="min-w-full border-separate border-spacing-1">

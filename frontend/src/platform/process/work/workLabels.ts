@@ -1,4 +1,5 @@
 import type {
+  AssignmentSuggestion,
   Estimate,
   PendingReason,
   Priority,
@@ -50,8 +51,6 @@ export const RELEASE_REASON_LABELS: Readonly<Record<ReleaseReason, string>> = {
 /** Lựa chọn "để chờ ca sau" (không giao ai) khi tổ không có người trực (R3). */
 export const WAIT_FOR_SHIFT = "";
 
-const EFFORT_SIZE_LABELS ={ SMALL: "nhỏ", MEDIUM: "vừa", LARGE: "lớn" } as const;
-
 /** 90 → "1 giờ 30 phút". */
 export const formatMinutes = (minutes: number) => formatSeconds(minutes * 60);
 
@@ -60,13 +59,28 @@ export const estimateBasisText = (estimate: Estimate) => {
   switch (estimate.basis) {
     case "COORDINATOR":
       return "Điều phối viên đặt";
-    case "SIMILAR_BY_SIZE":
-      return `Trung vị ${estimate.sampleSize ?? "?"} việc tương tự (cỡ ${
-        estimate.effortSize ? EFFORT_SIZE_LABELS[estimate.effortSize] : "?"
-      })`;
     case "SIMILAR":
       return `Trung vị ${estimate.sampleSize ?? "?"} việc tương tự`;
     default:
       return "Mặc định theo loại";
   }
 };
+
+/** Giải thích đề xuất người xử lý; backend trả câu kỹ thuật nên dịch theo từng nhánh (R2). */
+export const suggestionReasonText = (
+  suggestion: Pick<AssignmentSuggestion, "group" | "recommended" | "reason">,
+) => {
+  const base =
+    suggestion.group === "manual"
+      ? "Loại Khác: điều phối viên tự chọn người xử lý."
+      : suggestion.recommended === null
+        ? "Tổ không còn ai đang trực: chọn người khác hoặc để chờ ca sau."
+        : "Đề xuất người ít tải nhất (chênh dưới 15 phút thì xét ít việc nhất hôm nay).";
+  return suggestion.reason.includes("ESTIMATE_EXCEEDS_SHIFT")
+    ? `${base} Ước tính dài hơn thời gian còn lại của ca với một số người.`
+    : base;
+};
+
+/** Được nâng bậc ưu tiên do chờ lâu (R5). */
+export const isEscalated = (item: { priority: Priority; basePriority: Priority }) =>
+  item.priority !== item.basePriority;

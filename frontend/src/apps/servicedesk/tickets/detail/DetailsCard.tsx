@@ -10,11 +10,11 @@ import { Collapsible } from "../../../../platform/shared/ui/Collapsible";
 import { FieldRow } from "../../../../platform/shared/ui/FieldRow";
 import type { TicketView } from "../../services/ticketService";
 import { CATEGORY_LABELS, groupLabel } from "../ticketLabels";
-import { isStarted } from "../ticketRules";
+import { awaitsReview, isStarted } from "../ticketRules";
 
 interface Props {
   ticket: TicketView;
-  /** Người gửi chỉ thấy dự kiến bắt đầu và hạn; không thấy tổ, tải, ước tính. */
+  /** Người gửi chỉ thấy trạng thái và hạn; không thấy tổ, tải, ước tính. */
   isRequesterView: boolean;
 }
 
@@ -32,7 +32,7 @@ export const DetailsCard = ({ ticket, isRequesterView }: Props) => {
               personName(names, ticket.assignee)
             ) : (
               <span className="text-crm-text-3">
-                {state === "AWAITING_REVIEW" ? "Chờ điều phối viên giao việc" : "Chưa giao"}
+                {awaitsReview(ticket) ? "Chờ điều phối viên giao việc" : "Chưa giao"}
               </span>
             )}
           </FieldRow>
@@ -71,13 +71,6 @@ export const DetailsCard = ({ ticket, isRequesterView }: Props) => {
         {sla && (
           <FieldRow stacked label="Hạn">
             <SlaIndicator sla={sla} started={isStarted(ticket)} />
-          </FieldRow>
-        )}
-        {ticket.expectedStartAt && (
-          <FieldRow stacked label="Dự kiến bắt đầu">
-            <time dateTime={ticket.expectedStartAt} title={formatDateTime(ticket.expectedStartAt)}>
-              {formatRelativeTime(ticket.expectedStartAt)}
-            </time>
           </FieldRow>
         )}
         {(ticket.reopenCount ?? 0) > 0 && (

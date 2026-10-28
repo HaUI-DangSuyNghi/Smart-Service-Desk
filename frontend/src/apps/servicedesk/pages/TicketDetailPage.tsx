@@ -1,6 +1,5 @@
 import { Link, useParams } from "react-router";
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
 import { IconArrowLeft, IconTicket } from "@tabler/icons-react";
 import { useAuth } from "../../../platform/human/auth";
 import {
@@ -25,7 +24,7 @@ import { TicketSummary } from "../tickets/TicketSummary";
 import { useTicket } from "../tickets/useTickets";
 import { EnrichmentPanel } from "../tickets/EnrichmentPanel";
 import { IntakePanel } from "../tickets/IntakePanel";
-import { getIntake } from "../services/intakeService";
+import { useIntake } from "../tickets/useIntake";
 
 const WORKSPACE_PATTERN = /^[a-zA-Z0-9_-]{1,100}$/;
 const UUID_PATTERN = /^[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}$/;
@@ -94,15 +93,7 @@ const TicketDetail = ({ workspace, ticketId }: { workspace: string; ticketId: st
   const isRequesterView = !can(PERMISSIONS.taskHandle) && !can(PERMISSIONS.taskAssign);
   const assessment = ticket.data?.assessment;
   const { user } = useAuth();
-  const intake = useQuery({
-    queryKey: ["servicedesk", "intake", workspace, ticketId, user?.profile.sub],
-    queryFn: ({ signal }) => getIntake(workspace, ticketId, signal),
-    retry: false,
-    refetchInterval: (query) =>
-      query.state.data && !["REVIEWED", "CANONICAL_FOLLOWER"].includes(query.state.data.status)
-        ? 5000
-        : false,
-  });
+  const intake = useIntake(workspace, ticketId, { poll: true });
   const [contextRevision, setContextRevision] = useState<number | null>(null);
   // Gọi AI tay chỉ khi chưa có kết quả lưu sẵn, không qua luồng tiếp nhận và chưa bổ sung ngữ cảnh
   const manualTriage = intake.isSuccess && !intake.data && contextRevision === 0;

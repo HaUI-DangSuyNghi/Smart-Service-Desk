@@ -16,7 +16,6 @@ import {
   ProcessTimelinePage,
   QueuePage,
 } from "@/platform/process";
-import { isWorkflowAvailable } from "@/platform/services";
 // Landing nạp cùng app (không lazy): là trang đầu tiên và trang quay về sau đăng xuất,
 // tránh thêm một lượt loading nữa sau khi Keycloak chuyển về
 import LandingLayout from "../landing/LandingLayout";
@@ -68,10 +67,7 @@ const PLATFORM_ROUTES: readonly AppRoute[] = [
     component: KnowledgeDetailPage,
     requiredPermissions: [PERMISSIONS.documentView],
   },
-];
-
-/** Hàng đợi, cảnh báo, ca trực... (plan nghiệp vụ R2–R8); chỉ có khi backend sẵn sàng hoặc bật dữ liệu giả. */
-const WORKFLOW_ROUTES: readonly AppRoute[] = [
+  // Hàng đợi, cảnh báo, ca trực, sửa ước tính (plan nghiệp vụ R2–R8)
   { path: "queue", component: QueuePage, requiredPermissions: [PERMISSIONS.taskHandle] },
   { path: "alerts", component: AlertsPage, requiredPermissions: [PERMISSIONS.taskHandle] },
   { path: "duty", component: DutyPage, requiredPermissions: [PERMISSIONS.taskAssign] },
@@ -84,23 +80,18 @@ const WORKFLOW_ROUTES: readonly AppRoute[] = [
 
 /** Ghép route của platform với route các app đã đăng ký. */
 export const createAppRoutes = (registry: AppRegistry): RouteObject[] => {
-  const platformRoutes = isWorkflowAvailable
-    ? [...PLATFORM_ROUTES, ...WORKFLOW_ROUTES]
-    : PLATFORM_ROUTES;
   const pages: RouteObject[] = [
-    ...platformRoutes,
+    ...PLATFORM_ROUTES,
     ...registry.apps().flatMap((app) => app.routes),
   ].map((route) => ({
     path: route.path,
     element: routeElement(route),
   }));
-  if (isWorkflowAvailable) {
-    // Trang tự kiểm quyền quản trị nền tảng (không phải quyền theo workspace)
-    pages.push({
-      path: "settings",
-      element: createElement(SettingsPage, { sections: registry.settingsSections() }),
-    });
-  }
+  // Trang tự kiểm quyền quản trị nền tảng (không phải quyền theo workspace)
+  pages.push({
+    path: "settings",
+    element: createElement(SettingsPage, { sections: registry.settingsSections() }),
+  });
 
   return [
     // Công khai

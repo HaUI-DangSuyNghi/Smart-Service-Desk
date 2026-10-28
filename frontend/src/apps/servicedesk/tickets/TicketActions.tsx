@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useActor } from "../../../platform/human/workspace";
 import { useQueue, useTimeline, WorkActions } from "../../../platform/process";
-import { isWorkflowAvailable } from "../../../platform/services";
 import { Button } from "../../../platform/shared/ui/button";
 import type { TicketView } from "../services/ticketService";
 import { ConfirmResolution } from "./ConfirmResolution";
@@ -23,7 +22,7 @@ export const TicketActions = ({ ticket }: { ticket: TicketView }) => {
   const [dialog, setDialog] = useState<"review" | "correct" | null>(null);
   const { isHolder, isCreator, canReview, canCorrect } = ticketPermissions(ticket, viewer);
   // Thao tác R6 lấy từ hàng đợi của chính mình (Tầng 2 giữ trạng thái việc)
-  const queue = useQueue(undefined, isWorkflowAvailable && isHolder);
+  const queue = useQueue(undefined, isHolder);
   const queueItem = queue.data?.items.find((item) => item.id === ticket.taskId);
   // Bước xác nhận lấy từ tiến độ (dùng chung cache với phần tiến độ) để chạy được cả với backend
   // hiện tại, khi ticket chưa có trạng thái R6

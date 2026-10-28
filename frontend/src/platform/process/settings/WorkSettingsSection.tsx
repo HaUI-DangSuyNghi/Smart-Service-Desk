@@ -83,7 +83,15 @@ const WorkSettingsForm = ({ settings }: { settings: WorkSettings }) => {
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-8">
-      <FieldGroup title="Ca trực" icon={IconCalendarTime}>
+      <p className="text-crm-sm text-crm-text-2">
+        Lưu xong áp dụng ngay cho thao tác sau đó (duyệt, giao việc, bắt đầu, cảnh báo). Ticket đã
+        duyệt giữ nguyên hạn xử lý và ước tính đã tính lúc duyệt.
+      </p>
+      <FieldGroup title="Giờ làm việc" icon={IconCalendarTime}>
+        <p className="text-crm-sm text-crm-text-3">
+          Dùng để tính hạn xử lý (trừ mức Khẩn cấp tính liên tục). Lịch ca của từng người xếp ở
+          trang Ca trực.
+        </p>
         {settings.shifts.map((shift, index) => (
           <div key={shift.name} className="grid grid-cols-1 gap-2 sm:grid-cols-3">
             <FormField

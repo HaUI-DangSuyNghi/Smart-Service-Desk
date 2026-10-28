@@ -21,6 +21,8 @@ interface Props {
   item: QueueItem;
   /** Nút cỡ nhỏ cho dòng bảng; mặc định cỡ thường cho trang chi tiết. */
   compact?: boolean;
+  /** Việc nên làm ngay (đầu hàng, chưa có việc đang làm): nút Bắt đầu nổi bật. */
+  suggested?: boolean;
   /** Gọi sau mỗi thao tác để nơi nhúng (trang của app) tải lại dữ liệu của mình. */
   onChanged?: () => void;
 }
@@ -34,7 +36,7 @@ const stopPropagation = (event: MouseEvent) => event.stopPropagation();
  * Thao tác R6 của người đang giữ việc: Bắt đầu / Báo xong / Tiếp tục là nút chính,
  * Tạm dừng, Xin sửa ước tính, Trả việc nằm trong menu. Người khác không thấy gì.
  */
-export const WorkActions = ({ item, compact = false, onChanged }: Props) => {
+export const WorkActions = ({ item, compact = false, suggested = false, onChanged }: Props) => {
   const { actor } = useActor();
   const start = useStartWork();
   const resume = useResumeWork();
@@ -77,7 +79,7 @@ export const WorkActions = ({ item, compact = false, onChanged }: Props) => {
     <div className="flex items-center gap-1" onClick={stopPropagation}>
       <Button
         size={size}
-        variant={item.suggestStartNow && item.workState === "NOT_STARTED" ? "default" : "outline"}
+        variant={suggested && item.workState === "NOT_STARTED" ? "default" : "outline"}
         className={compact ? "flex-1" : undefined}
         disabled={isBusy}
         onClick={primary.onClick}

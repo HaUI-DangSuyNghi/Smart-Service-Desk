@@ -3,6 +3,8 @@ import type { TicketState } from "../services/ticketService";
 import type { Category, Impact, Urgency } from "./ticketRules";
 
 export const TICKET_STATE_LABELS: Readonly<Record<TicketState, string>> = {
+  INTAKE: "Đang tiếp nhận",
+  FOLLOWING: "Theo ticket gốc",
   AWAITING_REVIEW: "Chờ duyệt",
   ASSIGNED: "Đã giao",
   IN_PROGRESS: "Đang làm",
@@ -14,6 +16,8 @@ export const TICKET_STATE_LABELS: Readonly<Record<TicketState, string>> = {
 };
 
 export const TICKET_STATE_TONES: Readonly<Record<TicketState, TagTone>> = {
+  INTAKE: "orange",
+  FOLLOWING: "gray",
   AWAITING_REVIEW: "purple",
   ASSIGNED: "gray",
   IN_PROGRESS: "blue",
@@ -53,6 +57,8 @@ const GROUP_LABELS: Readonly<Record<string, string>> = {
   software: "Hỗ trợ phần mềm",
   sysadmin: "Quản trị hệ thống",
   general: "Chung",
+  // Loại Khác: điều phối viên tự chọn người
+  manual: "Điều phối viên chọn",
 };
 
 export const groupLabel = (group: string) => GROUP_LABELS[group] ?? group;

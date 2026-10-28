@@ -108,6 +108,41 @@ class TicketRepository {
                 row.getString("canonical_state")), parameters.toArray());
     }
 
+    /** Một dòng để lọc danh sách: liên kết quy trình kèm phân loại đã duyệt (null khi chưa duyệt). */
+    record FilterRow(ProcessLink link, Instant createdAt, String category, String priority) {}
+
+    List<FilterRow> filterBatch(String workspace, String creator, String query, Instant from, Instant to,
+                                UUID after, int limit) {
+        List<Object> parameters = new ArrayList<>(List.of(workspace));
+        String where = where(creator, query, from, to, parameters);
+        if (after != null) {
+            where += " and t.id>?";
+            parameters.add(after);
+        }
+        parameters.add(limit);
+        return jdbc.query("select t.id,t.creator,t.process_instance_id,t.created_at,c.state as canonical_state,r.category,r.priority,"
+            + " exists(select 1 from servicedesk_confirmation f where f.workspace=t.workspace"
+            + " and f.process_instance_id=t.process_instance_id and f.decision='REWORK') as reworked"
+            + " from servicedesk_ticket t left join servicedesk_canonical_link c on c.follower_id=t.id and c.workspace=t.workspace"
+            + " left join servicedesk_review r on r.ticket_id=t.id" + where
+            + " order by t.id limit ?", (row, number) -> new FilterRow(new ProcessLink(row.getObject("id", UUID.class),
+                row.getString("creator"), row.getString("process_instance_id"), row.getBoolean("reworked"),
+                row.getString("canonical_state")), row.getTimestamp("created_at").toInstant(),
+                row.getString("category"), row.getString("priority")), parameters.toArray());
+    }
+
+    /** Nạp ticket theo danh sách id, giữ đúng thứ tự truyền vào. */
+    List<Ticket> findAll(String workspace, List<UUID> ids) {
+        if (ids.isEmpty()) return List.of();
+        List<Object> parameters = new ArrayList<>(List.of(workspace));
+        parameters.addAll(ids);
+        var byId = new java.util.HashMap<UUID, Ticket>();
+        jdbc.query("select * from servicedesk_ticket where workspace=? and id in ("
+                + String.join(",", java.util.Collections.nCopies(ids.size(), "?")) + ")", TicketRepository::map, parameters.toArray())
+            .forEach(ticket -> byId.put(ticket.id(), ticket));
+        return ids.stream().map(byId::get).filter(java.util.Objects::nonNull).toList();
+    }
+
     private static Ticket map(ResultSet row, int rowNumber) throws SQLException {
         UUID id = row.getObject("id", UUID.class);
         String workspace = row.getString("workspace");

@@ -5,25 +5,25 @@ import { toast, toastError } from "@/platform/shared/ui/toast";
 import { PERMISSIONS } from "../workspace/permissions";
 import { useActor } from "../workspace/useActor";
 import { usePermissions } from "../workspace/usePermissions";
-import { useDutyList, useSetDuty } from "./useDuty";
+import { useDutyList, useSetMyDuty } from "./useDuty";
 
 /**
- * Công tắc Đang trực / Nghỉ trong menu tài khoản (R3, giai đoạn chưa có lịch trực).
- * Chỉ người xử lý việc mới thấy; tắt trực thì việc chưa bắt đầu được giao người khác.
+ * Công tắc Đang trực / Nghỉ trong menu tài khoản (R3). Có lịch ca thì chỉ trực trong ca
+ * (công tắc bật mà ngoài ca vẫn tính là nghỉ). Chỉ người xử lý việc mới thấy.
  */
 export const DutyMenuItem = () => {
   const { actor } = useActor();
   const { can } = usePermissions();
   const canHandle = can(PERMISSIONS.taskHandle);
   const duty = useDutyList(canHandle);
-  const setDuty = useSetDuty();
+  const setDuty = useSetMyDuty();
   const mine = duty.data?.find((status) => status.subject === actor?.subject);
 
   if (!canHandle || !mine) return null;
 
   const handleToggle = () => {
     setDuty.mutate(
-      { subject: "me", onDuty: !mine.onDuty },
+      !mine.onDuty,
       {
         onSuccess: (status) =>
           toast.success(status.onDuty ? "Bạn đang trực" : "Bạn đã chuyển sang nghỉ", {
@@ -49,7 +49,12 @@ export const DutyMenuItem = () => {
         size={10}
         className={cn(mine.onDuty ? "text-crm-tone-green" : "text-crm-text-faint")}
       />
-      <span className="flex-1">{mine.onDuty ? "Đang trực" : "Đang nghỉ"}</span>
+      <span className="flex-1">
+        {mine.onDuty ? "Đang trực" : "Đang nghỉ"}
+        {mine.onDuty && !mine.effectiveDuty && (
+          <span className="block text-crm-xs text-crm-text-3">Ngoài ca trực</span>
+        )}
+      </span>
       <span className="text-crm-xs text-crm-text-3">
         {mine.onDuty ? "Chuyển sang nghỉ" : "Bật trực"}
       </span>

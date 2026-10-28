@@ -1,9 +1,11 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCurrentWorkspace } from "../../../platform/human/workspace";
-import { completeTask } from "../../../platform/services";
+import { completeTask, type Priority } from "../../../platform/services";
 import {
   correctClassification,
   createTicket,
+  getEstimateDefault,
+  getReviewSuggestion,
   getTicket,
   listTickets,
   reviewTicket,
@@ -13,6 +15,7 @@ import {
   type TicketQuery,
   type TicketView,
 } from "../services/ticketService";
+import type { Category } from "./ticketRules";
 
 export const TICKETS_PAGE_SIZE = 20;
 
@@ -53,6 +56,37 @@ export const useTicket = (workspace: string, id: string) =>
     queryFn: ({ signal }) => getTicket(workspace, id, signal),
     refetchInterval: (query) => (isAssessing(query.state.data) ? ASSESSMENT_POLL_MS : false),
   });
+
+/**
+ * Đề xuất người xử lý theo loại / ưu tiên / ET đang chọn ở màn duyệt (R2);
+ * chưa chọn đủ loại và ưu tiên thì chưa tải.
+ */
+export const useReviewSuggestion = (
+  id: string,
+  query: { category?: Category; priority?: Priority; estimateMinutes?: number },
+) => {
+  const { current } = useCurrentWorkspace();
+  const { category, priority, estimateMinutes } = query;
+  return useQuery({
+    queryKey: [...ticketKeys.all(current), "suggestion", id, category, priority, estimateMinutes],
+    queryFn: ({ signal }) =>
+      getReviewSuggestion(current!, id, { category: category!, priority: priority!, estimateMinutes }, signal),
+    enabled: current !== null && category !== undefined && priority !== undefined,
+    // Gõ ET thì giữ đề xuất cũ trong lúc tải lại, không nháy skeleton
+    placeholderData: keepPreviousData,
+  });
+};
+
+/** ET mặc định theo loại / ưu tiên đang chọn ở màn duyệt; chưa chọn đủ thì chưa tải. */
+export const useEstimateDefault = (id: string, category?: Category, priority?: Priority) => {
+  const { current } = useCurrentWorkspace();
+  return useQuery({
+    queryKey: [...ticketKeys.all(current), "estimate-default", id, category, priority],
+    queryFn: ({ signal }) =>
+      getEstimateDefault(current!, id, { category: category!, priority: priority! }, signal),
+    enabled: current !== null && category !== undefined && priority !== undefined,
+  });
+};
 
 /** Sau mỗi thao tác: làm mới ticket và khối P (hàng đợi, tiến độ, công việc). */
 export const useRefreshTickets = () => {

@@ -1,5 +1,5 @@
 import type { TicketView } from "../../services/ticketService";
-import { HANDLING_STATES } from "../ticketRules";
+import { awaitsReview, isHandling } from "../ticketRules";
 import type { Viewer } from "../ticketPermissions";
 
 export interface BoardAccess {
@@ -24,7 +24,9 @@ export type BoardAction = "review" | "reassign" | "correct";
  */
 export const boardActions = (ticket: TicketView, viewer: Viewer): BoardAction[] => {
   if (!boardAccess(viewer).canEdit || !ticket.taskId || !ticket.state) return [];
-  if (ticket.state === "AWAITING_REVIEW") return ["review"];
-  if (HANDLING_STATES.has(ticket.state)) return ["reassign", "correct"];
+  // Người tạo ticket không tự duyệt, tự sửa phân loại (backend trả 403)
+  const independent = ticket.creator !== viewer.subject;
+  if (awaitsReview(ticket)) return independent ? ["review"] : [];
+  if (isHandling(ticket)) return independent ? ["reassign", "correct"] : ["reassign"];
   return [];
 };

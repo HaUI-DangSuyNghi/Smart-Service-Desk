@@ -16,7 +16,6 @@ import {
 import { cn } from "cn";
 import { hasAnyRole, PERMISSIONS, useActor, usePermissions } from "@/platform/human/workspace";
 import { AlertBadge, InboxBadge } from "@/platform/process";
-import { isWorkflowAvailable } from "@/platform/services";
 import { useIsMobile } from "@/platform/shared/lib/useMediaQuery";
 import type { MenuItem } from "../../router/registry";
 import { NavItem } from "./NavItem";
@@ -70,10 +69,7 @@ const PLATFORM_MENU: readonly MenuItem[] = [
     tone: "gray",
     requiredPermissions: [PERMISSIONS.auditView],
   },
-];
-
-/** Hàng đợi, cảnh báo, ca trực, yêu cầu sửa ước tính (plan nghiệp vụ R2–R8); chỉ khi đã sẵn sàng. */
-const WORKFLOW_MENU: readonly MenuItem[] = [
+  // Hàng đợi, cảnh báo, ca trực, yêu cầu sửa ước tính (plan nghiệp vụ R2–R8)
   {
     label: "Hàng đợi",
     path: "/queue",
@@ -105,8 +101,6 @@ const WORKFLOW_MENU: readonly MenuItem[] = [
   },
 ];
 
-const MENU = isWorkflowAvailable ? [...PLATFORM_MENU, ...WORKFLOW_MENU] : PLATFORM_MENU;
-
 interface Props {
   /** Menu do các app (Tầng 3) đăng ký qua registry. */
   appMenu: readonly MenuItem[];
@@ -128,7 +122,7 @@ export const AppSidebar = ({ appMenu }: Props) => {
   const { can } = usePermissions();
   const isVisible = (item: MenuItem) =>
     hasAnyRole(roles, item.requiredRoles) && can(...(item.requiredPermissions ?? []));
-  const visiblePlatformMenu = MENU.filter(isVisible);
+  const visiblePlatformMenu = PLATFORM_MENU.filter(isVisible);
   const visibleAppMenu = appMenu.filter(isVisible);
 
   return (

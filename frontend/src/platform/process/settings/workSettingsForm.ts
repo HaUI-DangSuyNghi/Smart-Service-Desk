@@ -1,27 +1,38 @@
 import type { FieldPath } from "react-hook-form";
 import { z } from "zod";
 
-// Form cấu hình chung (mục 6 của plan), khớp WorkSettings trong contracts/hpdi/openapi-target.yaml
+// Form cấu hình chung (mục 6 của plan), khớp WorkSettingsValidation của backend
 
 const minutes = z.coerce.number({ message: "Nhập số" }).int("Nhập số nguyên").min(0, "Không âm");
 const positiveMinutes = minutes.min(1, "Ít nhất 1");
 const ratio = z.coerce.number({ message: "Nhập số" }).min(0, "Từ 0").max(1, "Tới 1");
 const time = z.string().regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Dạng giờ:phút, ví dụ 07:00");
-const target = z.object({
-  startWithinMinutes: positiveMinutes,
-  resolveWithinMinutes: positiveMinutes,
-});
+// Trần của backend: hạn xong tối đa 10 năm
+const MAX_RESOLVE_MINUTES = 5_256_000;
+const target = z
+  .object({
+    startWithinMinutes: positiveMinutes,
+    resolveWithinMinutes: positiveMinutes.max(MAX_RESOLVE_MINUTES, "Quá lớn"),
+  })
+  .refine((value) => value.resolveWithinMinutes >= value.startWithinMinutes, {
+    path: ["resolveWithinMinutes"],
+    message: "Không sớm hơn hạn bắt đầu",
+  });
 
 export const workSettingsSchema = z.object({
   version: z.number(),
   assignment: z.object({
     pendingLoadFactor: ratio,
     tieThresholdMinutes: minutes,
-    maxInProgress: positiveMinutes,
+    maxInProgress: positiveMinutes.max(100, "Tối đa 100"),
     minRemainingMinutes: minutes,
   }),
   shifts: z
-    .array(z.object({ name: z.string().trim().min(1, "Nhập tên ca"), start: time, end: time }))
+    .array(
+      z
+        .object({ name: z.string().trim().min(1, "Nhập tên ca"), start: time, end: time })
+        .refine((shift) => shift.start < shift.end, { path: ["end"], message: "Sau giờ bắt đầu" }),
+    )
     .min(1),
   sla: z.object({
     targets: z.object({ LOW: target, MEDIUM: target, HIGH: target, CRITICAL: target }),
@@ -109,10 +120,7 @@ export const SLA_FIELDS: readonly NumberFieldDef[] = [
     path: "sla.escalateAfterRatio",
     label: "Tỉ lệ chờ để nâng 1 bậc",
     step: 0.05,
-  },
-  {
-    path: "critical.autoQueueAfterMinutes",
-    label: "Khẩn cấp tự vào hàng đợi (phút)",
+    hint: "Chưa bắt đầu mà đã chờ quá tỉ lệ này của hạn bắt đầu thì tự nâng ưu tiên 1 bậc (tối đa mức Cao).",
   },
 ];
 
@@ -132,6 +140,11 @@ export const ALERT_FIELDS: readonly NumberFieldDef[] = [
     path: "alerts.reopenUnclaimedMinutes",
     label: "Cảnh báo mở lại chưa nhận (phút)",
     hint: "Ticket Mở lại quá số phút này chưa ai nhận thì báo điều phối viên.",
+  },
+  {
+    path: "critical.autoQueueAfterMinutes",
+    label: "Nhắc khẩn cấp chưa duyệt (phút)",
+    hint: "AI gợi ý Khẩn cấp mà quá số phút này chưa ai duyệt thì nhắc lại điều phối viên. Hệ thống không tự duyệt thay người.",
   },
 ];
 

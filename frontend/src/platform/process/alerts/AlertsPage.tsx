@@ -11,7 +11,7 @@ import { Page, PageBody, PageHeader } from "@/platform/shared/ui/page";
 import { TableSkeleton } from "@/platform/shared/ui/Skeleton";
 import { Tag } from "@/platform/shared/ui/Tag";
 import { processLink } from "../common/processLinks";
-import { ALERT_LABELS, SEVERITY_LABELS, SEVERITY_TONES } from "./alertLabels";
+import { alertLabel, alertSubject, SEVERITY_LABELS, SEVERITY_TONES } from "./alertLabels";
 import { useAlerts, useMarkAlertRead } from "./useAlerts";
 
 /** Cảnh báo (R7, R8, R11): quá hạn, sắp hết hạn, khẩn cấp, mở lại...; bấm để đánh dấu đã đọc và mở việc. */
@@ -37,7 +37,7 @@ const AlertsPage = () => {
       width: "240px",
       cell: (alert) => (
         <span className={cn("block truncate", !alert.readAt && "font-medium")}>
-          {ALERT_LABELS[alert.type]}
+          {alertLabel(alert.type)}
         </span>
       ),
     },
@@ -54,7 +54,7 @@ const AlertsPage = () => {
       header: "Việc",
       icon: IconTypography,
       width: "300px",
-      cell: (alert) => <span className="block truncate">{alert.label}</span>,
+      cell: (alert) => <span className="block truncate">{alertSubject(alert)}</span>,
     },
     {
       key: "createdAt",

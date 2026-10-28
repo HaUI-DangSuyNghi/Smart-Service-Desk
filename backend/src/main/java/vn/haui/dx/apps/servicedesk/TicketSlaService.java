@@ -28,13 +28,23 @@ public class TicketSlaService {
     }
     private final JdbcTemplate jdbc;
     private final ObjectMapper json;
-    private final SlaPolicy policy;
+    /** Chính sách cho lần duyệt mới; việc đã duyệt dùng bản chụp đã lưu. */
+    private final java.util.function.Supplier<SlaPolicy> policies;
     private final Clock clock;
     private final WorkScheduling scheduling;
     private final ActivityJournal audit;
 
+    /** Cho test: một chính sách cố định. */
     public TicketSlaService(JdbcTemplate jdbc, ObjectMapper json, SlaPolicy policy, Clock clock, WorkScheduling scheduling, ActivityJournal audit) {
-        this.jdbc = jdbc; this.json = json; this.policy = policy; this.clock = clock; this.scheduling = scheduling; this.audit = audit;
+        this(jdbc, json, () -> policy, clock, scheduling, audit);
+    }
+    @org.springframework.beans.factory.annotation.Autowired
+    public TicketSlaService(JdbcTemplate jdbc, ObjectMapper json, TicketSlaConfiguration configuration, Clock clock, WorkScheduling scheduling, ActivityJournal audit) {
+        this(jdbc, json, configuration::current, clock, scheduling, audit);
+    }
+    private TicketSlaService(JdbcTemplate jdbc, ObjectMapper json, java.util.function.Supplier<SlaPolicy> policies, Clock clock,
+                             WorkScheduling scheduling, ActivityJournal audit) {
+        this.jdbc = jdbc; this.json = json; this.policies = policies; this.clock = clock; this.scheduling = scheduling; this.audit = audit;
     }
     public Instant now() { return clock.instant(); }
 
@@ -95,6 +105,7 @@ public class TicketSlaService {
         }
         var approved = clock.instant();
         var base = Priority.valueOf(priority);
+        var policy = policies.get();
         var target = policy.targets().get(base);
         var startBy = policy.calendar().add(approved, Duration.ofMinutes(target.startMinutes()), target.continuous());
         var resolveBy = policy.calendar().add(approved, Duration.ofMinutes(target.resolveMinutes()), target.continuous());

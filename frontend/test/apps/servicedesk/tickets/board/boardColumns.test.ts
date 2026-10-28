@@ -23,6 +23,11 @@ describe("boardColumns", () => {
     expect(columnOf("REOPENED")?.key).toBe("assigned");
   });
 
+  it("Đang tiếp nhận vào cột Chờ duyệt, Theo ticket gốc vào cột Đang chờ", () => {
+    expect(columnOf("INTAKE")?.key).toBe("review");
+    expect(columnOf("FOLLOWING")?.key).toBe("pending");
+  });
+
   it("thứ tự cột theo luồng, Đã đóng ở cuối và thu gọn", () => {
     expect(BOARD_COLUMNS.map((column) => column.key)).toEqual([
       "review",

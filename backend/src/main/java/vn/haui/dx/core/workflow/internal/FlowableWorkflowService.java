@@ -52,6 +52,9 @@ public final class FlowableWorkflowService implements WorkflowService {
     private static final String WORK_MILLIS = "executionMillis";
     @org.springframework.beans.factory.annotation.Value("${dx.workflow.max-in-progress:1}")
     private int maxInProgress = 1;
+    // Cấu hình hệ thống ghi đè thuộc tính; test tự khởi tạo service thì không có
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private org.springframework.beans.factory.ObjectProvider<vn.haui.dx.core.workflow.api.ExecutionLimits> limits;
 
     /** Cho test giao việc: người dùng cố định và danh bạ giả. */
     public FlowableWorkflowService(ProcessEngine engine, JdbcTemplate jdbc, CurrentUser user, AuditService audit,
@@ -123,6 +126,8 @@ public final class FlowableWorkflowService implements WorkflowService {
                 if (note == null) tasks.removeVariableLocal(taskId, "pendingNote");
                 else tasks.setVariableLocal(taskId, "pendingNote", note);
             } else {
+                var configured = limits == null ? null : limits.getIfAvailable();
+                int maxInProgress = configured == null ? this.maxInProgress : configured.maxInProgress();
                 if (maxInProgress < 1 || maxInProgress > 100) throw CoreException.conflict("Invalid execution limit configuration");
                 jdbc.query("select pg_advisory_xact_lock(hashtextextended(?, 0))",
                     (org.springframework.jdbc.core.RowCallbackHandler) row -> {}, "work-execution:" + user.sub());

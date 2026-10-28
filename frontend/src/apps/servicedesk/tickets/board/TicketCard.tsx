@@ -9,7 +9,7 @@ import { Tag, type TagTone } from "../../../../platform/shared/ui/Tag";
 import { Tooltip } from "../../../../platform/shared/ui/Tooltip";
 import type { TicketView } from "../../services/ticketService";
 import { ticketCode } from "../ticketLabels";
-import { isStarted } from "../ticketRules";
+import { aiSuggestion, isStarted } from "../ticketRules";
 import { CardMenu } from "./CardMenu";
 import type { BoardAction } from "./boardAccess";
 
@@ -50,8 +50,9 @@ interface ContentProps {
  */
 const CardContent = ({ ticket, names, actions, onAction }: ContentProps) => {
   // Chưa duyệt thì hiện gợi ý AI để điều phối viên sắp xếp
-  const priority = ticket.classification?.priority ?? ticket.assessment?.priority;
-  const category = ticket.classification?.category ?? ticket.assessment?.category;
+  const suggestion = aiSuggestion(ticket.assessment);
+  const priority = ticket.classification?.priority ?? suggestion?.priority;
+  const category = ticket.classification?.category ?? suggestion?.category;
   const assignee = ticket.assignee ? personName(names, ticket.assignee) : null;
   const reopenCount = ticket.reopenCount ?? 0;
   // AI không phân loại được: điều phối viên phải chọn tay

@@ -1,5 +1,6 @@
 import type { TicketView } from "../../services/ticketService";
 import { ticketPermissions, type Viewer } from "../ticketPermissions";
+import { awaitsReview } from "../ticketRules";
 import { boardAccess } from "./boardAccess";
 import { BOARD_COLUMNS, columnOf } from "./boardColumns";
 
@@ -31,8 +32,10 @@ const NONE: DropTargets = {};
 export const dropTargets = (ticket: TicketView, viewer: Viewer): DropTargets => {
   if (!ticket.taskId) return NONE;
 
-  if (ticket.state === "AWAITING_REVIEW") {
-    return boardAccess(viewer).canEdit ? { assigned: "review" } : NONE;
+  if (awaitsReview(ticket)) {
+    return boardAccess(viewer).canEdit && ticket.creator !== viewer.subject
+      ? { assigned: "review" }
+      : NONE;
   }
 
   // Bắt đầu, tạm dừng, báo xong, trả việc là việc của kỹ thuật viên giữ ticket, không phải của điều phối

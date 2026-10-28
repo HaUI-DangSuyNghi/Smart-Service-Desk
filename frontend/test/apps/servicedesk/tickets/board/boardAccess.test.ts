@@ -41,9 +41,21 @@ describe("boardActions", () => {
   });
 
   it("đang xử lý: giao lại và sửa phân loại", () => {
-    for (const state of ["ASSIGNED", "IN_PROGRESS", "PENDING", "REOPENED"] as const) {
+    for (const state of ["ASSIGNED", "IN_PROGRESS", "PENDING"] as const) {
       expect(boardActions(ticket(state), coordinator)).toEqual(["reassign", "correct"]);
     }
+    const reassigned = { ...ticket("REOPENED"), workState: "NOT_STARTED" } as TicketView;
+    expect(boardActions(reassigned, coordinator)).toEqual(["reassign", "correct"]);
+  });
+
+  it("mở lại chưa giao lại: quay về bước duyệt", () => {
+    expect(boardActions(ticket("REOPENED"), coordinator)).toEqual(["review"]);
+  });
+
+  it("ticket do chính mình tạo: không tự duyệt, không tự sửa phân loại", () => {
+    const own = (state: TicketView["state"]) => ({ ...ticket(state), creator: "u" }) as TicketView;
+    expect(boardActions(own("AWAITING_REVIEW"), coordinator)).toEqual([]);
+    expect(boardActions(own("IN_PROGRESS"), coordinator)).toEqual(["reassign"]);
   });
 
   it("chờ xác nhận, đã đóng, thiếu việc đang mở: không có mục nào", () => {

@@ -1,7 +1,4 @@
 import { apiClient } from "@/platform/shared/api";
-import { isMockSubject } from "./mock/mockDefaults";
-import { isWorkflowMock } from "./mock/mockMode";
-import { workMock } from "./mock/workMock";
 import { hpdiWorkspace } from "./paths";
 
 /** Khớp WorkspaceContext trong contracts/hpdi/openapi.yaml. */
@@ -55,18 +52,15 @@ export const getPeopleNames = async (
   ids: readonly string[],
   signal?: AbortSignal,
 ): Promise<Record<string, string>> => {
-  // Người giả (dữ liệu mẫu) tra tên tại chỗ, chỉ hỏi backend tên người thật
-  const realIds = isWorkflowMock ? ids.filter((id) => !isMockSubject(id)) : ids;
-  const mockNames = isWorkflowMock ? workMock.peopleNames(ids) : {};
-  if (realIds.length === 0) return mockNames;
+  if (ids.length === 0) return {};
   const { data } = await apiClient.get<Record<string, string>>(
     `${hpdiWorkspace(workspace)}/people`,
     {
-      params: { ids: realIds.join(",") },
+      params: { ids: ids.join(",") },
       signal,
     },
   );
-  return { ...data, ...mockNames };
+  return data;
 };
 
 /** GET /api/hpdi/v1/workspaces/{ws}/members: danh bạ workspace (503 khi Keycloak không phản hồi). */

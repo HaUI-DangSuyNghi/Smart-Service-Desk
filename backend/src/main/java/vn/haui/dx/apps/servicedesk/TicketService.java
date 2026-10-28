@@ -31,9 +31,10 @@ public class TicketService {
     private final org.springframework.beans.factory.ObjectProvider<vn.haui.dx.hpdi.intelligence.api.BackgroundProcessing> processing;
     private final boolean trueWait;
     private final TicketConfirmation confirmation;
+    private final TicketSearchService searches;
 
     public TicketService(TicketRepository repository, HumanContext access, ProcessCapability workflow,
-                         ActivityJournal audit, Validator validator, TicketStatisticsService statistics,
+                         ActivityJournal audit, Validator validator, TicketStatisticsService statistics, TicketSearchService searches,
                          ApplicationEventPublisher events, BackgroundTicketAssessment assessments,
                          org.springframework.beans.factory.ObjectProvider<vn.haui.dx.hpdi.intelligence.api.BackgroundProcessing> processing,
                          @org.springframework.beans.factory.annotation.Value("${serviceDesk.intake.true-wait:false}") boolean trueWait,
@@ -47,6 +48,7 @@ public class TicketService {
         this.audit = audit;
         this.validator = validator;
         this.statistics = statistics;
+        this.searches = searches;
         this.events = events;
         this.assessments = assessments;
         this.processing = processing;
@@ -101,6 +103,18 @@ public class TicketService {
         if (page == null) throw CapabilityException.validation("Page is required");
         filters(query, from, to);
         return repository.search(workspace, reader(user, workspace), query, from, to, page);
+    }
+
+    /** Lọc theo trạng thái, ưu tiên, loại, người xử lý ("me"), quá hạn; quyền xem như search. */
+    @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
+    public Page<Ticket> filter(String workspace, String query, Instant from, Instant to, java.util.List<String> states,
+                               java.util.List<String> priorities, String category, String assignee, Boolean overdue,
+                               String sort, PageRequest page) {
+        var user = member(workspace);
+        if (page == null) throw CapabilityException.validation("Page is required");
+        filters(query, from, to);
+        var filter = TicketSearchService.Filter.of(states, priorities, category, assignee, overdue, sort, user.subject());
+        return searches.search(workspace, reader(user, workspace), query, from, to, filter, page);
     }
 
     @Transactional(readOnly = true, isolation=Isolation.REPEATABLE_READ)

@@ -13,14 +13,15 @@ export interface BoardColumnDef {
 }
 
 /**
- * Thứ tự theo luồng R6. Không xác định (AI chưa phân loại) gộp vào cột Chờ duyệt,
- * Mở lại gộp vào cột Đã giao (bắt đầu lại cũng là thao tác Bắt đầu).
+ * Thứ tự theo luồng R6. Đang tiếp nhận và Không xác định gộp vào cột Chờ duyệt,
+ * Mở lại gộp vào cột Đã giao (bắt đầu lại cũng là thao tác Bắt đầu),
+ * Theo ticket gốc gộp vào cột Đang chờ (chờ ticket gốc xử lý xong).
  */
 export const BOARD_COLUMNS: readonly BoardColumnDef[] = [
   {
     key: "review",
     label: "Chờ duyệt",
-    states: ["AWAITING_REVIEW", "UNCLASSIFIED"],
+    states: ["INTAKE", "AWAITING_REVIEW", "UNCLASSIFIED"],
     tone: TICKET_STATE_TONES.AWAITING_REVIEW,
   },
   {
@@ -35,7 +36,12 @@ export const BOARD_COLUMNS: readonly BoardColumnDef[] = [
     states: ["IN_PROGRESS"],
     tone: TICKET_STATE_TONES.IN_PROGRESS,
   },
-  { key: "pending", label: "Đang chờ", states: ["PENDING"], tone: TICKET_STATE_TONES.PENDING },
+  {
+    key: "pending",
+    label: "Đang chờ",
+    states: ["PENDING", "FOLLOWING"],
+    tone: TICKET_STATE_TONES.PENDING,
+  },
   {
     key: "confirm",
     label: "Chờ xác nhận",

@@ -57,6 +57,31 @@ describe("ticketPermissions", () => {
     expect(handling.canAct).toBe(false);
   });
 
+  it("mở lại chưa giao lại là bước duyệt; đã giao lại là bước xử lý", () => {
+    const coordinator = viewer({ subject: "coord", canHandle: false, canAssign: true });
+    const back = ticketPermissions(
+      ticket({ state: "REOPENED", workState: null, assignee: null }),
+      coordinator,
+    );
+    expect(back.canReview).toBe(true);
+    expect(back.canCorrect).toBe(false);
+    const reassigned = ticketPermissions(
+      ticket({ state: "REOPENED", workState: "NOT_STARTED" }),
+      viewer({}),
+    );
+    expect(reassigned.canAct).toBe(true);
+    expect(reassigned.canReview).toBe(false);
+  });
+
+  it("người tạo ticket không tự duyệt, không tự sửa phân loại", () => {
+    const coordinator = viewer({ subject: "requester", canAssign: true });
+    expect(
+      ticketPermissions(ticket({ state: "AWAITING_REVIEW", assignee: null }), coordinator)
+        .canReview,
+    ).toBe(false);
+    expect(ticketPermissions(ticket({}), coordinator).canCorrect).toBe(false);
+  });
+
   it("người gửi chỉ xác nhận ở bước chờ xác nhận của ticket mình", () => {
     const requester = viewer({ subject: "requester", canHandle: false });
     const confirm = ticketPermissions(

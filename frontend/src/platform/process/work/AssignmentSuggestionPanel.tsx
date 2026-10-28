@@ -1,10 +1,13 @@
 import { IconSparkles } from "@tabler/icons-react";
-import type { AssignmentCandidate, ExcludedReason } from "@/platform/services";
+import type {
+  AssignmentCandidate,
+  AssignmentSuggestion,
+  ExcludedReason,
+} from "@/platform/services";
 import { ChoiceCard } from "@/platform/shared/ui/ChoiceCard";
 import { ErrorState } from "@/platform/shared/ui/ErrorState";
 import { TextSkeleton } from "@/platform/shared/ui/Skeleton";
-import { useAssignmentSuggestion } from "./useWork";
-import { formatMinutes, WAIT_FOR_SHIFT } from "./workLabels";
+import { formatMinutes, suggestionReasonText, WAIT_FOR_SHIFT } from "./workLabels";
 
 const EXCLUDED_LABELS: Record<ExcludedReason, string> = {
   OFF_DUTY: "đang nghỉ",
@@ -12,7 +15,11 @@ const EXCLUDED_LABELS: Record<ExcludedReason, string> = {
 };
 
 interface Props {
-  taskId: string;
+  /**
+   * Kết quả truy vấn đề xuất (useQuery); nơi gọi tự chọn nguồn: theo việc đã có
+   * (useAssignmentSuggestion) hoặc theo loại / ưu tiên đang chọn ở màn duyệt của app.
+   */
+  suggestion: { data?: AssignmentSuggestion; isPending: boolean; error: Error | null };
   /** subject đã chọn; WAIT_FOR_SHIFT là để chờ ca sau; undefined là chưa chọn. */
   value: string | undefined;
   onChange: (value: string) => void;
@@ -61,23 +68,23 @@ const CandidateLine = ({
  * người bị loại (nghỉ, là người tạo yêu cầu) vẫn hiện kèm lý do nhưng không chọn được.
  */
 export const AssignmentSuggestionPanel = ({
-  taskId,
+  suggestion,
   value,
   onChange,
   estimateMinutes,
   name,
 }: Props) => {
-  const suggestion = useAssignmentSuggestion(taskId);
-
-  if (suggestion.isPending) return <TextSkeleton lines={3} label="Đang tính đề xuất" />;
   if (suggestion.error) {
     return <ErrorState error={suggestion.error} fallback="Không tải được đề xuất người xử lý." />;
   }
+  if (suggestion.isPending || !suggestion.data) {
+    return <TextSkeleton lines={3} label="Đang tính đề xuất" />;
+  }
 
-  const { candidates, reason } = suggestion.data;
+  const { candidates } = suggestion.data;
   return (
     <div className="flex flex-col gap-1.5">
-      <p className="text-crm-sm text-crm-text-3">{reason}</p>
+      <p className="text-crm-sm text-crm-text-3">{suggestionReasonText(suggestion.data)}</p>
       {candidates.map((candidate) => (
         <ChoiceCard
           key={candidate.subject}

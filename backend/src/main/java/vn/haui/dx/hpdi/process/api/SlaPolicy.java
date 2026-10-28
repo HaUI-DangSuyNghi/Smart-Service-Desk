@@ -2,8 +2,15 @@ package vn.haui.dx.hpdi.process.api;
 import java.time.*;
 import java.util.*;
 
+/** warnRemainingRatio: còn dưới tỉ lệ này của hạn thì cảnh báo; bản chụp cũ không có trường này thì là 0,2. */
 public record SlaPolicy(String version, BusinessCalendar calendar, Map<Priority, Target> targets,
-                        double escalateAfterRatio, Priority maxEscalatedPriority, boolean waitingExternalCounts) {
+                        double escalateAfterRatio, Priority maxEscalatedPriority, boolean waitingExternalCounts,
+                        Double warnRemainingRatio) {
+    public static final double DEFAULT_WARN_RATIO = 0.2;
+    public SlaPolicy(String version, BusinessCalendar calendar, Map<Priority, Target> targets,
+                     double escalateAfterRatio, Priority maxEscalatedPriority, boolean waitingExternalCounts) {
+        this(version, calendar, targets, escalateAfterRatio, maxEscalatedPriority, waitingExternalCounts, DEFAULT_WARN_RATIO);
+    }
     public enum Priority { LOW, MEDIUM, HIGH, CRITICAL }
     public record Target(long startMinutes, long resolveMinutes, boolean continuous) {
         public Target {
@@ -15,6 +22,9 @@ public record SlaPolicy(String version, BusinessCalendar calendar, Map<Priority,
         if (version == null || version.isBlank() || calendar == null || maxEscalatedPriority == null
                 || !Double.isFinite(escalateAfterRatio) || escalateAfterRatio < 0 || escalateAfterRatio > 1)
             throw new IllegalArgumentException("Invalid SLA policy");
+        if (warnRemainingRatio == null) warnRemainingRatio = DEFAULT_WARN_RATIO;
+        if (!Double.isFinite(warnRemainingRatio) || warnRemainingRatio < 0 || warnRemainingRatio > 1)
+            throw new IllegalArgumentException("Invalid SLA warning ratio");
         targets = Map.copyOf(targets);
         if (!targets.keySet().equals(Set.of(Priority.values()))) throw new IllegalArgumentException("Missing SLA targets");
     }
@@ -42,6 +52,6 @@ public record SlaPolicy(String version, BusinessCalendar calendar, Map<Priority,
             resolvedAt == null && (pausedAt != null || !target.continuous() && !calendar.working(now)));
     }
     private boolean near(Instant now, Instant deadline, long budgetMinutes, boolean continuous) {
-        return !now.isAfter(deadline) && calendar.between(now, deadline, continuous).toMillis() < budgetMinutes * 60000.0 * 0.2;
+        return !now.isAfter(deadline) && calendar.between(now, deadline, continuous).toMillis() < budgetMinutes * 60000.0 * warnRemainingRatio;
     }
 }

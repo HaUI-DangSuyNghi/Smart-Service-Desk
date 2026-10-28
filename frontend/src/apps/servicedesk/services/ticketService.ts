@@ -5,37 +5,37 @@ import {
   type Assistance,
   type Suggestion,
 } from "../../../platform/intelligence";
-import {
-  isWorkflowMock,
-  type EffortSize,
-  type Estimate,
-  type PendingReason,
-  type Priority,
-  type Sla,
+import type {
+  AssignmentSuggestion,
+  Estimate,
+  Priority,
+  Sla,
+  WorkState,
 } from "../../../platform/services";
 import type { Category, EstimateTable, Impact, Urgency } from "../tickets/ticketRules";
-import { ticketMock } from "./mock/ticketMock";
 
-/** Khớp TicketStatistics (servicedesk.yaml) và TicketStatisticsV2 (servicedesk-target.yaml). */
+/** Khớp TicketStatistics (servicedesk.yaml). Các trạng thái loại trừ nhau; overdue cắt ngang. */
 export interface TicketStatistics {
   workspace: string;
   /** own: người yêu cầu chỉ thấy ticket của mình; workspace: kỹ thuật viên/điều phối viên thấy cả workspace. */
   visibility: "own" | "workspace";
   total: number;
+  /** Chờ duyệt + đã giao + đang làm + đang chờ + mở lại. */
   awaitingHandling: number;
   awaitingConfirmation: number;
   completed: number;
   /** Ticket không xếp được vào trạng thái nào (dữ liệu bất thường); không coi là đã xong. */
   unclassified: number;
-  // Bản đích: backend chưa trả thì không có
-  awaitingReview?: number;
-  assigned?: number;
-  inProgress?: number;
-  pending?: number;
-  reopened?: number;
-  closed?: number;
-  /** Quá hạn bắt đầu hoặc quá hạn xử lý; cắt ngang, không cộng vào total. */
-  overdue?: number;
+  awaitingReview: number;
+  assigned: number;
+  inProgress: number;
+  pending: number;
+  reopened: number;
+  closed: number;
+  /** Quá hạn bắt đầu hoặc quá hạn xử lý; không cộng vào total. */
+  overdue: number;
+  intake: number;
+  following: number;
 }
 
 /** GET thống kê ticket theo ngày tạo trong [from, to). */
@@ -44,7 +44,6 @@ export const getTicketStatistics = async (
   { from, to }: { from: string; to: string },
   signal?: AbortSignal,
 ): Promise<TicketStatistics> => {
-  if (isWorkflowMock) return ticketMock.getStatistics(workspace);
   const { data } = await apiClient.get<TicketStatistics>(
     `/apps/servicedesk/v1/workspaces/${encodeURIComponent(workspace)}/tickets/statistics`,
     { params: { from, to }, signal },
@@ -55,12 +54,13 @@ export const getTicketStatistics = async (
 /** Quy trình gắn với ticket (khớp TicketProcessView). */
 export interface TicketProcess {
   processInstanceId: string;
+  /** service-desk (cũ, không duyệt), service-desk-reviewed, service-desk-intake-reviewed. */
   processKey: string;
   businessKey: string;
   workspace: string;
 }
 
-/** Khớp Ticket trong contracts/openapi/servicedesk.yaml. */
+/** Phần gốc của ticket (Ticket trong servicedesk.yaml). */
 export interface Ticket {
   id: string;
   workspace: string;
@@ -74,10 +74,12 @@ export interface Ticket {
 }
 
 /**
- * Trạng thái theo R6: chờ duyệt, đã giao, đang làm, đang chờ, chờ xác nhận,
- * mở lại (người dùng báo chưa xong, chưa bắt đầu lại), đã đóng, không xác định.
+ * Trạng thái R6: tiếp nhận, theo ticket gốc (trùng), chờ duyệt, đã giao, đang làm, đang chờ,
+ * chờ xác nhận, mở lại (người dùng báo chưa xong), đã đóng, không xác định.
  */
 export type TicketState =
+  | "INTAKE"
+  | "FOLLOWING"
   | "AWAITING_REVIEW"
   | "ASSIGNED"
   | "IN_PROGRESS"
@@ -87,79 +89,98 @@ export type TicketState =
   | "CLOSED"
   | "UNCLASSIFIED";
 
-/** Phân loại đang hiệu lực (sau khi người duyệt/sửa), không phải gợi ý AI. */
+/** Phân loại đang hiệu lực (sau khi điều phối viên duyệt/sửa), không phải gợi ý AI. */
 export interface Classification {
   category: Category;
-  impact?: Impact | null;
-  urgency?: Urgency | null;
+  impact: Impact | null;
+  urgency: Urgency | null;
+  /** Ưu tiên hiệu lực; khác basePriority khi được nâng bậc do chờ lâu (R5). */
   priority: Priority;
   basePriority: Priority;
-  /** Được nâng bậc do chờ lâu (R5). */
   escalated: boolean;
+  /** Tổ theo Cấu hình hệ thống (loại lỗi → tổ); "manual" với loại Khác. */
   group: string;
-  source: "AI" | "COORDINATOR" | "AGENT";
-  reviewedBy?: string | null;
-  reviewedAt?: string | null;
+  source: string;
+  reviewedBy: string;
+  reviewedAt: string;
 }
 
 export type AssessmentStatus = "PENDING" | "READY" | "DEGRADED";
 
-/** Kết quả AI đã lưu lúc tạo ticket; chỉ là gợi ý. `category = null` khi AI không chắc. */
-export interface Assessment {
-  status: AssessmentStatus;
-  category?: Category | null;
-  impact?: Impact | null;
-  urgency?: Urgency | null;
-  priority?: Priority | null;
-  suggestedGroup?: string | null;
-  reasonCode?:
-    | "CLASSIFIED"
-    | "ROOT_CAUSE_CONFLICT"
-    | "INSUFFICIENT_INFORMATION"
-    | "INTELLIGENCE_UNAVAILABLE"
-    | null;
+/** Kết quả AI (luật service-desk@0.3.0); chỉ là gợi ý. */
+export interface AssessmentResult {
+  contractVersion: string;
+  profileVersion: string;
+  engine: string;
+  rulesVersion: string | null;
+  modelVersion: string | null;
+  category: Category | null;
+  priority: Priority | null;
+  impact: Impact | null;
+  urgency: Urgency | null;
+  /** INSUFFICIENT_INFORMATION: OTHER/MEDIUM chỉ là mặc định, không phải gợi ý. */
+  reasonCode: "CLASSIFIED" | "ROOT_CAUSE_CONFLICT" | "INSUFFICIENT_INFORMATION";
+  evidence: { field: "title" | "description"; text: string }[];
+  explanation: { classificationReason: string; priorityReason: string } | null;
   needsReview: boolean;
-  explanation?: { classificationReason: string; priorityReason: string } | null;
-  evidence?: { field: "title" | "description"; text: string }[];
   nextQuestions: string[];
-  effortSize?: EffortSize | null;
-  profileVersion?: string | null;
-  assessedAt?: string | null;
 }
 
-/** Một lần con người sửa giá trị (R9). */
+/**
+ * Kết quả AI chạy nền lúc tạo ticket (StoredAssessment). PENDING thì hỏi lại định kỳ;
+ * READY / DEGRADED là kết thúc. result chỉ có khi READY.
+ */
+export interface Assessment {
+  status: AssessmentStatus;
+  version: number;
+  /** Có thể có cả khi PENDING (đang thử lại); USE_FINAL_CONTEXT_ASSESSMENT: xem kết quả ở luồng tiếp nhận. */
+  errorCode: string | null;
+  result: AssessmentResult | null;
+}
+
+/** Một lần con người sửa phân loại (R9). */
 export interface Correction {
-  field: "category" | "priority" | "estimateMinutes" | "assignee";
-  previousValue: string | null;
+  operationId: string;
+  field: "category" | "priority";
+  previousValue: string;
   newValue: string;
   /** previousValue là gợi ý của AI. */
-  fromAi?: boolean;
+  fromAi: boolean;
   by: string;
   reason: string;
   at: string;
 }
 
-/** Ticket kèm thông tin nghiệp vụ mới; backend hiện tại chưa trả các trường này. */
+/**
+ * Ticket kèm thông tin nghiệp vụ (TicketReviewView). Ticket quy trình cũ (service-desk)
+ * chỉ có phần gốc nên các trường mới đều optional.
+ */
 export interface TicketView extends Ticket {
   state?: TicketState;
+  /** Việc đang mở (mọi bước); bước confirm thì người gửi dùng để xác nhận. */
+  taskId?: string | null;
+  /** Người giữ việc đang mở; null khi chưa ai nhận (kể cả "để chờ ca sau"). */
+  assignee?: string | null;
+  /** null khi chưa duyệt. */
+  estimate?: Estimate | null;
+  /** Chỉ có khi đang ở bước xử lý. */
+  workState?: WorkState | null;
+  workedMinutes?: number | null;
+  remainingMinutes?: number | null;
+  reopenCount?: number;
   /** null khi chưa duyệt. */
   classification?: Classification | null;
+  /** null khi ticket không có kết quả AI chạy nền. */
   assessment?: Assessment | null;
-  assignee?: string | null;
-  /** Việc đang mở, dùng cho các thao tác Bắt đầu/Tạm dừng/Tiếp tục/Trả việc. */
-  taskId?: string | null;
-  pendingReason?: PendingReason | null;
-  estimate?: Estimate | null;
-  workedMinutes?: number;
+  /** null khi chưa duyệt. */
   sla?: Sla | null;
-  /** Báo người dùng dự kiến bắt đầu (R4). */
-  expectedStartAt?: string | null;
-  reopenCount?: number;
+  /** Không có với người yêu cầu và người tạo ticket. */
+  corrections?: Correction[];
+  // Chỉ có khi ticket đã tới bước xác nhận
   closedAt?: string | null;
   /** AUTO: tự đóng do người dùng không xác nhận (R11). */
   closedBy?: "REQUESTER" | "AUTO" | null;
-  /** Chỉ có ở trang chi tiết, cho kỹ thuật viên/điều phối viên. */
-  corrections?: Correction[];
+  confirmDeadlineAt?: string;
 }
 
 export interface TicketQuery {
@@ -188,11 +209,14 @@ export interface ReviewDecision {
   impact?: Impact;
   urgency?: Urgency;
   priority: Priority;
-  estimateMinutes: number;
+  /** Bỏ trống: dùng bảng ET mặc định. */
+  estimateMinutes?: number;
   /** null: để chờ ca sau (tổ không ai trực). */
   assignee: string | null;
-  /** Bắt buộc khi khác gợi ý AI hoặc khác người được đề xuất. */
-  reason?: string;
+  reason: string;
+  // Ticket qua luồng tiếp nhận: gửi đúng revision/version đang xem từ GET /intake
+  expectedContextRevision?: number;
+  expectedIntakeVersion?: number;
 }
 
 export interface ClassificationCorrection {
@@ -223,7 +247,6 @@ export const listTickets = async (
   query: TicketQuery,
   signal?: AbortSignal,
 ): Promise<Page<TicketView>> => {
-  if (isWorkflowMock) return ticketMock.listTickets(workspace, query);
   const { data } = await apiClient.get<Page<TicketView>>(ticketsPath(workspace), {
     params: query,
     // Mảng gửi dạng state=A&state=B như contract, không phải state[]=A
@@ -239,26 +262,57 @@ export const getTicket = async (
   id: string,
   signal?: AbortSignal,
 ): Promise<TicketView> => {
-  if (isWorkflowMock && ticketMock.hasTicket(id)) return ticketMock.getTicket(workspace, id);
   const { data } = await apiClient.get<TicketView>(ticketPath(workspace, id), { signal });
   return data;
 };
 
 /** POST tạo ticket (R0). 409: đã gửi với cùng clientRequestId. */
 export const createTicket = async (workspace: string, input: NewTicket): Promise<TicketView> => {
-  if (isWorkflowMock) return ticketMock.createTicket(workspace, input);
   const { data } = await apiClient.post<TicketView>(ticketsPath(workspace), input);
   return data;
 };
 
-/** POST duyệt ticket (R4): chốt loại, ưu tiên, ET, người xử lý. 409: người khác đã duyệt. */
+/**
+ * POST duyệt ticket (R4): chốt loại, ưu tiên, ET, người xử lý.
+ * 409: người khác đã duyệt, người được giao đang nghỉ trực, hoặc tiếp nhận đã đổi.
+ */
 export const reviewTicket = async (
   workspace: string,
   id: string,
   decision: ReviewDecision,
 ): Promise<TicketView> => {
-  if (isWorkflowMock) return ticketMock.reviewTicket(workspace, id, decision);
   const { data } = await apiClient.post<TicketView>(`${ticketPath(workspace, id)}/review`, decision);
+  return data;
+};
+
+/** GET đề xuất người xử lý theo loại / ưu tiên đang chọn ở màn duyệt (chưa có việc xử lý). */
+export const getReviewSuggestion = async (
+  workspace: string,
+  id: string,
+  query: { category: Category; priority: Priority; estimateMinutes?: number },
+  signal?: AbortSignal,
+): Promise<AssignmentSuggestion> => {
+  const { data } = await apiClient.get<AssignmentSuggestion>(
+    `${ticketPath(workspace, id)}/assignment-suggestion`,
+    { params: query, signal },
+  );
+  return data;
+};
+
+/**
+ * GET ET backend dùng nếu điều phối viên không tự nhập: trung vị việc tương tự (đủ mẫu) hoặc
+ * bảng trong Cấu hình hệ thống. Màn duyệt điền sẵn số này.
+ */
+export const getEstimateDefault = async (
+  workspace: string,
+  id: string,
+  query: { category: Category; priority: Priority },
+  signal?: AbortSignal,
+): Promise<Estimate> => {
+  const { data } = await apiClient.get<Estimate>(`${ticketPath(workspace, id)}/estimate-default`, {
+    params: query,
+    signal,
+  });
   return data;
 };
 
@@ -268,7 +322,6 @@ export const correctClassification = async (
   id: string,
   correction: ClassificationCorrection,
 ): Promise<TicketView> => {
-  if (isWorkflowMock) return ticketMock.correctClassification(workspace, id, correction);
   const { data } = await apiClient.patch<TicketView>(
     `${ticketPath(workspace, id)}/classification`,
     correction,
@@ -282,7 +335,7 @@ export const triageTicket = async (workspace: string, id: string): Promise<Sugge
   return parseSuggestion(data);
 };
 
-/** Hỏi trợ lý tri thức về ticket; chỉ gửi câu hỏi, nguồn tri thức do backend chọn. */
+/** Hỏi trợ lý tri thức về ticket; 404 khi backend tắt tính năng. */
 export const askTicketAssistance = async (
   workspace: string,
   id: string,
@@ -300,7 +353,6 @@ export const askTicketAssistance = async (
 
 /** GET cấu hình riêng của Service Desk (quản trị nền tảng). */
 export const getServiceDeskSettings = async (signal?: AbortSignal): Promise<ServiceDeskSettings> => {
-  if (isWorkflowMock) return ticketMock.getSettings();
   const { data } = await apiClient.get<ServiceDeskSettings>("/apps/servicedesk/v1/settings", {
     signal,
   });
@@ -311,7 +363,6 @@ export const getServiceDeskSettings = async (signal?: AbortSignal): Promise<Serv
 export const updateServiceDeskSettings = async (
   settings: ServiceDeskSettings,
 ): Promise<ServiceDeskSettings> => {
-  if (isWorkflowMock) return ticketMock.updateSettings(settings);
   // Bỏ trường chỉ đọc: backend từ chối body có trường lạ
   const body = { ...settings };
   delete body.updatedAt;

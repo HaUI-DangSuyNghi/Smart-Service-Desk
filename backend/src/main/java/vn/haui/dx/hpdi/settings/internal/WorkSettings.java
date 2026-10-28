@@ -16,8 +16,9 @@ public class WorkSettings {
     private final JdbcTemplate jdbc;
     private final ObjectMapper json;
     private final SettingsAdministration admin;
-    public WorkSettings(JdbcTemplate jdbc, ObjectMapper json, SettingsAdministration admin) {
-        this.jdbc = jdbc; this.json = json; this.admin = admin;
+    private final WorkPolicyReader policy;
+    public WorkSettings(JdbcTemplate jdbc, ObjectMapper json, SettingsAdministration admin, WorkPolicyReader policy) {
+        this.jdbc = jdbc; this.json = json; this.admin = admin; this.policy = policy;
     }
     @Transactional(readOnly = true)
     public ObjectNode get() { admin.requireAdmin(); return current(); }
@@ -35,6 +36,8 @@ public class WorkSettings {
         if (rows.isEmpty()) throw CapabilityException.conflict("Settings version stale or exhausted");
         ObjectNode after = rows.get(0);
         admin.audit("hpdi.work-settings.update", before, after);
+        // Áp dụng ngay cho thao tác sau (duyệt, bắt đầu, cảnh báo...); việc đã duyệt giữ hạn đã tính
+        policy.invalidate();
         return after;
     }
     private ObjectNode current() {

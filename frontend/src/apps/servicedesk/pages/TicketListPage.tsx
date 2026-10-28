@@ -10,7 +10,7 @@ import {
   usePermissions,
 } from "../../../platform/human/workspace";
 import { PRIORITY_LABELS } from "../../../platform/process";
-import { isWorkflowAvailable, type Priority } from "../../../platform/services";
+import type { Priority } from "../../../platform/services";
 import { DataTable } from "../../../platform/shared/ui/DataTable";
 import { EmptyState } from "../../../platform/shared/ui/EmptyState";
 import { ErrorState } from "../../../platform/shared/ui/ErrorState";
@@ -25,12 +25,7 @@ import { boardAccess } from "../tickets/board/boardAccess";
 import { TicketBoard } from "../tickets/board/TicketBoard";
 import { useBoardView, type ListMode } from "../tickets/board/useBoardView";
 import { CreateTicketDialog } from "../tickets/CreateTicketDialog";
-import {
-  createdAtColumn,
-  creatorColumn,
-  titleColumn,
-  workflowColumns,
-} from "../tickets/ticketColumns";
+import { createdAtColumn, titleColumn, workflowColumns } from "../tickets/ticketColumns";
 import { TICKET_STATE_LABELS } from "../tickets/ticketLabels";
 import type { Viewer } from "../tickets/ticketPermissions";
 import { PRIORITIES } from "../tickets/ticketRules";
@@ -66,9 +61,8 @@ const PRIORITY_OPTIONS = PRIORITIES.map((priority) => ({
   label: PRIORITY_LABELS[priority],
 }));
 
-// Người yêu cầu chỉ thấy ticket của mình nên không cần chọn nhóm; backend cũ chưa lọc được thì cũng không có
+// Người yêu cầu chỉ thấy ticket của mình nên không cần chọn nhóm
 const viewsFor = (canAssign: boolean, canHandle: boolean): View[] => {
-  if (!isWorkflowAvailable) return [];
   if (canAssign) return ["all", "review", "overdue", "mine"];
   if (canHandle) return ["all", "mine"];
   return [];
@@ -79,7 +73,7 @@ const TicketListPage = () => {
   const navigate = useNavigate();
   const { current } = useCurrentWorkspace();
   const { can } = usePermissions();
-  const { actor, roles } = useActor();
+  const { actor } = useActor();
   const me = useMe();
   const viewer: Viewer = {
     subject: actor?.subject ?? null,
@@ -88,7 +82,7 @@ const TicketListPage = () => {
     isPlatformAdmin: me.data?.platformAdmin ?? false,
   };
   // Board chung cho điều phối viên, kỹ thuật viên, siêu quản trị; người gửi không có
-  const canBoard = isWorkflowAvailable && boardAccess(viewer).canView;
+  const canBoard = boardAccess(viewer).canView;
   const [mode, setMode] = useBoardView(canBoard);
   const isBoard = mode === "board";
   const views = viewsFor(viewer.canAssign, viewer.canHandle);
@@ -110,9 +104,7 @@ const TicketListPage = () => {
   const tickets = useTicketList(page, filter, { enabled: !isBoard });
   const items = tickets.data?.items ?? [];
   const names = usePeopleNames(items.flatMap((ticket) => [ticket.creator, ticket.assignee]));
-  const columns = isWorkflowAvailable
-    ? [titleColumn, ...workflowColumns(names), createdAtColumn]
-    : [titleColumn, creatorColumn(names), createdAtColumn];
+  const columns = [titleColumn, ...workflowColumns(names), createdAtColumn];
 
   // Đổi nhóm xem hay bộ lọc thì về trang đầu
   const resetPage =
@@ -129,7 +121,7 @@ const TicketListPage = () => {
         icon={IconTicket}
         actions={
           <>
-            {roles.includes("coordinator") && (
+            {viewer.canAssign && (
               <Button variant="outline" asChild>
                 <Link to="/servicedesk/intake-pending">Ticket đang tiếp nhận</Link>
               </Button>
@@ -166,24 +158,20 @@ const TicketListPage = () => {
             {canBoard && (
               <ViewTabs label="Chế độ xem" tabs={MODE_TABS} value={mode} onChange={setMode} />
             )}
-            {isWorkflowAvailable && (
-              <>
-                <SelectField
-                  aria-label="Lọc theo trạng thái"
-                  placeholder="Mọi trạng thái"
-                  options={STATE_OPTIONS}
-                  value={state}
-                  onValueChange={resetPage(setState)}
-                />
-                <SelectField
-                  aria-label="Lọc theo ưu tiên"
-                  placeholder="Mọi mức ưu tiên"
-                  options={PRIORITY_OPTIONS}
-                  value={priority}
-                  onValueChange={resetPage(setPriority)}
-                />
-              </>
-            )}
+            <SelectField
+              aria-label="Lọc theo trạng thái"
+              placeholder="Mọi trạng thái"
+              options={STATE_OPTIONS}
+              value={state}
+              onValueChange={resetPage(setState)}
+            />
+            <SelectField
+              aria-label="Lọc theo ưu tiên"
+              placeholder="Mọi mức ưu tiên"
+              options={PRIORITY_OPTIONS}
+              value={priority}
+              onValueChange={resetPage(setPriority)}
+            />
           </>
         }
       />

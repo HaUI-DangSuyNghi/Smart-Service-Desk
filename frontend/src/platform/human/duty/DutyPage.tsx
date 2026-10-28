@@ -1,6 +1,7 @@
-import { IconCalendarUser, IconClock, IconProgress, IconUser } from "@tabler/icons-react";
-import type { DutyStatus } from "@/platform/services";
-import { formatDateTime, formatRelativeTime } from "@/platform/shared/lib/format";
+import { useState } from "react";
+import { IconCalendarTime, IconCalendarUser, IconProgress, IconToggleRight, IconUser } from "@tabler/icons-react";
+import type { AgentSchedule, DutyStatus } from "@/platform/services";
+import { formatDateTime } from "@/platform/shared/lib/format";
 import { Button } from "@/platform/shared/ui/button";
 import { DataTable, type DataTableColumn } from "@/platform/shared/ui/DataTable";
 import { EmptyState } from "@/platform/shared/ui/EmptyState";
@@ -8,74 +9,115 @@ import { ErrorState } from "@/platform/shared/ui/ErrorState";
 import { Page, PageBody, PageHeader } from "@/platform/shared/ui/page";
 import { TableSkeleton } from "@/platform/shared/ui/Skeleton";
 import { Tag } from "@/platform/shared/ui/Tag";
-import { toast, toastError } from "@/platform/shared/ui/toast";
+import { personName } from "../workspace/people";
 import { useCurrentWorkspace } from "../workspace/useCurrentWorkspace";
-import { useDutyList, useSetDuty } from "./useDuty";
+import { usePeopleNames } from "../workspace/usePeopleNames";
+import { nextShift } from "./scheduleForm";
+import { ScheduleDialog } from "./ScheduleDialog";
+import { useDutyList, useSchedules } from "./useDuty";
 
-/** Ca trực (R3): điều phối viên xem ai đang trực và bật/tắt hộ; chỉ người đang trực được giao việc mới. */
+interface Row {
+  status: DutyStatus;
+  /** Chưa từng lưu lịch thì là lịch rỗng (version 0). */
+  schedule: AgentSchedule;
+}
+
+const emptySchedule = (subject: string): AgentSchedule => ({
+  subject,
+  version: 0,
+  enabled: false,
+  shifts: [],
+});
+
+const shiftText = (schedule: AgentSchedule) => {
+  if (!schedule.enabled) return <span className="text-crm-text-3">Không dùng lịch</span>;
+  const shift = nextShift(schedule);
+  if (!shift) return <span className="text-crm-tone-red">Hết ca đã xếp</span>;
+  const running = new Date(shift.startsAt) <= new Date();
+  return (
+    <span title={`${formatDateTime(shift.startsAt)} – ${formatDateTime(shift.endsAt)}`}>
+      {running ? "Trong ca tới " : "Ca tới: "}
+      {formatDateTime(running ? shift.endsAt : shift.startsAt)}
+    </span>
+  );
+};
+
+/**
+ * Ca trực (R3): điều phối viên xem ai đang trực và xếp lịch ca cho từng người.
+ * Công tắc trực do kỹ thuật viên tự bật/tắt; đang trực thực tế = công tắc bật và (không dùng lịch
+ * hoặc đang trong ca). Chỉ người đang trực được đề xuất nhận việc mới.
+ */
 const DutyPage = () => {
   const { current } = useCurrentWorkspace();
   const duty = useDutyList();
-  const setDuty = useSetDuty();
-  const items = duty.data ?? [];
+  const schedules = useSchedules();
+  const [editing, setEditing] = useState<AgentSchedule | null>(null);
+  const names = usePeopleNames((duty.data ?? []).map((status) => status.subject));
 
-  const handleToggle = (status: DutyStatus) => {
-    setDuty.mutate(
-      { subject: status.subject, onDuty: !status.onDuty },
-      {
-        onSuccess: (next) =>
-          toast.success(next.onDuty ? "Đã bật trực" : "Đã chuyển sang nghỉ", {
-            description: next.displayName,
-          }),
-        onError: (error) => toastError("Không đổi được trạng thái trực.", error),
-      },
-    );
-  };
+  const bySubject = new Map((schedules.data ?? []).map((item) => [item.subject, item]));
+  const rows: Row[] = (duty.data ?? []).map((status) => ({
+    status,
+    schedule: bySubject.get(status.subject) ?? emptySchedule(status.subject),
+  }));
 
-  const columns: DataTableColumn<DutyStatus>[] = [
+  const columns: DataTableColumn<Row>[] = [
     {
       key: "name",
       header: "Người xử lý",
       icon: IconUser,
-      width: "240px",
-      cell: (status) => <span className="block truncate">{status.displayName}</span>,
+      width: "220px",
+      cell: ({ status }) => (
+        <span className="block truncate">{personName(names, status.subject)}</span>
+      ),
     },
     {
-      key: "state",
+      key: "effective",
       header: "Trạng thái",
       icon: IconProgress,
       width: "120px",
-      cell: (status) =>
-        status.onDuty ? <Tag tone="green">Đang trực</Tag> : <Tag tone="gray">Nghỉ</Tag>,
+      cell: ({ status }) =>
+        status.effectiveDuty ? <Tag tone="green">Đang trực</Tag> : <Tag tone="gray">Nghỉ</Tag>,
     },
     {
-      key: "changedAt",
-      header: "Đổi lúc",
-      icon: IconClock,
-      width: "140px",
-      cell: (status) => (
-        <time dateTime={status.changedAt} title={formatDateTime(status.changedAt)}>
-          {formatRelativeTime(status.changedAt)}
-        </time>
+      key: "manual",
+      header: "Công tắc",
+      icon: IconToggleRight,
+      width: "110px",
+      cell: ({ status }) => (
+        <span className={status.onDuty ? undefined : "text-crm-text-3"}>
+          {status.onDuty ? "Bật" : "Tắt"}
+        </span>
       ),
+    },
+    {
+      key: "shift",
+      header: "Lịch ca",
+      icon: IconCalendarTime,
+      width: "240px",
+      cell: ({ schedule }) => shiftText(schedule),
     },
     {
       key: "action",
       header: "Thao tác",
-      width: "120px",
-      cell: (status) => (
+      width: "130px",
+      cell: ({ schedule }) => (
         <Button
           size="xs"
           variant="outline"
           className="w-full"
-          disabled={setDuty.isPending && setDuty.variables?.subject === status.subject}
-          onClick={() => handleToggle(status)}
+          disabled={!schedules.data}
+          onClick={(event) => {
+            event.stopPropagation();
+            setEditing(schedule);
+          }}
         >
-          {status.onDuty ? "Cho nghỉ" : "Bật trực"}
+          Sửa lịch ca
         </Button>
       ),
     },
   ];
+
+  const error = duty.error ?? schedules.error;
 
   return (
     <Page>
@@ -83,16 +125,21 @@ const DutyPage = () => {
       <PageBody>
         {current === null && <EmptyState icon={IconCalendarUser} title="Chưa thuộc workspace nào" />}
         {current !== null && duty.isPending && (
-          <TableSkeleton columns={4} label="Đang tải ca trực" />
+          <TableSkeleton columns={5} label="Đang tải ca trực" />
         )}
-        {duty.error && <ErrorState error={duty.error} />}
-        {duty.data && items.length === 0 && (
+        {error && <ErrorState error={error} />}
+        {duty.data && rows.length === 0 && (
           <EmptyState icon={IconCalendarUser} title="Chưa có người xử lý nào" />
         )}
-        {items.length > 0 && (
-          <DataTable columns={columns} rows={items} getRowKey={(status) => status.subject} />
+        {rows.length > 0 && (
+          <DataTable columns={columns} rows={rows} getRowKey={(row) => row.status.subject} />
         )}
       </PageBody>
+      <ScheduleDialog
+        schedule={editing}
+        name={editing ? personName(names, editing.subject) : ""}
+        onClose={() => setEditing(null)}
+      />
     </Page>
   );
 };

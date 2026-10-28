@@ -48,16 +48,6 @@ export {
   type TaskCompletion,
   type WorkItem,
 } from "./processService";
-// Dữ liệu giả cho phần backend chưa cài; xóa khi backend xong (xem mock/mockMode.ts)
-export { isWorkflowAvailable, isWorkflowMock, mockError } from "./mock/mockMode";
-export {
-  workMock,
-  type MockFlow,
-  type MockProcess,
-  type MockTask,
-  type MockUser,
-  type NextTaskSpec,
-} from "./mock/workMock";
 export {
   decideEstimateRequest,
   getAssignmentSuggestion,
@@ -66,14 +56,17 @@ export {
   listAlerts,
   listDuty,
   listEstimateRequests,
+  listSchedules,
   markAlertRead,
   pauseWork,
   releaseWork,
   requestEstimateChange,
   resumeWork,
-  setDuty,
+  setMyDuty,
   startWork,
+  updateSchedule,
   updateWorkSettings,
+  type AgentSchedule,
   type Alert,
   type AlertPage,
   type AlertSeverity,
@@ -81,7 +74,6 @@ export {
   type AssignmentCandidate,
   type AssignmentSuggestion,
   type DutyStatus,
-  type EffortSize,
   type Estimate,
   type EstimateBasis,
   type EstimateRequest,
@@ -94,6 +86,7 @@ export {
   type QueuePage,
   type ReleaseInput,
   type ReleaseReason,
+  type ScheduledShift,
   type Shift,
   type Sla,
   type SlaTarget,

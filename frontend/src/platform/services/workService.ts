@@ -1,10 +1,8 @@
 import { apiClient, type Page } from "@/platform/shared/api";
-import { isWorkflowMock } from "./mock/mockMode";
-import { workMock } from "./mock/workMock";
 import { hpdiWorkspace } from "./paths";
 import type { PageQuery, WorkItem } from "./processService";
 
-// Kiểu khớp schema trong contracts/hpdi/openapi-target.yaml (bản đích, backend chưa cài)
+// Kiểu khớp contracts/hpdi/openapi.yaml (QueueItem, AssignmentSuggestion, EstimateRequest, AgentDuty, WorkAlert...)
 
 export type Priority = "LOW" | "MEDIUM" | "HIGH" | "CRITICAL";
 
@@ -13,21 +11,18 @@ export type WorkState = "NOT_STARTED" | "IN_PROGRESS" | "PENDING";
 
 export type PendingReason = "WAITING_REQUESTER" | "WAITING_PARTS" | "WAITING_EXTERNAL" | "OTHER";
 
-export type EffortSize = "SMALL" | "MEDIUM" | "LARGE";
-
 /**
- * Nguồn của thời gian ước tính: điều phối viên đặt, trung vị theo cỡ việc,
- * trung vị theo loại × ưu tiên, hoặc bảng mặc định.
+ * Nguồn của thời gian ước tính: bảng mặc định theo loại × ưu tiên, trung vị thời gian làm của việc
+ * tương tự đã đóng, hoặc điều phối viên đặt/duyệt.
  */
-export type EstimateBasis = "COORDINATOR" | "SIMILAR_BY_SIZE" | "SIMILAR" | "DEFAULT";
+export type EstimateBasis = "DEFAULT" | "SIMILAR" | "COORDINATOR";
 
 /** Thời gian ước tính (ET): số phút làm, không tính thời gian chờ. */
 export interface Estimate {
   minutes: number;
   basis: EstimateBasis;
-  /** Số việc đã xong dùng tính trung vị; null khi basis là COORDINATOR hoặc DEFAULT. */
+  /** Số việc dùng tính trung vị; chỉ có khi basis là SIMILAR. */
   sampleSize?: number | null;
-  effortSize?: EffortSize | null;
 }
 
 /** Hạn xử lý theo mức ưu tiên hiệu lực. */
@@ -36,9 +31,9 @@ export interface Sla {
   resolveBy: string;
   startBreached: boolean;
   resolveBreached: boolean;
-  /** Còn dưới ngưỡng cảnh báo (mặc định 20%) thời gian. */
+  /** Còn dưới 20% thời gian. */
   warning: boolean;
-  /** Đang chờ người dùng hoặc ngoài ca trực. */
+  /** Đang chờ người dùng hoặc ngoài giờ làm việc. */
   clockPaused: boolean;
 }
 
@@ -47,23 +42,16 @@ export interface QueueItem extends WorkItem {
   /** Nhãn hiển thị do app cung cấp (ví dụ tiêu đề yêu cầu). */
   label: string;
   workState: WorkState;
-  pendingReason?: PendingReason | null;
-  pendingNote?: string | null;
-  pendingSince?: string | null;
+  pendingReason: PendingReason | null;
+  pendingNote: string | null;
+  /** Ưu tiên hiệu lực; khác basePriority là đã được nâng bậc do chờ lâu. */
   priority: Priority;
   basePriority: Priority;
-  /** Được nâng bậc ưu tiên do chờ lâu. */
-  escalated?: boolean;
   estimate: Estimate;
   workedMinutes: number;
   /** Phần tính vào tải. */
   remainingMinutes: number;
-  sla?: Sla | null;
-  queuePosition?: number | null;
-  /** null khi đã bắt đầu. */
-  expectedStartAt?: string | null;
-  /** Người giữ không có việc đang làm và đây là việc đầu hàng. */
-  suggestStartNow?: boolean;
+  sla: Sla | null;
   reopenCount: number;
 }
 
@@ -82,22 +70,25 @@ export interface AssignmentCandidate {
   loadMinutes: number;
   assignedToday: number;
   /** ET dài hơn số này thì điều phối viên tự quyết. */
-  shiftRemainingMinutes?: number | null;
+  shiftRemainingMinutes: number | null;
   recommended: boolean;
-  excludedReason?: ExcludedReason | null;
+  excludedReason: ExcludedReason | null;
 }
 
 export interface AssignmentSuggestion {
   taskId: string;
+  /** Tổ hỗ trợ; "manual" là điều phối viên tự chọn (loại OTHER). */
   group: string;
   estimateMinutes: number;
-  /** null khi tổ không ai trực. */
-  recommended?: string | null;
+  /** null khi tổ không ai trực hoặc loại OTHER. */
+  recommended: string | null;
+  /** Mã lý do, có thể chứa ESTIMATE_EXCEEDS_SHIFT. */
   reason: string;
   candidates: AssignmentCandidate[];
 }
 
-export type EstimateRequestStatus = "PENDING" | "APPROVED" | "REJECTED";
+/** SUPERSEDED: bị thay do đổi phân loại hoặc đổi người giữ việc. */
+export type EstimateRequestStatus = "PENDING" | "APPROVED" | "REJECTED" | "SUPERSEDED";
 
 export interface EstimateRequest {
   id: string;
@@ -110,21 +101,37 @@ export interface EstimateRequest {
   proposedMinutes: number;
   reason: string;
   status: EstimateRequestStatus;
-  decidedBy?: string | null;
-  decidedAt?: string | null;
-  decisionNote?: string | null;
+  decidedBy: string | null;
+  decidedAt: string | null;
+  decisionNote: string | null;
+  supersededReason?: "CLASSIFICATION_CHANGED" | "ASSIGNMENT_CHANGED" | null;
   createdAt: string;
 }
 
+/** Trạng thái trực: onDuty là công tắc tay; effectiveDuty tính cả lịch ca. */
 export interface DutyStatus {
   subject: string;
-  displayName: string;
   onDuty: boolean;
-  /** MANUAL: bật/tắt tay; SCHEDULE: theo lịch trực (sau này). */
-  source: "MANUAL" | "SCHEDULE";
-  changedAt: string;
-  changedBy?: string | null;
-  note?: string | null;
+  effectiveDuty: boolean;
+  note: string | null;
+  updatedAt: string | null;
+}
+
+/** Một ca trực cụ thể (thời điểm tuyệt đối). */
+export interface ScheduledShift {
+  startsAt: string;
+  endsAt: string;
+  /** Mặc định Asia/Ho_Chi_Minh. */
+  timezone?: string;
+}
+
+/** Lịch ca của một người; bật lịch thì chỉ trực trong ca (và công tắc tay đang bật). */
+export interface AgentSchedule {
+  subject: string;
+  /** Gửi lại version đang xem, người khác đã sửa trước thì 409. */
+  version: number;
+  enabled: boolean;
+  shifts: ScheduledShift[];
 }
 
 export type AlertType =
@@ -133,12 +140,12 @@ export type AlertType =
   | "SLA_BREACHED"
   | "PENDING_TOO_LONG"
   | "CRITICAL_NEW"
-  | "CRITICAL_AUTO_QUEUED"
+  | "CLASSIFICATION_CHANGED"
   | "REOPENED"
   | "REOPEN_UNCLAIMED"
   | "ASSIGNEE_OFF_DUTY"
   | "NO_ONE_ON_DUTY"
-  | "ESTIMATE_REQUESTED";
+  | "CRITICAL_UNREVIEWED";
 
 export type AlertSeverity = "INFO" | "WARNING" | "CRITICAL";
 
@@ -146,13 +153,13 @@ export interface Alert {
   id: string;
   type: AlertType;
   severity: AlertSeverity;
-  taskId?: string | null;
+  taskId: string | null;
   processInstanceId: string;
   processKey: string;
   businessKey: string;
   label: string;
   createdAt: string;
-  readAt?: string | null;
+  readAt: string | null;
 }
 
 export interface AlertPage extends Page<Alert> {
@@ -233,7 +240,6 @@ export const getQueue = async (
   { assignee, page = 0, size = 50 }: PageQuery & { assignee?: string },
   signal?: AbortSignal,
 ): Promise<QueuePage> => {
-  if (isWorkflowMock) return workMock.getQueue(workspace, assignee);
   const { data } = await apiClient.get<QueuePage>(`${hpdiWorkspace(workspace)}/queue`, {
     params: { assignee, page, size },
     signal,
@@ -243,7 +249,6 @@ export const getQueue = async (
 
 /** POST Bắt đầu. 409: đã đủ số việc đang làm, hoặc việc không ở trạng thái chưa bắt đầu. */
 export const startWork = async (workspace: string, taskId: string): Promise<QueueItem> => {
-  if (isWorkflowMock) return workMock.startWork(workspace, taskId);
   const { data } = await apiClient.post<QueueItem>(`${taskPath(workspace, taskId)}/start`);
   return data;
 };
@@ -254,14 +259,12 @@ export const pauseWork = async (
   taskId: string,
   input: PauseInput,
 ): Promise<QueueItem> => {
-  if (isWorkflowMock) return workMock.pauseWork(workspace, taskId, input);
   const { data } = await apiClient.post<QueueItem>(`${taskPath(workspace, taskId)}/pause`, input);
   return data;
 };
 
 /** POST Tiếp tục. 409: đã đủ số việc đang làm. */
 export const resumeWork = async (workspace: string, taskId: string): Promise<QueueItem> => {
-  if (isWorkflowMock) return workMock.resumeWork(workspace, taskId);
   const { data } = await apiClient.post<QueueItem>(`${taskPath(workspace, taskId)}/resume`);
   return data;
 };
@@ -272,17 +275,15 @@ export const releaseWork = async (
   taskId: string,
   input: ReleaseInput,
 ): Promise<void> => {
-  if (isWorkflowMock) return workMock.releaseWork(workspace, taskId, input);
   await apiClient.post(`${taskPath(workspace, taskId)}/release`, input);
 };
 
-/** GET đề xuất người xử lý theo tải và ca trực (điều phối viên); không giao việc. */
+/** GET đề xuất người xử lý cho việc đã duyệt (điều phối viên); không giao việc. */
 export const getAssignmentSuggestion = async (
   workspace: string,
   taskId: string,
   signal?: AbortSignal,
 ): Promise<AssignmentSuggestion> => {
-  if (isWorkflowMock) return workMock.getAssignmentSuggestion(workspace, taskId);
   const { data } = await apiClient.get<AssignmentSuggestion>(
     `${taskPath(workspace, taskId)}/assignment-suggestion`,
     { signal },
@@ -296,7 +297,6 @@ export const requestEstimateChange = async (
   taskId: string,
   input: { proposedMinutes: number; reason: string },
 ): Promise<EstimateRequest> => {
-  if (isWorkflowMock) return workMock.requestEstimateChange(workspace, taskId, input);
   const { data } = await apiClient.post<EstimateRequest>(
     `${taskPath(workspace, taskId)}/estimate-requests`,
     input,
@@ -310,7 +310,6 @@ export const listEstimateRequests = async (
   { status, page = 0, size = 20 }: PageQuery & { status?: EstimateRequestStatus },
   signal?: AbortSignal,
 ): Promise<Page<EstimateRequest>> => {
-  if (isWorkflowMock) return workMock.listEstimateRequests(workspace, status);
   const { data } = await apiClient.get<Page<EstimateRequest>>(
     `${hpdiWorkspace(workspace)}/estimate-requests`,
     { params: { status, page, size }, signal },
@@ -324,7 +323,6 @@ export const decideEstimateRequest = async (
   requestId: string,
   input: { approved: boolean; note?: string },
 ): Promise<EstimateRequest> => {
-  if (isWorkflowMock) return workMock.decideEstimateRequest(workspace, requestId, input);
   const { data } = await apiClient.post<EstimateRequest>(
     `${hpdiWorkspace(workspace)}/estimate-requests/${encodeURIComponent(requestId)}/decision`,
     input,
@@ -334,23 +332,40 @@ export const decideEstimateRequest = async (
 
 /** GET trạng thái trực; điều phối viên thấy tất cả, kỹ thuật viên chỉ thấy mình. */
 export const listDuty = async (workspace: string, signal?: AbortSignal): Promise<DutyStatus[]> => {
-  if (isWorkflowMock) return workMock.listDuty(workspace);
   const { data } = await apiClient.get<DutyStatus[]>(`${hpdiWorkspace(workspace)}/duty`, {
     signal,
   });
   return data;
 };
 
-/** PUT bật/tắt trực; subject "me" là chính mình. */
-export const setDuty = async (
+/** PUT bật/tắt trực của chính mình (backend không cho bật/tắt hộ người khác). */
+export const setMyDuty = async (
   workspace: string,
-  subject: string,
   input: { onDuty: boolean; note?: string },
 ): Promise<DutyStatus> => {
-  if (isWorkflowMock) return workMock.setDuty(workspace, subject, input);
-  const { data } = await apiClient.put<DutyStatus>(
-    `${hpdiWorkspace(workspace)}/duty/${encodeURIComponent(subject)}`,
-    input,
+  const { data } = await apiClient.put<DutyStatus>(`${hpdiWorkspace(workspace)}/duty/me`, input);
+  return data;
+};
+
+/** GET lịch ca; điều phối viên thấy tất cả kỹ thuật viên, kỹ thuật viên chỉ thấy mình. */
+export const listSchedules = async (
+  workspace: string,
+  signal?: AbortSignal,
+): Promise<AgentSchedule[]> => {
+  const { data } = await apiClient.get<AgentSchedule[]>(`${hpdiWorkspace(workspace)}/schedules`, {
+    signal,
+  });
+  return data;
+};
+
+/** PUT ghi đè lịch ca của một người (điều phối viên). 409: version cũ. */
+export const updateSchedule = async (
+  workspace: string,
+  { subject, ...body }: AgentSchedule,
+): Promise<AgentSchedule> => {
+  const { data } = await apiClient.put<AgentSchedule>(
+    `${hpdiWorkspace(workspace)}/schedules/${encodeURIComponent(subject)}`,
+    body,
   );
   return data;
 };
@@ -361,7 +376,6 @@ export const listAlerts = async (
   { since, unreadOnly, page = 0, size = 20 }: AlertQuery,
   signal?: AbortSignal,
 ): Promise<AlertPage> => {
-  if (isWorkflowMock) return workMock.listAlerts(workspace, { since, unreadOnly });
   const { data } = await apiClient.get<AlertPage>(`${hpdiWorkspace(workspace)}/alerts`, {
     params: { since, unreadOnly, page, size },
     signal,
@@ -371,20 +385,17 @@ export const listAlerts = async (
 
 /** POST đánh dấu đã đọc; gọi lặp vẫn thành công. */
 export const markAlertRead = async (workspace: string, alertId: string): Promise<void> => {
-  if (isWorkflowMock) return workMock.markAlertRead(workspace, alertId);
   await apiClient.post(`${hpdiWorkspace(workspace)}/alerts/${encodeURIComponent(alertId)}/read`);
 };
 
 /** GET cấu hình chung (quản trị nền tảng). */
 export const getWorkSettings = async (signal?: AbortSignal): Promise<WorkSettings> => {
-  if (isWorkflowMock) return workMock.getWorkSettings();
   const { data } = await apiClient.get<WorkSettings>("/hpdi/v1/settings/work", { signal });
   return data;
 };
 
 /** PUT ghi đè cấu hình chung; 409 khi người khác vừa sửa (version cũ). */
 export const updateWorkSettings = async (settings: WorkSettings): Promise<WorkSettings> => {
-  if (isWorkflowMock) return workMock.updateWorkSettings(settings);
   // Bỏ trường chỉ đọc: backend từ chối body có trường lạ
   const body = { ...settings };
   delete body.updatedAt;

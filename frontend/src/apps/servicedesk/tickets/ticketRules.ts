@@ -1,5 +1,5 @@
 import type { Priority } from "../../../platform/services";
-import type { TicketState, TicketView } from "../services/ticketService";
+import type { Assessment, TicketState, TicketView } from "../services/ticketService";
 
 // Luật nghiệp vụ thuần của ticket (plan ticket.md): R1 chọn tổ, mục 4 bảng ưu tiên, R2 ET mặc định
 
@@ -18,14 +18,7 @@ export const PRIORITIES: readonly Priority[] = ["LOW", "MEDIUM", "HIGH", "CRITIC
 export const IMPACTS: readonly Impact[] = ["I1", "I2", "I3", "I4"];
 export const URGENCIES: readonly Urgency[] = ["U1", "U2", "U3", "U4"];
 
-/** R1: loại lỗi → tổ (group Keycloak trong workspace); OTHER do điều phối viên tự chọn. */
-export const DEFAULT_CATEGORY_GROUPS: Readonly<Record<Category, string | null>> = {
-  HARDWARE: "hardware",
-  NETWORK: "network",
-  SOFTWARE: "software",
-  ACCOUNT: "sysadmin",
-  OTHER: null,
-};
+// Loại lỗi → tổ (R1) và ET mặc định (R2) nằm ở Cấu hình hệ thống, FE đọc từ backend
 
 /** Mục 4: ưu tiên = ảnh hưởng × độ gấp. */
 const PRIORITY_MATRIX: Readonly<Record<Impact, Readonly<Record<Urgency, Priority>>>> = {
@@ -38,16 +31,8 @@ const PRIORITY_MATRIX: Readonly<Record<Impact, Readonly<Record<Urgency, Priority
 export const priorityOf = (impact: Impact, urgency: Urgency): Priority =>
   PRIORITY_MATRIX[impact][urgency];
 
+/** Bảng ET mặc định (phút làm) theo loại × ưu tiên, sửa ở Cấu hình hệ thống. */
 export type EstimateTable = Record<Category, Record<Priority, number>>;
-
-/** R2: ET mặc định (phút làm) theo loại × ưu tiên, dùng khi chưa đủ dữ liệu. */
-export const DEFAULT_ESTIMATES: Readonly<EstimateTable> = {
-  HARDWARE: { LOW: 45, MEDIUM: 60, HIGH: 90, CRITICAL: 120 },
-  NETWORK: { LOW: 30, MEDIUM: 45, HIGH: 60, CRITICAL: 90 },
-  SOFTWARE: { LOW: 30, MEDIUM: 30, HIGH: 45, CRITICAL: 60 },
-  ACCOUNT: { LOW: 15, MEDIUM: 15, HIGH: 20, CRITICAL: 30 },
-  OTHER: { LOW: 30, MEDIUM: 45, HIGH: 60, CRITICAL: 90 },
-};
 
 export const MAX_TITLE = 200;
 export const MAX_DESCRIPTION = 4000;
@@ -62,6 +47,26 @@ export const HANDLING_STATES: ReadonlySet<TicketState> = new Set([
   "PENDING",
   "REOPENED",
 ]);
+
+/**
+ * Gợi ý AI dùng được để điền sẵn / sắp xếp: chỉ khi READY và không phải INSUFFICIENT_INFORMATION
+ * (khi đó OTHER/MEDIUM chỉ là giá trị mặc định, không phải gợi ý).
+ */
+export const aiSuggestion = (assessment?: Assessment | null) => {
+  const result = assessment?.status === "READY" ? assessment.result : null;
+  return result && result.reasonCode !== "INSUFFICIENT_INFORMATION" ? result : null;
+};
+
+/**
+ * Đang ở bước duyệt: chờ duyệt lần đầu, hoặc Mở lại (người gửi báo chưa xong) mà chưa duyệt lại.
+ * Mở lại sau khi đã giao lại thì có workState (bước xử lý), không phải bước duyệt.
+ */
+export const awaitsReview = (ticket: Pick<TicketView, "state" | "workState">) =>
+  ticket.state === "AWAITING_REVIEW" || (ticket.state === "REOPENED" && !ticket.workState);
+
+/** Đang ở bước xử lý: còn sửa được phân loại, đổi người, Bắt đầu / Tạm dừng. */
+export const isHandling = (ticket: Pick<TicketView, "state" | "workState">) =>
+  ticket.state !== undefined && HANDLING_STATES.has(ticket.state) && !awaitsReview(ticket);
 
 /** Đã bắt đầu làm (đang làm, đang chờ, hoặc đã có thời gian làm): hạn tính tới hạn xong. */
 export const isStarted = (ticket: Pick<TicketView, "state" | "workedMinutes">) =>

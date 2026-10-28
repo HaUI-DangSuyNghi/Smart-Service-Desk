@@ -13,7 +13,7 @@ import { formatDateTime, formatRelativeTime } from "../../../platform/shared/lib
 import type { DataTableColumn } from "../../../platform/shared/ui/DataTable";
 import type { TicketView } from "../services/ticketService";
 import { CATEGORY_LABELS } from "./ticketLabels";
-import { isStarted } from "./ticketRules";
+import { aiSuggestion, isStarted } from "./ticketRules";
 import { TicketStateTag } from "./TicketStateTag";
 
 const NONE = <span className="text-crm-text-3">—</span>;
@@ -46,7 +46,7 @@ export const creatorColumn = (names: ReadonlyMap<string, string>): DataTableColu
   cell: (ticket) => personName(names, ticket.creator),
 });
 
-/** Cột nghiệp vụ mới (R4–R6); chỉ dùng khi backend trả trạng thái hoặc bật dữ liệu giả. */
+/** Cột nghiệp vụ (R4–R6); ticket quy trình cũ không có các trường này thì hiện "—". */
 export const workflowColumns = (
   names: ReadonlyMap<string, string>,
 ): DataTableColumn<TicketView>[] => [
@@ -64,7 +64,7 @@ export const workflowColumns = (
     width: "130px",
     cell: (ticket) => {
       // Chưa duyệt thì hiện gợi ý AI cho điều phối viên sắp xếp
-      const priority = ticket.classification?.priority ?? ticket.assessment?.priority;
+      const priority = ticket.classification?.priority ?? aiSuggestion(ticket.assessment)?.priority;
       return priority ? (
         <PriorityTag priority={priority} escalated={ticket.classification?.escalated} />
       ) : (
@@ -78,7 +78,7 @@ export const workflowColumns = (
     icon: IconCategory,
     width: "120px",
     cell: (ticket) => {
-      const category = ticket.classification?.category ?? ticket.assessment?.category;
+      const category = ticket.classification?.category ?? aiSuggestion(ticket.assessment)?.category;
       return category ? CATEGORY_LABELS[category] : NONE;
     },
   },

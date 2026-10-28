@@ -1,5 +1,5 @@
 import type { TicketView } from "../services/ticketService";
-import { HANDLING_STATES } from "./ticketRules";
+import { awaitsReview, isHandling } from "./ticketRules";
 
 /** Người đang xem ticket; `subject` null khi chưa biết vai trò (đang tải). */
 export interface Viewer {
@@ -29,15 +29,16 @@ export interface TicketPermissions {
  * Kỹ thuật viên A chỉ xem ticket của B; ticket của mình thì đổi trạng thái, hành động được.
  */
 export const ticketPermissions = (ticket: TicketView, viewer: Viewer): TicketPermissions => {
-  const { state } = ticket;
   const isHolder = viewer.subject !== null && ticket.assignee === viewer.subject;
   const isCreator = viewer.subject !== null && ticket.creator === viewer.subject;
-  const handling = state !== undefined && HANDLING_STATES.has(state);
+  const handling = isHandling(ticket);
+  const hasTask = Boolean(ticket.taskId);
 
-  const canAct = isHolder && handling && Boolean(ticket.taskId);
-  const canReview = state === "AWAITING_REVIEW" && viewer.canAssign && Boolean(ticket.taskId);
-  const canCorrect = handling && Boolean(ticket.taskId) && (isHolder || viewer.canAssign);
-  const canConfirm = isCreator && state === "AWAITING_CONFIRMATION";
+  const canAct = isHolder && handling && hasTask;
+  // Backend cấm người tạo ticket tự duyệt hoặc tự sửa phân loại (cần người độc lập)
+  const canReview = awaitsReview(ticket) && viewer.canAssign && hasTask && !isCreator;
+  const canCorrect = handling && hasTask && (isHolder || viewer.canAssign) && !isCreator;
+  const canConfirm = isCreator && ticket.state === "AWAITING_CONFIRMATION";
 
   return {
     isHolder,

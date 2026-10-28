@@ -20,8 +20,9 @@ public class ServiceDeskSettings {
     private final JdbcTemplate jdbc;
     private final ObjectMapper json;
     private final SettingsAdministration admin;
-    public ServiceDeskSettings(JdbcTemplate jdbc, ObjectMapper json, SettingsAdministration admin) {
-        this.jdbc = jdbc; this.json = json; this.admin = admin;
+    private final ServiceDeskPolicy policy;
+    public ServiceDeskSettings(JdbcTemplate jdbc, ObjectMapper json, SettingsAdministration admin, ServiceDeskPolicy policy) {
+        this.jdbc = jdbc; this.json = json; this.admin = admin; this.policy = policy;
     }
     @GetMapping
     @Transactional(readOnly = true)
@@ -44,6 +45,8 @@ public class ServiceDeskSettings {
         if (rows.isEmpty()) throw CapabilityException.conflict("Settings version stale or exhausted");
         ObjectNode after = rows.get(0);
         admin.audit("servicedesk.settings.update", before, after);
+        // Áp dụng cho lần duyệt / giao việc sau; ticket đã duyệt giữ ET đã gán
+        policy.invalidate();
         return after;
     }
     static void validate(JsonNode root) {

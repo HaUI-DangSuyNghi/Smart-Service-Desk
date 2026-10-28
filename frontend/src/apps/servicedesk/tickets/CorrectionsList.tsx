@@ -1,5 +1,5 @@
 import { personName, usePeopleNames } from "../../../platform/human/workspace";
-import { formatMinutes, PRIORITY_LABELS } from "../../../platform/process";
+import { PRIORITY_LABELS } from "../../../platform/process";
 import { formatRelativeTime } from "../../../platform/shared/lib/format";
 import type { Priority } from "../../../platform/services";
 import type { Correction } from "../services/ticketService";
@@ -9,18 +9,13 @@ import type { Category } from "./ticketRules";
 const FIELD_LABELS: Record<Correction["field"], string> = {
   category: "Loại sự cố",
   priority: "Ưu tiên",
-  estimateMinutes: "Ước tính",
-  assignee: "Người xử lý",
 };
 
-/** Giá trị lưu dạng mã (HARDWARE, HIGH, 60) → chữ dễ đọc. */
-const valueLabel = (field: Correction["field"], value: string | null) => {
-  if (value === null) return "trống";
-  if (field === "category") return CATEGORY_LABELS[value as Category] ?? value;
-  if (field === "priority") return PRIORITY_LABELS[value as Priority] ?? value;
-  if (field === "estimateMinutes") return formatMinutes(Number(value));
-  return value;
-};
+/** Giá trị lưu dạng mã (HARDWARE, HIGH) → chữ dễ đọc. */
+const valueLabel = (field: Correction["field"], value: string) =>
+  field === "category"
+    ? (CATEGORY_LABELS[value as Category] ?? value)
+    : (PRIORITY_LABELS[value as Priority] ?? value);
 
 /** Lịch sử con người sửa kết quả AI và sửa lẫn nhau (R9). */
 export const CorrectionsList = ({ corrections }: { corrections: readonly Correction[] }) => {
@@ -32,7 +27,7 @@ export const CorrectionsList = ({ corrections }: { corrections: readonly Correct
       <h2 className="mb-2 font-medium">Lịch sử sửa phân loại</h2>
       <ul className="flex flex-col gap-2">
         {corrections.map((item, index) => (
-          <li key={`${item.at}-${item.field}-${index}`} className="text-crm-sm">
+          <li key={`${item.operationId}-${item.field}-${index}`} className="text-crm-sm">
             <p className="text-crm-text">
               {FIELD_LABELS[item.field]}: {valueLabel(item.field, item.previousValue)}
               {item.fromAi && " (AI)"} →{" "}

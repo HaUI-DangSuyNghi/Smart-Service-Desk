@@ -28,12 +28,15 @@ const STATUS_LABELS: Record<EstimateRequestStatus, string> = {
   PENDING: "Chờ quyết",
   APPROVED: "Đã đồng ý",
   REJECTED: "Đã từ chối",
+  // Bị thay do đổi phân loại hoặc đổi người giữ việc
+  SUPERSEDED: "Hết hiệu lực",
 };
 
 const STATUS_TONES: Record<EstimateRequestStatus, TagTone> = {
   PENDING: "orange",
   APPROVED: "green",
   REJECTED: "gray",
+  SUPERSEDED: "gray",
 };
 
 type View = "PENDING" | "ALL";

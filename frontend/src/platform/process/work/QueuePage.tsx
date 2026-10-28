@@ -2,7 +2,14 @@ import { useState } from "react";
 import { useNavigate } from "react-router";
 import { IconListNumbers } from "@tabler/icons-react";
 import { useDutyList } from "@/platform/human/duty";
-import { PERMISSIONS, useActor, useCurrentWorkspace, usePermissions } from "@/platform/human/workspace";
+import {
+  PERMISSIONS,
+  personName,
+  useActor,
+  useCurrentWorkspace,
+  usePeopleNames,
+  usePermissions,
+} from "@/platform/human/workspace";
 import type { QueueItem } from "@/platform/services";
 import { EmptyState } from "@/platform/shared/ui/EmptyState";
 import { ErrorState } from "@/platform/shared/ui/ErrorState";
@@ -15,7 +22,7 @@ import { useQueue } from "./useWork";
 import { formatMinutes } from "./workLabels";
 
 /**
- * Hàng đợi (R4): việc được giao đã sắp thứ tự, việc Đang làm ghim đầu, có dự kiến bắt đầu.
+ * Hàng đợi (R4): việc được giao đã sắp thứ tự, việc Đang làm ghim đầu, kèm tổng tải.
  * Điều phối viên chọn người để xem hàng đợi của người khác.
  */
 const QueuePage = () => {
@@ -30,10 +37,11 @@ const QueuePage = () => {
   const items = queue.data?.items ?? [];
   const isMine = !person || person === actor?.subject;
 
-  const options = (duty.data ?? []).map((status) => ({
-    value: status.subject,
-    label: status.onDuty ? status.displayName : `${status.displayName} (nghỉ)`,
-  }));
+  const names = usePeopleNames((duty.data ?? []).map((status) => status.subject));
+  const options = (duty.data ?? []).map((status) => {
+    const name = personName(names, status.subject);
+    return { value: status.subject, label: status.effectiveDuty ? name : `${name} (nghỉ)` };
+  });
 
   const handleOpen = (item: QueueItem) =>
     navigate(processLink(item.processKey, item.businessKey) ?? `/processes/${item.processInstanceId}`);

@@ -1,5 +1,4 @@
 import { personName, usePeopleNames } from "../../../../platform/human/workspace";
-import { PENDING_REASON_LABELS } from "../../../../platform/process";
 import type { TicketView } from "../../services/ticketService";
 import { TicketActions } from "../TicketActions";
 import { ticketPermissions } from "../ticketPermissions";
@@ -26,11 +25,6 @@ export const StatusBlock = ({ ticket }: { ticket: TicketView }) => {
     <div>
       <div className="flex flex-wrap items-center gap-2 border-b border-crm-line px-4 py-3">
         <TicketStateTag state={ticket.state} />
-        {ticket.pendingReason && (
-          <span className="text-crm-sm text-crm-text-3">
-            {PENDING_REASON_LABELS[ticket.pendingReason]}
-          </span>
-        )}
       </div>
       <TicketActions ticket={ticket} />
       {showReadOnlyNote && ticket.assignee && (

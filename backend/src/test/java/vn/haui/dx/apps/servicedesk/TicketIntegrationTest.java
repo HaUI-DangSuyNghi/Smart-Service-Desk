@@ -1076,7 +1076,8 @@ class TicketIntegrationTest {
         assertFalse(reviewed.path("sla").path("resolveBreached").asBoolean());
         var id = UUID.fromString(ticket.path("id").asText());
         var state = slaService.read("lab-a", id);
-        assertEquals("r5-v1", state.policy().version());
+        // Bản chụp chính sách theo version Cấu hình hệ thống lúc duyệt
+        assertTrue(state.policy().version().startsWith("r5-settings-v"));
         assertEquals(60, state.policy().targets().get(state.base()).startMinutes());
         assertNull(slaService.read("lab-b", id));
         assertTrue(slaService.batch("lab-b", List.of(state.taskId())).isEmpty());
@@ -1393,6 +1394,46 @@ class TicketIntegrationTest {
                 Integer.class,UUID.fromString(ticket.path("id").asText())),jdbc.queryForObject(
                 "select count(*) from hpdi_alert_event where task_id=? and type='CLASSIFICATION_CHANGED'",Integer.class,task));
         } finally { start.countDown(); pool.shutdownNow(); }
+    }
+
+    @Test void ticketListFiltersByStatePriorityCategoryAssigneeAndSortsLikeReviewQueue() throws Exception {
+        String worker = "filter-agent-" + UUID.randomUUID(), owner = "filter-owner-" + UUID.randomUUID();
+        String marker = "Filter " + UUID.randomUUID();
+        var waiting = create(owner, marker + " waiting", "requester");
+        var assigned = create(owner, marker + " assigned", "requester");
+        var critical = create(owner, marker + " critical", "requester");
+        review(assigned, "review-coordinator", worker, null, "NETWORK", "LOW").andExpect(status().isOk());
+        String task = body(review(critical, "review-coordinator", worker, null, "HARDWARE", "CRITICAL")
+            .andExpect(status().isOk())).path("taskId").asText();
+        mvc.perform(post("/api/hpdi/v1/workspaces/lab-a/tasks/" + task + "/start").with(as(worker, "lab-a", "agent")))
+            .andExpect(status().isOk());
+        var coordinator = as("review-coordinator", "lab-a", "coordinator");
+        mvc.perform(get(BASE).param("q", marker).param("state", "ASSIGNED").param("state", "IN_PROGRESS").with(coordinator))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.total").value(2));
+        mvc.perform(get(BASE).param("q", marker).param("assignee", "me").with(as(worker, "lab-a", "agent")))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.total").value(2));
+        mvc.perform(get(BASE).param("q", marker).param("priority", "CRITICAL").with(coordinator))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.total").value(1))
+            .andExpect(jsonPath("$.items[0].id").value(critical.path("id").asText()))
+            .andExpect(jsonPath("$.items[0].state").value("IN_PROGRESS"));
+        mvc.perform(get(BASE).param("q", marker).param("category", "NETWORK").with(coordinator))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.total").value(1))
+            .andExpect(jsonPath("$.items[0].id").value(assigned.path("id").asText()));
+        mvc.perform(get(BASE).param("q", marker).param("sort", "priority").with(coordinator))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.total").value(3))
+            .andExpect(jsonPath("$.items[0].id").value(critical.path("id").asText()))
+            .andExpect(jsonPath("$.items[1].id").value(assigned.path("id").asText()))
+            .andExpect(jsonPath("$.items[2].id").value(waiting.path("id").asText()));
+        // Danh sách không lọc cũng trả trạng thái; người yêu cầu chỉ thấy ticket của mình
+        mvc.perform(get(BASE).param("q", marker).with(as(owner, "lab-a", "requester")))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.total").value(3)).andExpect(jsonPath("$.items[0].state").exists());
+        mvc.perform(get(BASE).param("q", marker).param("state", "AWAITING_REVIEW").param("state", "ASSIGNED")
+                .with(as("filter-stranger", "lab-a", "requester")))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.total").value(0));
+        for (var invalid : List.of(Map.of("state", "BOGUS"), Map.of("priority", "URGENT"), Map.of("category", "network"),
+                Map.of("sort", "title")))
+            mvc.perform(get(BASE).param(invalid.keySet().iterator().next(), invalid.values().iterator().next()).with(coordinator))
+                .andExpect(status().isBadRequest());
     }
 
     private ResultActions review(JsonNode ticket, String reviewer, String assignee, Integer minutes) throws Exception {

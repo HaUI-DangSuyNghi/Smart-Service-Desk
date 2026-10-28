@@ -3,7 +3,7 @@ import { useNavigate } from "react-router";
 import { PERMISSIONS, useCurrentWorkspace, usePermissions } from "@/platform/human/workspace";
 import { toast } from "@/platform/shared/ui/toast";
 import { processLink } from "../common/processLinks";
-import { ALERT_LABELS } from "./alertLabels";
+import { alertLabel, alertSubject } from "./alertLabels";
 import { useAlerts } from "./useAlerts";
 
 /**
@@ -36,8 +36,8 @@ export const AlertWatcher = () => {
               `/processes/${alert.processInstanceId}`,
           );
         const show = alert.severity === "CRITICAL" ? toast.error : toast.warning;
-        show(ALERT_LABELS[alert.type], {
-          description: alert.label,
+        show(alertLabel(alert.type), {
+          description: alertSubject(alert),
           action: { label: "Xem", onClick: open },
         });
       });

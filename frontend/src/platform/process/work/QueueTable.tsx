@@ -8,16 +8,18 @@ import {
   IconTypography,
 } from "@tabler/icons-react";
 import type { QueueItem } from "@/platform/services";
-import { formatDateTime, formatRelativeTime } from "@/platform/shared/lib/format";
 import { DataTable, type DataTableColumn } from "@/platform/shared/ui/DataTable";
 import { EstimateText } from "./EstimateText";
 import { PriorityTag } from "./PriorityTag";
 import { SlaIndicator } from "./SlaIndicator";
 import { WorkActions } from "./WorkActions";
+import { formatMinutes, isEscalated } from "./workLabels";
 import { WorkStateTag } from "./WorkStateTag";
 
 interface Props {
   items: readonly QueueItem[];
+  /** Số thứ tự của dòng đầu (trang sau thì cộng thêm). */
+  firstPosition?: number;
   /** Hàng đợi của chính mình thì có cột thao tác. */
   showActions: boolean;
   onOpen: (item: QueueItem) => void;
@@ -26,7 +28,11 @@ interface Props {
 const isStarted = (item: QueueItem) => item.workState !== "NOT_STARTED" || item.workedMinutes > 0;
 
 /** Bảng hàng đợi đã sắp theo R4; thứ tự do backend quyết, bảng không tự sắp lại. */
-export const QueueTable = ({ items, showActions, onOpen }: Props) => {
+export const QueueTable = ({ items, firstPosition = 1, showActions, onOpen }: Props) => {
+  // Chưa có việc đang làm thì gợi ý làm ngay việc đầu hàng
+  const suggestedId = items.some((item) => item.workState === "IN_PROGRESS")
+    ? null
+    : items.find((item) => item.workState === "NOT_STARTED")?.id;
   const columns: DataTableColumn<QueueItem>[] = [
     {
       key: "label",
@@ -35,7 +41,9 @@ export const QueueTable = ({ items, showActions, onOpen }: Props) => {
       width: "320px",
       cell: (item) => (
         <span className="flex min-w-0 items-center gap-1.5">
-          <span className="w-5 shrink-0 text-crm-text-3 tabular-nums">{item.queuePosition}</span>
+          <span className="w-5 shrink-0 text-crm-text-3 tabular-nums">
+            {firstPosition + items.indexOf(item)}
+          </span>
           <span className="truncate">{item.label}</span>
           {item.reopenCount > 0 && (
             <span className="shrink-0 text-crm-sm text-crm-tone-red">
@@ -50,7 +58,7 @@ export const QueueTable = ({ items, showActions, onOpen }: Props) => {
       header: "Ưu tiên",
       icon: IconFlag,
       width: "130px",
-      cell: (item) => <PriorityTag priority={item.priority} escalated={item.escalated} />,
+      cell: (item) => <PriorityTag priority={item.priority} escalated={isEscalated(item)} />,
     },
     {
       key: "state",
@@ -79,18 +87,12 @@ export const QueueTable = ({ items, showActions, onOpen }: Props) => {
       cell: (item) => <EstimateText estimate={item.estimate} />,
     },
     {
-      key: "expectedStart",
-      header: "Dự kiến bắt đầu",
+      key: "remaining",
+      header: "Còn lại",
       icon: IconCalendarTime,
-      width: "150px",
-      cell: (item) =>
-        item.expectedStartAt ? (
-          <time dateTime={item.expectedStartAt} title={formatDateTime(item.expectedStartAt)}>
-            {formatRelativeTime(item.expectedStartAt)}
-          </time>
-        ) : (
-          <span className="text-crm-text-3">Đã bắt đầu</span>
-        ),
+      width: "130px",
+      // Phần tính vào tải: ước tính trừ thời gian đã làm (đang chờ thì tính một nửa)
+      cell: (item) => formatMinutes(item.remainingMinutes),
     },
   ];
   if (showActions) {
@@ -99,7 +101,7 @@ export const QueueTable = ({ items, showActions, onOpen }: Props) => {
       header: "Thao tác",
       icon: IconHash,
       width: "150px",
-      cell: (item) => <WorkActions item={item} compact />,
+      cell: (item) => <WorkActions item={item} compact suggested={item.id === suggestedId} />,
     });
   }
 

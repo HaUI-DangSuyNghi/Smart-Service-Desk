@@ -16,7 +16,8 @@ public final class WorkSettingsValidation {
         object(assignment, "pendingLoadFactor", "tieThresholdMinutes", "maxInProgress", "minRemainingMinutes");
         ratio(assignment.get("pendingLoadFactor"));
         integer(assignment.get("tieThresholdMinutes"), 0, Integer.MAX_VALUE);
-        positive(assignment.get("maxInProgress"));
+        // Core chỉ nhận 1..100 việc Đang làm
+        integer(assignment.get("maxInProgress"), 1, 100);
         integer(assignment.get("minRemainingMinutes"), 0, Integer.MAX_VALUE);
         var shifts = root.get("shifts");
         require(shifts.isArray() && !shifts.isEmpty(), "At least one shift required");
@@ -39,7 +40,8 @@ public final class WorkSettingsValidation {
         for (var target : sla.get("targets")) {
             object(target, "startWithinMinutes", "resolveWithinMinutes");
             long start = integer(target.get("startWithinMinutes"), 1, Integer.MAX_VALUE);
-            integer(target.get("resolveWithinMinutes"), start, Integer.MAX_VALUE);
+            // Trần của SlaPolicy.Target (10 năm)
+            integer(target.get("resolveWithinMinutes"), start, 5_256_000);
         }
         ratio(sla.get("escalateAfterRatio"));
         require(Set.of("LOW", "MEDIUM", "HIGH", "CRITICAL").contains(text(sla.get("maxEscalatedPriority"), 8)), "Invalid priority");
