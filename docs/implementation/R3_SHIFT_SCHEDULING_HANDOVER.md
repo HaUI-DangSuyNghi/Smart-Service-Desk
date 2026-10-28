@@ -7,6 +7,10 @@ merge baseline changed no source files. Existing untracked documents are untouch
 `docs/ticket.md` was read as supplied local requirements, not committed as authority.
 Delivery: Draft review only; no merge, force push, history rewrite or CI waiver.
 
+Final acceptance follow-up is recorded at the end of this document. It supersedes
+the initial test counts, disabled upgrade-test workaround, and open runtime/race
+gaps below. PR #60 remains Draft pending independent approval and external gates.
+
 ## GAP Matrix
 
 | Area | Before R3 | This change / scope |
@@ -124,7 +128,7 @@ ask the user to reconcile; never silently retry a stale replacement. On cancella
 retain other dated shifts in the replacement. Display manual and effective duty
 separately, show the ET warning, and retain normal R6 handover actions after shift end.
 
-## Test Evidence And Findings
+## Initial Delivery Evidence And Findings (Historical)
 
 Evidence files are local `.local/r3-*` logs and Maven Surefire XML, not committed
 generated artifacts. Exact final counts and publication status are recorded at
@@ -208,3 +212,126 @@ monitoring, and history retention policy.
 Merge recommendation: keep Draft; DO NOT MERGE until acceptance gaps are resolved,
 review is approved and required checks are available. Eventual merge must be a
 merge commit into `develop`, never squash/rebase or automatic merge.
+
+## Final Acceptance Follow-Up - 2026-10-28
+
+Acceptance source is the delivery commit containing this section. Its exact SHA
+and pushed HEAD are recorded in the PR acceptance comment. Machine-readable
+evidence is in `docs/implementation/evidence/r3-final-acceptance/`:
+`acceptance.json` includes the backend/contracts source fingerprint, artifact
+SHA-256, Surefire XML/log hashes, profile totals and baseline contract errors;
+`runtime-http.json` contains real HTTP responses without bearer tokens;
+`historical-skips.json` enumerates all 21 class/method/reason/origin/impact rows;
+`migrations.json` contains clean-runtime checksums and exact upgrade evidence.
+
+### Unfiltered Second-Domain Diagnosis And Fix
+
+| Failure/error | Develop baseline | Classification and resolution |
+| --- | --- | --- |
+| `CoreRuntimeIntegrationTest.independentWorkflowAndParentBinding` expects sample definitions | Reproduced | Test composition: supply existing Core BPMN fixtures and Core-only registrations in the second-domain test classpath |
+| `CoreRuntimeIntegrationTest.workflowAuditFailureRollsBackEngineAndScope` gets 404 rather than 409 | Reproduced | Same missing fixture; audit transaction is not reached without the registered sample process |
+| `WorkflowApprovalTest.startEngine` cannot find sample BPMN | Reproduced | Same test-resource omission; production samples remain excluded |
+| R3 upgrade test assumes `duty_upgrade`, then assumes Service Desk V30 in second-domain | New PR test-fixture defect | Use the configured test database with an isolated schema; upgrade the highest available pre-V31 migration, preserving all earlier checksums |
+
+- Exact unmodified develop reproduction: 249 total, 246 PASS, 2 FAIL, 1 ERROR,
+  0 SKIP. Original PR HEAD reproduction: 260 total, 256 PASS, 2 FAIL, 1 ERROR,
+  1 SKIP (the old conditional disable). The earlier missing-database run's
+  additional migration error was a fixture configuration issue, not production.
+- Removed the R3 second-domain conditional disable. The upgrade test now executes
+  in both domains: Full upgrades exact V30 to V31; isolated second-domain upgrades
+  its highest shared pre-V31 version (V28) to V31, without importing Service Desk.
+- Fixed profile runs 286 tests because the previously failing class setup now
+  allows all Core workflow tests to execute. No new excludes/skips were added.
+- Inspected the packaged second-domain JAR: no Service Desk or sample application
+  classes/resources. Core probe contributions/BPMN are test-only. Room Request
+  production code and its dependency direction are unchanged.
+
+### Final Regression Results
+
+All Maven proofs run on native Linux/JDK 17 with fresh PostgreSQL 16.6 fixtures.
+Counts are parsed from Surefire XML, not inferred from exit status.
+
+| Profile/gate | Total | PASS | FAIL | ERROR | SKIP |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Backend Full, `mvn -B -o clean verify` | 842 | 842 | 0 | 0 | 0 |
+| Core-only, `-Pcore-only clean verify` | 106 | 106 | 0 | 0 | 0 |
+| Unfiltered Second-domain, `-Psecond-domain clean verify` | 286 | 286 | 0 | 0 | 0 |
+| Explicit R2/R3/R4/R5/R6/R7/R8/R9/R11 regression selection | 198 | 198 | 0 | 0 | 0 |
+| AI-D2 team release, Python 3.12.12 | 4 | 4 | 0 | 0 | 0 |
+| AI-D2 Compose boundaries | 1 | 1 | 0 | 0 | 0 |
+| Tier source-boundary checker self-tests | 43 | 43 | 0 | 0 | 0 |
+
+The targeted selection is `AgentDutyIntegrationTest,AgentSchedulePolicyTest,AgentScheduleMigrationTest,AssignmentSuggestionIntegrationTest,AssignmentSuggestionTest,TicketIntegrationTest,WorkAlertsIntegrationTest,AgentDutyUpgradeIntegrationTest,ConfirmationUpgradeIntegrationTest,ServiceDeskMigrationIntegrationTest,TicketAssignmentEligibilityTest,SlaPolicyTest,ClassificationSlaAmendmentTest`.
+
+All historical 21 skips belong to `BackgroundTicketAssessmentTest`. Each method
+and its `BACKGROUND_TEST_JDBC_URL` condition exists at the exact develop baseline.
+They cover Service Desk background/outbox/worker security, not direct R3/Core/Room
+Request behavior; shared service-identity regression coverage is nevertheless
+important. They were NOT counted as PASS. Supplying a fresh `background_assessment`
+database and `BACKGROUND_TEST_JDBC_URL` executes all 21 successfully in final Full.
+Python 3.11 initially produced two AI-D2 environment errors (`Path.is_junction`
+unavailable); the unchanged tests pass on the installed Python 3.12.12.
+
+### Real Runtime And Concurrency Evidence
+
+- `scripts/test-r3-runtime.py --postgres r3-accept-pg --backend r3-accept-backend --evidence .local/r3-real-runtime-final.json`
+  runs against an isolated packaged JAR, PostgreSQL 16.6, actual Flowable schema
+  7.1.0.2 and Keycloak 26.0.7. `.env` supplies demo/admin credentials; directory and
+  background clients use their actual configured service accounts. No MockMvc
+  JWT substitutes for these runtime checks. Never point this destructive fixture
+  probe at a non-acceptance environment: it temporarily changes test membership,
+  injects a database audit-failure trigger and stops/restarts the backend.
+- Runtime covers all 15 requested scenarios: Coordinator schedule creation, Agent
+  self-read, Requester write denial, stale Coordinator JWT denial after removing
+  current role membership (restored afterward), manual ON, eligible assignment,
+  outside-shift denial, manual OFF precedence, exact server-time remaining-minute
+  range, ET warning, natural expiry preserving IN_PROGRESS, R6 HANDOVER, persistent
+  alert recipient isolation/generation dedup, restart persistence, foreign-workspace
+  denial and real audit-failure rollback. The artifact digest is in acceptance JSON.
+- Backend is stopped BEFORE a second assigned task's shift ends and started AFTER
+  the boundary. Schedule/head/history/manual-duty/schedule-audit digests remain
+  identical; prior alert survives and the worker produces exactly one new
+  ASSIGNEE_OFF_DUTY alert for the second task. A real background JWT is required
+  for alert evaluation/delivery. Duplicate means same generation, not distinct
+  legitimate manual-OFF and later natural-expiry generations.
+- Added deterministic PostgreSQL/Flowable tests: expiry while START waits at the
+  process row lock; schedule cancellation commits while assignment waits (409);
+  Coordinator reassign and R6 release queue behind the same process lock (one
+  valid ownership outcome); R9 correction waits while eligibility expires; actual
+  R11 auto-close worker waits while schedule cancellation commits independently.
+  The existing two-Coordinator CAS and transactional audit rollback tests pass.
+  A test-observation issue initially counted only direct blockers; the final
+  observer follows PostgreSQL's recursive wait chain rather than using sleeps
+  or weakening the overlap assertion. Full then passes all 842 tests.
+- Existing-assignment START after expiry remains allowed; scheduling gates NEW
+  assignment, not already-owned work. This preserves the R3 non-interruption rule.
+  No production lock ordering or process/task/Agent lock implementation changed.
+
+### Migration, Contracts And Remaining Gates
+
+- Clean packaged runtime applies all 31 versioned migrations successfully. Full
+  proves exact V30 -> V31, unchanged V1-V30 checksums/manual duty, no implicit
+  enrollment, schedule persistence across connections. Runtime restart is also
+  verified across a real shift boundary, not just a database count comparison.
+- Source tier-boundary gate PASS; ArchUnit PASS in Maven. Service Desk whole-document
+  OpenAPI PASS. R3 schedule paths/additive schemas PASS independently; 27 actual
+  runtime R3 success/Problem responses validate against those contracts.
+- Whole HPDI `openapi.yaml` and `openapi-target.yaml` remain FAIL on BOTH baseline
+  and delivery: `KnowledgePage.properties.description` contains a string schema;
+  target alert `unread` has an invalid `cho badge` keyword from an unquoted comma.
+  These are baseline contract debt, not R3 regressions. No whole-HPDI PASS or waiver
+  is claimed. No WorkSettings/R7/R12 expansion or N+1 optimization is included.
+- P0 code: no confirmed critical defect found by these checks; not an exhaustive
+  security/concurrency proof. P1 external acceptance: independent approval and
+  owner resolution of required hosted CI are still outstanding. Hosted jobs have
+  explicit payment/spending-limit annotations: `HOSTED_CI_BLOCKED_BILLING`, not PASS.
+- P2 baseline debt: complete HPDI OpenAPI structural errors; existing effective-duty
+  N+1 evaluation. Business decisions remain recurrence/leave/holidays, overtime,
+  Coordinator release and retention. None is silently promoted into this PR.
+
+Exact merge recommendation: R3 is ready for final independent technical review;
+KEEP DRAFT / DO NOT MERGE now. Required hosted CI is blocked, independent approval
+is absent, and whole-document baseline contract failures require owner disposition
+if that contract gate is mandatory. No waiver/exception is recorded by this work.
+After required approvals/gates are satisfied, merge into `develop` with a MERGE
+COMMIT ONLY. Do not squash, rebase, auto-merge or open another PR.

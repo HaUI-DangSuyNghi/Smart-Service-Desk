@@ -9,14 +9,17 @@ import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import static org.junit.jupiter.api.Assertions.*;
 
 @EnabledIfEnvironmentVariable(named="FILE_TEST_JDBC_URL", matches=".+/file_storage")
-@org.junit.jupiter.api.condition.DisabledIfSystemProperty(named="dx.proof.second-domain", matches="true")
 class AgentScheduleMigrationTest {
-    @Test void upgradeFromV30PreservesDutyChecksumsAndScheduleAcrossConnections() {
-        String url=System.getenv("FILE_TEST_JDBC_URL").replace("/file_storage","/duty_upgrade");
+    @Test void upgradeFromPreV31PreservesDutyChecksumsAndScheduleAcrossConnections() {
+        String url=System.getenv("FILE_TEST_JDBC_URL");
         String password=System.getenv("FILE_TEST_DB_PASSWORD");
         var source=new DriverManagerDataSource(url,"workflow",password);
         String schema="shift_"+UUID.randomUUID().toString().replace("-","");
-        Flyway.configure().dataSource(source).schemas(schema).target("30").load().migrate();
+        var priorVersion=java.util.Arrays.stream(Flyway.configure().dataSource(source).schemas(schema).load().info().all())
+            .map(org.flywaydb.core.api.MigrationInfo::getVersion).filter(java.util.Objects::nonNull)
+            .filter(version -> version.compareTo(org.flywaydb.core.api.MigrationVersion.fromVersion("31"))<0)
+            .max(java.util.Comparator.naturalOrder()).orElseThrow();
+        Flyway.configure().dataSource(source).schemas(schema).target(priorVersion).load().migrate();
         var scoped=new DriverManagerDataSource(url+"?currentSchema="+schema,"workflow",password);
         var jdbc=new JdbcTemplate(scoped);
         jdbc.update("insert into hpdi_agent_duty(workspace,subject,on_duty,note) values('lab-a','agent',true,'Preserve me')");
