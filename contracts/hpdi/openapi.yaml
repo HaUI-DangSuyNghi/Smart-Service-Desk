@@ -2083,7 +2083,6 @@ components:
             type: array
             items:
               $ref: '#/components/schemas/KnowledgeSummary'
-          description: Authorized exact bytes, Base64 encoded
     TriageSuggestion:
       type: object
       required:

@@ -76,7 +76,6 @@ class SettingsHttpAcceptanceTest {
                 for (String regular : List.of("user1", "user2", "user3")) {
                     String jwt = token(realm, "core-probe", "grant_type=password&username=" + regular + "&password=" + encode(password));
                     deniedBoth(path, jwt, 403);
-                    call("GET", "/api/core/v1/audit/system", jwt, null, 403);
                     if (path.contains("hpdi")) {
                         call("GET", "/api/core/v1/workspaces/system:platform/audit", jwt, null, 403);
                         call("GET", "/api/core/v1/workspaces/system%3Aplatform/audit", jwt, null, 403);
@@ -120,7 +119,6 @@ class SettingsHttpAcceptanceTest {
             }
             kc("DELETE", "/users/" + subject + "/role-mappings/realm", role, 204);
             for (String path : paths) deniedBoth(path, adminJwt, 403);
-            call("GET", "/api/core/v1/audit/system", adminJwt, null, 403);
             kc("POST", "/users/" + subject + "/role-mappings/realm", role, 204);
             kc("PUT", "/users/" + subject, "{\"enabled\":false}", 204);
             for (String path : paths) deniedBoth(path, adminJwt, 403);
@@ -137,7 +135,7 @@ class SettingsHttpAcceptanceTest {
             for (String path : paths) deniedBoth(path, serviceJwt, 403);
             var saved = new ArrayList<ObjectNode>();
             for (String path : paths) saved.add(call("GET", path, adminJwt, null, 200));
-            call("GET", "/api/core/v1/audit/system", adminJwt, null, 200);
+            call("GET", "/api/core/v1/audit/system", adminJwt, null, 404);
             stop(); start(database + "?currentSchema=" + schema, dbPassword, proxy.getAddress().getPort());
             for (int index = 0; index < paths.size(); index++) assertEquals(saved.get(index), call("GET", paths.get(index), adminJwt, null, 200));
             assertTrue(jdbc.queryForObject("select count(*)>0 from audit_event", Boolean.class));

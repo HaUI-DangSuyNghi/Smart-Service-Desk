@@ -581,7 +581,8 @@ only the settings row for an accurate audit-before image, performs guarded CAS,
 and records audit in the same transaction. No Core workflow lock was changed.
 Conflict/exhaustion is 409; audit insert failure rolls back payload and metadata.
 Core reserved system audit reads now require fresh admin, mine rejects reserved
-scope, and /api/core/v1/audit/system is the explicit protected read entry point.
+scope. The initially added /api/core/v1/audit/system read route is removed in
+final merge preparation (section 14); no new HTTP audit-read API is required.
 Normal workspace audit rules are unchanged.
 
 All fields are PERSISTED_NOT_ENFORCED: PUT has NO effect on new or active work.
@@ -741,3 +742,60 @@ if observed, is BLOCKED, never waived. Merge readiness is conditional on final
 independent review, hosted checks and explicit handling of baseline failures.
 Draft PR targets develop; MERGE COMMIT ONLY after final review. No merge,
 squash/rebase, force-push or runtime/R7 implementation is performed here.
+
+## 14. Final merge preparation - PR 62
+
+This section supersedes section 13's endpoint and baseline-debt conclusions;
+section 13 remains historical evidence for 01b38f8, not final acceptance.
+
+### Minimal correction and scope review
+
+Removed /api/core/v1/audit/system. Settings Foundation requires transactional
+audit recording, not a new global audit-read HTTP API. Neither Core live/target
+OpenAPI nor the approved Foundation scope requires that route. The existing
+workspace AuditController, AuditService API and MANDATORY recording transaction
+are unchanged. Internal reserved-scope searches still require fresh admin;
+mine still denies reserved scopes. Authorization, not a Spring path-variable
+syntax assumption, protects scopes containing ':'. HTTP acceptance asserts the
+removed route returns 404 for a valid authenticated admin and still checks
+plain/encoded reserved workspace paths deny ordinary users. Existing audit
+service tests cover authorized search, reserved denial and workspace isolation.
+
+Corrected only contract/fixture defects: removed the stray description string
+under KnowledgePage.properties (not an actual response property), quoted the
+alerts.unread description containing a comma, and completed the statistics
+fixture with all required R12 counters. The fixture uses assigned=1 so the
+legacy awaitingHandling=1 and total=1 remain consistent with the partition.
+No application behavior or schema required-field rules are relaxed.
+The settings validator now requires zero whole-document errors for all six
+Core/HPDI/Service Desk live/target documents; baseline equality is not a waiver.
+
+All settings remain PERSISTED_NOT_ENFORCED. No runtime consumer wiring, SLA,
+deadline, shift, ET, eligibility, Core workflow locking or V1-V33 migration
+changes are included in merge preparation. R7 remains BLOCKED, not implemented
+and not represented as a passing Emergency Auto-Queue acceptance gate.
+
+### Final acceptance evidence protocol
+
+Run scripts/test-fresh-admin.ps1 with BuildImage dx-platform-build:0.1.0 for
+unfiltered full (with PackagedProof), core-only, second-domain and the section
+13 targeted filter. Each evidence directory contains source.json with exact
+committed SHA, raw Maven log, JUnit XML and summary.json. HTTP responses and
+both application JVM logs demonstrate CAS, rollback and restart without
+database deletion. PostgreSQL tests check Full V31 -> V32 -> V33, Second-domain
+V31 -> V32 without V33, and Core-only without HPDI/App migrations. Live Keycloak
+is pinned to 26.0.8; the outage test disconnects the directory proxy, not the
+issuer process. No mock JWT is counted as fresh-revocation evidence.
+
+Run test-settings-contract.py against each final responses.json, plus
+test-core-contract.py, test-r12-statistics-contract.py, check-tier-boundaries.py
+and the 43 tier-boundary self-tests. Exact final results and raw evidence paths
+are recorded in the PR acceptance update; earlier baseline FAILs are preserved
+above and must not be relabeled PASS retroactively.
+
+Hosted Actions annotations on the previous HEAD explicitly state jobs were
+not started because recent account payments failed or spending limit requires
+increase. This is BLOCKED (billing), not code FAIL or CI PASS. Dependent matrix
+cancellations and conditional skips are reported separately. Reinspect final
+HEAD annotations after push. No waiver or branch-protection bypass is granted.
+Keep Draft while hosted gates are blocked, pending final independent review.

@@ -91,8 +91,7 @@ class WorkSettingsIntegrationTest {
         mvc.perform(get(PATH)).andExpect(status().isUnauthorized());
         for (CoreException denial : List.of(CoreException.forbidden("revoked"), CoreException.unavailable("outage"))) {
             doThrow(denial).when(authorization).requirePlatformAdmin();
-            for (String path : List.of(PATH, "/api/core/v1/audit/system"))
-                mvc.perform(get(path).with(jwt())).andExpect(status().is(denial.code().status()));
+            mvc.perform(get(PATH).with(jwt())).andExpect(status().is(denial.code().status()));
             mvc.perform(put(PATH).with(jwt()).contentType("application/json").content("{}"))
                 .andExpect(status().is(denial.code().status()));
         }

@@ -1,4 +1,4 @@
-"""Validate settings HTTP evidence and report (never waive) baseline spec errors."""
+"""Validate settings HTTP evidence and require valid whole-document OpenAPI."""
 import argparse
 import json
 from pathlib import Path
@@ -56,7 +56,7 @@ def main():
             validator.validate(json.loads(response["bodyJson"]))
             validated += 1
     print(f"PASS settings live/target schema parity and {validated} HTTP response schemas")
-    relatives = ("hpdi/openapi.yaml", "hpdi/openapi-target.yaml", "openapi/servicedesk.yaml", "openapi/servicedesk-target.yaml")
+    relatives = ("hpdi/openapi.yaml", "hpdi/openapi-target.yaml", "openapi/servicedesk.yaml", "openapi/servicedesk-target.yaml", "openapi/core.yaml", "openapi/core-target.yaml")
     def errors(path):
         document = yaml.safe_load(path.read_text(encoding="utf-8"))
         return sorted((str(error.json_path), error.message) for error in
@@ -68,11 +68,8 @@ def main():
             (baseline / relative).write_bytes(subprocess.check_output(["git", "show", args.baseline + ":contracts/" + relative], cwd=ROOT))
         for relative in relatives:
             before, after = errors(baseline / relative), errors(ROOT / "contracts" / relative)
-            assert before == after, f"New whole-document OpenAPI regression: {relative}: {after} vs {before}"
-            if after:
-                print("BASELINE_FAIL", relative, json.dumps(after, ensure_ascii=True))
-            else:
-                print("PASS whole-document OpenAPI", relative)
+            assert not after, f"Whole-document OpenAPI failure: {relative}: {after}"
+            print("PASS whole-document OpenAPI", relative, f"(resolved {len(before)} baseline diagnostics)")
 
 
 if __name__ == "__main__":
