@@ -11,6 +11,8 @@ public interface ProcessRegistration {
             String outcome, List<TaskView> active) {}
     default String evaluateTimer(String workspace, String processKey, String processId, String businessKey,
             String owner, String generation, TaskView active, java.time.Instant now) { return null; }
+    default void enrollTimer(String workspace, String processKey, String processId, String businessKey,
+            String owner, String generation, java.time.Instant createdAt, String handleId, java.time.Instant resolvedAt, java.time.Instant now) {}
     default void afterAssignmentChanged(String workspace, String taskId, String assignee, String actor) {}
     default String releaseTarget(String processKey, String taskKey) { return null; }
     default void afterRelease(String workspace, String processKey, String processId, String taskId,

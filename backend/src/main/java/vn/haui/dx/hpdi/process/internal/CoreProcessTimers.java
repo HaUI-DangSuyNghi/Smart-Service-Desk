@@ -11,4 +11,7 @@ public class CoreProcessTimers implements ProcessTimers {
     public void evaluate(String workspace, String processId, String generation) {
         timers.evaluate(workspace, processId, generation);
     }
+    public void enrollConfirmations() {
+        timers.enrollConfirmations();
+    }
 }

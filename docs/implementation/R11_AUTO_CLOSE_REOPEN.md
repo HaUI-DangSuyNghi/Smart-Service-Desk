@@ -16,7 +16,9 @@ Delivery: Draft PR into `develop`. No self-merge, force-push or history rewrite.
 | REOPEN_UNCLAIMED alert | Target OpenAPI had type definition; no backend implementation | Durable monitor emits `REOPEN_UNCLAIMED` after 15 minutes if ticket remains unclaimed in intake, review or unassigned handle; stops on reviewed Agent assignment or canonical linkage |
 | Concurrency & duplicate prevention | Single active task query in Core | Process-scope advisory lock, row-level confirmation lock, unique generation constraint, atomic state transition |
 | Canonical follower propagation | Guard checked ended process without checking closure provenance; AUTO root could close follower | Fail-closed guard added to `CanonicalTicketService.rootClosed` preventing AUTO-closed roots from closing followers |
-| Migrations | Migrations ended at V27 | Additive migrations V28 (HPDI alert types) and V29 (Service Desk confirmation ledger) |
+| Legacy active confirmation enrollment (review 5678302783 P1) | Pre-V29 active confirm tasks had no ledger | Reconciles native active Flowable confirm tasks under process-scope lock, verifies ticket/workspace/initiator/business key/definition and resolved handle history; native task creation +72h; transactional system audit, no ticket mutation; overdue enrollments held for manual review |
+| Reopen polling fairness (review 5678302783 P2) | Already emitted REOPEN_UNCLAIMED generations remained eligible | V30 persistent reopen_alerted_at, atomically committed with durable publication; emitted generations excluded from the 100-row fair checked_at queue |
+| Migrations | Migrations ended at V27 | Additive V28/V29 plus V30 enrollment hold and reopen publication cursor; V1-V29 untouched |
 | OpenAPI / Contract | Fields only in target draft; live had no closure metadata | Promoted `closedAt`, `closedBy`, `handleResolvedAt`, `confirmStartedAt`, `confirmDeadlineAt`, `confirmGeneration`, `confirmationHistory`, and alert types to live contracts |
 
 ## 2. Workflow Transition Matrix
@@ -141,3 +143,15 @@ R11 guard implemented:
 
 - Ready for internal review as Draft PR into `develop`.
 - Do NOT merge until hosted CI billing is resolved and owner conducts independent review.
+
+
+## 13. Review 5678302783 Follow-Up
+
+- P1: enrollment runs before each scheduled evaluation and recovers after restart. Only live native tasks are considered; stale/corrupt correlations fail closed. Scope-row locking serializes enrollment with Requester completion and other workers. Existing generation enrollment is a no-op. Resolved native task-local outcome history and the matching SLA handle receipt are required; no timestamps or prior work are invented.
+- No reader/Requester impersonation: Core executes under ServiceIdentity with workflow:timer, reads native history itself, and passes verified task identity/time through the HPDI callback. App SQL touches only its own tables.
+- Rollout policy (owner decision pending): a missing-ledger generation already due at enrollment (including exact deadline equality) is persisted with rollout_hold=true, rollout_reason=OVERDUE_AT_ROLLOUT. Deadline remains the native start +72h, never an invented grace period. Scheduled and direct timer evaluation both refuse AUTO-close while held. Requester accepted/rework remains available. No automatic hold release is provided; owner approval and an audited operational procedure are required before any future release policy.
+- Operator inventory: `select workspace,ticket_id,process_instance_id,generation,confirm_started_at,deadline_at,rollout_reason from servicedesk_confirmation where rollout_hold and decision is null order by deadline_at;`. Missing verified handle/SLA evidence is not enrolled or auto-closed; investigate native history manually. Historical already-completed rework rounds are not reconstructed or assigned invented alert deadlines.
+- P2: reopen_alerted_at is written in the same transaction as persistent REOPEN_UNCLAIMED insertion and its system audit. A crash/audit failure before commit rolls back both; a retry after commit sees the cursor. Existing unique alert identity still deduplicates V29 events on first reconciliation. REOPENED, current recipient authorization, Intake CAS and assignment/receipt rules are unchanged.
+- Fairness: successfully alerted rows leave the pending query; failures/stale work rotate by checked_at,workspace,generation with a 100-row batch. Enrollment failure is isolated per process and logged, not silently accepted.
+- Migration/runtime evidence includes V27 native active confirmation, V29 empty ledger, then V30 startup/enrollment; original migration checksums and ticket state are asserted unchanged. No V1-V29 migration is edited.
+- Merge policy: Draft PR #59 only; independent review and owner decision remain required. MERGE COMMIT ONLY. Hosted CI billing remains BLOCKED, never CI PASS.

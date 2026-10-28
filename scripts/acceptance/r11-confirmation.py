@@ -137,7 +137,7 @@ try:
             call(task + '/complete', 'user2', 'POST', {'expectedTaskKey': 'handle', 'outcome': 'resolved'})
             return call(path, 'user1')
 
-        pending, accepted, reopened = waiting(), waiting(), waiting()
+        pending, accepted, reopened, legacy_overdue = waiting(), waiting(), waiting(), waiting()
         parse = datetime.datetime.fromisoformat
         check('deadline is exactly 72 continuous hours', parse(pending['confirmDeadlineAt'].replace('Z', '+00:00')) - parse(pending['confirmStartedAt'].replace('Z', '+00:00')) == datetime.timedelta(hours=72))
         for ticket, outcome in ((accepted, 'accepted'), (reopened, 'rework')):
@@ -148,12 +148,27 @@ try:
             raise AssertionError('Agent completed Requester task')
         except urllib.error.HTTPError as failure:
             check('real JWT Agent cannot confirm', failure.code == 403)
-        docker('restart', backend_name)
+        docker('stop', backend_name)
+        docker('exec', database, 'psql', '-U', 'workflow', '-d', 'core', '-v', 'ON_ERROR_STOP=1', '-c',
+               "delete from servicedesk_confirmation where generation='" + str(uuid.UUID(pending['confirmGeneration'])) + "'")
+        docker('start', backend_name)
         backend = 'http://' + docker('port', backend_name, '8080/tcp')
         wait(backend + '/actuator/health')
-        restored = call(base + '/' + pending['id'], 'user1')
+        until = time.monotonic() + 60
+        while time.monotonic() < until:
+            restored = call(base + '/' + pending['id'], 'user1')
+            if restored.get('confirmGeneration'):
+                break
+            time.sleep(1)
+        check('restart enrolls legacy active confirm from native task time', restored.get('confirmGeneration') == pending['confirmGeneration'] and restored.get('confirmStartedAt') == pending['confirmStartedAt'])
         check('restart before deadline preserves generation and deadline', restored['confirmGeneration'] == pending['confirmGeneration'] and restored['confirmDeadlineAt'] == pending['confirmDeadlineAt'] and restored['closedBy'] is None)
+        docker('stop', backend_name)
+        docker('exec', database, 'psql', '-U', 'workflow', '-d', 'core', '-v', 'ON_ERROR_STOP=1', '-c',
+               "delete from servicedesk_confirmation where generation='" + str(uuid.UUID(legacy_overdue['confirmGeneration'])) + "'")
         offset.write_text('259205', encoding='ascii')
+        docker('start', backend_name)
+        backend = 'http://' + docker('port', backend_name, '8080/tcp')
+        wait(backend + '/actuator/health')
         until = time.monotonic() + 60
         while time.monotonic() < until:
             closed = call(base + '/' + pending['id'], 'user1')
@@ -162,7 +177,9 @@ try:
             time.sleep(1)
         check('real scheduled worker closes due generation with signed service identity', closed.get('closedBy') == 'AUTO' and closed['state'] == 'CLOSED')
         check('auto-close preserves process and resolved SLA', closed['process'] == pending['process'] and closed['sla'] == pending['sla'] and closed['workedMinutes'] == pending['workedMinutes'])
-        check('accepted generation remains REQUESTER', call(base + '/' + accepted['id'], 'user1')['closedBy'] == 'REQUESTER')
+        held = call(base + '/' + legacy_overdue['id'], 'user1')
+        check('overdue legacy generation stays active on manual rollout hold', held.get('closedBy') is None and held['confirmationHistory'][0].get('rolloutHold') is True and held['confirmDeadlineAt'] == legacy_overdue['confirmDeadlineAt'])
+        check('accepted generation remains REQUESTER' , call(base + '/' + accepted['id'], 'user1')['closedBy'] == 'REQUESTER')
         again = call(base + '/' + reopened['id'], 'user1')
         check('rework before deadline is never auto-closed', again['closedBy'] is None and again['state'] == 'REOPENED' and again['reopenCount'] == 1 and again['process'] == reopened['process'])
         until = time.monotonic() + 60

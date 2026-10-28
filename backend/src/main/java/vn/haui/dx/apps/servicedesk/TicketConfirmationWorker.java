@@ -22,9 +22,14 @@ public class TicketConfirmationWorker {
     @Scheduled(fixedDelayString = "${serviceDesk.confirmation.poll-ms:30000}", initialDelayString = "${serviceDesk.confirmation.poll-ms:30000}")
     public void run() {
         if (!enabled) return;
+        try { timers.enrollConfirmations(); }
+        catch (RuntimeException failure) {
+            LOG.warn("Confirmation enrollment deferred: cause={}", failure.getClass().getSimpleName());
+        }
         var now = Timestamp.from(clock.instant());
         var rows = jdbc.queryForList("select workspace,process_instance_id,generation from servicedesk_confirmation"
-            + " where (decision is null and deadline_at<=?) or (decision='REWORK' and reopen_received_at is null and reopen_deadline_at<=?)"
+            + " where (decision is null and not rollout_hold and deadline_at<=?)"
+            + " or (decision='REWORK' and reopen_received_at is null and reopen_alerted_at is null and reopen_deadline_at<=?)"
             + " order by checked_at,workspace,generation limit 100", now, now);
         for (var row : rows) {
             String workspace = (String) row.get("workspace"), process = (String) row.get("process_instance_id"), generation = (String) row.get("generation");

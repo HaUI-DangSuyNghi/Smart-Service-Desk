@@ -139,5 +139,10 @@ public class ProcessRegistry {
         return owners.get(key).evaluateTimer(workspace, key, processId, businessKey, owner, generation, active, now);
     }
 
+    public void enrollTimer(String workspace, String key, String processId, String businessKey,
+            String owner, String generation, java.time.Instant createdAt, String handleId, java.time.Instant resolvedAt, java.time.Instant now) {
+        owners.get(key).enrollTimer(workspace, key, processId, businessKey, owner, generation, createdAt, handleId, resolvedAt, now);
+    }
+
     public Collection<ProcessPolicy> policies() { return policies.values(); }
 }

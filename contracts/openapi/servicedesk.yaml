@@ -1082,6 +1082,8 @@ components:
         reopenDeadlineAt: {type: string, format: date-time, nullable: true}
         reopenReceivedAt: {type: string, format: date-time, nullable: true}
         reopenReceivedReason: {type: string, nullable: true, enum: [ASSIGNED, CANONICAL, null]}
+        reopenAlertedAt: {type: string, format: date-time, nullable: true}
+        rolloutHold: {type: boolean, nullable: true}
 
     TicketTask:
       type: object

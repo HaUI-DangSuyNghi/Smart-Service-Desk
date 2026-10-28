@@ -85,6 +85,32 @@ public class TicketConfirmation {
     }
 
     @Transactional(propagation = Propagation.MANDATORY)
+    public void enroll(String workspace, String key, String processId, String businessKey,
+            String owner, String generation, Instant createdAt, String handleId, Instant resolvedAt, Instant now) {
+        if (!ServiceDeskProcess.reviewed(key)) return;
+        if (Boolean.TRUE.equals(jdbc.queryForObject(
+                "select exists(select 1 from servicedesk_confirmation where workspace=? and generation=?)",
+                Boolean.class, workspace, generation))) return;
+        var tickets = jdbc.queryForList("select id,creator from servicedesk_ticket where workspace=? and id=?::uuid and process_instance_id=? and process_key=?",
+            workspace, businessKey, processId, key);
+        if (tickets.isEmpty() || !owner.equals(tickets.get(0).get("creator"))) return;
+        if (resolvedAt == null || resolvedAt.isAfter(createdAt) || createdAt.isAfter(now)) return;
+        if (!Boolean.TRUE.equals(jdbc.queryForObject("select exists(select 1 from servicedesk_sla where workspace=?"
+                + " and ticket_id=?::uuid and process_instance_id=? and handle_task_id=? and resolved_at is not null)",
+                Boolean.class, workspace, businessKey, processId, handleId))) return;
+        Instant deadline = createdAt.plus(Duration.ofHours(72));
+        boolean hold = !now.isBefore(deadline);
+        int inserted = jdbc.update("insert into servicedesk_confirmation(workspace,ticket_id,process_instance_id,generation,handle_task_id,handle_resolved_at,confirm_started_at,deadline_at,rollout_hold,rollout_reason)"
+            + " values(?,?::uuid,?,?,?,?,?,?,?,?) on conflict(workspace,process_instance_id,generation) do nothing",
+            workspace, businessKey, processId, generation, handleId, Timestamp.from(resolvedAt),
+            Timestamp.from(createdAt), Timestamp.from(deadline), hold, hold ? "OVERDUE_AT_ROLLOUT" : null);
+        if (inserted > 0) {
+            audit.recordSystem(workspace, new BusinessActivity("servicedesk.confirmation.enrolled", "servicedesk.ticket", businessKey,
+                Map.of("generationId", generation, "rolloutHoldKey", Boolean.toString(hold), "policyVersion", "r11-72h-v1")));
+        }
+    }
+
+    @Transactional(propagation = Propagation.MANDATORY)
     public String evaluate(String workspace, String key, String processId, String businessKey, String owner,
             String generation, WorkItem active, Instant now) {
         if (!ServiceDeskProcess.reviewed(key)) return null;
@@ -97,6 +123,7 @@ public class TicketConfirmation {
         jdbc.update("update servicedesk_confirmation set checked_at=? where workspace=? and process_instance_id=? and generation=?",
             Timestamp.from(now), workspace, processId, generation);
         if (row.get("decision") == null) {
+            if (Boolean.TRUE.equals(row.get("rollout_hold"))) return null;
             if (!"confirm".equals(active.key()) || !generation.equals(active.id()) || !owner.equals(active.assignee())
                     || !((Timestamp) row.get("confirm_started_at")).toInstant().equals(active.createdAt())
                     || now.isBefore(((Timestamp) row.get("deadline_at")).toInstant())) return null;
@@ -110,8 +137,11 @@ public class TicketConfirmation {
             return "accepted";
         }
         if ("REWORK".equals(row.get("decision")) && row.get("reopen_received_at") == null
+                && row.get("reopen_alerted_at") == null
                 && !now.isBefore(((Timestamp) row.get("reopen_deadline_at")).toInstant())
                 && java.util.Set.of("intake", "review", "handle").contains(active.key())) {
+            jdbc.update("update servicedesk_confirmation set reopen_alerted_at=? where workspace=? and process_instance_id=? and generation=?",
+                Timestamp.from(now), workspace, processId, generation);
             emit(workspace, key, processId, businessKey, generation, WorkAlerts.Type.REOPEN_UNCLAIMED,
                 "Reopened ticket awaiting " + ("handle".equals(active.key()) ? "authorized Agent assignment" : "Coordinator " + active.key()));
         }
@@ -121,14 +151,16 @@ public class TicketConfirmation {
     public record State(Instant closedAt, String closedBy, Instant handleResolvedAt, Instant confirmStartedAt,
                         Instant confirmDeadlineAt, String confirmGeneration, List<History> confirmationHistory) {}
     public record History(String generation, Instant confirmStartedAt, Instant deadlineAt, String decision,
-                          Instant decidedAt, String decidedBy, Instant reopenDeadlineAt, Instant reopenReceivedAt, String reopenReceivedReason) {}
+                          Instant decidedAt, String decidedBy, Instant reopenDeadlineAt, Instant reopenReceivedAt,
+                          String reopenReceivedReason, Instant reopenAlertedAt, Boolean rolloutHold) {}
 
     public State read(String workspace, UUID id) {
         var history = jdbc.query("select * from servicedesk_confirmation where workspace=? and ticket_id=? order by confirm_started_at,generation",
             (row, index) -> new History(row.getString("generation"), row.getTimestamp("confirm_started_at").toInstant(),
                 row.getTimestamp("deadline_at").toInstant(), row.getString("decision"), instant(row.getTimestamp("decided_at")),
                 row.getString("decided_by"), instant(row.getTimestamp("reopen_deadline_at")), instant(row.getTimestamp("reopen_received_at")),
-                row.getString("reopen_received_reason")), workspace, id);
+                row.getString("reopen_received_reason"), instant(row.getTimestamp("reopen_alerted_at")),
+                row.getBoolean("rollout_hold") ? Boolean.TRUE : null), workspace, id);
         if (history.isEmpty()) return null;
         var latest = history.get(history.size() - 1);
         Instant resolved = jdbc.queryForObject("select handle_resolved_at from servicedesk_confirmation where workspace=? and generation=?",

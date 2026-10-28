@@ -25,6 +25,11 @@ public class ContributionRegistry implements ProcessRegistration {
             String initiator, String generation, vn.haui.dx.core.workflow.api.TaskView active, java.time.Instant now) {
         return owner(key).evaluateTimer(workspace, key, processId, businessKey, initiator, generation, item(active), now);
     }
+
+    @Override public void enrollTimer(String workspace, String key, String processId, String businessKey,
+            String owner, String generation, java.time.Instant createdAt, String handleId, java.time.Instant resolvedAt, java.time.Instant now) {
+        owner(key).enrollTimer(workspace, key, processId, businessKey, owner, generation, createdAt, handleId, resolvedAt, now);
+    }
     @Override public void afterAssignmentChanged(String workspace, String taskId, String assignee, String actor) {
         estimateLifecycle.assignmentChanged(workspace, taskId, assignee, actor);
     }

@@ -44,6 +44,11 @@ public class ServiceDeskProcess implements ProcessContribution {
         return confirmation.getObject().evaluate(workspace, key, processId, businessKey, owner, generation, active, now);
     }
 
+    @Override public void enrollTimer(String workspace, String key, String processId, String businessKey,
+            String owner, String generation, java.time.Instant createdAt, String handleId, java.time.Instant resolvedAt, java.time.Instant now) {
+        confirmation.getObject().enroll(workspace, key, processId, businessKey, owner, generation, createdAt, handleId, resolvedAt, now);
+    }
+
     @Override public void afterExecution(String workspace, String processKey, String processId, String taskId,
             vn.haui.dx.hpdi.process.api.WorkExecution.Action action, String reason, java.time.Instant at) {
         if (reviewed(processKey)) sla.getObject().transition(workspace, processId, taskId, action, reason, at);

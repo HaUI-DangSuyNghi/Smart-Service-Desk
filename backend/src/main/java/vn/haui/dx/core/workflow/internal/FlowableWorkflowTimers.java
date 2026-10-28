@@ -19,6 +19,7 @@ import vn.haui.dx.core.workflow.api.WorkflowTimers;
 
 @Service
 public class FlowableWorkflowTimers implements WorkflowTimers {
+    private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(FlowableWorkflowTimers.class);
     private final ProcessEngine engine;
     private final JdbcTemplate jdbc;
     private final ProcessRegistry registry;
@@ -74,5 +75,56 @@ public class FlowableWorkflowTimers implements WorkflowTimers {
                 Map.of("processInstanceId", processId, "processKey", key, "generation", generation,
                     "outcome", outcome, "serviceSubject", access.current().sub()));
         }));
+    }
+
+    public void enrollConfirmations() {
+        var tasks = engine.getTaskService().createTaskQuery().taskDefinitionKey("confirm").active().list();
+        for (var task : tasks) {
+            String processId = task.getProcessInstanceId();
+            var scopes = jdbc.queryForList("select workspace,process_key from process_scope where id=?", processId);
+            if (scopes.isEmpty()) continue;
+            var scope = scopes.get(0);
+            String workspace = (String) scope.get("workspace"), key = (String) scope.get("process_key");
+            if (registry.policies().stream().noneMatch(policy -> policy.processKey().equals(key))
+                    || !registry.supportsDefinition(task.getProcessDefinitionId())
+                    || !registry.definitionId(key).equals(task.getProcessDefinitionId())) continue;
+            try {
+                identity.run(workspace, "workflow:timer", () -> transaction.executeWithoutResult(status -> {
+                    var locked = jdbc.queryForList("select * from process_scope where workspace=? and id=? for update", workspace, processId);
+                    if (locked.isEmpty()) return;
+                    var lockedScope = locked.get(0);
+                    var current = engine.getTaskService().createTaskQuery().taskId(task.getId()).singleResult();
+                    if (current == null || current.isSuspended()
+                            || !processId.equals(current.getProcessInstanceId())
+                            || !key.equals(lockedScope.get("process_key"))
+                            || engine.getTaskService().createTaskQuery().processInstanceId(processId).count() != 1) return;
+                    var process = engine.getRuntimeService().createProcessInstanceQuery().processInstanceId(processId).singleResult();
+                    if (process == null || process.isSuspended() || !Objects.equals(process.getBusinessKey(), lockedScope.get("business_key"))) return;
+                    if (!Objects.equals(engine.getRuntimeService().getVariable(processId, "workspace"), workspace)
+                            || !Objects.equals(engine.getRuntimeService().getVariable(processId, "initiator"), lockedScope.get("owner"))) return;
+                    var groups = engine.getTaskService().getIdentityLinksForTask(current.getId()).stream()
+                        .filter(link -> "candidate".equals(link.getType()) && link.getGroupId() != null)
+                        .map(link -> link.getGroupId()).sorted().toList();
+                    if (engine.getTaskService().getIdentityLinksForTask(current.getId()).stream()
+                            .anyMatch(link -> "candidate".equals(link.getType()))) return;
+                    var model = engine.getRepositoryService().getBpmnModel(current.getProcessDefinitionId())
+                        .getMainProcess().getFlowElement(current.getTaskDefinitionKey());
+                    if (!(model instanceof org.flowable.bpmn.model.UserTask userTask)
+                            || !"${initiator}".equals(userTask.getAssignee()) || !groups.isEmpty()
+                            || !userTask.getCandidateUsers().isEmpty() || !userTask.getCandidateGroups().isEmpty()
+                            || !Objects.equals(lockedScope.get("owner"), current.getAssignee()))
+                        return;
+                    var history = engine.getHistoryService().createHistoricTaskInstanceQuery().processInstanceId(processId)
+                        .finished().includeTaskLocalVariables().list().stream()
+                        .filter(step -> step.getEndTime() != null && !step.getEndTime().after(current.getCreateTime()))
+                        .max(java.util.Comparator.comparing(org.flowable.task.api.history.HistoricTaskInstance::getEndTime));
+                    if (history.isEmpty() || !"resolved".equals(history.get().getTaskLocalVariables().get("outcome"))) return;
+                    registry.enrollTimer(workspace, key, processId, (String) lockedScope.get("business_key"),
+                        (String) lockedScope.get("owner"), current.getId(), current.getCreateTime().toInstant(), history.get().getId(), history.get().getEndTime().toInstant(), clock.instant());
+                }));
+            } catch (RuntimeException failure) {
+                LOG.warn("Timer enrollment deferred: process={}, cause={}", processId, failure.getClass().getSimpleName());
+            }
+        }
     }
 }
