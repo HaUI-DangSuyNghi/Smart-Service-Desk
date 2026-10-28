@@ -54,6 +54,19 @@ class TicketAlertRulesTest {
         state(now.minusNanos(1), now.minusNanos(1), null, null, null);
         assertEquals(Set.of(WorkAlerts.Type.START_OVERDUE, WorkAlerts.Type.SLA_BREACHED), check(null));
     }
+
+    @Test void changedGroupDoesNotFalselyReportOnDutyIncumbentAsOffDuty() {
+        state(now.plusSeconds(600),now.plusSeconds(3600),now.minusSeconds(60),null,null);
+        service.check("lab-a","process","handle",Map.of("network-agent",true),Map.of("agent",true),null);
+        verify(alerts,never()).publish(any());
+    }
+
+    @Test void staleGroupDutyReadIsDiscardedAfterCorrection() {
+        row.put("category","NETWORK");
+        service.check("lab-a","process","handle",Map.of(),Map.of(),"HARDWARE");
+        verifyNoInteractions(alerts);
+        verify(sla,never()).read(anyString(),any());
+    }
     @Test void lateStartNeverProducesUnstartedAlertAndResolvedWorkDoesNotAlert() {
         state(now.minusSeconds(600), now.plusSeconds(3000), now.minusSeconds(300), null, null);
         assertTrue(check(null).isEmpty());

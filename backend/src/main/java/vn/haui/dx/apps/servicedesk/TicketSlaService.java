@@ -14,8 +14,17 @@ import vn.haui.dx.hpdi.process.api.SlaPolicy.Priority;
 @Service
 public class TicketSlaService {
     public record State(UUID ticketId, String processId, String taskId, SlaPolicy policy, Priority base, Priority priority,
-                        Instant approvedAt, Instant startBy, Instant resolveBy, Instant firstStarted, Instant resolvedAt, Instant pausedAt) {
-        public Sla project(Instant now) { return policy.project(base, startBy, resolveBy, firstStarted, resolvedAt, pausedAt, now); }
+                        Instant approvedAt, Instant startBy, Instant resolveBy, Instant firstStarted, Instant resolvedAt, Instant pausedAt,
+                        boolean manualPriority, boolean historicalStartBreach, boolean historicalResolveBreach) {
+        public State(UUID ticketId, String processId, String taskId, SlaPolicy policy, Priority base, Priority priority,
+                Instant approvedAt, Instant startBy, Instant resolveBy, Instant firstStarted, Instant resolvedAt, Instant pausedAt) {
+            this(ticketId, processId, taskId, policy, base, priority, approvedAt, startBy, resolveBy, firstStarted, resolvedAt, pausedAt, false, false, false);
+        }
+        public Sla project(Instant now) {
+            var current = policy.project(base, startBy, resolveBy, firstStarted, resolvedAt, pausedAt, now);
+            return new Sla(current.startBy(), current.resolveBy(), current.startBreached() || historicalStartBreach,
+                current.resolveBreached() || historicalResolveBreach, current.warning(), current.clockPaused());
+        }
     }
     private final JdbcTemplate jdbc;
     private final ObjectMapper json;
@@ -28,6 +37,31 @@ public class TicketSlaService {
         this.jdbc = jdbc; this.json = json; this.policy = policy; this.clock = clock; this.scheduling = scheduling; this.audit = audit;
     }
     public Instant now() { return clock.instant(); }
+
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void correctPriority(String workspace, UUID ticketId, String taskId, String priority, UUID operation) {
+        var state = jdbc.query("select * from servicedesk_sla where workspace=? and handle_task_id=? for update", this::map, workspace, taskId)
+            .stream().findFirst().orElseThrow(() -> vn.haui.dx.hpdi.common.api.CapabilityException.conflict("SLA snapshot required"));
+        if (state.resolvedAt() != null) throw vn.haui.dx.hpdi.common.api.CapabilityException.conflict("Resolved work cannot be corrected");
+        var at = now();
+        var next = Priority.valueOf(priority);
+        var adjustments = jdbc.queryForMap("select start_budget_adjustment_millis,resolve_budget_adjustment_millis from servicedesk_sla where workspace=? and handle_task_id=?", workspace, taskId);
+        var deadlines = ClassificationSlaAmendment.calculate(state.policy(), state.base(), next, state.startBy(),
+            state.resolveBy(), state.firstStarted(), state.pausedAt(), at,
+            ((Number)adjustments.get("start_budget_adjustment_millis")).longValue(), ((Number)adjustments.get("resolve_budget_adjustment_millis")).longValue());
+        var breached = state.project(at);
+        jdbc.update("insert into servicedesk_sla_amendment(operation_id,workspace,ticket_id,handle_task_id,before_state)"
+            + " select ?,workspace,ticket_id,handle_task_id,to_jsonb(s) from servicedesk_sla s where workspace=? and handle_task_id=?",
+            operation, workspace, taskId);
+        jdbc.update("update servicedesk_sla set manual_priority=?,priority=?,start_by=?,resolve_by=?,"
+            + "start_breached_history=?,resolve_breached_history=?,checked_at=?,start_budget_adjustment_millis=?,resolve_budget_adjustment_millis=? where workspace=? and handle_task_id=?",
+            priority, priority, timestamp(deadlines.startBy()), timestamp(deadlines.resolveBy()), breached.startBreached(),
+            breached.resolveBreached(), timestamp(at), deadlines.startAdjustmentMillis(), deadlines.resolveAdjustmentMillis(), workspace, taskId);
+        jdbc.update("update servicedesk_sla_amendment a set after_state=to_jsonb(s) from servicedesk_sla s"
+            + " where a.operation_id=? and s.workspace=a.workspace and s.handle_task_id=a.handle_task_id", operation);
+        scheduling.reconcile(workspace, state.processId(), taskId,
+            () -> new WorkScheduling.Schedule((next.ordinal()+1)*25, read(workspace, ticketId).project(at).resolveBy()));
+    }
 
     @Transactional(propagation = Propagation.MANDATORY)
     public void released(String workspace, String taskId) {
@@ -52,8 +86,8 @@ public class TicketSlaService {
         if (!previous.isEmpty()) {
             var state = previous.get(0);
             if (!state.base().name().equals(priority)) throw vn.haui.dx.hpdi.common.api.CapabilityException.conflict("Handover preserves SLA base priority");
-            jdbc.update("insert into servicedesk_sla(workspace,ticket_id,process_instance_id,review_task_id,handle_task_id,policy,base_priority,priority,approved_at,start_by,resolve_by,first_started_at,escalated_at,checked_at)"
-                + " select workspace,ticket_id,process_instance_id,?,?,policy,base_priority,priority,approved_at,start_by,resolve_by,first_started_at,escalated_at,clock_timestamp()"
+            jdbc.update("insert into servicedesk_sla(workspace,ticket_id,process_instance_id,review_task_id,handle_task_id,policy,base_priority,priority,approved_at,start_by,resolve_by,first_started_at,escalated_at,checked_at,manual_priority,start_breached_history,resolve_breached_history,start_budget_adjustment_millis,resolve_budget_adjustment_millis)"
+                + " select workspace,ticket_id,process_instance_id,?,?,policy,base_priority,priority,approved_at,start_by,resolve_by,first_started_at,escalated_at,clock_timestamp(),manual_priority,start_breached_history,resolve_breached_history,start_budget_adjustment_millis,resolve_budget_adjustment_millis"
                 + " from servicedesk_sla where workspace=? and handle_task_id=?", reviewId, taskId, workspace, state.taskId());
             scheduling.reconcile(workspace, processId, taskId, () -> new WorkScheduling.Schedule((state.priority().ordinal() + 1) * 25, state.resolveBy()));
             activity(workspace, ticketId, taskId, "continued", false);
@@ -135,7 +169,7 @@ public class TicketSlaService {
             if (rows.isEmpty() || rows.get(0).resolvedAt() != null) return null;
             var state = rows.get(0);
             var at = clock.instant();
-            var effective = state.priority() != state.base() ? state.priority()
+            var effective = state.manualPriority() || state.priority() != state.base() ? state.priority()
                 : state.policy().escalate(state.base(), state.approvedAt(), state.firstStarted(), at);
             if (effective != state.priority()) {
                 jdbc.update("update servicedesk_sla set priority=?,escalated_at=? where workspace=? and handle_task_id=?",
@@ -154,8 +188,9 @@ public class TicketSlaService {
     private State map(ResultSet row, int index) throws SQLException {
         try {
             return new State(row.getObject("ticket_id", UUID.class), row.getString("process_instance_id"), row.getString("handle_task_id"),
-                json.readValue(row.getString("policy"), SlaPolicy.class), Priority.valueOf(row.getString("base_priority")), Priority.valueOf(row.getString("priority")),
-                instant(row, "approved_at"), instant(row, "start_by"), instant(row, "resolve_by"), instant(row, "first_started_at"), instant(row, "resolved_at"), instant(row, "paused_at"));
+                json.readValue(row.getString("policy"), SlaPolicy.class), Priority.valueOf(row.getString("manual_priority") == null ? row.getString("base_priority") : row.getString("manual_priority")), Priority.valueOf(row.getString("priority")),
+                instant(row, "approved_at"), instant(row, "start_by"), instant(row, "resolve_by"), instant(row, "first_started_at"), instant(row, "resolved_at"), instant(row, "paused_at"),
+                row.getString("manual_priority") != null, row.getBoolean("start_breached_history"), row.getBoolean("resolve_breached_history"));
         } catch (com.fasterxml.jackson.core.JsonProcessingException failure) { throw new IllegalStateException("Invalid SLA snapshot", failure); }
     }
     private String write(SlaPolicy value) {

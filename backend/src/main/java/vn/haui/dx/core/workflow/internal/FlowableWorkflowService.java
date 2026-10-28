@@ -238,6 +238,15 @@ public final class FlowableWorkflowService implements WorkflowService {
 
     @Override
     public void release(String workspace, String taskId, String reason, String note) {
+        release(workspace, taskId, reason, note, false);
+    }
+
+    @Override
+    public void returnForCorrection(String workspace, String taskId, String note) {
+        release(workspace, taskId, "WRONG_GROUP", note, true);
+    }
+
+    private void release(String workspace, String taskId, String reason, String note, boolean correction) {
         var user = member(workspace);
         text(reason, 100, "reason");
         text(note, 1000, "note");
@@ -246,15 +255,27 @@ public final class FlowableWorkflowService implements WorkflowService {
             var reference = scope(workspace, task.getProcessInstanceId());
             String key = (String) reference.get("process_key");
             WorkspacePermissions.require(user, directory, workspace, "task:handle");
-            if (!user.sub().equals(task.getAssignee()) || user.sub().equals(reference.get("owner")))
+            boolean coordinator = correction && user.hasRole(workspace, WorkspaceRole.COORDINATOR);
+            if ((!coordinator && !user.sub().equals(task.getAssignee())) || user.sub().equals(reference.get("owner")))
                 throw CoreException.forbidden("Independent task assignee required");
-            candidate(user, workspace, task);
+            if (!coordinator) candidate(user, workspace, task);
+            if (coordinator) WorkspacePermissions.require(user, directory, workspace, "task:assign");
             String target = registry.releaseTarget(key, task.getTaskDefinitionKey());
             directory.refresh(workspace);
+            if (correction) {
+                String requiredRole = coordinator ? "coordinator" : "agent";
+                var currentPermissions = directory.rolePermissions(workspace).getOrDefault(requiredRole, List.of());
+                if ((!coordinator && !user.hasRole(workspace, WorkspaceRole.AGENT))
+                        || currentPermissions.stream().noneMatch(permission -> "task:handle".equals(permission.name()))
+                        || coordinator && currentPermissions.stream().noneMatch(permission -> "task:assign".equals(permission.name())))
+                    throw CoreException.forbidden("Current correction permissions required");
+            }
             if (directory.members(workspace).stream().noneMatch(person -> person.sub().equals(user.sub())
                     && person.roles().stream().anyMatch(role -> user.hasRole(workspace, role)
-                        && view(task).candidateGroups().contains(workspace + ":" + role.value()))))
+                        && (coordinator ? role.equals(WorkspaceRole.COORDINATOR) : view(task).candidateGroups().contains(workspace + ":" + role.value())))))
                 throw CoreException.forbidden("Current workspace membership required");
+            if (correction && executionState(taskId) != TaskExecution.State.NOT_STARTED)
+                throw CoreException.conflict("Correction return requires work not yet started");
             if (target == null || task.isSuspended() || !registry.executionTask(key, task.getTaskDefinitionKey()))
                 throw CoreException.conflict("Task does not support release");
             var active = engine.getTaskService().createTaskQuery().processInstanceId(task.getProcessInstanceId()).list();

@@ -5,6 +5,9 @@ import vn.haui.dx.hpdi.common.api.Page;
 import vn.haui.dx.hpdi.common.api.PageRequest;
 
 public interface WorkExecution {
+    default void returnForCorrection(String workspace, String taskId, String note) {
+        throw vn.haui.dx.hpdi.common.api.CapabilityException.conflict("Correction return is not supported");
+    }
     default void release(String workspace, String taskId, String reason, String note) {
         throw vn.haui.dx.hpdi.common.api.CapabilityException.conflict("Work release is not supported");
     }

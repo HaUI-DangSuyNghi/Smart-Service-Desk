@@ -16,7 +16,7 @@ class KeycloakPermissionGuardTest {
     private final WorkspaceDirectory directory = mock(WorkspaceDirectory.class);
     private final WorkspaceAccess access = mock(WorkspaceAccess.class);
     private final CurrentUser user = mock(CurrentUser.class);
-    private final KeycloakPermissionGuard guard = new KeycloakPermissionGuard(new WorkspacePermissions(access, directory));
+    private final KeycloakPermissionGuard guard = new KeycloakPermissionGuard(new WorkspacePermissions(access, directory), access, directory);
 
     @BeforeEach void setup() {
         when(access.current()).thenReturn(user);
@@ -29,6 +29,21 @@ class KeycloakPermissionGuardTest {
         assertDoesNotThrow(() -> guard.require("lab-a", "request:create"));
         var error = assertThrows(CoreException.class, () -> guard.require("lab-a", "task:handle"));
         assertEquals(ErrorCode.FORBIDDEN, error.code());
+    }
+
+    @Test void currentGuardIntersectsSignedRoleLiveMembershipAndRoleSpecificPolicy() {
+        when(user.hasRole("lab-a",WorkspaceRole.COORDINATOR)).thenReturn(true);
+        when(directory.members("lab-a")).thenReturn(List.of(new DirectoryMember("coordinator","coordinator",null,Set.of(WorkspaceRole.COORDINATOR))));
+        when(user.sub()).thenReturn("coordinator");
+        when(directory.rolePermissions("lab-a")).thenReturn(Map.of("coordinator",List.of(new DirectoryPermission("task:handle",null))));
+        assertDoesNotThrow(() -> guard.requireCurrent("lab-a","coordinator","task:handle"));
+        verify(directory).refresh("lab-a");
+        when(directory.members("lab-a")).thenReturn(List.of());
+        assertEquals(vn.haui.dx.hpdi.common.api.CapabilityException.Code.FORBIDDEN,
+            assertThrows(vn.haui.dx.hpdi.common.api.CapabilityException.class,()->guard.requireCurrent("lab-a","coordinator","task:handle")).code());
+        when(directory.members("lab-a")).thenReturn(List.of(new DirectoryMember("coordinator","coordinator",null,Set.of(WorkspaceRole.COORDINATOR))));
+        when(directory.rolePermissions("lab-a")).thenReturn(Map.of());
+        assertThrows(vn.haui.dx.hpdi.common.api.CapabilityException.class,()->guard.requireCurrent("lab-a","coordinator","task:handle"));
     }
 
     @Test void keycloakOutageIsNotTreatedAsGranted() {

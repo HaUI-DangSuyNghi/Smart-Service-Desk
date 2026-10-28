@@ -63,10 +63,16 @@ public class TicketAlerts {
     }
     @Transactional
     public void check(String workspace, String processId, String task, Map<String, Boolean> duty) {
+        check(workspace, processId, task, duty, duty, null);
+    }
+    @Transactional
+    public void check(String workspace, String processId, String task, Map<String, Boolean> duty,
+            Map<String, Boolean> incumbentDuty, String expectedCategory) {
         scheduling.reconcile(workspace, processId, task, () -> {
             var rows = jdbc.queryForList("select * from servicedesk_alert_monitor where workspace=? and handle_task_id=? and active for update", workspace, task);
             if (rows.isEmpty()) return null;
             var row = rows.get(0);
+            if (expectedCategory != null && !expectedCategory.equals(row.get("category"))) return null;
             var state = sla.read(workspace, (UUID) row.get("ticket_id"));
             if (state == null || !task.equals(state.taskId()) || state.resolvedAt() != null) return null;
             Instant now = sla.now();
@@ -79,9 +85,9 @@ public class TicketAlerts {
             var pending = (Timestamp) row.get("pending_at");
             if (agent != null && pending != null && now.isAfter(pending.toInstant().plus(Duration.ofDays(3))))
                 emit(row, PENDING_TOO_LONG, WARNING, review + ":pending:" + pending.toInstant().toEpochMilli(), false, agent);
-            if (duty != null) {
-                boolean empty = duty.values().stream().noneMatch(Boolean.TRUE::equals);
-                boolean off = agent != null && !Boolean.TRUE.equals(duty.get(agent));
+            if (duty != null || incumbentDuty != null) {
+                boolean empty = duty != null && duty.values().stream().noneMatch(Boolean.TRUE::equals);
+                boolean off = incumbentDuty != null && agent != null && !Boolean.TRUE.equals(incumbentDuty.get(agent));
                 int groupGeneration = ((Number) row.get("group_generation")).intValue();
                 int offGeneration = ((Number) row.get("off_generation")).intValue();
                 if (empty && !Boolean.TRUE.equals(row.get("group_empty"))) emit(row, NO_ONE_ON_DUTY, WARNING, review + ":empty:" + ++groupGeneration, true, null);

@@ -28,4 +28,10 @@ public class TicketAssignmentEligibility {
             throw CapabilityException.validation("Current support group agent membership required");
         if (!duty.onDuty(workspace, subject)) throw CapabilityException.conflict("Agent is off duty");
     }
+    public void requireIncumbent(String workspace, String creator, String subject) {
+        if (subject == null || subject.equals(creator)
+                || directory.currentAgents(workspace, null).stream().noneMatch(agent -> subject.equals(agent.subject())))
+            throw CapabilityException.forbidden("Current independent agent required");
+        if (!duty.onDuty(workspace, subject)) throw CapabilityException.conflict("Agent is off duty");
+    }
 }

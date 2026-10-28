@@ -81,6 +81,38 @@ class IntakeWorkflowIntegrationTest {
     }
 
     @Test
+    void r9CannotReleaseIntakeOrReuseTheOldReceiptAfterCorrectionReturn() throws Exception {
+        var ticket = create();
+        org.mockito.Mockito.when(directory.members("wait-a")).thenReturn(List.of(
+            new vn.haui.dx.core.identity.api.DirectoryMember("agent","Synthetic agent",null,java.util.Set.of(vn.haui.dx.core.identity.api.WorkspaceRole.AGENT)),
+            new vn.haui.dx.core.identity.api.DirectoryMember("coordinator","Synthetic coordinator",null,java.util.Set.of(vn.haui.dx.core.identity.api.WorkspaceRole.COORDINATOR))));
+        String correction = path(ticket)+"/classification";
+        var admission = jdbc.queryForMap("select * from servicedesk_intake_admission where ticket_id=?",id(ticket));
+        mvc.perform(patch(correction).with(as("coordinator","coordinator")).contentType("application/json")
+            .content("{\"priority\":\"CRITICAL\",\"reason\":\"No admission bypass\"}")).andExpect(status().isConflict());
+        assertEquals(admission,jdbc.queryForMap("select * from servicedesk_intake_admission where ticket_id=?",id(ticket)));
+        release(ticket,UUID.randomUUID());
+        long originalVersion = state(ticket).path("version").asLong();
+        review(ticket,originalVersion,200);
+        admission = jdbc.queryForMap("select * from servicedesk_intake_admission where ticket_id=?",id(ticket));
+        var finalAttempts = jdbc.queryForList("select * from servicedesk_final_attempt where ticket_id=?",id(ticket));
+        mvc.perform(patch(correction).with(as("coordinator","coordinator")).contentType("application/json")
+            .content("{\"priority\":\"CRITICAL\",\"reason\":\"Verified after review\"}")).andExpect(status().isOk());
+        assertEquals(admission,jdbc.queryForMap("select * from servicedesk_intake_admission where ticket_id=?",id(ticket)));
+        assertEquals(finalAttempts,jdbc.queryForList("select * from servicedesk_final_attempt where ticket_id=?",id(ticket)));
+        mvc.perform(patch(correction).with(as("coordinator","coordinator")).contentType("application/json")
+            .content("{\"category\":\"NETWORK\",\"reason\":\"Return for new group approval\"}")).andExpect(status().isOk());
+        assertEquals("AWAITING_REVIEW",getTicket(ticket).path("state").asText());
+        review(ticket,originalVersion,409);
+        long nextVersion = state(ticket).path("version").asLong();
+        assertTrue(nextVersion>originalVersion);
+        mvc.perform(post(path(ticket)+"/review").with(as("coordinator","coordinator")).contentType("application/json")
+            .content("{\"category\":\"NETWORK\",\"priority\":\"CRITICAL\",\"assignee\":null,\"reason\":\"Fresh approval\","
+                + "\"expectedContextRevision\":0,\"expectedIntakeVersion\":"+nextVersion+"}")).andExpect(status().isOk());
+        assertEquals(ticket.path("process"),getTicket(ticket).path("process"));
+    }
+
+    @Test
     void manualReleaseCreatesExactlyOneReviewInTheSameProcess() throws Exception {
         var ticket = create();
         UUID operation = UUID.randomUUID();
@@ -92,6 +124,48 @@ class IntakeWorkflowIntegrationTest {
         assertTrue(state(ticket).path("reviewTaskMayExist").asBoolean());
         release(ticket, operation);
         assertEquals(reviewed.path("taskId"), getTicket(ticket).path("taskId"));
+    }
+
+    @Test
+    void r9ConcurrentAiD2ReworkCannotCarryAnOldCorrectionIntoIntakeAdmission() throws Exception {
+        var ticket = create();
+        org.mockito.Mockito.when(directory.members("wait-a")).thenReturn(List.of(
+            new vn.haui.dx.core.identity.api.DirectoryMember("agent","Synthetic agent",null,java.util.Set.of(vn.haui.dx.core.identity.api.WorkspaceRole.AGENT)),
+            new vn.haui.dx.core.identity.api.DirectoryMember("coordinator","Synthetic coordinator",null,java.util.Set.of(vn.haui.dx.core.identity.api.WorkspaceRole.COORDINATOR))));
+        release(ticket,UUID.randomUUID());
+        review(ticket,state(ticket).path("version").asLong(),200);
+        String handle = getTicket(ticket).path("taskId").asText();
+        mvc.perform(post(TASKS+handle+"/claim").with(as("agent","agent"))).andExpect(status().isOk());
+        mvc.perform(post(TASKS+handle+"/start").with(as("agent","agent"))).andExpect(status().isOk());
+        var ready = new java.util.concurrent.CountDownLatch(2);
+        var gate = new java.util.concurrent.CountDownLatch(1);
+        var pool = java.util.concurrent.Executors.newFixedThreadPool(2);
+        try {
+            var correction = pool.submit(() -> {
+                ready.countDown(); assertTrue(gate.await(15,java.util.concurrent.TimeUnit.SECONDS));
+                return mvc.perform(patch(path(ticket)+"/classification").with(as("coordinator","coordinator"))
+                    .contentType("application/json").content("{\"priority\":\"CRITICAL\",\"reason\":\"Concurrent verification\"}"))
+                    .andReturn().getResponse().getStatus();
+            });
+            var rework = pool.submit(() -> {
+                ready.countDown(); assertTrue(gate.await(15,java.util.concurrent.TimeUnit.SECONDS));
+                mvc.perform(post(TASKS+handle+"/complete").with(as("agent","agent")).contentType("application/json")
+                    .content("{\"expectedTaskKey\":\"handle\",\"outcome\":\"resolved\"}")).andExpect(status().isNoContent());
+                String confirm = getTicket(ticket).path("taskId").asText();
+                mvc.perform(post(TASKS+confirm+"/complete").with(as("owner","requester")).contentType("application/json")
+                    .content("{\"expectedTaskKey\":\"confirm\",\"outcome\":\"rework\"}")).andExpect(status().isNoContent());
+                return true;
+            });
+            assertTrue(ready.await(15,java.util.concurrent.TimeUnit.SECONDS)); gate.countDown();
+            assertTrue(List.of(200,409).contains(correction.get(30,java.util.concurrent.TimeUnit.SECONDS)));
+            assertTrue(rework.get(30,java.util.concurrent.TimeUnit.SECONDS));
+            assertEquals("INTAKE",getTicket(ticket).path("state").asText());
+            assertEquals("NEW",state(ticket).path("status").asText());
+            assertTrue(getTicket(ticket).path("sla").isNull());
+            mvc.perform(patch(path(ticket)+"/classification").with(as("coordinator","coordinator"))
+                .contentType("application/json").content("{\"priority\":\"LOW\",\"reason\":\"Cannot bypass fresh admission\"}"))
+                .andExpect(status().isConflict());
+        } finally { gate.countDown(); pool.shutdownNow(); }
     }
 
     @Test

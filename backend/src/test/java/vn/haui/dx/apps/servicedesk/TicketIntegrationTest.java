@@ -66,6 +66,88 @@ class TicketIntegrationTest {
     @Autowired TicketAlerts ticketAlerts;
 
     @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings={"NOT_STARTED","IN_PROGRESS","PENDING"})
+    void r9CoordinatorCategoryCorrectionPreservesProcessAndWorkState(String state) throws Exception {
+        String worker = "r9-agent-"+UUID.randomUUID();
+        var ticket = create("r9-owner-"+UUID.randomUUID(),"R9 category","requester");
+        var reviewed = body(review(ticket,"coordinator",worker,null).andExpect(status().isOk()));
+        String task = reviewed.path("taskId").asText();
+        String actions = "/api/hpdi/v1/workspaces/lab-a/tasks/"+task;
+        if (!"NOT_STARTED".equals(state)) {
+            mvc.perform(post(actions+"/start").with(as(worker,"lab-a","agent"))).andExpect(status().isOk());
+            if ("PENDING".equals(state)) mvc.perform(post(actions+"/pause").with(as(worker,"lab-a","agent"))
+                .contentType("application/json").content("{\"reason\":\"WAITING_REQUESTER\"}")).andExpect(status().isOk());
+        }
+        var before = jdbc.queryForMap("select * from servicedesk_sla where handle_task_id=?",task);
+        var monitor = jdbc.queryForMap("select * from servicedesk_alert_monitor where handle_task_id=?",task);
+        var corrected = body(mvc.perform(patch(BASE+"/"+ticket.path("id").asText()+"/classification")
+            .with(as("coordinator","lab-a","coordinator")).contentType("application/json")
+            .content("{\"category\":\"NETWORK\",\"reason\":\"Verified network fault\"}")).andExpect(status().isOk()));
+        assertEquals(ticket.path("process"),corrected.path("process"));
+        assertEquals("NETWORK",corrected.path("classification").path("category").asText());
+        assertEquals(1,corrected.path("corrections").size());
+        assertFalse(corrected.path("corrections").get(0).path("fromAi").asBoolean());
+        var after = jdbc.queryForMap("select * from servicedesk_sla where handle_task_id=?",task);
+        for (var field : List.of("approved_at","start_by","resolve_by","first_started_at")) assertEquals(before.get(field),after.get(field));
+        if ("NOT_STARTED".equals(state)) {
+            assertEquals("AWAITING_REVIEW",corrected.path("state").asText());
+            assertNotEquals(task,corrected.path("taskId").asText());
+            var next = body(review(ticket,"coordinator","r9-next-agent",null,"NETWORK","HIGH").andExpect(status().isOk()));
+            assertEquals(before.get("approved_at"),jdbc.queryForObject("select approved_at from servicedesk_sla where handle_task_id=?",java.sql.Timestamp.class,next.path("taskId").asText()));
+        } else {
+            assertEquals(task,corrected.path("taskId").asText());
+            assertEquals(state,corrected.path("workState").asText());
+            assertEquals(worker,corrected.path("assignee").asText());
+            assertEquals(monitor.get("pending_at"),jdbc.queryForObject("select pending_at from servicedesk_alert_monitor where handle_task_id=?",java.sql.Timestamp.class,task));
+        }
+        assertEquals(1,jdbc.queryForObject("select count(*) from hpdi_alert_event where task_id=? and type='CLASSIFICATION_CHANGED'",Integer.class,task));
+    }
+
+    @Test void r9PriorityCorrectionSupersedesEtAndSynchronizesNativeSchedule() throws Exception {
+        var ticket = create("r9-priority-owner-"+UUID.randomUUID(),"R9 priority","requester");
+        var reviewed = body(review(ticket,"coordinator","r9-agent",null).andExpect(status().isOk()));
+        String task = reviewed.path("taskId").asText();
+        String tasks = "/api/hpdi/v1/workspaces/lab-a/tasks/";
+        var request = body(mvc.perform(post(tasks+task+"/estimate-requests").with(as("r9-agent","lab-a","agent"))
+            .contentType("application/json").content("{\"proposedMinutes\":150,\"reason\":\"More diagnostics\"}")).andExpect(status().isCreated()));
+        var before = jdbc.queryForMap("select * from servicedesk_sla where handle_task_id=?",task);
+        var corrected = body(mvc.perform(patch(BASE+"/"+ticket.path("id").asText()+"/classification")
+            .with(as("r9-agent","lab-a","agent")).contentType("application/json")
+            .content("{\"priority\":\"CRITICAL\",\"reason\":\"Confirmed impact\"}")).andExpect(status().isOk()));
+        assertEquals("CRITICAL",corrected.path("classification").path("priority").asText());
+        assertEquals(120,corrected.path("estimate").path("minutes").asInt());
+        var after = jdbc.queryForMap("select * from servicedesk_sla where handle_task_id=?",task);
+        assertEquals(before.get("approved_at"),after.get("approved_at"));
+        assertEquals(before.get("policy"),after.get("policy"));
+        assertEquals(before.get("base_priority"),after.get("base_priority"));
+        assertEquals("CLASSIFICATION_CHANGED",jdbc.queryForObject("select superseded_reason from hpdi_estimate_request where id=?",String.class,UUID.fromString(request.path("id").asText())));
+        assertEquals(100,jdbc.queryForObject("select priority_ from act_ru_task where id_=?",Integer.class,task));
+        assertEquals(((java.sql.Timestamp)after.get("resolve_by")).getTime(),jdbc.queryForObject("select due_date_ from act_ru_task where id_=?",java.sql.Timestamp.class,task).getTime());
+        mvc.perform(get(BASE+"/"+ticket.path("id").asText()).with(as(ticket.path("creator").asText(),"lab-a","requester")))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.corrections").doesNotExist());
+        mvc.perform(post("/api/hpdi/v1/workspaces/lab-a/estimate-requests/"+request.path("id").asText()+"/decision")
+            .with(as("coordinator","lab-a","coordinator")).contentType("application/json").content("{\"approved\":true}"))
+            .andExpect(status().isConflict());
+    }
+
+    @Test void r9NoOpValidationAndRevokedMembershipDoNotCreateHistory() throws Exception {
+        var ticket = create("r9-validation-owner-"+UUID.randomUUID(),"R9 validation","requester");
+        review(ticket,"coordinator","r9-agent",45).andExpect(status().isOk());
+        String route = BASE+"/"+ticket.path("id").asText()+"/classification";
+        for (var invalid : List.of("{}","{\"reason\":\"Only reason\"}","{\"priority\":\"URGENT\",\"reason\":\"Invalid enum\"}",
+                "{\"priority\":\"LOW\",\"reason\":\" \"}"))
+            mvc.perform(patch(route).with(as("r9-agent","lab-a","agent")).contentType("application/json").content(invalid)).andExpect(status().isBadRequest());
+        mvc.perform(patch(route).with(as("r9-agent","lab-a","agent")).contentType("application/json")
+            .content("{\"priority\":\"HIGH\",\"reason\":\"Unchanged\"}")).andExpect(status().isConflict());
+        mvc.perform(patch(route).with(as("other-agent","lab-a","agent")).contentType("application/json")
+            .content("{\"priority\":\"LOW\",\"reason\":\"Not authorized\"}")).andExpect(status().isForbidden());
+        when(directory.members("lab-a")).thenReturn(List.of());
+        mvc.perform(patch(route).with(as("coordinator","lab-a","coordinator")).contentType("application/json")
+            .content("{\"priority\":\"LOW\",\"reason\":\"Revoked role\"}")).andExpect(status().isForbidden());
+        assertEquals(0,jdbc.queryForObject("select count(*) from servicedesk_classification_correction where ticket_id=?",Integer.class,UUID.fromString(ticket.path("id").asText())));
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
     @org.junit.jupiter.params.provider.ValueSource(strings = {"NOT_STARTED", "IN_PROGRESS", "PENDING"})
     void r6HandoverReturnsRealReviewAndPreservesWorkAndDeadline(String state) throws Exception {
         String worker = "handover-" + UUID.randomUUID();
@@ -660,11 +742,180 @@ class TicketIntegrationTest {
                 .collect(java.util.stream.Collectors.toSet())).when(directory).supportGroupMembers(anyString(), anyString());
     }
 
+    @Test void r9AuditFailureRollsBackHistoryEtSlaAlertsAndNativeReturn() throws Exception {
+        var ticket = create("r9-rollback-owner-"+UUID.randomUUID(),"R9 rollback","requester");
+        var reviewed = body(review(ticket,"coordinator","r9-rollback-agent",75).andExpect(status().isOk()));
+        String task = reviewed.path("taskId").asText();
+        UUID id = UUID.fromString(ticket.path("id").asText());
+        var before = jdbc.queryForMap("select * from servicedesk_sla where handle_task_id=?",task);
+        var oldReview = jdbc.queryForMap("select * from servicedesk_review where ticket_id=?",id);
+        jdbc.execute("create function r9_reject_audit() returns trigger language plpgsql as $$ begin if new.action='servicedesk.ticket.classification.correct' then raise exception 'R9 audit rejection' using errcode='23514'; end if; return new; end $$");
+        jdbc.execute("create trigger r9_reject before insert on audit_event for each row execute function r9_reject_audit()");
+        try {
+            mvc.perform(patch(BASE+"/"+id+"/classification").with(as("coordinator","lab-a","coordinator"))
+                .contentType("application/json").content("{\"category\":\"NETWORK\",\"priority\":\"CRITICAL\",\"reason\":\"Verified\"}"))
+                .andExpect(status().isConflict());
+            assertEquals(before,jdbc.queryForMap("select * from servicedesk_sla where handle_task_id=?",task));
+            assertEquals(oldReview,jdbc.queryForMap("select * from servicedesk_review where ticket_id=?",id));
+            assertEquals(1,jdbc.queryForObject("select count(*) from act_ru_task where id_=?",Integer.class,task));
+            for (var table : List.of("servicedesk_classification_correction","servicedesk_sla_amendment","servicedesk_work_release"))
+                assertEquals(0,jdbc.queryForObject("select count(*) from "+table+" where ticket_id=?",Integer.class,id));
+            assertEquals(0,jdbc.queryForObject("select count(*) from hpdi_alert_event where task_id=? and type='CLASSIFICATION_CHANGED'",Integer.class,task));
+        } finally {
+            jdbc.execute("drop trigger r9_reject on audit_event");
+            jdbc.execute("drop function r9_reject_audit()");
+        }
+    }
+
+    @Test void r9PausedPriorityChangesKeepManualEstimateAndPersistBreachAcrossRestart() throws Exception {
+        String worker = "r9-paused-"+UUID.randomUUID();
+        var ticket = create("r9-paused-owner-"+UUID.randomUUID(),"R9 paused priority","requester");
+        var reviewed = body(review(ticket,"coordinator",worker,75).andExpect(status().isOk()));
+        String task = reviewed.path("taskId").asText();
+        UUID id = UUID.fromString(ticket.path("id").asText());
+        String actions = "/api/hpdi/v1/workspaces/lab-a/tasks/"+task;
+        mvc.perform(post(actions+"/start").with(as(worker,"lab-a","agent"))).andExpect(status().isOk());
+        mvc.perform(post(actions+"/pause").with(as(worker,"lab-a","agent")).contentType("application/json")
+            .content("{\"reason\":\"WAITING_REQUESTER\",\"note\":\"Need evidence\"}")).andExpect(status().isOk());
+        var before = jdbc.queryForMap("select * from servicedesk_sla where handle_task_id=?",task);
+        String route = BASE+"/"+id+"/classification";
+        var corrected = body(mvc.perform(patch(route).with(as(worker,"lab-a","agent")).contentType("application/json")
+            .content("{\"priority\":\"CRITICAL\",\"reason\":\"Confirmed urgent impact\"}")).andExpect(status().isOk()));
+        assertEquals("PENDING",corrected.path("workState").asText());
+        assertEquals(75,corrected.path("estimate").path("minutes").asInt());
+        assertTrue(corrected.path("sla").path("clockPaused").asBoolean());
+        var paused = jdbc.queryForMap("select * from servicedesk_sla where handle_task_id=?",task);
+        for (var field : List.of("approved_at","first_started_at","paused_at","policy","base_priority")) assertEquals(before.get(field),paused.get(field));
+        mvc.perform(post(actions+"/resume").with(as(worker,"lab-a","agent"))).andExpect(status().isOk());
+        jdbc.update("update servicedesk_sla set approved_at=approved_at-interval '30 days',start_by=start_by-interval '30 days',"
+            + "resolve_by=resolve_by-interval '30 days' where handle_task_id=?",task);
+        corrected = body(mvc.perform(patch(route).with(as(worker,"lab-a","agent")).contentType("application/json")
+            .content("{\"priority\":\"LOW\",\"reason\":\"Mitigated impact; preserve old breach\"}")).andExpect(status().isOk()));
+        assertTrue(corrected.path("sla").path("resolveBreached").asBoolean());
+        var state = slaService.read("lab-a",id);
+        var restarted = new TicketSlaService(jdbc,json,state.policy(),java.time.Clock.systemUTC(),
+            mock(vn.haui.dx.hpdi.process.api.WorkScheduling.class),mock(vn.haui.dx.hpdi.human.api.ActivityJournal.class));
+        assertEquals(state,restarted.read("lab-a",id));
+        slaService.reconcile("lab-a",state.processId(),task);
+        assertEquals("LOW",jdbc.queryForObject("select priority from servicedesk_sla where handle_task_id=?",String.class,task));
+        assertEquals(2,jdbc.queryForObject("select count(*) from servicedesk_sla_amendment where ticket_id=?",Integer.class,id));
+    }
+
+    @Test void r9IncumbentEtExceptionDoesNotWeakenOrdinaryR2GroupChecks() throws Exception {
+        String worker = "r9-incumbent-"+UUID.randomUUID();
+        var ticket = create("r9-incumbent-owner-"+UUID.randomUUID(),"R9 retained incumbent","requester");
+        var reviewed = body(review(ticket,"coordinator",worker,null).andExpect(status().isOk()));
+        String task = reviewed.path("taskId").asText();
+        String actions = "/api/hpdi/v1/workspaces/lab-a/tasks/"+task;
+        mvc.perform(post(actions+"/start").with(as(worker,"lab-a","agent"))).andExpect(status().isOk());
+        doReturn(java.util.Set.of()).when(directory).supportGroupMembers(eq("lab-a"),anyString());
+        String estimate = "{\"proposedMinutes\":120,\"reason\":\"Changed diagnostics\"}";
+        mvc.perform(post(actions+"/estimate-requests").with(as(worker,"lab-a","agent")).contentType("application/json")
+            .content(estimate)).andExpect(status().isBadRequest());
+        mvc.perform(patch(BASE+"/"+ticket.path("id").asText()+"/classification").with(as("coordinator","lab-a","coordinator"))
+            .contentType("application/json").content("{\"category\":\"NETWORK\",\"reason\":\"Retain current worker\"}"))
+            .andExpect(status().isOk());
+        mvc.perform(post(actions+"/estimate-requests").with(as(worker,"lab-a","agent")).contentType("application/json")
+            .content(estimate)).andExpect(status().isCreated());
+        String next = "r9-replacement-"+UUID.randomUUID();
+        var members = new java.util.ArrayList<>(directory.members("lab-a"));
+        members.add(new vn.haui.dx.core.identity.api.DirectoryMember(next,next,null,java.util.Set.of(vn.haui.dx.core.identity.api.WorkspaceRole.AGENT)));
+        when(directory.members("lab-a")).thenReturn(members);
+        doReturn(java.util.Set.of(next)).when(directory).supportGroupMembers("lab-a","network");
+        mvc.perform(post(actions+"/pause").with(as(worker,"lab-a","agent")).contentType("application/json")
+            .content("{\"reason\":\"WAITING_EXTERNAL\"}")).andExpect(status().isOk());
+        mvc.perform(post(actions+"/assign").with(as("coordinator","lab-a","coordinator")).contentType("application/json")
+            .content("{\"assignee\":\""+next+"\"}")).andExpect(status().isOk());
+        assertNull(jdbc.queryForObject("select correction_incumbent from servicedesk_review where ticket_id=?",String.class,
+            UUID.fromString(ticket.path("id").asText())));
+    }
+
+    @Test void r9RejectsUnreviewedRequesterForeignWorkspaceMissingTicketAndUnauthenticatedCalls() throws Exception {
+        String owner = "r9-security-owner-"+UUID.randomUUID();
+        var ticket = create(owner,"R9 security","requester");
+        String route = BASE+"/"+ticket.path("id").asText()+"/classification";
+        String payload = "{\"priority\":\"CRITICAL\",\"reason\":\"Verified impact\"}";
+        mvc.perform(patch(route).contentType("application/json").content(payload)).andExpect(status().isUnauthorized());
+        mvc.perform(patch(route).with(as("coordinator","lab-b","coordinator")).contentType("application/json").content(payload)).andExpect(status().isForbidden());
+        mvc.perform(patch(route).with(as("coordinator","lab-a","coordinator")).contentType("application/json").content(payload)).andExpect(status().isConflict());
+        mvc.perform(patch(BASE+"/"+UUID.randomUUID()+"/classification").with(as("coordinator","lab-a","coordinator"))
+            .contentType("application/json").content(payload)).andExpect(status().isNotFound());
+        review(ticket,"coordinator","r9-security-agent",null).andExpect(status().isOk());
+        mvc.perform(patch(route).with(as(owner,"lab-a","requester")).contentType("application/json").content(payload)).andExpect(status().isForbidden());
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings={"START","PAUSE","RESUME","RELEASE","COMPLETE","REASSIGN","ET_APPROVAL","SLA_WORKER","CORRECTION"})
+    void r9ConcurrentMutationSerializesAtProcessScope(String competing) throws Exception {
+        String worker = "r9-race-"+UUID.randomUUID();
+        String replacement = "r9-race-next-"+UUID.randomUUID();
+        var ticket = create("r9-race-owner-"+UUID.randomUUID(),"R9 race","requester");
+        var reviewed = body(review(ticket,"coordinator",worker,75).andExpect(status().isOk()));
+        if ("REASSIGN".equals(competing)) {
+            var members = new java.util.ArrayList<>(directory.members("lab-a"));
+            members.add(new vn.haui.dx.core.identity.api.DirectoryMember(replacement,replacement,null,java.util.Set.of(vn.haui.dx.core.identity.api.WorkspaceRole.AGENT)));
+            when(directory.members("lab-a")).thenReturn(members);
+        }
+        String task = reviewed.path("taskId").asText();
+        String actions = "/api/hpdi/v1/workspaces/lab-a/tasks/"+task;
+        if (List.of("PAUSE","RESUME","COMPLETE").contains(competing))
+            mvc.perform(post(actions+"/start").with(as(worker,"lab-a","agent"))).andExpect(status().isOk());
+        if ("RESUME".equals(competing)) mvc.perform(post(actions+"/pause").with(as(worker,"lab-a","agent"))
+            .contentType("application/json").content("{\"reason\":\"WAITING_REQUESTER\"}")).andExpect(status().isOk());
+        String estimateRequest;
+        if ("ET_APPROVAL".equals(competing)) estimateRequest = body(mvc.perform(post(actions+"/estimate-requests")
+            .with(as(worker,"lab-a","agent")).contentType("application/json")
+            .content("{\"proposedMinutes\":120,\"reason\":\"More work\"}")).andExpect(status().isCreated())).path("id").asText();
+        else estimateRequest = null;
+        String route = BASE+"/"+ticket.path("id").asText()+"/classification";
+        var correction = patch(route).with(as("coordinator","lab-a","coordinator")).contentType("application/json")
+            .content("{\"category\":\"NETWORK\",\"priority\":\"CRITICAL\",\"reason\":\"Verified classification\"}");
+        var competingRequest = switch (competing) {
+            case "CORRECTION" -> patch(route).with(as("coordinator","lab-a","coordinator")).contentType("application/json")
+                .content("{\"category\":\"NETWORK\",\"priority\":\"CRITICAL\",\"reason\":\"Same correction\"}");
+            case "RELEASE" -> post(actions+"/release").with(as(worker,"lab-a","agent")).contentType("application/json")
+                .content("{\"reason\":\"HANDOVER\",\"note\":\"Hand over diagnostics\"}");
+            case "COMPLETE" -> post(actions+"/complete").with(as(worker,"lab-a","agent")).contentType("application/json")
+                .content("{\"expectedTaskKey\":\"handle\",\"outcome\":\"resolved\"}");
+            case "REASSIGN" -> post(actions+"/assign").with(as("coordinator","lab-a","coordinator")).contentType("application/json")
+                .content("{\"assignee\":\""+replacement+"\"}");
+            case "ET_APPROVAL" -> post("/api/hpdi/v1/workspaces/lab-a/estimate-requests/"+estimateRequest+"/decision")
+                .with(as("coordinator","lab-a","coordinator")).contentType("application/json").content("{\"approved\":true}");
+            case "PAUSE" -> post(actions+"/pause").with(as(worker,"lab-a","agent")).contentType("application/json")
+                .content("{\"reason\":\"WAITING_REQUESTER\"}");
+            default -> post(actions+"/"+competing.toLowerCase()).with(as(worker,"lab-a","agent"));
+        };
+        var ready = new CountDownLatch(2);
+        var start = new CountDownLatch(1);
+        var pool = Executors.newFixedThreadPool(2);
+        try {
+            var first = pool.submit(() -> { ready.countDown(); assertTrue(start.await(15,TimeUnit.SECONDS));
+                return mvc.perform(correction).andReturn().getResponse().getStatus(); });
+            var second = pool.submit(() -> { ready.countDown(); assertTrue(start.await(15,TimeUnit.SECONDS));
+                if ("SLA_WORKER".equals(competing)) {
+                    slaService.reconcile("lab-a",ticket.path("process").path("processInstanceId").asText(),task); return 200;
+                }
+                return mvc.perform(competingRequest).andReturn().getResponse().getStatus(); });
+            assertTrue(ready.await(15,TimeUnit.SECONDS)); start.countDown();
+            var results = List.of(first.get(30,TimeUnit.SECONDS),second.get(30,TimeUnit.SECONDS));
+            assertTrue(results.stream().allMatch(code -> List.of(200,204,409).contains(code)),results.toString());
+            assertTrue(results.stream().anyMatch(code -> code==200 || code==204),results.toString());
+            String process = ticket.path("process").path("processInstanceId").asText();
+            assertEquals(1,jdbc.queryForObject("select count(*) from act_ru_task where proc_inst_id_=?",Integer.class,process));
+            assertTrue(jdbc.queryForObject("select count(distinct operation_id) from servicedesk_classification_correction where ticket_id=?",
+                Integer.class,UUID.fromString(ticket.path("id").asText()))<=1);
+        } finally { start.countDown(); pool.shutdownNow(); }
+    }
+
     private ResultActions review(JsonNode ticket, String reviewer, String assignee, Integer minutes) throws Exception {
+        return review(ticket,reviewer,assignee,minutes,"HARDWARE","HIGH");
+    }
+
+    private ResultActions review(JsonNode ticket, String reviewer, String assignee, Integer minutes, String category, String priority) throws Exception {
         when(directory.members("lab-a")).thenReturn("unknown-agent".equals(assignee) ? List.of() : List.of(new vn.haui.dx.core.identity.api.DirectoryMember(
             Objects.toString(assignee,"review-agent"), Objects.toString(assignee,"review-agent"), null, java.util.Set.of(new vn.haui.dx.core.identity.api.WorkspaceRole("agent"))),
             new vn.haui.dx.core.identity.api.DirectoryMember(reviewer,reviewer,null,java.util.Set.of(vn.haui.dx.core.identity.api.WorkspaceRole.COORDINATOR))));
-        var input = json.createObjectNode().put("category","HARDWARE").put("priority","HIGH").put("reason","Reviewed by coordinator");
+        var input = json.createObjectNode().put("category",category).put("priority",priority).put("reason","Reviewed by coordinator");
         if (assignee == null) input.putNull("assignee"); else input.put("assignee",assignee);
         if (minutes != null) input.put("estimateMinutes",minutes);
         return mvc.perform(post(BASE+"/"+ticket.path("id").asText()+"/review").with(as(reviewer,"lab-a","coordinator"))

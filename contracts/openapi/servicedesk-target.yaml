@@ -85,41 +85,6 @@ paths:
         '403': {$ref: 'core.yaml#/components/responses/Forbidden'}
         '404': {$ref: 'core.yaml#/components/responses/NotFound'}
 
-  /workspaces/{workspace}/tickets/{id}/classification:
-    parameters:
-      - {$ref: 'core.yaml#/components/parameters/Workspace'}
-      - {$ref: 'servicedesk.yaml#/components/parameters/TicketId'}
-    patch:
-      operationId: correctClassification
-      description: >-
-        R9. Agent đang giữ ticket hoặc coordinator sửa loại lỗi và/hoặc mức ưu tiên, bắt buộc lý do; mọi lần sửa được lưu.
-        Đổi loại lỗi dẫn tới đổi tổ → ticket chưa bắt đầu quay về AWAITING_REVIEW để đề xuất người lại;
-        ticket đang làm thì giữ người, báo điều phối viên. Đổi mức ưu tiên tính lại SLA.
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              additionalProperties: false
-              required: [reason]
-              minProperties: 2
-              properties:
-                category: {$ref: '#/components/schemas/Category'}
-                priority: {$ref: '../hpdi/openapi-target.yaml#/components/schemas/Priority'}
-                reason: {type: string, minLength: 1, maxLength: 1000}
-      responses:
-        '200':
-          description: Ticket sau khi sửa
-          content:
-            application/json:
-              schema: {$ref: '#/components/schemas/TicketView'}
-        '400': {$ref: 'core.yaml#/components/responses/BadRequest'}
-        '401': {$ref: 'core.yaml#/components/responses/Unauthorized'}
-        '403': {$ref: 'core.yaml#/components/responses/Forbidden'}
-        '404': {$ref: 'core.yaml#/components/responses/NotFound'}
-        '409': {$ref: 'core.yaml#/components/responses/Conflict'}
-
   /workspaces/{workspace}/tickets/statistics:
     parameters:
       - {$ref: 'core.yaml#/components/parameters/Workspace'}

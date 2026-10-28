@@ -20,12 +20,15 @@ public class TicketWorkEstimate implements WorkEstimate {
             + " where t.workspace=? and t.process_instance_id=? and not t.awaiting_review", workspace, task.processInstanceId());
         if (rows.isEmpty() || !"handle".equals(task.key())) throw CapabilityException.conflict("Active reviewed handle required");
         var row = rows.get(0);
-        eligibility.require(workspace, TicketReview.Category.valueOf((String) row.get("category")), (String) row.get("creator"), agent);
-        return new Snapshot((String) row.get("review_task_id"), (String) row.get("title"), ((Number) row.get("estimate_minutes")).intValue());
+        if (!agent.equals(task.assignee())) throw CapabilityException.conflict("Current assignee required");
+        if (agent.equals(row.get("correction_incumbent"))) eligibility.requireIncumbent(workspace, (String) row.get("creator"), agent);
+        else eligibility.require(workspace, TicketReview.Category.valueOf((String) row.get("category")), (String) row.get("creator"), agent);
+        String generation = row.get("estimate_generation") == null ? (String) row.get("review_task_id") : (String) row.get("estimate_generation");
+        return new Snapshot(generation, (String) row.get("title"), ((Number) row.get("estimate_minutes")).intValue());
     }
     public void approve(String workspace, WorkItem task, String generation, int minutes, String actor, String reason) {
         int changed = jdbc.update("update servicedesk_review r set estimate_minutes=?,estimate_basis='COORDINATOR'"
-            + " from servicedesk_ticket t where t.id=r.ticket_id and t.workspace=? and t.process_instance_id=? and r.review_task_id=?",
+            + " from servicedesk_ticket t where t.id=r.ticket_id and t.workspace=? and t.process_instance_id=? and coalesce(r.estimate_generation,r.review_task_id)=?",
             minutes, workspace, task.processInstanceId(), generation);
         if (changed != 1) throw CapabilityException.conflict("Estimate generation changed");
         jdbc.update("insert into servicedesk_estimate_history(ticket_id,review_task_id,category,priority,assignee,minutes,basis,changed_by,reason)"
