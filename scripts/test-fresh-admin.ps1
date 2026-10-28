@@ -1,6 +1,7 @@
 param(
     [string]$Maven = 'mvn',
     [string]$BuildImage,
+    [string]$Tests,
     [ValidateSet('focused','core-only','full','second-domain')][string]$Profile = 'focused'
 )
 $ErrorActionPreference = 'Stop'
@@ -70,8 +71,10 @@ try {
     if (!$ready) { throw 'Keycloak readiness timeout' }
     $arguments = @('-B','-o','-f',(Join-Path $root 'backend/pom.xml'),'clean','verify')
     if ($Profile -eq 'focused') {
-        $arguments += @('-Pcore-only','-Dtest=KeycloakFreshAdminAuthorizationTest,KeycloakFreshAdminIntegrationTest')
+        $arguments += '-Pcore-only'
+        if (!$Tests) { $Tests = 'KeycloakFreshAdminAuthorizationTest,KeycloakFreshAdminIntegrationTest' }
     } elseif ($Profile -ne 'full') { $arguments += "-P$Profile" }
+    if ($Tests) { $arguments += "-Dtest=$Tests" }
     $arguments += @('-Dservice-desk.background.scheduled=false','-Dservice-desk.sla.scheduled=false',
         '-Dspring.datasource.hikari.maximum-pool-size=3')
     if ($BuildImage) {

@@ -4,7 +4,7 @@ Date: 2026-10-28 (Asia/Saigon). Branch: `feature/work-settings-admin`.
 Runtime baseline: `246a8d6676f4030b474e0f809fbb9ce652339cb8`.
 Reviewed document: `06c3996cd159430bb4febd62b65bba780ba089f7`.
 Phase 1 design below is retained as historical/planned context. Settings APIs,
-storage and migrations remain NOT_IMPLEMENTED. Core fresh-admin capability is
+storage and migrations were NOT_IMPLEMENTED at Phase 1. Core fresh-admin capability is
 implemented only in Phase 2 Commit 1; current evidence and limits are in section 10.
 
 ## 1. Approved Scope And GAP Matrix
@@ -570,3 +570,27 @@ regression evidence. Self-review found no remaining P0/P1 in this diff; the
 bounded-search availability limitation above remains P2. Independent review is
 still required; hosted CI NOT_VERIFIED. A final focused run on the committed
 SHA and its evidence directory are reported with delivery. Stop after this fix.
+
+## 11. Phase 2 Commit 2 - Work Settings Foundation
+
+V32 adds a seeded singleton HPDI JSONB document (version 1). GET/PUT use the
+Core fresh-admin capability through SettingsAdministration. Replacement validates
+all nested fields, rejects coercion/unknown/read-only/duplicate fields, locks
+only the settings row for an accurate audit-before image, performs guarded CAS,
+and records audit in the same transaction. No Core workflow lock was changed.
+Conflict/exhaustion is 409; audit insert failure rolls back payload and metadata.
+Core reserved system audit reads now require fresh admin, mine rejects reserved
+scope, and /api/core/v1/audit/system is the explicit protected read entry point.
+Normal workspace audit rules are unchanged.
+
+All fields are PERSISTED_NOT_ENFORCED: PUT has NO effect on new or active work.
+Seeds match r5-v1 LOW 510/2550 and MEDIUM 240/1020 working minutes; CRITICAL
+15/120 continuous minutes. Closing seed 3 does not alter R11's continuous 72h.
+R7 remains BLOCKED; maxInProgress does not modify Core execution configuration.
+Live/target settings contracts now document the implemented storage-only API.
+
+Targeted Second-domain run PASS: 40 tests, zero FAIL/ERROR/SKIP;
+.local/fresh-admin-ec5042d93c13. Includes PostgreSQL clean/upgrade migration,
+checksums/data preservation, CAS race, overflow and transactional audit failure.
+Earlier run had one test ERROR from Mockito restubbing an already-throwing mock;
+fixed test with doThrow, not production authorization. Full acceptance follows.
