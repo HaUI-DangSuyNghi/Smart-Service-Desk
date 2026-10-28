@@ -20,7 +20,8 @@ Baseline: 84a479456b683ccb1d1bf745a909bcd1c41e1201. Date: 2026-10-28 (Asia/Saigo
 
 Source: supplied task and target OpenAPI. Local docs/ticket.md is untracked user material, not a canonical baseline; it is not staged.
 R5, R7/R8 and R2/R6 reports define reused SLA, outbox and handover boundaries.
-BUSINESS_DECISION_REQUIRED: owner ratification of cross-clock consumed-budget conversion, sticky breach, and manual priority precedence.
+OWNER_APPROVED on 2026-10-28: cross-clock consumed-budget conversion, historical
+breach preservation and manual priority precedence, per the owner's PR follow-up.
 No hosted CI waiver is assumed. Hosted CI must not be described as passing without a run.
 
 ## Implemented Requirement Traceability
@@ -183,7 +184,69 @@ failure proves rollback of history, amendment, review, native return, SLA and al
 Intake's existing CAS and task-bound receipt remain authoritative; new rounds use
 a fresh receipt/version. Existing AI-D2 suites remain required.
 
-## Test Evidence
+## Follow-Up Verification For Review 5677475009
+
+Reviewed GitHub review 5677475009 and source at
+`3c33a99c50006204009aa91ad7d75c1beeba4b14` before changing code. The two P2 follow-ups
+are fixed: priority-only CRITICAL corrections now emit one durable correction
+alert, and DEFAULT ET follows confirmed business priority rather than escalation.
+No new P0/P1 is confirmed by this verification. No migration V1-V27 is modified;
+no schema change, new event type or overall two-clock SLA engine is introduced.
+
+Production change: `6ad237a35e63a6e5a0fa5da46565f6ecf6119ffb`. Test-only handover
+assertion correction: `eb8781d996098bdfeb8d2733c3a0e1d7d9b20cd5` (native release
+returns 204, not 200). The initial run caught that assertion mismatch; it is not
+reported as a passing run. The corrected source passed Full and targeted suites.
+The final documentation/evidence commit containing this section is rerun before
+push; its exact tested SHA and check receipt are recorded in PR #58.
+
+| Follow-up verification | PASS | FAIL | ERROR | SKIP |
+| --- | ---: | ---: | ---: | ---: |
+| Backend Full | 803 | 0 | 0 | 0 |
+| Core-only | 106 | 0 | 0 | 0 |
+| Second-domain | 43 | 0 | 0 | 0 |
+| R2/R5/R6/R7/R8/R9 + Intake + migration targeted | 145 | 0 | 0 | 0 |
+| Python tier-boundary tests | 43 | 0 | 0 | 0 |
+| Real Keycloak JWT HTTP runtime | 31 requests | 0 | 0 | 0 |
+| Actual application restart | 3 tickets + 2 critical correction alerts | 0 | 0 | 0 |
+| Isolated smoke | 88 PASS lines | 0 | 0 | 0 |
+| DB consistency | 5 zero-violation queries | 0 | 0 | 0 |
+| R9 promoted contract | 4 actual responses + 9 request checks | 0 | 0 | 0 |
+
+Targeted overlaps Full; do not add the counts as unique tests. TicketIntegration
+now has 94 cases; upgrade coverage remains 21 cases. The new parameterized
+business-priority test covers LOW -> automatic MEDIUM -> category correction;
+manual HIGH -> category correction; COORDINATOR estimate preservation across
+priority/category correction and re-review; and escalation -> category correction
+while running -> actual R6 HANDOVER -> Coordinator re-review. The R2 pending
+supersession test now also creates a fresh request after the R9 generation change.
+Critical alert tests cover priority-only and combined corrections, repeated no-op
+deduplication, audit-trigger rollback and concurrent correction operation/event
+counts. Real JWT HTTP checks reject requester alert access and exclude the Agent
+from Coordinator-only critical events; actual application restart retains both
+critical event IDs and all three ticket snapshots.
+
+Reproducible commands use scripts/test-task-execution.ps1 with profiles full,
+core-only and second-domain, and Maven image maven:3.9.11-eclipse-temurin-21.
+The targeted -Test list is TicketIntegrationTest,IntakeWorkflowIntegrationTest,
+ServiceDeskMigrationIntegrationTest,ClassificationSlaAmendmentTest,
+TicketAlertRulesTest,KeycloakPermissionGuardTest. Evidence is retained under
+.local/task-execution-* and .local/r9-followup-*; no tokens or secrets are staged.
+Runtime uses isolated project r9-followup-20261028, PostgreSQL 16.6 and Keycloak
+26.0.7 via the documented image override, not the broken default pinned image.
+OpenAPI baseline comparison remains HPDI live 3 / target 1 unchanged errors,
+Service Desk live/target 0; this is not whole-HPDI validation PASS.
+
+Hosted CI: **HOSTED_CI_BLOCKED_BILLING**. The reviewed HEAD had 17 failures,
+2 cancellations and 2 skips; an actual check annotation states that jobs did not
+start because account payments failed or spending limits need increasing. New
+HEAD checks are inspected after push. No hosted PASS or owner waiver is claimed.
+Owner SLA approval is a business decision only; it is not CI evidence or an
+independent APPROVED review. Final recommendation: READY FOR FINAL INDEPENDENT
+REVIEW; DO NOT MERGE until approval and owner handling of the hosted-CI gate are
+recorded, then MERGE COMMIT ONLY. Do not merge or rewrite shared history here.
+
+## Historical Test Evidence Before Review Follow-Up
 
 Tested implementation SHA: `f22267ae4cb3b5a8101bcc2eb61f1b9c030600a8`.
 The following documentation-only delivery commit does not change tested source.
