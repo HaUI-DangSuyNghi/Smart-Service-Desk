@@ -27,14 +27,17 @@ public class TicketCorrectionService {
     private final WorkAlerts alerts;
     private final TicketSlaService sla;
     private final Validator validator;
+    private final TicketAssignmentEligibility eligibility;
+    private final TicketEstimates defaults;
 
     public TicketCorrectionService(JdbcTemplate jdbc, TicketService tickets, TicketReviewService reviews,
             HumanContext humans, PermissionGuard permissions, ProcessCapability processes, WorkExecution execution,
             WorkScheduling scheduling, EstimateInvalidation estimates, ActivityJournal audit, WorkAlerts alerts,
-            TicketSlaService sla, Validator validator) {
+            TicketSlaService sla, Validator validator, TicketAssignmentEligibility eligibility, TicketEstimates defaults) {
         this.jdbc=jdbc; this.tickets=tickets; this.reviews=reviews; this.humans=humans; this.permissions=permissions;
         this.processes=processes; this.execution=execution; this.scheduling=scheduling; this.estimates=estimates;
         this.audit=audit; this.alerts=alerts; this.sla=sla; this.validator=validator;
+        this.eligibility=eligibility; this.defaults=defaults;
     }
 
     @Transactional
@@ -87,14 +90,19 @@ public class TicketCorrectionService {
             if (priorityChanged || priorityReaffirmed) {
                 sla.correctPriority(workspace, id, taskId, priority, operation);
             }
-            int minutes = "DEFAULT".equals(row.get("estimate_basis"))
-                ? TicketReview.defaultMinutes(TicketReview.Category.valueOf(category), TicketReview.Priority.valueOf(priority))
-                : ((Number)row.get("estimate_minutes")).intValue();
-            jdbc.update("update servicedesk_review set category=?,priority=?,estimate_minutes=?,estimate_generation=? where ticket_id=?",
-                category, input.priority()==null ? row.get("priority") : priority, minutes, operation.toString(), id);
+            // ET do điều phối viên đặt thì giữ; ET tự tính (bảng hoặc trung vị) thì tính lại theo phân loại mới
+            String basis = (String) row.get("estimate_basis");
+            int minutes = ((Number)row.get("estimate_minutes")).intValue();
+            Integer samples = row.get("estimate_samples") == null ? null : ((Number)row.get("estimate_samples")).intValue();
+            if (!"COORDINATOR".equals(basis)) {
+                var recomputed = defaults.estimate(workspace, TicketReview.Category.valueOf(category), TicketReview.Priority.valueOf(priority));
+                minutes = recomputed.minutes(); basis = recomputed.basis(); samples = recomputed.sampleSize();
+            }
+            jdbc.update("update servicedesk_review set category=?,priority=?,estimate_minutes=?,estimate_basis=?,estimate_samples=?,estimate_generation=? where ticket_id=?",
+                category, input.priority()==null ? row.get("priority") : priority, minutes, basis, samples, operation.toString(), id);
             jdbc.update("update servicedesk_alert_monitor set category=? where workspace=? and handle_task_id=?", category, workspace, taskId);
             var estimateHistoryId = jdbc.queryForObject("insert into servicedesk_estimate_history(ticket_id,review_task_id,category,priority,assignee,minutes,basis,changed_by,reason)"
-                + " values(?,?,?,?,?,?,?,?,?) returning id", Long.class, id, reviewId, category, priority, work.task().assignee(), minutes, row.get("estimate_basis"), actor.subject(), input.reason());
+                + " values(?,?,?,?,?,?,?,?,?) returning id", Long.class, id, reviewId, category, priority, work.task().assignee(), minutes, basis, actor.subject(), input.reason());
             if (priorityChanged || priorityReaffirmed)
                 audit.record(workspace, new BusinessActivity("servicedesk.sla.priority.overridden", "servicedesk.ticket", id.toString(),
                     Map.of("operationId", operation.toString(), "handleTaskId", taskId, "estimateHistoryId", estimateHistoryId.toString(),
@@ -102,8 +110,8 @@ public class TicketCorrectionService {
                         "previousManualPriorityKey", oldSla.manualPriority() ? oldSla.base().name() : "NONE",
                         "manualPriorityKey", priority, "reaffirmedKey", Boolean.toString(priorityReaffirmed))));
             estimates.classificationChanged(workspace, taskId, actor.subject());
-            boolean groupChanged = categoryChanged && !Objects.equals(TicketAssignmentEligibility.supportGroup(TicketReview.Category.valueOf(previousCategory)),
-                TicketAssignmentEligibility.supportGroup(TicketReview.Category.valueOf(category)));
+            boolean groupChanged = categoryChanged && !Objects.equals(eligibility.groupOf(TicketReview.Category.valueOf(previousCategory)),
+                eligibility.groupOf(TicketReview.Category.valueOf(category)));
             if (groupChanged) {
                 if (!"NOT_STARTED".equals(work.workState()))
                     jdbc.update("update servicedesk_review set correction_incumbent=? where ticket_id=?", work.task().assignee(), id);

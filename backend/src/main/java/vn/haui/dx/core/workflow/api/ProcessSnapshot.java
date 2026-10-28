@@ -10,7 +10,8 @@ public record ProcessSnapshot(String id, String workspace, String owner, String 
             boolean historyPresent, Instant endedAt, String deleteReason, String endActivityId, List<TaskState> tasks) {
         this(id, workspace, owner, processKey, businessKey, historyPresent, endedAt, deleteReason, endActivityId, tasks, Map.of());
     }
-    public record TaskState(String key, boolean active, String id, String workState) {
+    public record TaskState(String key, boolean active, String id, String workState, String assignee) {
+        public TaskState(String key, boolean active, String id, String workState) { this(key, active, id, workState, null); }
         public TaskState(String key, boolean active) { this(key, active, null, "NOT_STARTED"); }
     }
 }

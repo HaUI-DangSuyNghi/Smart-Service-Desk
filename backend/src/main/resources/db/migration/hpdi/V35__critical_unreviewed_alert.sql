@@ -1,0 +1,6 @@
+-- R7: nhắc khi việc khẩn cấp quá hạn cấu hình mà chưa ai duyệt
+ALTER TABLE hpdi_alert_event DROP CONSTRAINT hpdi_alert_event_type_check;
+ALTER TABLE hpdi_alert_event ADD CONSTRAINT hpdi_alert_event_type_check CHECK (
+    type IN ('START_OVERDUE','SLA_WARNING','SLA_BREACHED','PENDING_TOO_LONG','CRITICAL_NEW',
+        'NO_ONE_ON_DUTY','ASSIGNEE_OFF_DUTY','CLASSIFICATION_CHANGED','REOPENED','REOPEN_UNCLAIMED','CRITICAL_UNREVIEWED')
+);

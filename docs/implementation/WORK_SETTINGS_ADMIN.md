@@ -8,6 +8,27 @@ NOT_IMPLEMENTED/NOT_RUN labels are historical, not current delivery status.
 Current Phase 2 implementation, evidence and remaining limits are in sections
 10-13. Both settings APIs and V32/V33 are implemented as storage-only foundation.
 
+> **Phase 3 – runtime wiring (2026-10-28, `feature/FE-08-ticket-workflow`).** Settings are now
+> ENFORCED for new operations; stored snapshots stay unchanged. Supersedes every
+> PERSISTED_NOT_ENFORCED statement below.
+>
+> | Setting | Runtime consumer | Applies to |
+> | --- | --- | --- |
+> | assignment.pendingLoadFactor, minRemainingMinutes | `TicketReviewService.remainingMinutes` | every queue / load read |
+> | assignment.tieThresholdMinutes | `AssignmentSuggestionController.rank` | every suggestion |
+> | assignment.maxInProgress | `core.workflow.api.ExecutionLimits` ← `WorkPolicyReader` (property is fallback) | every start / resume |
+> | shifts, sla.*, alerts.warnRemainingRatio | `TicketSlaConfiguration.current()` → `servicedesk_sla.policy` snapshot (`r5-settings-v<version>`) | reviews after the change; reviewed work keeps its snapshot |
+> | critical.autoQueueAfterMinutes | `TicketAlerts.remindUnreviewed` (`servicedesk_critical_watch`, V36) emits `CRITICAL_UNREVIEWED` (V35) to Coordinators once | AI-advised CRITICAL still awaiting review. **No auto-review / auto-queue** (AI keeps no operational authority) |
+> | alerts.pendingRemindDays | `TicketAlerts.check` | every monitor pass |
+> | alerts.reopenUnclaimedMinutes, closing.autoCloseAfterDays | `TicketConfirmation` (persisted deadlines; audit label `r11-<hours>h-v1`) | confirmations / reworks created after the change |
+> | estimate.* | `TicketEstimates`: median `worked_millis` of closed tickets (same workspace, category, priority, within window, outliers dropped) when samples ≥ minSamples, basis `SIMILAR` + `sampleSize` (V34) | reviews and default-basis corrections after the change |
+> | categoryGroups | `ServiceDeskPolicy` → eligibility, suggestion, alerts, assignment cursor, `classification.group` | immediately |
+> | estimateDefaults | `ServiceDeskPolicy` → `TicketEstimates` fallback, `GET /tickets/{id}/estimate-default` | reviews after the change |
+>
+> Readers cache 5 s and are invalidated after commit. Working days, holidays and zone remain
+> properties (`service-desk.sla.*`); `service-desk.sla.shifts`, `escalate-after-ratio`,
+> `max-escalated-priority`, `waiting-external-counts` and `serviceDesk.confirmation.reopen-minutes` are no longer read.
+
 ## 1. Approved Scope And GAP Matrix
 
 BD-01 is APPROVED by the owner's FINAL PHASE 1 CORRECTION request.

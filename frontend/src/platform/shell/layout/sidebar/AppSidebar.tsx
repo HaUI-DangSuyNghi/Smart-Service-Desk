@@ -1,17 +1,21 @@
 import {
+  IconBell,
   IconBook,
+  IconCalendarUser,
   IconChartBar,
   IconHistory,
   IconHome,
+  IconHourglass,
   IconInbox,
   IconLayoutSidebarLeftCollapse,
   IconLayoutSidebarLeftExpand,
+  IconListNumbers,
   IconSend,
   IconUsers,
 } from "@tabler/icons-react";
 import { cn } from "cn";
 import { hasAnyRole, PERMISSIONS, useActor, usePermissions } from "@/platform/human/workspace";
-import { InboxBadge } from "@/platform/process";
+import { AlertBadge, InboxBadge } from "@/platform/process";
 import { useIsMobile } from "@/platform/shared/lib/useMediaQuery";
 import type { MenuItem } from "../../router/registry";
 import { NavItem } from "./NavItem";
@@ -64,6 +68,36 @@ const PLATFORM_MENU: readonly MenuItem[] = [
     icon: IconHistory,
     tone: "gray",
     requiredPermissions: [PERMISSIONS.auditView],
+  },
+  // Hàng đợi, cảnh báo, ca trực, yêu cầu sửa ước tính (plan nghiệp vụ R2–R8)
+  {
+    label: "Hàng đợi",
+    path: "/queue",
+    icon: IconListNumbers,
+    tone: "blue",
+    requiredPermissions: [PERMISSIONS.taskHandle],
+  },
+  {
+    label: "Cảnh báo",
+    path: "/alerts",
+    icon: IconBell,
+    tone: "orange",
+    badge: AlertBadge,
+    requiredPermissions: [PERMISSIONS.taskHandle],
+  },
+  {
+    label: "Ca trực",
+    path: "/duty",
+    icon: IconCalendarUser,
+    tone: "turquoise",
+    requiredPermissions: [PERMISSIONS.taskAssign],
+  },
+  {
+    label: "Sửa ước tính",
+    path: "/estimate-requests",
+    icon: IconHourglass,
+    tone: "purple",
+    requiredPermissions: [PERMISSIONS.taskAssign],
   },
 ];
 

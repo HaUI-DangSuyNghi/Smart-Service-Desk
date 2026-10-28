@@ -18,20 +18,56 @@ public class TicketAlerts {
     private final WorkAlerts alerts;
     private final TicketSlaService sla;
     private final WorkScheduling scheduling;
+    private final vn.haui.dx.hpdi.settings.api.WorkPolicy work;
+    /** Cho test: ngưỡng theo giá trị seed. */
     public TicketAlerts(JdbcTemplate jdbc, WorkAlerts alerts, TicketSlaService sla, WorkScheduling scheduling) {
-        this.jdbc = jdbc; this.alerts = alerts; this.sla = sla; this.scheduling = scheduling;
+        this(jdbc, alerts, sla, scheduling, () -> vn.haui.dx.hpdi.settings.api.WorkPolicy.DEFAULTS);
     }
+    @org.springframework.beans.factory.annotation.Autowired
+    public TicketAlerts(JdbcTemplate jdbc, WorkAlerts alerts, TicketSlaService sla, WorkScheduling scheduling,
+                        vn.haui.dx.hpdi.settings.api.WorkPolicy work) {
+        this.jdbc = jdbc; this.alerts = alerts; this.sla = sla; this.scheduling = scheduling; this.work = work;
+    }
+
+    // Ticket còn ở bước duyệt: chờ duyệt (không qua tiếp nhận) hoặc tiếp nhận đã thả sang duyệt đúng bản đang có
+    private static final String AWAITING_REVIEW = "((t.awaiting_review and not exists(select 1 from servicedesk_intake_admission a where a.ticket_id=t.id))"
+        + " or exists(select 1 from servicedesk_intake_admission a where a.ticket_id=t.id and a.status='REVIEW_RELEASED' and a.sealed_revision=t.context_revision))";
     @Transactional(propagation = Propagation.MANDATORY)
     public void advisory(Ticket ticket, String generation, String priority) {
         if (!"CRITICAL".equals(priority)) return;
         if (jdbc.queryForList("select id from servicedesk_ticket where workspace=? and id=? for update", ticket.workspace(), ticket.id()).isEmpty()) return;
         boolean awaiting = Boolean.TRUE.equals(jdbc.queryForObject("select exists(select 1 from servicedesk_ticket t where t.workspace=? and t.id=? and"
-            + " ((t.awaiting_review and not exists(select 1 from servicedesk_intake_admission a where a.ticket_id=t.id))"
-            + " or exists(select 1 from servicedesk_intake_admission a where a.ticket_id=t.id and a.status='REVIEW_RELEASED' and a.sealed_revision=t.context_revision)))",
-            Boolean.class, ticket.workspace(), ticket.id()));
+            + " " + AWAITING_REVIEW + ")", Boolean.class, ticket.workspace(), ticket.id()));
         if (!awaiting) return;
         alerts.publish(new WorkAlerts.Event(ticket.workspace(), CRITICAL_NEW, CRITICAL, ticket.process().processInstanceId(), ticket.process().processKey(),
             ticket.id().toString(), null, "advisory:" + generation, "AI suggests CRITICAL - UNAPPROVED; Coordinator review required", true, null));
+        // R7: theo dõi để nhắc lại nếu quá hạn vẫn chưa ai duyệt (không tự duyệt)
+        jdbc.update("insert into servicedesk_critical_watch(workspace,ticket_id,process_instance_id,process_key,generation,advised_at)"
+            + " values(?,?,?,?,?,?) on conflict(workspace,ticket_id,generation) do nothing", ticket.workspace(), ticket.id(),
+            ticket.process().processInstanceId(), ticket.process().processKey(), generation, Timestamp.from(sla.now()));
+    }
+
+    /**
+     * R7: AI gợi ý CRITICAL mà quá criticalReviewAlertMinutes chưa ai duyệt thì nhắc điều phối viên một lần
+     * (CRITICAL_UNREVIEWED). Ticket vẫn chờ người duyệt; đã duyệt thì thôi theo dõi.
+     */
+    @Transactional
+    public void remindUnreviewed(String workspace, UUID ticketId, String generation) {
+        var rows = jdbc.queryForList("select w.*,exists(select 1 from servicedesk_ticket t where t.workspace=w.workspace and t.id=w.ticket_id and "
+            + AWAITING_REVIEW + ") as awaiting from servicedesk_critical_watch w where w.workspace=? and w.ticket_id=? and w.generation=?"
+            + " and w.closed_at is null for update of w", workspace, ticketId, generation);
+        if (rows.isEmpty()) return;
+        var row = rows.get(0);
+        var now = sla.now();
+        if (Boolean.TRUE.equals(row.get("awaiting"))) {
+            var due = ((Timestamp) row.get("advised_at")).toInstant().plus(Duration.ofMinutes(work.current().criticalReviewAlertMinutes()));
+            if (now.isBefore(due)) return;
+            alerts.publish(new WorkAlerts.Event(workspace, CRITICAL_UNREVIEWED, CRITICAL, (String) row.get("process_instance_id"),
+                (String) row.get("process_key"), ticketId.toString(), null, "unreviewed:" + generation,
+                "AI suggests CRITICAL and nobody has reviewed it yet; Coordinator review required", true, null));
+        }
+        jdbc.update("update servicedesk_critical_watch set closed_at=? where workspace=? and ticket_id=? and generation=?",
+            Timestamp.from(now), workspace, ticketId, generation);
     }
     @Transactional(propagation = Propagation.MANDATORY)
     public void reviewed(String workspace, Ticket ticket, String review, String handle, TicketReview.Decision decision) {
@@ -83,7 +119,7 @@ public class TicketAlerts {
             if (projected.resolveBreached()) emit(row, SLA_BREACHED, CRITICAL, review, true, agent);
             else if (projected.warning() && !projected.clockPaused()) emit(row, SLA_WARNING, WARNING, review, true, agent);
             var pending = (Timestamp) row.get("pending_at");
-            if (agent != null && pending != null && now.isAfter(pending.toInstant().plus(Duration.ofDays(3))))
+            if (agent != null && pending != null && now.isAfter(pending.toInstant().plus(Duration.ofDays(work.current().pendingRemindDays()))))
                 emit(row, PENDING_TOO_LONG, WARNING, review + ":pending:" + pending.toInstant().toEpochMilli(), false, agent);
             if (duty != null || incumbentDuty != null) {
                 boolean empty = duty != null && duty.values().stream().noneMatch(Boolean.TRUE::equals);

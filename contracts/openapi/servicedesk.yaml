@@ -125,6 +125,39 @@ paths:
         '404': {$ref: 'core.yaml#/components/responses/NotFound'}
         '409': {$ref: 'core.yaml#/components/responses/Conflict'}
         '503': {$ref: '../hpdi/openapi.yaml#/components/responses/ServiceUnavailable'}
+  /workspaces/{workspace}/tickets/{id}/estimate-default:
+    parameters:
+    - $ref: core.yaml#/components/parameters/Workspace
+    - $ref: '#/components/parameters/TicketId'
+    get:
+      operationId: getTicketEstimateDefault
+      description: Coordinator with task:assign. The estimate review uses when estimateMinutes is omitted — median of closed work with the same category and priority (SIMILAR) when settings allow, otherwise the settings table (DEFAULT). Read-only.
+      parameters:
+      - name: category
+        in: query
+        required: true
+        schema: {type: string, enum: [HARDWARE, NETWORK, SOFTWARE, ACCOUNT, OTHER]}
+      - name: priority
+        in: query
+        required: true
+        schema: {type: string, enum: [LOW, MEDIUM, HIGH, CRITICAL]}
+      responses:
+        '200':
+          description: Default estimate for the review form.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [minutes, basis]
+                properties:
+                  minutes: {type: integer, minimum: 1, maximum: 10080}
+                  basis: {type: string, enum: [DEFAULT, SIMILAR]}
+                  sampleSize: {type: integer, minimum: 1, nullable: true}
+        '400': {$ref: 'core.yaml#/components/responses/BadRequest'}
+        '401': {$ref: 'core.yaml#/components/responses/Unauthorized'}
+        '403': {$ref: 'core.yaml#/components/responses/Forbidden'}
+        '404': {$ref: 'core.yaml#/components/responses/NotFound'}
+        '503': {$ref: '../hpdi/openapi.yaml#/components/responses/ServiceUnavailable'}
   /workspaces/{workspace}/tickets/{id}/review:
     parameters:
     - $ref: core.yaml#/components/parameters/Workspace
@@ -349,7 +382,10 @@ paths:
     get:
       operationId: searchTickets
       description: Requester sees own tickets; agent/coordinator sees workspace tickets. Stable newest-first ordering
-        by createdAt and id.
+        by createdAt and id. Items carry the R6 state, classification, assessment and SLA like getTicket (legacy
+        service-desk tickets stay plain). state, priority, category, assignee and overdue use the same state rules as
+        statistics and may be combined. state=AWAITING_REVIEW alone (no other filter) is the coordinator review queue
+        (coordinator only; reviewed priority then oldest first).
       parameters:
       - $ref: '#/components/parameters/Query'
       - $ref: '#/components/parameters/From'
@@ -358,11 +394,34 @@ paths:
       - $ref: core.yaml#/components/parameters/Size
       - name: state
         in: query
+        style: form
+        explode: true
+        description: Repeat to select several states.
         schema:
-          type: string
-          enum:
-          - AWAITING_REVIEW
-        description: Coordinator review queue only; other state filters are not implemented.
+          type: array
+          items:
+            type: string
+            enum: [AWAITING_REVIEW, ASSIGNED, IN_PROGRESS, PENDING, AWAITING_CONFIRMATION, REOPENED, INTAKE, FOLLOWING, CLOSED, UNCLASSIFIED]
+      - name: priority
+        in: query
+        style: form
+        explode: true
+        description: Effective priority (escalation applied) while handling, otherwise the latest reviewed priority. Unreviewed tickets never match.
+        schema:
+          type: array
+          items: {type: string, enum: [LOW, MEDIUM, HIGH, CRITICAL]}
+      - name: category
+        in: query
+        description: Reviewed category.
+        schema: {type: string, enum: [HARDWARE, NETWORK, SOFTWARE, ACCOUNT, OTHER]}
+      - name: assignee
+        in: query
+        description: Assignee of the current task; "me" is the caller.
+        schema: {type: string, maxLength: 100}
+      - name: overdue
+        in: query
+        description: true = handle task currently breaches its start or resolve SLA.
+        schema: {type: boolean}
       - name: sort
         in: query
         schema:
@@ -370,7 +429,7 @@ paths:
           enum:
           - createdAt
           - priority
-        description: Requires state=AWAITING_REVIEW; reviewed priority then oldest first. No aging/SLA.
+        description: createdAt = newest first (default). priority = effective priority, then nearest SLA deadline, then oldest first.
       responses:
         '200':
           description: Authorized tickets only; total uses the same access filter.
@@ -728,7 +787,7 @@ components:
           description: Được nâng bậc do chờ lâu (R5)
         group:
           type: string
-          description: 'Actual BPMN candidate role: agent. Category-specific routing remains deferred.'
+          description: Support group of the category from Service Desk settings (categoryGroups); "manual" for OTHER (coordinator chooses).
         source:
           type: string
           enum:

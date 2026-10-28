@@ -21,6 +21,7 @@ paths:
       - {$ref: 'core.yaml#/components/parameters/Workspace'}
     get:
       operationId: searchTicketsV2
+      # Đã cài: bộ lọc và sắp xếp ở searchTickets (servicedesk.yaml)
       description: >-
         Mở rộng searchTickets: thêm bộ lọc và trường R6/SLA. Quyền xem như cũ (requester thấy ticket của mình).
         Điều phối viên lấy hàng chờ duyệt bằng state=AWAITING_REVIEW, sort=priority.

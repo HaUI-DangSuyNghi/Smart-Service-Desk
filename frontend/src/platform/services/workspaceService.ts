@@ -52,6 +52,7 @@ export const getPeopleNames = async (
   ids: readonly string[],
   signal?: AbortSignal,
 ): Promise<Record<string, string>> => {
+  if (ids.length === 0) return {};
   const { data } = await apiClient.get<Record<string, string>>(
     `${hpdiWorkspace(workspace)}/people`,
     {

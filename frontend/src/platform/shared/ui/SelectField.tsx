@@ -43,7 +43,19 @@ export const SelectField = ({
           className,
         )}
       >
-        <span className="truncate">{selected?.label ?? placeholder}</span>
+        {/* Mọi nhãn xếp chồng cùng một ô lưới (ẩn) để nút luôn rộng bằng nhãn dài nhất, chọn nhãn ngắn không bị co */}
+        <span className="grid min-w-0">
+          {choices.map((option) => (
+            <span
+              key={option.value}
+              aria-hidden
+              className="invisible col-start-1 row-start-1 truncate"
+            >
+              {option.label}
+            </span>
+          ))}
+          <span className="col-start-1 row-start-1 truncate">{selected?.label ?? placeholder}</span>
+        </span>
         <IconChevronDown size={14} stroke={2} className="shrink-0 text-crm-text-3" />
       </DropdownMenuTrigger>
 

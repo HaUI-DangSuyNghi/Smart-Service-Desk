@@ -25,12 +25,16 @@ public class TicketReviewService implements WorkProjection {
     private final TicketConfirmation confirmation;
     private final vn.haui.dx.apps.servicedesk.intelligence.BackgroundTicketAssessment assessments;
     private final vn.haui.dx.apps.servicedesk.intake.IntakeAdmission intake;
+    private final TicketEstimates estimates;
+    private final TicketAssignmentEligibility eligibility;
+    private final vn.haui.dx.hpdi.settings.api.WorkPolicy work;
 
     public TicketReviewService(JdbcTemplate jdbc, TicketRepository tickets, HumanContext humans, PermissionGuard permissions,
                               WorkInbox inbox, WorkExecution execution, ProcessCapability processes, ActivityJournal audit, Validator validator,
                               vn.haui.dx.apps.servicedesk.intelligence.BackgroundTicketAssessment assessments,
                               vn.haui.dx.apps.servicedesk.intake.IntakeAdmission intake, TicketSlaService sla, TicketAlerts alerts,
-                              TicketConfirmation confirmation) {
+                              TicketConfirmation confirmation, TicketEstimates estimates, TicketAssignmentEligibility eligibility,
+                              vn.haui.dx.hpdi.settings.api.WorkPolicy work) {
         this.jdbc=jdbc; this.tickets=tickets; this.humans=humans; this.permissions=permissions;
         this.inbox=inbox; this.execution=execution; this.processes=processes; this.audit=audit; this.validator=validator;
         this.assessments=assessments;
@@ -38,6 +42,9 @@ public class TicketReviewService implements WorkProjection {
         this.sla=sla;
         this.alerts=alerts;
         this.confirmation=confirmation;
+        this.estimates=estimates;
+        this.eligibility=eligibility;
+        this.work=work;
     }
     @Override public String processKey() { return ServiceDeskProcess.REVIEWED_KEY; }
 
@@ -59,20 +66,26 @@ public class TicketReviewService implements WorkProjection {
         var review = timeline.currentTasks().stream().filter(task -> "review".equals(task.key())).findFirst()
             .orElseThrow(() -> CapabilityException.conflict("Ticket is not awaiting review"));
         intake.approveReview(workspace, id, decision.expectedContextRevision(), decision.expectedIntakeVersion(), review.id());
-        int defaults = TicketReview.defaultMinutes(decision.category(), decision.priority());
+        // ET mặc định: trung vị việc tương tự hoặc bảng cấu hình (R2); bàn giao giữ ET điều phối viên đã duyệt
+        var computed = estimates.estimate(workspace, decision.category(), decision.priority());
+        int defaults = computed.minutes();
+        String initialBasis = computed.basis();
+        Integer initialSamples = computed.sampleSize();
         var handover = jdbc.queryForList("select r.estimate_minutes,r.estimate_basis from servicedesk_work_release h join servicedesk_review r on r.ticket_id=h.ticket_id"
             + " where h.workspace=? and h.review_task_id=?", workspace, review.id());
-        if (!handover.isEmpty() && "COORDINATOR".equals(handover.get(0).get("estimate_basis")))
+        if (!handover.isEmpty() && "COORDINATOR".equals(handover.get(0).get("estimate_basis"))) {
             defaults = ((Number) handover.get(0).get("estimate_minutes")).intValue();
+            initialBasis = "COORDINATOR";
+            initialSamples = null;
+        }
         int minutes = decision.estimateMinutes() == null ? defaults : decision.estimateMinutes();
-        String basis = decision.estimateMinutes() == null ? "DEFAULT" : "COORDINATOR";
-        String initialBasis = handover.isEmpty() ? "DEFAULT" : (String) handover.get(0).get("estimate_basis");
-        if (decision.estimateMinutes() == null) basis = initialBasis;
+        String basis = decision.estimateMinutes() == null ? initialBasis : "COORDINATOR";
+        Integer samples = decision.estimateMinutes() == null ? initialSamples : null;
         jdbc.update("update servicedesk_ticket set awaiting_review=false where id=?",id);
         jdbc.update("delete from servicedesk_review where ticket_id=?",id);
-        jdbc.update("insert into servicedesk_review(ticket_id,category,priority,estimate_minutes,estimate_basis,assignee,review_task_id,reviewed_by,reason,impact,urgency)"
-            + " values(?,?,?,?,?,?,?,?,?,?,?)",
-            id, decision.category().name(), decision.priority().name(), minutes, basis, decision.assignee(), review.id(), actor.subject(), decision.reason(), decision.impact(), decision.urgency());
+        jdbc.update("insert into servicedesk_review(ticket_id,category,priority,estimate_minutes,estimate_basis,estimate_samples,assignee,review_task_id,reviewed_by,reason,impact,urgency)"
+            + " values(?,?,?,?,?,?,?,?,?,?,?,?)",
+            id, decision.category().name(), decision.priority().name(), minutes, basis, samples, decision.assignee(), review.id(), actor.subject(), decision.reason(), decision.impact(), decision.urgency());
         intake.feedback(workspace, id, review.id(), decision, actor.subject(), decision.reason());
         jdbc.update("insert into servicedesk_estimate_history(ticket_id,review_task_id,category,priority,assignee,minutes,basis,changed_by,reason) values(?,?,?,?,?,?,?,?,?)",
             id, review.id(), decision.category().name(), decision.priority().name(), decision.assignee(), defaults, initialBasis, actor.subject(), decision.reason());
@@ -107,12 +120,12 @@ public class TicketReviewService implements WorkProjection {
         QueueItem item = null;
         if (task != null && "handle".equals(task.key()) && ServiceDeskProcess.reviewed(task.processKey()))
             item = project(workspace, execution.get(workspace, task.id()));
-        var estimates = jdbc.query("select estimate_minutes,estimate_basis from servicedesk_review where ticket_id=?",
-            (row,index) -> new QueueItem.Estimate(row.getInt(1),row.getString(2)), ticket.id());
+        var estimates = jdbc.query("select estimate_minutes,estimate_basis,estimate_samples from servicedesk_review where ticket_id=?",
+            (row,index) -> estimate(row.getInt(1),row.getString(2),(Integer) row.getObject(3)), ticket.id());
         if (item != null) state = switch(item.workState()) { case "IN_PROGRESS" -> "IN_PROGRESS"; case "PENDING" -> "PENDING"; default -> reopened > 0 ? "REOPENED" : "ASSIGNED"; };
         var classifications=jdbc.query("select * from servicedesk_review where ticket_id=?",(row,index) ->
             new TicketReview.Classification(row.getString("category"),row.getString("priority"),row.getString("priority"),false,
-                "agent","COORDINATOR",row.getString("impact"),row.getString("urgency"),row.getString("reviewed_by"),
+                Objects.requireNonNullElse(eligibility.groupOf(TicketReview.Category.valueOf(row.getString("category"))),"manual"),"COORDINATOR",row.getString("impact"),row.getString("urgency"),row.getString("reviewed_by"),
                 row.getTimestamp("reviewed_at").toInstant()),ticket.id());
         long closedWork=jdbc.queryForObject("select worked_millis from servicedesk_ticket where id=?",Long.class,ticket.id());
         var slaState = sla.read(workspace, ticket.id());
@@ -153,7 +166,7 @@ public class TicketReviewService implements WorkProjection {
         parameters.add(ServiceDeskProcess.REVIEWED_KEY);
         parameters.add(ServiceDeskProcess.INTAKE_KEY);
         executions.forEach(item -> parameters.add(item.task().processInstanceId()));
-        var rows = jdbc.queryForList("select t.process_instance_id,t.title,t.worked_millis,r.priority,r.estimate_minutes,r.estimate_basis,"
+        var rows = jdbc.queryForList("select t.process_instance_id,t.title,t.worked_millis,r.priority,r.estimate_minutes,r.estimate_basis,r.estimate_samples,"
             + " (select greatest(count(distinct h.review_task_id)-1-(select count(*) from servicedesk_work_release x where x.ticket_id=t.id),0) from servicedesk_estimate_history h where h.ticket_id=t.id) as reopened"
             + " from servicedesk_ticket t join servicedesk_review r on r.ticket_id=t.id where t.workspace=? and t.process_key in (?,?)"
             + " and t.process_instance_id in (" + String.join(",", Collections.nCopies(executions.size(), "?")) + ")", parameters.toArray());
@@ -161,10 +174,11 @@ public class TicketReviewService implements WorkProjection {
         rows.forEach(row -> byProcess.put((String)row.get("process_instance_id"),row));
         var slaStates = sla.batch(workspace, executions.stream().map(item -> item.task().id()).toList());
         var now = sla.now();
+        var settings = work.current();
         return executions.stream().map(item -> {
             var row = byProcess.get(item.task().processInstanceId());
             if (row == null) throw CapabilityException.conflict("Reviewed work projection required");
-            var projected = projected(item, row);
+            var projected = projected(item, row, settings);
             var state = slaStates.get(item.task().id());
             return state == null ? projected : new QueueItem(projected.task(), projected.label(), projected.workState(),
                 state.priority().name(), state.base().name(), projected.estimate(), projected.workedMinutes(), projected.remainingMinutes(),
@@ -172,14 +186,27 @@ public class TicketReviewService implements WorkProjection {
         }).toList();
     }
 
-    private QueueItem projected(WorkExecution.Item execution, Map<String,Object> row) {
+    private QueueItem projected(WorkExecution.Item execution, Map<String,Object> row, vn.haui.dx.hpdi.settings.api.WorkPolicy.Snapshot settings) {
         int minutes=((Number)row.get("estimate_minutes")).intValue();
         long worked=(execution.workedMillis()+((Number)row.get("worked_millis")).longValue())/60_000;
-        long remaining="NOT_STARTED".equals(execution.workState()) && worked == 0 ? minutes : Math.max(10,minutes-worked);
-        if ("PENDING".equals(execution.workState())) remaining=(remaining+1)/2;
+        long remaining=remainingMinutes(execution.workState(), minutes, worked, settings.minRemainingMinutes(), settings.pendingLoadFactor());
         int reopened=((Number)row.get("reopened")).intValue();
         return new QueueItem(execution.task(),(String)row.get("title"),execution.workState(),(String)row.get("priority"),
-            (String)row.get("priority"),new QueueItem.Estimate(minutes,(String)row.get("estimate_basis")),worked,remaining,reopened,
+            (String)row.get("priority"),estimate(minutes,(String)row.get("estimate_basis"),(Integer)row.get("estimate_samples")),worked,remaining,reopened,
             execution.pendingReason(),execution.pendingNote());
+    }
+
+    /**
+     * Phần tính vào tải (R2): chưa đụng tới thì bằng ET; đã làm thì ET trừ phần đã làm, không dưới mức tối thiểu;
+     * Đang chờ thì nhân hệ số (làm tròn lên). Mặc định 10 phút và 0,5 như công thức cũ.
+     */
+    static long remainingMinutes(String workState, int estimate, long worked, int minimum, double pendingFactor) {
+        long remaining = "NOT_STARTED".equals(workState) && worked == 0 ? estimate : Math.max(minimum, estimate - worked);
+        // Trừ sai số dấu phẩy động trước khi làm tròn lên (10 × 0,3 = 3,0000000000000004)
+        return "PENDING".equals(workState) ? (long) Math.ceil(remaining * pendingFactor - 1e-9) : remaining;
+    }
+
+    private static QueueItem.Estimate estimate(int minutes, String basis, Integer samples) {
+        return new QueueItem.Estimate(minutes, basis, "SIMILAR".equals(basis) ? samples : null);
     }
 }

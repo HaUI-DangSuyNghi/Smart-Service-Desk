@@ -25,13 +25,15 @@ import { TimelineStep } from "./TimelineStep";
 
 interface Props {
   timeline: Timeline;
+  /** Chỉ dòng thời gian các bước, không tóm tắt và nội dung: cho cột hẹp bên cạnh trang của app. */
+  compact?: boolean;
 }
 
 /**
  * Tiến độ của một quy trình bất kỳ: tóm tắt và dòng thời gian các bước.
  * App nhúng lại component này ở trang chi tiết bản ghi của mình.
  */
-export const ProcessTimeline = ({ timeline }: Props) => {
+export const ProcessTimeline = ({ timeline, compact = false }: Props) => {
   const labels = useProcessLabels();
   // Chỉ hỏi tên của những người có mặt trên trang, không cần quyền xem cả danh bạ
   const names = usePeopleNames([
@@ -69,22 +71,24 @@ export const ProcessTimeline = ({ timeline }: Props) => {
 
   return (
     <>
-      <dl className="border-b border-crm-line px-4 py-3">
-        <FieldRow label="Trạng thái">
-          {endedAt ? <Tag tone="green">Đã kết thúc</Tag> : <Tag tone="blue">Đang chạy</Tag>}
-        </FieldRow>
-        <FieldRow label="Mã yêu cầu">
-          <BusinessKeyLink processKey={processKey} businessKey={timeline.businessKey} />
-        </FieldRow>
-        <FieldRow label="Người tạo">{initiator}</FieldRow>
-        <FieldRow label="Bắt đầu">{formatDateTime(startedAt)}</FieldRow>
-        {endedAt && (
-          <FieldRow label="Tổng thời gian">{formatDuration(startedAt, endedAt)}</FieldRow>
-        )}
-      </dl>
+      {!compact && (
+        <dl className="border-b border-crm-line px-4 py-3">
+          <FieldRow label="Trạng thái">
+            {endedAt ? <Tag tone="green">Đã kết thúc</Tag> : <Tag tone="blue">Đang chạy</Tag>}
+          </FieldRow>
+          <FieldRow label="Mã yêu cầu">
+            <BusinessKeyLink processKey={processKey} businessKey={timeline.businessKey} />
+          </FieldRow>
+          <FieldRow label="Người tạo">{initiator}</FieldRow>
+          <FieldRow label="Bắt đầu">{formatDateTime(startedAt)}</FieldRow>
+          {endedAt && (
+            <FieldRow label="Tổng thời gian">{formatDuration(startedAt, endedAt)}</FieldRow>
+          )}
+        </dl>
+      )}
 
       {/* Quy trình gắn app (ticket, đặt phòng) có thể không có ô nào; nội dung nằm ở trang của app */}
-      {content.length > 0 && (
+      {!compact && content.length > 0 && (
         <section className="border-b border-crm-line px-4 py-4">
           <h2 className="mb-1 font-medium">Nội dung</h2>
           <dl>
@@ -97,8 +101,8 @@ export const ProcessTimeline = ({ timeline }: Props) => {
         </section>
       )}
 
-      <section className="px-4 py-4">
-        <h2 className="mb-3 font-medium">Các bước</h2>
+      <section className={compact ? "px-4 pt-1 pb-3" : "px-4 py-4"}>
+        {!compact && <h2 className="mb-3 font-medium">Các bước</h2>}
         <ol>
           <TimelineItem icon={IconFlag} marker="start" title="Tạo yêu cầu">
             <p className="text-crm-sm text-crm-text-3">

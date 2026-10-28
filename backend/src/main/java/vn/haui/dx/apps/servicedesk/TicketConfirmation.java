@@ -7,7 +7,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
@@ -24,14 +23,21 @@ public class TicketConfirmation {
     private final WorkAlerts alerts;
     private final ProcessCapability processes;
     private final Clock clock;
-    private final Duration reopenWait;
+    private final vn.haui.dx.hpdi.settings.api.WorkPolicy work;
 
     public TicketConfirmation(JdbcTemplate jdbc, ActivityJournal audit, HumanContext human, WorkAlerts alerts,
-            ProcessCapability processes, Clock clock, @Value("${serviceDesk.confirmation.reopen-minutes:15}") int reopenMinutes) {
-        if (reopenMinutes < 1 || reopenMinutes > 1440) throw new IllegalArgumentException("Invalid reopen deadline");
+            ProcessCapability processes, Clock clock, vn.haui.dx.hpdi.settings.api.WorkPolicy work) {
         this.jdbc = jdbc; this.audit = audit; this.human = human; this.alerts = alerts;
-        this.processes = processes; this.clock = clock; this.reopenWait = Duration.ofMinutes(reopenMinutes);
+        this.processes = processes; this.clock = clock; this.work = work;
     }
+
+    // Hạn lưu vào servicedesk_confirmation lúc tạo nên đổi cấu hình chỉ áp dụng cho lần xác nhận sau
+    /** R11: tự đóng sau bấy nhiêu ngày liên tục (không tính theo ngày làm việc). */
+    private Duration closeWait() { return Duration.ofDays(work.current().autoCloseAfterDays()); }
+    /** R11: người dùng báo chưa xong mà quá bấy nhiêu phút chưa ai nhận lại thì báo. */
+    private Duration reopenWait() { return Duration.ofMinutes(work.current().reopenUnclaimedMinutes()); }
+    /** Nhãn chính sách ghi vào audit, ví dụ r11-72h-v1 với mặc định 3 ngày. */
+    private String closePolicy() { return "r11-" + closeWait().toHours() + "h-v1"; }
 
     @Transactional(propagation = Propagation.MANDATORY)
     public void completed(String workspace, String key, String processId, WorkItem completed, String outcome, List<WorkItem> active) {
@@ -51,7 +57,7 @@ public class TicketConfirmation {
             String decision = "accepted".equals(outcome) ? "REQUESTER" : "REWORK";
             int changed = jdbc.update("update servicedesk_confirmation set decision=?,decided_at=?,decided_by=?,reopen_deadline_at=?"
                 + " where workspace=? and process_instance_id=? and generation=? and decision is null", decision, Timestamp.from(now), actor,
-                "REWORK".equals(decision) ? Timestamp.from(now.plus(reopenWait)) : null, workspace, processId, completed.id());
+                "REWORK".equals(decision) ? Timestamp.from(now.plus(reopenWait())) : null, workspace, processId, completed.id());
             if (changed != 1) throw CapabilityException.conflict("Confirmation generation already decided");
             audit.record(workspace, new BusinessActivity("servicedesk.confirmation.decided", "servicedesk.ticket", id.toString(),
                 Map.of("generationId", completed.id(), "decisionKey", decision, "processInstanceId", processId)));
@@ -72,9 +78,9 @@ public class TicketConfirmation {
             .orElseThrow(() -> CapabilityException.conflict("Resolved handle history required"));
         jdbc.update("insert into servicedesk_confirmation(workspace,ticket_id,process_instance_id,generation,handle_task_id,handle_resolved_at,confirm_started_at,deadline_at)"
             + " values(?,?,?,?,?,?,?,?)", workspace, id, processId, confirm.id(), handle.id(), Timestamp.from(handle.endedAt()),
-            Timestamp.from(confirm.createdAt()), Timestamp.from(confirm.createdAt().plus(Duration.ofHours(72))));
+            Timestamp.from(confirm.createdAt()), Timestamp.from(confirm.createdAt().plus(closeWait())));
         audit.record(workspace, new BusinessActivity("servicedesk.confirmation.started", "servicedesk.ticket", id.toString(),
-            Map.of("generationId", confirm.id(), "policyVersion", "r11-72h-v1")));
+            Map.of("generationId", confirm.id(), "policyVersion", closePolicy())));
     }
 
     @Transactional(propagation = Propagation.MANDATORY)
@@ -98,7 +104,7 @@ public class TicketConfirmation {
         if (!Boolean.TRUE.equals(jdbc.queryForObject("select exists(select 1 from servicedesk_sla where workspace=?"
                 + " and ticket_id=?::uuid and process_instance_id=? and handle_task_id=? and resolved_at is not null)",
                 Boolean.class, workspace, businessKey, processId, handleId))) return;
-        Instant deadline = createdAt.plus(Duration.ofHours(72));
+        Instant deadline = createdAt.plus(closeWait());
         boolean hold = !now.isBefore(deadline);
         int inserted = jdbc.update("insert into servicedesk_confirmation(workspace,ticket_id,process_instance_id,generation,handle_task_id,handle_resolved_at,confirm_started_at,deadline_at,rollout_hold,rollout_reason)"
             + " values(?,?::uuid,?,?,?,?,?,?,?,?) on conflict(workspace,process_instance_id,generation) do nothing",
@@ -106,7 +112,7 @@ public class TicketConfirmation {
             Timestamp.from(createdAt), Timestamp.from(deadline), hold, hold ? "OVERDUE_AT_ROLLOUT" : null);
         if (inserted > 0) {
             audit.recordSystem(workspace, new BusinessActivity("servicedesk.confirmation.enrolled", "servicedesk.ticket", businessKey,
-                Map.of("generationId", generation, "rolloutHoldKey", Boolean.toString(hold), "policyVersion", "r11-72h-v1")));
+                Map.of("generationId", generation, "rolloutHoldKey", Boolean.toString(hold), "policyVersion", closePolicy())));
         }
     }
 
@@ -133,7 +139,7 @@ public class TicketConfirmation {
             jdbc.update("update servicedesk_confirmation set decision='AUTO',decided_at=?,decided_by='system:workflow'"
                 + " where workspace=? and process_instance_id=? and generation=?", Timestamp.from(now), workspace, processId, generation);
             audit.recordSystem(workspace, new BusinessActivity("servicedesk.confirmation.autoclosed", "servicedesk.ticket", businessKey,
-                Map.of("generationId", generation, "processInstanceId", processId, "policyVersion", "r11-72h-v1")));
+                Map.of("generationId", generation, "processInstanceId", processId, "policyVersion", closePolicy())));
             return "accepted";
         }
         if ("REWORK".equals(row.get("decision")) && row.get("reopen_received_at") == null

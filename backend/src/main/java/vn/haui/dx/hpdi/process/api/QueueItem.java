@@ -10,5 +10,10 @@ public record QueueItem(@JsonUnwrapped WorkItem task, String label, String workS
         this(task, label, workState, priority, basePriority, estimate, workedMinutes, remainingMinutes,
             reopenCount, pendingReason, pendingNote, null);
     }
-    public record Estimate(int minutes, String basis) {}
+    /** basis: DEFAULT, COORDINATOR, SIMILAR (trung vị); sampleSize: số việc dùng tính trung vị, chỉ có khi SIMILAR. */
+    public record Estimate(int minutes, String basis,
+                           @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+                           Integer sampleSize) {
+        public Estimate(int minutes, String basis) { this(minutes, basis, null); }
+    }
 }

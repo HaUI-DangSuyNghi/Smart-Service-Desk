@@ -25,14 +25,28 @@ public class AssignmentSuggestionController {
     private final ProcessCapability processes;
     private final List<WorkProjection> projections;
     private final ZoneId zone;
+    private final TicketAssignmentEligibility eligibility;
+    private final TicketEstimates estimates;
+    private final vn.haui.dx.hpdi.settings.api.WorkPolicy work;
 
     public AssignmentSuggestionController(JdbcTemplate jdbc, TicketRepository tickets, AgentDirectory directory,
             AgentDuty duty, HumanContext humans, PermissionGuard permissions, WorkExecution execution,
             ProcessCapability processes, List<WorkProjection> projections,
-            @Value("${dx.assignment.business-zone:Asia/Ho_Chi_Minh}") String zone) {
+            @Value("${dx.assignment.business-zone:Asia/Ho_Chi_Minh}") String zone,
+            TicketAssignmentEligibility eligibility, TicketEstimates estimates, vn.haui.dx.hpdi.settings.api.WorkPolicy work) {
         this.jdbc=jdbc; this.tickets=tickets; this.directory=directory; this.duty=duty; this.humans=humans;
         this.permissions=permissions; this.execution=execution; this.processes=processes;
         this.projections=List.copyOf(projections); this.zone=ZoneId.of(zone);
+        this.eligibility=eligibility; this.estimates=estimates; this.work=work;
+    }
+
+    /** ET backend sẽ dùng nếu điều phối viên không tự nhập (bảng cấu hình hoặc trung vị việc tương tự), để màn duyệt điền sẵn. */
+    @GetMapping("/api/apps/servicedesk/v1/workspaces/{workspace}/tickets/{id}/estimate-default")
+    public TicketEstimates.Estimate estimateDefault(@PathVariable String workspace, @PathVariable UUID id,
+            @RequestParam TicketReview.Category category, @RequestParam TicketReview.Priority priority) {
+        authorize(workspace);
+        tickets.find(workspace,id,null).orElseThrow(() -> CapabilityException.notFound("Ticket not found"));
+        return estimates.estimate(workspace,category,priority);
     }
 
     public record Candidate(String subject, String displayName, boolean onDuty, long loadMinutes,
@@ -69,7 +83,7 @@ public class AssignmentSuggestionController {
             .filter(task -> "review".equals(task.key())).findFirst()
             .orElseThrow(() -> CapabilityException.conflict("Ticket is not awaiting review"));
         return suggest(workspace,review.id(),ticket,category,
-            estimateMinutes==null ? TicketReview.defaultMinutes(category,priority) : estimateMinutes);
+            estimateMinutes==null ? estimates.estimate(workspace,category,priority).minutes() : estimateMinutes);
     }
 
     private void authorize(String workspace) {
@@ -78,7 +92,8 @@ public class AssignmentSuggestionController {
     }
 
     private Suggestion suggest(String workspace, String taskId, Ticket ticket, TicketReview.Category category, int estimate) {
-        String group=TicketAssignmentEligibility.supportGroup(category);
+        String group=eligibility.groupOf(category);
+        int tie=work.current().tieThresholdMinutes();
         var agents=directory.currentAgents(workspace,group);
         var statuses=new HashMap<String,Boolean>();
         duty.list(workspace).forEach(status -> statuses.put(status.subject(),status.effectiveDuty()));
@@ -97,13 +112,13 @@ public class AssignmentSuggestionController {
             return new Candidate(agent.subject(),agent.fullName()==null ? agent.username() : agent.fullName(),onDuty,
                 loads.getOrDefault(agent.subject(),0L),counts.getOrDefault(agent.subject(),0L),duty.shiftRemainingMinutes(workspace,agent.subject()),false,excluded);
         }).toList();
-        var ranked=rank(candidates,cursors.isEmpty() ? null : cursors.get(0));
+        var ranked=rank(candidates,cursors.isEmpty() ? null : cursors.get(0),tie);
         String selected=group==null || ranked.isEmpty() ? null : ranked.get(0).subject();
         var result=new ArrayList<Candidate>();
         ranked.forEach(candidate -> result.add(mark(candidate,selected)));
         candidates.stream().filter(candidate -> candidate.excludedReason()!=null).sorted(Comparator.comparing(Candidate::subject)).forEach(result::add);
         String reason=group==null ? "OTHER requires manual coordinator selection" : selected==null ? "No eligible on-duty agent in support group"
-            : "Minimum-load band (<15 minutes from minimum; considered task excluded), then fewest assignments today, then committed-assignment round-robin; selected "
+            : "Minimum-load band (<" + tie + " minutes from minimum; considered task excluded), then fewest assignments today, then committed-assignment round-robin; selected "
                 + selected + " with " + ranked.get(0).loadMinutes() + " load minutes and " + ranked.get(0).assignedToday() + " assignments today";
         if (ranked.stream().anyMatch(candidate -> candidate.shiftRemainingMinutes()!=null && estimate>candidate.shiftRemainingMinutes()))
             reason += "; ESTIMATE_EXCEEDS_SHIFT: compare estimateMinutes with each candidate shiftRemainingMinutes; Coordinator must decide overtime or R6 handover";
@@ -126,13 +141,20 @@ public class AssignmentSuggestionController {
         }
     }
 
+    /** Ngưỡng ngang tải theo giá trị seed (15 phút). */
     static List<Candidate> rank(List<Candidate> candidates, String cursor) {
+        return rank(candidates, cursor, vn.haui.dx.hpdi.settings.api.WorkPolicy.DEFAULTS.tieThresholdMinutes());
+    }
+
+    /** tie: chênh tải dưới bấy nhiêu phút thì coi như bằng nhau (R2, cấu hình tieThresholdMinutes). */
+    static List<Candidate> rank(List<Candidate> candidates, String cursor, int tie) {
         var remaining=new ArrayList<>(candidates.stream().filter(candidate -> candidate.excludedReason()==null)
             .sorted(Comparator.comparingLong(Candidate::loadMinutes).thenComparing(Candidate::subject)).toList());
         var result=new ArrayList<Candidate>();
         while (!remaining.isEmpty()) {
             long minimum=remaining.get(0).loadMinutes();
-            var band=remaining.stream().filter(candidate -> candidate.loadMinutes()-minimum<15)
+            // Ngưỡng 0 vẫn giữ người ít tải nhất trong nhóm (chênh 0 < 1)
+            var band=remaining.stream().filter(candidate -> candidate.loadMinutes()-minimum<Math.max(1,tie))
                 .sorted(Comparator.comparingLong(Candidate::assignedToday)
                     .thenComparingInt(candidate -> cursor==null || candidate.subject().compareTo(cursor)>0 ? 0 : 1)
                     .thenComparing(Candidate::subject)).toList();
