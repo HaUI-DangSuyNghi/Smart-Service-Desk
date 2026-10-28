@@ -1,0 +1,720 @@
+ecosystem,component,version,origin,license_evidence,limitations
+npm,node_modules/@babel/code-frame,7.29.7,https://registry.npmjs.org/@babel/code-frame/-/code-frame-7.29.7.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@babel/compat-data,7.29.7,https://registry.npmjs.org/@babel/compat-data/-/compat-data-7.29.7.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@babel/core,7.29.7,https://registry.npmjs.org/@babel/core/-/core-7.29.7.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@babel/generator,7.29.8,https://registry.npmjs.org/@babel/generator/-/generator-7.29.8.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@babel/helper-annotate-as-pure,7.29.7,https://registry.npmjs.org/@babel/helper-annotate-as-pure/-/helper-annotate-as-pure-7.29.7.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@babel/helper-compilation-targets,7.29.7,https://registry.npmjs.org/@babel/helper-compilation-targets/-/helper-compilation-targets-7.29.7.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@babel/helper-create-class-features-plugin,7.29.7,https://registry.npmjs.org/@babel/helper-create-class-features-plugin/-/helper-create-class-features-plugin-7.29.7.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@babel/helper-globals,7.29.7,https://registry.npmjs.org/@babel/helper-globals/-/helper-globals-7.29.7.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@babel/helper-member-expression-to-functions,7.29.7,https://registry.npmjs.org/@babel/helper-member-expression-to-functions/-/helper-member-expression-to-functions-7.29.7.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@babel/helper-module-imports,7.29.7,https://registry.npmjs.org/@babel/helper-module-imports/-/helper-module-imports-7.29.7.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@babel/helper-module-transforms,7.29.7,https://registry.npmjs.org/@babel/helper-module-transforms/-/helper-module-transforms-7.29.7.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@babel/helper-optimise-call-expression,7.29.7,https://registry.npmjs.org/@babel/helper-optimise-call-expression/-/helper-optimise-call-expression-7.29.7.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@babel/helper-plugin-utils,7.29.7,https://registry.npmjs.org/@babel/helper-plugin-utils/-/helper-plugin-utils-7.29.7.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@babel/helper-replace-supers,7.29.7,https://registry.npmjs.org/@babel/helper-replace-supers/-/helper-replace-supers-7.29.7.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@babel/helper-skip-transparent-expression-wrappers,7.29.7,https://registry.npmjs.org/@babel/helper-skip-transparent-expression-wrappers/-/helper-skip-transparent-expression-wrappers-7.29.7.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@babel/helper-string-parser,7.29.7,https://registry.npmjs.org/@babel/helper-string-parser/-/helper-string-parser-7.29.7.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@babel/helper-validator-identifier,7.29.7,https://registry.npmjs.org/@babel/helper-validator-identifier/-/helper-validator-identifier-7.29.7.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@babel/helper-validator-option,7.29.7,https://registry.npmjs.org/@babel/helper-validator-option/-/helper-validator-option-7.29.7.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@babel/helpers,7.29.10,https://registry.npmjs.org/@babel/helpers/-/helpers-7.29.10.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@babel/parser,7.29.9,https://registry.npmjs.org/@babel/parser/-/parser-7.29.9.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@babel/plugin-syntax-jsx,7.29.7,https://registry.npmjs.org/@babel/plugin-syntax-jsx/-/plugin-syntax-jsx-7.29.7.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@babel/plugin-syntax-typescript,7.29.7,https://registry.npmjs.org/@babel/plugin-syntax-typescript/-/plugin-syntax-typescript-7.29.7.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@babel/plugin-transform-modules-commonjs,7.29.7,https://registry.npmjs.org/@babel/plugin-transform-modules-commonjs/-/plugin-transform-modules-commonjs-7.29.7.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@babel/plugin-transform-typescript,7.29.9,https://registry.npmjs.org/@babel/plugin-transform-typescript/-/plugin-transform-typescript-7.29.9.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@babel/preset-typescript,7.29.7,https://registry.npmjs.org/@babel/preset-typescript/-/preset-typescript-7.29.7.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@babel/template,7.29.7,https://registry.npmjs.org/@babel/template/-/template-7.29.7.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@babel/traverse,7.29.10,https://registry.npmjs.org/@babel/traverse/-/traverse-7.29.10.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@babel/types,7.29.8,https://registry.npmjs.org/@babel/types/-/types-7.29.8.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@cacheable/memory,2.2.0,https://registry.npmjs.org/@cacheable/memory/-/memory-2.2.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@cacheable/utils,2.5.0,https://registry.npmjs.org/@cacheable/utils/-/utils-2.5.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@dotenvx/dotenvx,1.75.1,https://registry.npmjs.org/@dotenvx/dotenvx/-/dotenvx-1.75.1.tgz,BSD-3-Clause,lock metadata; notice review pending
+npm,node_modules/@dotenvx/dotenvx/node_modules/commander,11.1.0,https://registry.npmjs.org/commander/-/commander-11.1.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@dotenvx/dotenvx/node_modules/define-lazy-prop,2.0.0,https://registry.npmjs.org/define-lazy-prop/-/define-lazy-prop-2.0.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@dotenvx/dotenvx/node_modules/execa,5.1.1,https://registry.npmjs.org/execa/-/execa-5.1.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@dotenvx/dotenvx/node_modules/get-stream,6.0.1,https://registry.npmjs.org/get-stream/-/get-stream-6.0.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@dotenvx/dotenvx/node_modules/human-signals,2.1.0,https://registry.npmjs.org/human-signals/-/human-signals-2.1.0.tgz,Apache-2.0,lock metadata; notice review pending
+npm,node_modules/@dotenvx/dotenvx/node_modules/is-docker,2.2.1,https://registry.npmjs.org/is-docker/-/is-docker-2.2.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@dotenvx/dotenvx/node_modules/is-stream,2.0.1,https://registry.npmjs.org/is-stream/-/is-stream-2.0.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@dotenvx/dotenvx/node_modules/is-wsl,2.2.0,https://registry.npmjs.org/is-wsl/-/is-wsl-2.2.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@dotenvx/dotenvx/node_modules/isexe,3.1.5,https://registry.npmjs.org/isexe/-/isexe-3.1.5.tgz,BlueOak-1.0.0,lock metadata; notice review pending
+npm,node_modules/@dotenvx/dotenvx/node_modules/npm-run-path,4.0.1,https://registry.npmjs.org/npm-run-path/-/npm-run-path-4.0.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@dotenvx/dotenvx/node_modules/open,8.4.2,https://registry.npmjs.org/open/-/open-8.4.2.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@dotenvx/dotenvx/node_modules/signal-exit,3.0.7,https://registry.npmjs.org/signal-exit/-/signal-exit-3.0.7.tgz,ISC,lock metadata; notice review pending
+npm,node_modules/@dotenvx/dotenvx/node_modules/strip-final-newline,2.0.0,https://registry.npmjs.org/strip-final-newline/-/strip-final-newline-2.0.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@dotenvx/dotenvx/node_modules/which,4.0.0,https://registry.npmjs.org/which/-/which-4.0.0.tgz,ISC,lock metadata; notice review pending
+npm,node_modules/@dotenvx/primitives,0.8.0,https://registry.npmjs.org/@dotenvx/primitives/-/primitives-0.8.0.tgz,BSD-3-Clause,lock metadata; notice review pending
+npm,node_modules/@eslint-community/eslint-utils,4.10.1,https://registry.npmjs.org/@eslint-community/eslint-utils/-/eslint-utils-4.10.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@eslint-community/eslint-utils/node_modules/eslint-visitor-keys,3.4.3,https://registry.npmjs.org/eslint-visitor-keys/-/eslint-visitor-keys-3.4.3.tgz,Apache-2.0,lock metadata; notice review pending
+npm,node_modules/@eslint-community/regexpp,4.12.2,https://registry.npmjs.org/@eslint-community/regexpp/-/regexpp-4.12.2.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@eslint/config-array,0.23.5,https://registry.npmjs.org/@eslint/config-array/-/config-array-0.23.5.tgz,Apache-2.0,lock metadata; notice review pending
+npm,node_modules/@eslint/config-helpers,0.7.0,https://registry.npmjs.org/@eslint/config-helpers/-/config-helpers-0.7.0.tgz,Apache-2.0,lock metadata; notice review pending
+npm,node_modules/@eslint/core,1.2.1,https://registry.npmjs.org/@eslint/core/-/core-1.2.1.tgz,Apache-2.0,lock metadata; notice review pending
+npm,node_modules/@eslint/js,10.0.1,https://registry.npmjs.org/@eslint/js/-/js-10.0.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@eslint/object-schema,3.0.5,https://registry.npmjs.org/@eslint/object-schema/-/object-schema-3.0.5.tgz,Apache-2.0,lock metadata; notice review pending
+npm,node_modules/@eslint/plugin-kit,0.7.3,https://registry.npmjs.org/@eslint/plugin-kit/-/plugin-kit-0.7.3.tgz,Apache-2.0,lock metadata; notice review pending
+npm,node_modules/@floating-ui/core,1.8.0,https://registry.npmjs.org/@floating-ui/core/-/core-1.8.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@floating-ui/dom,1.8.0,https://registry.npmjs.org/@floating-ui/dom/-/dom-1.8.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@floating-ui/react-dom,2.1.9,https://registry.npmjs.org/@floating-ui/react-dom/-/react-dom-2.1.9.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@floating-ui/utils,0.2.12,https://registry.npmjs.org/@floating-ui/utils/-/utils-0.2.12.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@fontsource-variable/geist,5.3.0,https://registry.npmjs.org/@fontsource-variable/geist/-/geist-5.3.0.tgz,OFL-1.1,lock metadata; notice review pending
+npm,node_modules/@fontsource-variable/inter,5.3.0,https://registry.npmjs.org/@fontsource-variable/inter/-/inter-5.3.0.tgz,OFL-1.1,lock metadata; notice review pending
+npm,node_modules/@fontsource-variable/inter-tight,5.3.0,https://registry.npmjs.org/@fontsource-variable/inter-tight/-/inter-tight-5.3.0.tgz,OFL-1.1,lock metadata; notice review pending
+npm,node_modules/@hono/node-server,2.1.5,https://registry.npmjs.org/@hono/node-server/-/node-server-2.1.5.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@hookform/resolvers,5.9.2,https://registry.npmjs.org/@hookform/resolvers/-/resolvers-5.9.2.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@humanfs/core,0.19.2,https://registry.npmjs.org/@humanfs/core/-/core-0.19.2.tgz,Apache-2.0,lock metadata; notice review pending
+npm,node_modules/@humanfs/node,0.16.8,https://registry.npmjs.org/@humanfs/node/-/node-0.16.8.tgz,Apache-2.0,lock metadata; notice review pending
+npm,node_modules/@humanfs/types,0.15.0,https://registry.npmjs.org/@humanfs/types/-/types-0.15.0.tgz,Apache-2.0,lock metadata; notice review pending
+npm,node_modules/@humanwhocodes/module-importer,1.0.1,https://registry.npmjs.org/@humanwhocodes/module-importer/-/module-importer-1.0.1.tgz,Apache-2.0,lock metadata; notice review pending
+npm,node_modules/@humanwhocodes/retry,0.4.3,https://registry.npmjs.org/@humanwhocodes/retry/-/retry-0.4.3.tgz,Apache-2.0,lock metadata; notice review pending
+npm,node_modules/@jridgewell/gen-mapping,0.3.13,https://registry.npmjs.org/@jridgewell/gen-mapping/-/gen-mapping-0.3.13.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@jridgewell/remapping,2.3.5,https://registry.npmjs.org/@jridgewell/remapping/-/remapping-2.3.5.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@jridgewell/resolve-uri,3.1.2,https://registry.npmjs.org/@jridgewell/resolve-uri/-/resolve-uri-3.1.2.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@jridgewell/sourcemap-codec,1.6.0,https://registry.npmjs.org/@jridgewell/sourcemap-codec/-/sourcemap-codec-1.6.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@jridgewell/trace-mapping,0.3.31,https://registry.npmjs.org/@jridgewell/trace-mapping/-/trace-mapping-0.3.31.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@keyv/bigmap,1.3.1,https://registry.npmjs.org/@keyv/bigmap/-/bigmap-1.3.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@keyv/serialize,1.1.1,https://registry.npmjs.org/@keyv/serialize/-/serialize-1.1.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@modelcontextprotocol/sdk,1.32.1,https://registry.npmjs.org/@modelcontextprotocol/sdk/-/sdk-1.32.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@modelcontextprotocol/sdk/node_modules/ajv-formats,3.0.1,https://registry.npmjs.org/ajv-formats/-/ajv-formats-3.0.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@nodelib/fs.scandir,2.1.5,https://registry.npmjs.org/@nodelib/fs.scandir/-/fs.scandir-2.1.5.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@nodelib/fs.stat,2.0.5,https://registry.npmjs.org/@nodelib/fs.stat/-/fs.stat-2.0.5.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@nodelib/fs.walk,1.2.8,https://registry.npmjs.org/@nodelib/fs.walk/-/fs.walk-1.2.8.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@oxc-project/types,0.154.0,https://registry.npmjs.org/@oxc-project/types/-/types-0.154.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@playwright/test,1.58.2,https://registry.npmjs.org/@playwright/test/-/test-1.58.2.tgz,Apache-2.0,lock metadata; notice review pending
+npm,node_modules/@radix-ui/number,1.1.3,https://registry.npmjs.org/@radix-ui/number/-/number-1.1.3.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@radix-ui/primitive,1.2.0,https://registry.npmjs.org/@radix-ui/primitive/-/primitive-1.2.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@radix-ui/react-accessible-icon,1.2.0,https://registry.npmjs.org/@radix-ui/react-accessible-icon/-/react-accessible-icon-1.2.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@radix-ui/react-accordion,1.3.1,https://registry.npmjs.org/@radix-ui/react-accordion/-/react-accordion-1.3.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@radix-ui/react-alert-dialog,1.2.1,https://registry.npmjs.org/@radix-ui/react-alert-dialog/-/react-alert-dialog-1.2.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@radix-ui/react-arrow,1.1.17,https://registry.npmjs.org/@radix-ui/react-arrow/-/react-arrow-1.1.17.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@radix-ui/react-aspect-ratio,1.2.0,https://registry.npmjs.org/@radix-ui/react-aspect-ratio/-/react-aspect-ratio-1.2.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@radix-ui/react-avatar,1.3.1,https://registry.npmjs.org/@radix-ui/react-avatar/-/react-avatar-1.3.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@radix-ui/react-checkbox,1.4.1,https://registry.npmjs.org/@radix-ui/react-checkbox/-/react-checkbox-1.4.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@radix-ui/react-collapsible,1.2.1,https://registry.npmjs.org/@radix-ui/react-collapsible/-/react-collapsible-1.2.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@radix-ui/react-collection,1.2.0,https://registry.npmjs.org/@radix-ui/react-collection/-/react-collection-1.2.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@radix-ui/react-compose-refs,1.1.5,https://registry.npmjs.org/@radix-ui/react-compose-refs/-/react-compose-refs-1.1.5.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@radix-ui/react-context,1.3.0,https://registry.npmjs.org/@radix-ui/react-context/-/react-context-1.3.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@radix-ui/react-context-menu,2.4.1,https://registry.npmjs.org/@radix-ui/react-context-menu/-/react-context-menu-2.4.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@radix-ui/react-dialog,1.3.1,https://registry.npmjs.org/@radix-ui/react-dialog/-/react-dialog-1.3.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@radix-ui/react-direction,1.2.0,https://registry.npmjs.org/@radix-ui/react-direction/-/react-direction-1.2.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@radix-ui/react-dismissable-layer,1.2.1,https://registry.npmjs.org/@radix-ui/react-dismissable-layer/-/react-dismissable-layer-1.2.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@radix-ui/react-dropdown-menu,2.2.1,https://registry.npmjs.org/@radix-ui/react-dropdown-menu/-/react-dropdown-menu-2.2.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@radix-ui/react-focus-guards,1.2.0,https://registry.npmjs.org/@radix-ui/react-focus-guards/-/react-focus-guards-1.2.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@radix-ui/react-focus-scope,1.3.1,https://registry.npmjs.org/@radix-ui/react-focus-scope/-/react-focus-scope-1.3.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@radix-ui/react-form,0.3.0,https://registry.npmjs.org/@radix-ui/react-form/-/react-form-0.3.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@radix-ui/react-hover-card,1.2.1,https://registry.npmjs.org/@radix-ui/react-hover-card/-/react-hover-card-1.2.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@radix-ui/react-id,1.1.4,https://registry.npmjs.org/@radix-ui/react-id/-/react-id-1.1.4.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@radix-ui/react-label,2.1.17,https://registry.npmjs.org/@radix-ui/react-label/-/react-label-2.1.17.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@radix-ui/react-menu,2.2.1,https://registry.npmjs.org/@radix-ui/react-menu/-/react-menu-2.2.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@radix-ui/react-menubar,1.2.1,https://registry.npmjs.org/@radix-ui/react-menubar/-/react-menubar-1.2.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@radix-ui/react-navigation-menu,1.4.1,https://registry.npmjs.org/@radix-ui/react-navigation-menu/-/react-navigation-menu-1.4.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@radix-ui/react-one-time-password-field,0.2.1,https://registry.npmjs.org/@radix-ui/react-one-time-password-field/-/react-one-time-password-field-0.2.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@radix-ui/react-password-toggle-field,0.2.1,https://registry.npmjs.org/@radix-ui/react-password-toggle-field/-/react-password-toggle-field-0.2.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@radix-ui/react-popover,1.3.1,https://registry.npmjs.org/@radix-ui/react-popover/-/react-popover-1.3.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@radix-ui/react-popper,1.4.0,https://registry.npmjs.org/@radix-ui/react-popper/-/react-popper-1.4.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@radix-ui/react-portal,1.2.0,https://registry.npmjs.org/@radix-ui/react-portal/-/react-portal-1.2.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@radix-ui/react-presence,1.1.11,https://registry.npmjs.org/@radix-ui/react-presence/-/react-presence-1.1.11.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@radix-ui/react-primitive,2.2.0,https://registry.npmjs.org/@radix-ui/react-primitive/-/react-primitive-2.2.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@radix-ui/react-progress,1.2.1,https://registry.npmjs.org/@radix-ui/react-progress/-/react-progress-1.2.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@radix-ui/react-radio-group,1.5.1,https://registry.npmjs.org/@radix-ui/react-radio-group/-/react-radio-group-1.5.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@radix-ui/react-roving-focus,1.2.1,https://registry.npmjs.org/@radix-ui/react-roving-focus/-/react-roving-focus-1.2.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@radix-ui/react-scroll-area,1.4.0,https://registry.npmjs.org/@radix-ui/react-scroll-area/-/react-scroll-area-1.4.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@radix-ui/react-select,2.4.1,https://registry.npmjs.org/@radix-ui/react-select/-/react-select-2.4.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@radix-ui/react-separator,1.2.0,https://registry.npmjs.org/@radix-ui/react-separator/-/react-separator-1.2.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@radix-ui/react-slider,1.6.1,https://registry.npmjs.org/@radix-ui/react-slider/-/react-slider-1.6.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@radix-ui/react-slot,1.5.0,https://registry.npmjs.org/@radix-ui/react-slot/-/react-slot-1.5.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@radix-ui/react-switch,1.4.1,https://registry.npmjs.org/@radix-ui/react-switch/-/react-switch-1.4.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@radix-ui/react-tabs,1.2.1,https://registry.npmjs.org/@radix-ui/react-tabs/-/react-tabs-1.2.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@radix-ui/react-toast,1.3.1,https://registry.npmjs.org/@radix-ui/react-toast/-/react-toast-1.3.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@radix-ui/react-toggle,1.2.1,https://registry.npmjs.org/@radix-ui/react-toggle/-/react-toggle-1.2.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@radix-ui/react-toggle-group,1.2.1,https://registry.npmjs.org/@radix-ui/react-toggle-group/-/react-toggle-group-1.2.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@radix-ui/react-toolbar,1.2.1,https://registry.npmjs.org/@radix-ui/react-toolbar/-/react-toolbar-1.2.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@radix-ui/react-tooltip,1.4.1,https://registry.npmjs.org/@radix-ui/react-tooltip/-/react-tooltip-1.4.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@radix-ui/react-use-callback-ref,1.1.5,https://registry.npmjs.org/@radix-ui/react-use-callback-ref/-/react-use-callback-ref-1.1.5.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@radix-ui/react-use-controllable-state,1.3.0,https://registry.npmjs.org/@radix-ui/react-use-controllable-state/-/react-use-controllable-state-1.3.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@radix-ui/react-use-effect-event,0.0.5,https://registry.npmjs.org/@radix-ui/react-use-effect-event/-/react-use-effect-event-0.0.5.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@radix-ui/react-use-escape-keydown,1.1.6,https://registry.npmjs.org/@radix-ui/react-use-escape-keydown/-/react-use-escape-keydown-1.1.6.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@radix-ui/react-use-is-hydrated,0.1.3,https://registry.npmjs.org/@radix-ui/react-use-is-hydrated/-/react-use-is-hydrated-0.1.3.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@radix-ui/react-use-layout-effect,1.1.4,https://registry.npmjs.org/@radix-ui/react-use-layout-effect/-/react-use-layout-effect-1.1.4.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@radix-ui/react-use-previous,1.1.4,https://registry.npmjs.org/@radix-ui/react-use-previous/-/react-use-previous-1.1.4.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@radix-ui/react-use-rect,1.1.4,https://registry.npmjs.org/@radix-ui/react-use-rect/-/react-use-rect-1.1.4.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@radix-ui/react-use-size,1.1.5,https://registry.npmjs.org/@radix-ui/react-use-size/-/react-use-size-1.1.5.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@radix-ui/react-visually-hidden,1.2.13,https://registry.npmjs.org/@radix-ui/react-visually-hidden/-/react-visually-hidden-1.2.13.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@radix-ui/rect,1.1.3,https://registry.npmjs.org/@radix-ui/rect/-/rect-1.1.3.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@rolldown/binding-android-arm-eabi,1.2.14,https://registry.npmjs.org/@rolldown/binding-android-arm-eabi/-/binding-android-arm-eabi-1.2.14.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@rolldown/binding-android-arm64,1.2.14,https://registry.npmjs.org/@rolldown/binding-android-arm64/-/binding-android-arm64-1.2.14.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@rolldown/binding-darwin-arm64,1.2.14,https://registry.npmjs.org/@rolldown/binding-darwin-arm64/-/binding-darwin-arm64-1.2.14.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@rolldown/binding-darwin-x64,1.2.14,https://registry.npmjs.org/@rolldown/binding-darwin-x64/-/binding-darwin-x64-1.2.14.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@rolldown/binding-freebsd-x64,1.2.14,https://registry.npmjs.org/@rolldown/binding-freebsd-x64/-/binding-freebsd-x64-1.2.14.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@rolldown/binding-linux-arm-gnueabihf,1.2.14,https://registry.npmjs.org/@rolldown/binding-linux-arm-gnueabihf/-/binding-linux-arm-gnueabihf-1.2.14.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@rolldown/binding-linux-arm64-gnu,1.2.14,https://registry.npmjs.org/@rolldown/binding-linux-arm64-gnu/-/binding-linux-arm64-gnu-1.2.14.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@rolldown/binding-linux-arm64-musl,1.2.14,https://registry.npmjs.org/@rolldown/binding-linux-arm64-musl/-/binding-linux-arm64-musl-1.2.14.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@rolldown/binding-linux-ppc64-gnu,1.2.14,https://registry.npmjs.org/@rolldown/binding-linux-ppc64-gnu/-/binding-linux-ppc64-gnu-1.2.14.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@rolldown/binding-linux-s390x-gnu,1.2.14,https://registry.npmjs.org/@rolldown/binding-linux-s390x-gnu/-/binding-linux-s390x-gnu-1.2.14.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@rolldown/binding-linux-x64-gnu,1.2.14,https://registry.npmjs.org/@rolldown/binding-linux-x64-gnu/-/binding-linux-x64-gnu-1.2.14.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@rolldown/binding-linux-x64-musl,1.2.14,https://registry.npmjs.org/@rolldown/binding-linux-x64-musl/-/binding-linux-x64-musl-1.2.14.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@rolldown/binding-openharmony-arm64,1.2.14,https://registry.npmjs.org/@rolldown/binding-openharmony-arm64/-/binding-openharmony-arm64-1.2.14.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@rolldown/binding-win32-arm64-msvc,1.2.14,https://registry.npmjs.org/@rolldown/binding-win32-arm64-msvc/-/binding-win32-arm64-msvc-1.2.14.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@rolldown/binding-win32-x64-msvc,1.2.14,https://registry.npmjs.org/@rolldown/binding-win32-x64-msvc/-/binding-win32-x64-msvc-1.2.14.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@rolldown/pluginutils,1.0.1,https://registry.npmjs.org/@rolldown/pluginutils/-/pluginutils-1.0.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@sec-ant/readable-stream,0.4.1,https://registry.npmjs.org/@sec-ant/readable-stream/-/readable-stream-0.4.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@shadcn/registry,0.2.0,https://registry.npmjs.org/@shadcn/registry/-/registry-0.2.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@shadcn/registry/node_modules/cn,0.2.6,https://registry.npmjs.org/cn/-/cn-0.2.6.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@shadcn/registry/node_modules/zod,4.6.7,https://registry.npmjs.org/zod/-/zod-4.6.7.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@sindresorhus/merge-streams,4.0.0,https://registry.npmjs.org/@sindresorhus/merge-streams/-/merge-streams-4.0.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@standard-schema/utils,0.3.0,https://registry.npmjs.org/@standard-schema/utils/-/utils-0.3.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@tabler/icons,3.49.0,https://registry.npmjs.org/@tabler/icons/-/icons-3.49.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@tabler/icons-react,3.49.0,https://registry.npmjs.org/@tabler/icons-react/-/icons-react-3.49.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@tailwindcss/node,4.3.3,https://registry.npmjs.org/@tailwindcss/node/-/node-4.3.3.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@tailwindcss/node/node_modules/lightningcss,1.32.0,https://registry.npmjs.org/lightningcss/-/lightningcss-1.32.0.tgz,MPL-2.0,lock metadata; notice review pending
+npm,node_modules/@tailwindcss/node/node_modules/lightningcss-android-arm64,1.32.0,https://registry.npmjs.org/lightningcss-android-arm64/-/lightningcss-android-arm64-1.32.0.tgz,MPL-2.0,lock metadata; notice review pending
+npm,node_modules/@tailwindcss/node/node_modules/lightningcss-darwin-arm64,1.32.0,https://registry.npmjs.org/lightningcss-darwin-arm64/-/lightningcss-darwin-arm64-1.32.0.tgz,MPL-2.0,lock metadata; notice review pending
+npm,node_modules/@tailwindcss/node/node_modules/lightningcss-darwin-x64,1.32.0,https://registry.npmjs.org/lightningcss-darwin-x64/-/lightningcss-darwin-x64-1.32.0.tgz,MPL-2.0,lock metadata; notice review pending
+npm,node_modules/@tailwindcss/node/node_modules/lightningcss-freebsd-x64,1.32.0,https://registry.npmjs.org/lightningcss-freebsd-x64/-/lightningcss-freebsd-x64-1.32.0.tgz,MPL-2.0,lock metadata; notice review pending
+npm,node_modules/@tailwindcss/node/node_modules/lightningcss-linux-arm-gnueabihf,1.32.0,https://registry.npmjs.org/lightningcss-linux-arm-gnueabihf/-/lightningcss-linux-arm-gnueabihf-1.32.0.tgz,MPL-2.0,lock metadata; notice review pending
+npm,node_modules/@tailwindcss/node/node_modules/lightningcss-linux-arm64-gnu,1.32.0,https://registry.npmjs.org/lightningcss-linux-arm64-gnu/-/lightningcss-linux-arm64-gnu-1.32.0.tgz,MPL-2.0,lock metadata; notice review pending
+npm,node_modules/@tailwindcss/node/node_modules/lightningcss-linux-arm64-musl,1.32.0,https://registry.npmjs.org/lightningcss-linux-arm64-musl/-/lightningcss-linux-arm64-musl-1.32.0.tgz,MPL-2.0,lock metadata; notice review pending
+npm,node_modules/@tailwindcss/node/node_modules/lightningcss-linux-x64-gnu,1.32.0,https://registry.npmjs.org/lightningcss-linux-x64-gnu/-/lightningcss-linux-x64-gnu-1.32.0.tgz,MPL-2.0,lock metadata; notice review pending
+npm,node_modules/@tailwindcss/node/node_modules/lightningcss-linux-x64-musl,1.32.0,https://registry.npmjs.org/lightningcss-linux-x64-musl/-/lightningcss-linux-x64-musl-1.32.0.tgz,MPL-2.0,lock metadata; notice review pending
+npm,node_modules/@tailwindcss/node/node_modules/lightningcss-win32-arm64-msvc,1.32.0,https://registry.npmjs.org/lightningcss-win32-arm64-msvc/-/lightningcss-win32-arm64-msvc-1.32.0.tgz,MPL-2.0,lock metadata; notice review pending
+npm,node_modules/@tailwindcss/node/node_modules/lightningcss-win32-x64-msvc,1.32.0,https://registry.npmjs.org/lightningcss-win32-x64-msvc/-/lightningcss-win32-x64-msvc-1.32.0.tgz,MPL-2.0,lock metadata; notice review pending
+npm,node_modules/@tailwindcss/node/node_modules/magic-string,0.30.21,https://registry.npmjs.org/magic-string/-/magic-string-0.30.21.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@tailwindcss/oxide,4.3.3,https://registry.npmjs.org/@tailwindcss/oxide/-/oxide-4.3.3.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@tailwindcss/oxide-android-arm64,4.3.3,https://registry.npmjs.org/@tailwindcss/oxide-android-arm64/-/oxide-android-arm64-4.3.3.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@tailwindcss/oxide-darwin-arm64,4.3.3,https://registry.npmjs.org/@tailwindcss/oxide-darwin-arm64/-/oxide-darwin-arm64-4.3.3.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@tailwindcss/oxide-darwin-x64,4.3.3,https://registry.npmjs.org/@tailwindcss/oxide-darwin-x64/-/oxide-darwin-x64-4.3.3.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@tailwindcss/oxide-freebsd-x64,4.3.3,https://registry.npmjs.org/@tailwindcss/oxide-freebsd-x64/-/oxide-freebsd-x64-4.3.3.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@tailwindcss/oxide-linux-arm-gnueabihf,4.3.3,https://registry.npmjs.org/@tailwindcss/oxide-linux-arm-gnueabihf/-/oxide-linux-arm-gnueabihf-4.3.3.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@tailwindcss/oxide-linux-arm64-gnu,4.3.3,https://registry.npmjs.org/@tailwindcss/oxide-linux-arm64-gnu/-/oxide-linux-arm64-gnu-4.3.3.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@tailwindcss/oxide-linux-arm64-musl,4.3.3,https://registry.npmjs.org/@tailwindcss/oxide-linux-arm64-musl/-/oxide-linux-arm64-musl-4.3.3.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@tailwindcss/oxide-linux-x64-gnu,4.3.3,https://registry.npmjs.org/@tailwindcss/oxide-linux-x64-gnu/-/oxide-linux-x64-gnu-4.3.3.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@tailwindcss/oxide-linux-x64-musl,4.3.3,https://registry.npmjs.org/@tailwindcss/oxide-linux-x64-musl/-/oxide-linux-x64-musl-4.3.3.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@tailwindcss/oxide-wasm32-wasi,4.3.3,https://registry.npmjs.org/@tailwindcss/oxide-wasm32-wasi/-/oxide-wasm32-wasi-4.3.3.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@tailwindcss/oxide-win32-arm64-msvc,4.3.3,https://registry.npmjs.org/@tailwindcss/oxide-win32-arm64-msvc/-/oxide-win32-arm64-msvc-4.3.3.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@tailwindcss/oxide-win32-x64-msvc,4.3.3,https://registry.npmjs.org/@tailwindcss/oxide-win32-x64-msvc/-/oxide-win32-x64-msvc-4.3.3.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@tailwindcss/vite,4.3.3,https://registry.npmjs.org/@tailwindcss/vite/-/vite-4.3.3.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@tanstack/query-core,5.104.4,https://registry.npmjs.org/@tanstack/query-core/-/query-core-5.104.4.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@tanstack/react-query,5.104.4,https://registry.npmjs.org/@tanstack/react-query/-/react-query-5.104.4.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@tanstack/react-store,0.11.2,https://registry.npmjs.org/@tanstack/react-store/-/react-store-0.11.2.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@tanstack/react-table,9.3.1,https://registry.npmjs.org/@tanstack/react-table/-/react-table-9.3.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@tanstack/store,0.11.2,https://registry.npmjs.org/@tanstack/store/-/store-0.11.2.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@tanstack/table-core,9.3.1,https://registry.npmjs.org/@tanstack/table-core/-/table-core-9.3.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@ts-morph/common,0.27.0,https://registry.npmjs.org/@ts-morph/common/-/common-0.27.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@types/chai,5.2.3,https://registry.npmjs.org/@types/chai/-/chai-5.2.3.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@types/deep-eql,4.0.2,https://registry.npmjs.org/@types/deep-eql/-/deep-eql-4.0.2.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@types/esrecurse,4.3.1,https://registry.npmjs.org/@types/esrecurse/-/esrecurse-4.3.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@types/estree,1.0.9,https://registry.npmjs.org/@types/estree/-/estree-1.0.9.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@types/json-schema,7.0.15,https://registry.npmjs.org/@types/json-schema/-/json-schema-7.0.15.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@types/node,24.19.2,https://registry.npmjs.org/@types/node/-/node-24.19.2.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@types/react,19.3.0,https://registry.npmjs.org/@types/react/-/react-19.3.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@types/react-dom,19.3.0,https://registry.npmjs.org/@types/react-dom/-/react-dom-19.3.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@types/validate-npm-package-name,4.0.2,https://registry.npmjs.org/@types/validate-npm-package-name/-/validate-npm-package-name-4.0.2.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@typescript-eslint/eslint-plugin,8.71.2,https://registry.npmjs.org/@typescript-eslint/eslint-plugin/-/eslint-plugin-8.71.2.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@typescript-eslint/eslint-plugin/node_modules/ignore,7.0.13,https://registry.npmjs.org/ignore/-/ignore-7.0.13.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@typescript-eslint/parser,8.71.2,https://registry.npmjs.org/@typescript-eslint/parser/-/parser-8.71.2.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@typescript-eslint/project-service,8.71.2,https://registry.npmjs.org/@typescript-eslint/project-service/-/project-service-8.71.2.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@typescript-eslint/scope-manager,8.71.2,https://registry.npmjs.org/@typescript-eslint/scope-manager/-/scope-manager-8.71.2.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@typescript-eslint/tsconfig-utils,8.71.2,https://registry.npmjs.org/@typescript-eslint/tsconfig-utils/-/tsconfig-utils-8.71.2.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@typescript-eslint/type-utils,8.71.2,https://registry.npmjs.org/@typescript-eslint/type-utils/-/type-utils-8.71.2.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@typescript-eslint/types,8.71.2,https://registry.npmjs.org/@typescript-eslint/types/-/types-8.71.2.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@typescript-eslint/typescript-estree,8.71.2,https://registry.npmjs.org/@typescript-eslint/typescript-estree/-/typescript-estree-8.71.2.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@typescript-eslint/typescript-estree/node_modules/semver,7.8.5,https://registry.npmjs.org/semver/-/semver-7.8.5.tgz,ISC,lock metadata; notice review pending
+npm,node_modules/@typescript-eslint/utils,8.71.2,https://registry.npmjs.org/@typescript-eslint/utils/-/utils-8.71.2.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@typescript-eslint/visitor-keys,8.71.2,https://registry.npmjs.org/@typescript-eslint/visitor-keys/-/visitor-keys-8.71.2.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@vitejs/plugin-react,6.1.2,https://registry.npmjs.org/@vitejs/plugin-react/-/plugin-react-6.1.2.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@vitest/mocker,5.0.5,https://registry.npmjs.org/@vitest/mocker/-/mocker-5.0.5.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/@vitest/spy,5.0.5,https://registry.npmjs.org/@vitest/spy/-/spy-5.0.5.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/accepts,2.0.0,https://registry.npmjs.org/accepts/-/accepts-2.0.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/acorn,8.19.0,https://registry.npmjs.org/acorn/-/acorn-8.19.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/acorn-jsx,5.3.2,https://registry.npmjs.org/acorn-jsx/-/acorn-jsx-5.3.2.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/agent-base,6.0.2,https://registry.npmjs.org/agent-base/-/agent-base-6.0.2.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/ajv,8.20.0,https://registry.npmjs.org/ajv/-/ajv-8.20.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/ajv-formats,2.1.1,https://registry.npmjs.org/ajv-formats/-/ajv-formats-2.1.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/ansi-colors,4.1.3,https://registry.npmjs.org/ansi-colors/-/ansi-colors-4.1.3.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/ansi-regex,5.0.1,https://registry.npmjs.org/ansi-regex/-/ansi-regex-5.0.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/aria-hidden,1.2.6,https://registry.npmjs.org/aria-hidden/-/aria-hidden-1.2.6.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/assertion-error,2.0.1,https://registry.npmjs.org/assertion-error/-/assertion-error-2.0.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/ast-types,0.16.3,https://registry.npmjs.org/ast-types/-/ast-types-0.16.3.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/asynckit,0.4.0,https://registry.npmjs.org/asynckit/-/asynckit-0.4.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/atomically,1.7.0,https://registry.npmjs.org/atomically/-/atomically-1.7.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/axios,1.20.0,https://registry.npmjs.org/axios/-/axios-1.20.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/balanced-match,4.0.4,https://registry.npmjs.org/balanced-match/-/balanced-match-4.0.4.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/baseline-browser-mapping,2.11.29,https://registry.npmjs.org/baseline-browser-mapping/-/baseline-browser-mapping-2.11.29.tgz,Apache-2.0,lock metadata; notice review pending
+npm,node_modules/body-parser,2.3.0,https://registry.npmjs.org/body-parser/-/body-parser-2.3.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/body-parser/node_modules/content-type,2.1.0,https://registry.npmjs.org/content-type/-/content-type-2.1.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/brace-expansion,5.0.12,https://registry.npmjs.org/brace-expansion/-/brace-expansion-5.0.12.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/braces,3.0.3,https://registry.npmjs.org/braces/-/braces-3.0.3.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/browserslist,4.29.4,https://registry.npmjs.org/browserslist/-/browserslist-4.29.4.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/bundle-name,4.1.1,https://registry.npmjs.org/bundle-name/-/bundle-name-4.1.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/bytes,3.1.2,https://registry.npmjs.org/bytes/-/bytes-3.1.2.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/cacheable,2.5.0,https://registry.npmjs.org/cacheable/-/cacheable-2.5.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/call-bind-apply-helpers,1.0.2,https://registry.npmjs.org/call-bind-apply-helpers/-/call-bind-apply-helpers-1.0.2.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/call-bound,1.0.4,https://registry.npmjs.org/call-bound/-/call-bound-1.0.4.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/caniuse-lite,1.0.30001816,https://registry.npmjs.org/caniuse-lite/-/caniuse-lite-1.0.30001816.tgz,CC-BY-4.0,lock metadata; notice review pending
+npm,node_modules/chai,6.3.0,https://registry.npmjs.org/chai/-/chai-6.3.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/chalk,5.6.2,https://registry.npmjs.org/chalk/-/chalk-5.6.2.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/class-variance-authority,0.7.1,https://registry.npmjs.org/class-variance-authority/-/class-variance-authority-0.7.1.tgz,Apache-2.0,lock metadata; notice review pending
+npm,node_modules/cli-cursor,5.0.0,https://registry.npmjs.org/cli-cursor/-/cli-cursor-5.0.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/cli-spinners,2.9.2,https://registry.npmjs.org/cli-spinners/-/cli-spinners-2.9.2.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/clsx,2.1.1,https://registry.npmjs.org/clsx/-/clsx-2.1.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/cn,0.5.0,https://registry.npmjs.org/cn/-/cn-0.5.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/code-block-writer,13.0.3,https://registry.npmjs.org/code-block-writer/-/code-block-writer-13.0.3.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/combined-stream,1.0.8,https://registry.npmjs.org/combined-stream/-/combined-stream-1.0.8.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/commander,14.0.3,https://registry.npmjs.org/commander/-/commander-14.0.3.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/conf,10.2.0,https://registry.npmjs.org/conf/-/conf-10.2.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/conf/node_modules/json-schema-typed,7.0.3,https://registry.npmjs.org/json-schema-typed/-/json-schema-typed-7.0.3.tgz,BSD-2-Clause,lock metadata; notice review pending
+npm,node_modules/conf/node_modules/semver,7.8.5,https://registry.npmjs.org/semver/-/semver-7.8.5.tgz,ISC,lock metadata; notice review pending
+npm,node_modules/content-disposition,2.0.1,https://registry.npmjs.org/content-disposition/-/content-disposition-2.0.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/content-type,1.0.5,https://registry.npmjs.org/content-type/-/content-type-1.0.5.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/convert-source-map,2.0.0,https://registry.npmjs.org/convert-source-map/-/convert-source-map-2.0.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/cookie,1.1.1,https://registry.npmjs.org/cookie/-/cookie-1.1.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/cookie-signature,1.2.2,https://registry.npmjs.org/cookie-signature/-/cookie-signature-1.2.2.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/cors,2.8.6,https://registry.npmjs.org/cors/-/cors-2.8.6.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/cross-spawn,7.0.6,https://registry.npmjs.org/cross-spawn/-/cross-spawn-7.0.6.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/cssesc,3.0.0,https://registry.npmjs.org/cssesc/-/cssesc-3.0.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/csstype,3.2.3,https://registry.npmjs.org/csstype/-/csstype-3.2.3.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/debounce-fn,4.0.0,https://registry.npmjs.org/debounce-fn/-/debounce-fn-4.0.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/debug,4.4.3,https://registry.npmjs.org/debug/-/debug-4.4.3.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/dedent,1.7.2,https://registry.npmjs.org/dedent/-/dedent-1.7.2.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/deep-is,0.1.4,https://registry.npmjs.org/deep-is/-/deep-is-0.1.4.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/deepmerge,4.3.1,https://registry.npmjs.org/deepmerge/-/deepmerge-4.3.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/default-browser,5.5.1,https://registry.npmjs.org/default-browser/-/default-browser-5.5.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/default-browser-id,5.0.1,https://registry.npmjs.org/default-browser-id/-/default-browser-id-5.0.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/define-lazy-prop,3.0.0,https://registry.npmjs.org/define-lazy-prop/-/define-lazy-prop-3.0.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/delayed-stream,1.0.0,https://registry.npmjs.org/delayed-stream/-/delayed-stream-1.0.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/depd,2.0.0,https://registry.npmjs.org/depd/-/depd-2.0.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/detect-libc,2.1.2,https://registry.npmjs.org/detect-libc/-/detect-libc-2.1.2.tgz,Apache-2.0,lock metadata; notice review pending
+npm,node_modules/detect-node-es,1.1.0,https://registry.npmjs.org/detect-node-es/-/detect-node-es-1.1.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/diff,8.0.4,https://registry.npmjs.org/diff/-/diff-8.0.4.tgz,BSD-3-Clause,lock metadata; notice review pending
+npm,node_modules/dot-prop,6.0.1,https://registry.npmjs.org/dot-prop/-/dot-prop-6.0.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/dotenv,17.4.2,https://registry.npmjs.org/dotenv/-/dotenv-17.4.2.tgz,BSD-2-Clause,lock metadata; notice review pending
+npm,node_modules/dunder-proto,1.0.1,https://registry.npmjs.org/dunder-proto/-/dunder-proto-1.0.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/ee-first,1.1.1,https://registry.npmjs.org/ee-first/-/ee-first-1.1.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/electron-to-chromium,1.5.459,https://registry.npmjs.org/electron-to-chromium/-/electron-to-chromium-1.5.459.tgz,ISC,lock metadata; notice review pending
+npm,node_modules/emoji-regex,10.6.0,https://registry.npmjs.org/emoji-regex/-/emoji-regex-10.6.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/encodeurl,2.0.0,https://registry.npmjs.org/encodeurl/-/encodeurl-2.0.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/enhanced-resolve,5.26.0,https://registry.npmjs.org/enhanced-resolve/-/enhanced-resolve-5.26.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/enquirer,2.4.1,https://registry.npmjs.org/enquirer/-/enquirer-2.4.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/env-paths,2.2.1,https://registry.npmjs.org/env-paths/-/env-paths-2.2.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/es-define-property,1.0.1,https://registry.npmjs.org/es-define-property/-/es-define-property-1.0.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/es-errors,1.3.0,https://registry.npmjs.org/es-errors/-/es-errors-1.3.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/es-module-lexer,2.3.2,https://registry.npmjs.org/es-module-lexer/-/es-module-lexer-2.3.2.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/es-object-atoms,1.1.2,https://registry.npmjs.org/es-object-atoms/-/es-object-atoms-1.1.2.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/es-set-tostringtag,2.1.0,https://registry.npmjs.org/es-set-tostringtag/-/es-set-tostringtag-2.1.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/escalade,3.2.0,https://registry.npmjs.org/escalade/-/escalade-3.2.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/escape-html,1.0.3,https://registry.npmjs.org/escape-html/-/escape-html-1.0.3.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/escape-string-regexp,4.0.0,https://registry.npmjs.org/escape-string-regexp/-/escape-string-regexp-4.0.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/eslint,10.13.0,https://registry.npmjs.org/eslint/-/eslint-10.13.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/eslint-config-prettier,10.1.8,https://registry.npmjs.org/eslint-config-prettier/-/eslint-config-prettier-10.1.8.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/eslint-plugin-react-hooks,7.1.1,https://registry.npmjs.org/eslint-plugin-react-hooks/-/eslint-plugin-react-hooks-7.1.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/eslint-plugin-react-refresh,0.5.7,https://registry.npmjs.org/eslint-plugin-react-refresh/-/eslint-plugin-react-refresh-0.5.7.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/eslint-scope,9.1.2,https://registry.npmjs.org/eslint-scope/-/eslint-scope-9.1.2.tgz,BSD-2-Clause,lock metadata; notice review pending
+npm,node_modules/eslint-visitor-keys,5.0.1,https://registry.npmjs.org/eslint-visitor-keys/-/eslint-visitor-keys-5.0.1.tgz,Apache-2.0,lock metadata; notice review pending
+npm,node_modules/eslint/node_modules/ajv,6.15.0,https://registry.npmjs.org/ajv/-/ajv-6.15.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/eslint/node_modules/json-schema-traverse,0.4.1,https://registry.npmjs.org/json-schema-traverse/-/json-schema-traverse-0.4.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/espree,11.2.0,https://registry.npmjs.org/espree/-/espree-11.2.0.tgz,BSD-2-Clause,lock metadata; notice review pending
+npm,node_modules/esprima,4.0.1,https://registry.npmjs.org/esprima/-/esprima-4.0.1.tgz,BSD-2-Clause,lock metadata; notice review pending
+npm,node_modules/esquery,1.7.0,https://registry.npmjs.org/esquery/-/esquery-1.7.0.tgz,BSD-3-Clause,lock metadata; notice review pending
+npm,node_modules/esrecurse,4.3.0,https://registry.npmjs.org/esrecurse/-/esrecurse-4.3.0.tgz,BSD-2-Clause,lock metadata; notice review pending
+npm,node_modules/estraverse,5.3.0,https://registry.npmjs.org/estraverse/-/estraverse-5.3.0.tgz,BSD-2-Clause,lock metadata; notice review pending
+npm,node_modules/estree-walker,3.0.3,https://registry.npmjs.org/estree-walker/-/estree-walker-3.0.3.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/esutils,2.0.3,https://registry.npmjs.org/esutils/-/esutils-2.0.3.tgz,BSD-2-Clause,lock metadata; notice review pending
+npm,node_modules/etag,1.8.1,https://registry.npmjs.org/etag/-/etag-1.8.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/eventsource,3.0.7,https://registry.npmjs.org/eventsource/-/eventsource-3.0.7.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/eventsource-parser,3.1.1,https://registry.npmjs.org/eventsource-parser/-/eventsource-parser-3.1.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/execa,9.6.1,https://registry.npmjs.org/execa/-/execa-9.6.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/expect-type,1.4.0,https://registry.npmjs.org/expect-type/-/expect-type-1.4.0.tgz,Apache-2.0,lock metadata; notice review pending
+npm,node_modules/express,5.3.0,https://registry.npmjs.org/express/-/express-5.3.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/express-rate-limit,8.7.1,https://registry.npmjs.org/express-rate-limit/-/express-rate-limit-8.7.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/express/node_modules/content-type,2.1.0,https://registry.npmjs.org/content-type/-/content-type-2.1.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/express/node_modules/cookie,0.7.2,https://registry.npmjs.org/cookie/-/cookie-0.7.2.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/fast-deep-equal,3.1.3,https://registry.npmjs.org/fast-deep-equal/-/fast-deep-equal-3.1.3.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/fast-glob,3.3.3,https://registry.npmjs.org/fast-glob/-/fast-glob-3.3.3.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/fast-glob/node_modules/glob-parent,5.1.2,https://registry.npmjs.org/glob-parent/-/glob-parent-5.1.2.tgz,ISC,lock metadata; notice review pending
+npm,node_modules/fast-json-stable-stringify,2.1.0,https://registry.npmjs.org/fast-json-stable-stringify/-/fast-json-stable-stringify-2.1.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/fast-levenshtein,2.0.6,https://registry.npmjs.org/fast-levenshtein/-/fast-levenshtein-2.0.6.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/fast-uri,3.1.8,https://registry.npmjs.org/fast-uri/-/fast-uri-3.1.8.tgz,BSD-3-Clause,lock metadata; notice review pending
+npm,node_modules/fastq,1.20.3,https://registry.npmjs.org/fastq/-/fastq-1.20.3.tgz,ISC,lock metadata; notice review pending
+npm,node_modules/fdir,6.5.0,https://registry.npmjs.org/fdir/-/fdir-6.5.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/figures,6.1.0,https://registry.npmjs.org/figures/-/figures-6.1.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/file-entry-cache,11.1.5,https://registry.npmjs.org/file-entry-cache/-/file-entry-cache-11.1.5.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/fill-range,7.1.1,https://registry.npmjs.org/fill-range/-/fill-range-7.1.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/finalhandler,2.1.1,https://registry.npmjs.org/finalhandler/-/finalhandler-2.1.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/find-up,5.0.0,https://registry.npmjs.org/find-up/-/find-up-5.0.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/flat-cache,6.1.23,https://registry.npmjs.org/flat-cache/-/flat-cache-6.1.23.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/flatted,3.4.4,https://registry.npmjs.org/flatted/-/flatted-3.4.4.tgz,ISC,lock metadata; notice review pending
+npm,node_modules/follow-redirects,1.16.1,https://registry.npmjs.org/follow-redirects/-/follow-redirects-1.16.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/form-data,4.0.6,https://registry.npmjs.org/form-data/-/form-data-4.0.6.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/form-data/node_modules/mime-db,1.52.0,https://registry.npmjs.org/mime-db/-/mime-db-1.52.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/form-data/node_modules/mime-types,2.1.35,https://registry.npmjs.org/mime-types/-/mime-types-2.1.35.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/forwarded,0.2.0,https://registry.npmjs.org/forwarded/-/forwarded-0.2.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/fresh,2.0.0,https://registry.npmjs.org/fresh/-/fresh-2.0.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/fs-extra,11.4.1,https://registry.npmjs.org/fs-extra/-/fs-extra-11.4.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/fsevents,2.3.3,https://registry.npmjs.org/fsevents/-/fsevents-2.3.3.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/function-bind,1.1.2,https://registry.npmjs.org/function-bind/-/function-bind-1.1.2.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/fuzzysort,3.1.0,https://registry.npmjs.org/fuzzysort/-/fuzzysort-3.1.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/gensync,1.0.0-beta.2,https://registry.npmjs.org/gensync/-/gensync-1.0.0-beta.2.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/get-east-asian-width,1.7.0,https://registry.npmjs.org/get-east-asian-width/-/get-east-asian-width-1.7.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/get-intrinsic,1.3.0,https://registry.npmjs.org/get-intrinsic/-/get-intrinsic-1.3.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/get-nonce,1.0.1,https://registry.npmjs.org/get-nonce/-/get-nonce-1.0.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/get-own-enumerable-keys,1.0.0,https://registry.npmjs.org/get-own-enumerable-keys/-/get-own-enumerable-keys-1.0.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/get-proto,1.0.1,https://registry.npmjs.org/get-proto/-/get-proto-1.0.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/get-stream,9.0.1,https://registry.npmjs.org/get-stream/-/get-stream-9.0.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/glob-parent,6.0.2,https://registry.npmjs.org/glob-parent/-/glob-parent-6.0.2.tgz,ISC,lock metadata; notice review pending
+npm,node_modules/globals,17.13.0,https://registry.npmjs.org/globals/-/globals-17.13.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/gopd,1.2.0,https://registry.npmjs.org/gopd/-/gopd-1.2.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/graceful-fs,4.2.11,https://registry.npmjs.org/graceful-fs/-/graceful-fs-4.2.11.tgz,ISC,lock metadata; notice review pending
+npm,node_modules/has-symbols,1.1.0,https://registry.npmjs.org/has-symbols/-/has-symbols-1.1.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/has-tostringtag,1.0.2,https://registry.npmjs.org/has-tostringtag/-/has-tostringtag-1.0.2.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/hashery,1.5.1,https://registry.npmjs.org/hashery/-/hashery-1.5.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/hasown,2.0.4,https://registry.npmjs.org/hasown/-/hasown-2.0.4.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/hermes-estree,0.25.1,https://registry.npmjs.org/hermes-estree/-/hermes-estree-0.25.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/hermes-parser,0.25.1,https://registry.npmjs.org/hermes-parser/-/hermes-parser-0.25.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/hono,4.13.13,https://registry.npmjs.org/hono/-/hono-4.13.13.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/hookified,1.15.1,https://registry.npmjs.org/hookified/-/hookified-1.15.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/http-errors,2.0.1,https://registry.npmjs.org/http-errors/-/http-errors-2.0.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/https-proxy-agent,5.0.1,https://registry.npmjs.org/https-proxy-agent/-/https-proxy-agent-5.0.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/human-signals,8.0.1,https://registry.npmjs.org/human-signals/-/human-signals-8.0.1.tgz,Apache-2.0,lock metadata; notice review pending
+npm,node_modules/iconv-lite,0.7.3,https://registry.npmjs.org/iconv-lite/-/iconv-lite-0.7.3.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/ignore,5.3.2,https://registry.npmjs.org/ignore/-/ignore-5.3.2.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/imurmurhash,0.1.4,https://registry.npmjs.org/imurmurhash/-/imurmurhash-0.1.4.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/inherits,2.0.4,https://registry.npmjs.org/inherits/-/inherits-2.0.4.tgz,ISC,lock metadata; notice review pending
+npm,node_modules/ip-address,10.7.4,https://registry.npmjs.org/ip-address/-/ip-address-10.7.4.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/ipaddr.js,1.9.1,https://registry.npmjs.org/ipaddr.js/-/ipaddr.js-1.9.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/is-docker,3.0.0,https://registry.npmjs.org/is-docker/-/is-docker-3.0.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/is-extglob,2.1.1,https://registry.npmjs.org/is-extglob/-/is-extglob-2.1.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/is-glob,4.0.3,https://registry.npmjs.org/is-glob/-/is-glob-4.0.3.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/is-in-ssh,1.0.0,https://registry.npmjs.org/is-in-ssh/-/is-in-ssh-1.0.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/is-inside-container,1.0.0,https://registry.npmjs.org/is-inside-container/-/is-inside-container-1.0.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/is-interactive,2.0.0,https://registry.npmjs.org/is-interactive/-/is-interactive-2.0.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/is-number,7.0.0,https://registry.npmjs.org/is-number/-/is-number-7.0.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/is-obj,2.0.0,https://registry.npmjs.org/is-obj/-/is-obj-2.0.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/is-plain-obj,4.1.0,https://registry.npmjs.org/is-plain-obj/-/is-plain-obj-4.1.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/is-promise,4.0.0,https://registry.npmjs.org/is-promise/-/is-promise-4.0.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/is-regexp,3.1.0,https://registry.npmjs.org/is-regexp/-/is-regexp-3.1.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/is-stream,4.0.1,https://registry.npmjs.org/is-stream/-/is-stream-4.0.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/is-unicode-supported,2.1.0,https://registry.npmjs.org/is-unicode-supported/-/is-unicode-supported-2.1.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/is-wsl,3.1.1,https://registry.npmjs.org/is-wsl/-/is-wsl-3.1.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/isexe,2.0.0,https://registry.npmjs.org/isexe/-/isexe-2.0.0.tgz,ISC,lock metadata; notice review pending
+npm,node_modules/jiti,2.7.0,https://registry.npmjs.org/jiti/-/jiti-2.7.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/jose,6.2.12,https://registry.npmjs.org/jose/-/jose-6.2.12.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/js-tokens,4.0.0,https://registry.npmjs.org/js-tokens/-/js-tokens-4.0.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/jsesc,3.1.0,https://registry.npmjs.org/jsesc/-/jsesc-3.1.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/json-schema-traverse,1.0.0,https://registry.npmjs.org/json-schema-traverse/-/json-schema-traverse-1.0.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/json-schema-typed,8.0.2,https://registry.npmjs.org/json-schema-typed/-/json-schema-typed-8.0.2.tgz,BSD-2-Clause,lock metadata; notice review pending
+npm,node_modules/json-stable-stringify-without-jsonify,1.0.1,https://registry.npmjs.org/json-stable-stringify-without-jsonify/-/json-stable-stringify-without-jsonify-1.0.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/json5,2.2.3,https://registry.npmjs.org/json5/-/json5-2.2.3.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/jsonfile,6.2.1,https://registry.npmjs.org/jsonfile/-/jsonfile-6.2.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/jwt-decode,4.0.0,https://registry.npmjs.org/jwt-decode/-/jwt-decode-4.0.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/keyv,5.6.0,https://registry.npmjs.org/keyv/-/keyv-5.6.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/kleur,4.1.5,https://registry.npmjs.org/kleur/-/kleur-4.1.5.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/levn,0.4.1,https://registry.npmjs.org/levn/-/levn-0.4.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/lightningcss,1.33.0,https://registry.npmjs.org/lightningcss/-/lightningcss-1.33.0.tgz,MPL-2.0,lock metadata; notice review pending
+npm,node_modules/lightningcss-android-arm64,1.33.0,https://registry.npmjs.org/lightningcss-android-arm64/-/lightningcss-android-arm64-1.33.0.tgz,MPL-2.0,lock metadata; notice review pending
+npm,node_modules/lightningcss-darwin-arm64,1.33.0,https://registry.npmjs.org/lightningcss-darwin-arm64/-/lightningcss-darwin-arm64-1.33.0.tgz,MPL-2.0,lock metadata; notice review pending
+npm,node_modules/lightningcss-darwin-x64,1.33.0,https://registry.npmjs.org/lightningcss-darwin-x64/-/lightningcss-darwin-x64-1.33.0.tgz,MPL-2.0,lock metadata; notice review pending
+npm,node_modules/lightningcss-freebsd-x64,1.33.0,https://registry.npmjs.org/lightningcss-freebsd-x64/-/lightningcss-freebsd-x64-1.33.0.tgz,MPL-2.0,lock metadata; notice review pending
+npm,node_modules/lightningcss-linux-arm-gnueabihf,1.33.0,https://registry.npmjs.org/lightningcss-linux-arm-gnueabihf/-/lightningcss-linux-arm-gnueabihf-1.33.0.tgz,MPL-2.0,lock metadata; notice review pending
+npm,node_modules/lightningcss-linux-arm64-gnu,1.33.0,https://registry.npmjs.org/lightningcss-linux-arm64-gnu/-/lightningcss-linux-arm64-gnu-1.33.0.tgz,MPL-2.0,lock metadata; notice review pending
+npm,node_modules/lightningcss-linux-arm64-musl,1.33.0,https://registry.npmjs.org/lightningcss-linux-arm64-musl/-/lightningcss-linux-arm64-musl-1.33.0.tgz,MPL-2.0,lock metadata; notice review pending
+npm,node_modules/lightningcss-linux-x64-gnu,1.33.0,https://registry.npmjs.org/lightningcss-linux-x64-gnu/-/lightningcss-linux-x64-gnu-1.33.0.tgz,MPL-2.0,lock metadata; notice review pending
+npm,node_modules/lightningcss-linux-x64-musl,1.33.0,https://registry.npmjs.org/lightningcss-linux-x64-musl/-/lightningcss-linux-x64-musl-1.33.0.tgz,MPL-2.0,lock metadata; notice review pending
+npm,node_modules/lightningcss-win32-arm64-msvc,1.33.0,https://registry.npmjs.org/lightningcss-win32-arm64-msvc/-/lightningcss-win32-arm64-msvc-1.33.0.tgz,MPL-2.0,lock metadata; notice review pending
+npm,node_modules/lightningcss-win32-x64-msvc,1.33.0,https://registry.npmjs.org/lightningcss-win32-x64-msvc/-/lightningcss-win32-x64-msvc-1.33.0.tgz,MPL-2.0,lock metadata; notice review pending
+npm,node_modules/locate-path,6.0.0,https://registry.npmjs.org/locate-path/-/locate-path-6.0.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/log-symbols,6.0.0,https://registry.npmjs.org/log-symbols/-/log-symbols-6.0.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/log-symbols/node_modules/is-unicode-supported,1.3.0,https://registry.npmjs.org/is-unicode-supported/-/is-unicode-supported-1.3.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/lru-cache,5.1.1,https://registry.npmjs.org/lru-cache/-/lru-cache-5.1.1.tgz,ISC,lock metadata; notice review pending
+npm,node_modules/lucide-react,1.59.0,https://registry.npmjs.org/lucide-react/-/lucide-react-1.59.0.tgz,ISC,lock metadata; notice review pending
+npm,node_modules/magic-string,1.4.3,https://registry.npmjs.org/magic-string/-/magic-string-1.4.3.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/math-intrinsics,1.1.0,https://registry.npmjs.org/math-intrinsics/-/math-intrinsics-1.1.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/media-typer,1.1.1,https://registry.npmjs.org/media-typer/-/media-typer-1.1.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/merge-descriptors,2.0.0,https://registry.npmjs.org/merge-descriptors/-/merge-descriptors-2.0.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/merge-stream,2.0.0,https://registry.npmjs.org/merge-stream/-/merge-stream-2.0.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/merge2,1.4.1,https://registry.npmjs.org/merge2/-/merge2-1.4.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/micromatch,4.0.8,https://registry.npmjs.org/micromatch/-/micromatch-4.0.8.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/micromatch/node_modules/picomatch,2.3.2,https://registry.npmjs.org/picomatch/-/picomatch-2.3.2.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/mime-db,1.54.0,https://registry.npmjs.org/mime-db/-/mime-db-1.54.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/mime-types,3.0.2,https://registry.npmjs.org/mime-types/-/mime-types-3.0.2.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/mimic-fn,3.1.0,https://registry.npmjs.org/mimic-fn/-/mimic-fn-3.1.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/mimic-function,5.0.1,https://registry.npmjs.org/mimic-function/-/mimic-function-5.0.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/minimatch,10.2.6,https://registry.npmjs.org/minimatch/-/minimatch-10.2.6.tgz,BlueOak-1.0.0,lock metadata; notice review pending
+npm,node_modules/minimist,1.2.8,https://registry.npmjs.org/minimist/-/minimist-1.2.8.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/ms,2.1.3,https://registry.npmjs.org/ms/-/ms-2.1.3.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/nanoid,3.3.20,https://registry.npmjs.org/nanoid/-/nanoid-3.3.20.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/natural-compare,1.4.0,https://registry.npmjs.org/natural-compare/-/natural-compare-1.4.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/negotiator,1.1.0,https://registry.npmjs.org/negotiator/-/negotiator-1.1.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/negotiator/node_modules/content-type,2.1.0,https://registry.npmjs.org/content-type/-/content-type-2.1.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/node-releases,2.0.59,https://registry.npmjs.org/node-releases/-/node-releases-2.0.59.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/npm-run-path,6.0.0,https://registry.npmjs.org/npm-run-path/-/npm-run-path-6.0.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/npm-run-path/node_modules/path-key,4.0.0,https://registry.npmjs.org/path-key/-/path-key-4.0.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/object-assign,4.1.1,https://registry.npmjs.org/object-assign/-/object-assign-4.1.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/object-inspect,1.13.4,https://registry.npmjs.org/object-inspect/-/object-inspect-1.13.4.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/object-treeify,1.1.33,https://registry.npmjs.org/object-treeify/-/object-treeify-1.1.33.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/obug,3.0.0,https://registry.npmjs.org/obug/-/obug-3.0.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/oidc-client-ts,3.5.0,https://registry.npmjs.org/oidc-client-ts/-/oidc-client-ts-3.5.0.tgz,Apache-2.0,lock metadata; notice review pending
+npm,node_modules/on-finished,2.4.1,https://registry.npmjs.org/on-finished/-/on-finished-2.4.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/once,1.4.0,https://registry.npmjs.org/once/-/once-1.4.0.tgz,ISC,lock metadata; notice review pending
+npm,node_modules/onetime,5.1.2,https://registry.npmjs.org/onetime/-/onetime-5.1.2.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/onetime/node_modules/mimic-fn,2.1.0,https://registry.npmjs.org/mimic-fn/-/mimic-fn-2.1.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/open,11.0.4,https://registry.npmjs.org/open/-/open-11.0.4.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/optionator,0.9.4,https://registry.npmjs.org/optionator/-/optionator-0.9.4.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/ora,8.2.0,https://registry.npmjs.org/ora/-/ora-8.2.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/ora/node_modules/ansi-regex,6.4.0,https://registry.npmjs.org/ansi-regex/-/ansi-regex-6.4.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/ora/node_modules/strip-ansi,7.2.0,https://registry.npmjs.org/strip-ansi/-/strip-ansi-7.2.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/p-limit,3.1.0,https://registry.npmjs.org/p-limit/-/p-limit-3.1.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/p-locate,5.0.0,https://registry.npmjs.org/p-locate/-/p-locate-5.0.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/p-try,2.2.0,https://registry.npmjs.org/p-try/-/p-try-2.2.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/parse-ms,4.0.0,https://registry.npmjs.org/parse-ms/-/parse-ms-4.0.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/parseurl,1.3.3,https://registry.npmjs.org/parseurl/-/parseurl-1.3.3.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/path-browserify,1.0.1,https://registry.npmjs.org/path-browserify/-/path-browserify-1.0.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/path-exists,4.0.0,https://registry.npmjs.org/path-exists/-/path-exists-4.0.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/path-key,3.1.1,https://registry.npmjs.org/path-key/-/path-key-3.1.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/path-to-regexp,8.4.2,https://registry.npmjs.org/path-to-regexp/-/path-to-regexp-8.4.2.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/picocolors,1.1.1,https://registry.npmjs.org/picocolors/-/picocolors-1.1.1.tgz,ISC,lock metadata; notice review pending
+npm,node_modules/picomatch,4.0.7,https://registry.npmjs.org/picomatch/-/picomatch-4.0.7.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/pkce-challenge,5.0.1,https://registry.npmjs.org/pkce-challenge/-/pkce-challenge-5.0.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/pkg-up,3.1.0,https://registry.npmjs.org/pkg-up/-/pkg-up-3.1.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/pkg-up/node_modules/find-up,3.0.0,https://registry.npmjs.org/find-up/-/find-up-3.0.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/pkg-up/node_modules/locate-path,3.0.0,https://registry.npmjs.org/locate-path/-/locate-path-3.0.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/pkg-up/node_modules/p-limit,2.3.0,https://registry.npmjs.org/p-limit/-/p-limit-2.3.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/pkg-up/node_modules/p-locate,3.0.0,https://registry.npmjs.org/p-locate/-/p-locate-3.0.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/pkg-up/node_modules/path-exists,3.0.0,https://registry.npmjs.org/path-exists/-/path-exists-3.0.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/playwright,1.58.2,https://registry.npmjs.org/playwright/-/playwright-1.58.2.tgz,Apache-2.0,lock metadata; notice review pending
+npm,node_modules/playwright-core,1.58.2,https://registry.npmjs.org/playwright-core/-/playwright-core-1.58.2.tgz,Apache-2.0,lock metadata; notice review pending
+npm,node_modules/playwright/node_modules/fsevents,2.3.2,https://registry.npmjs.org/fsevents/-/fsevents-2.3.2.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/postcss,8.5.31,https://registry.npmjs.org/postcss/-/postcss-8.5.31.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/postcss-selector-parser,7.1.6,https://registry.npmjs.org/postcss-selector-parser/-/postcss-selector-parser-7.1.6.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/powershell-utils,0.2.1,https://registry.npmjs.org/powershell-utils/-/powershell-utils-0.2.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/prelude-ls,1.2.1,https://registry.npmjs.org/prelude-ls/-/prelude-ls-1.2.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/prettier,3.9.10,https://registry.npmjs.org/prettier/-/prettier-3.9.10.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/pretty-ms,9.3.1,https://registry.npmjs.org/pretty-ms/-/pretty-ms-9.3.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/prompts,2.4.2,https://registry.npmjs.org/prompts/-/prompts-2.4.2.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/prompts/node_modules/kleur,3.0.3,https://registry.npmjs.org/kleur/-/kleur-3.0.3.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/proxy-addr,2.0.8,https://registry.npmjs.org/proxy-addr/-/proxy-addr-2.0.8.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/proxy-from-env,2.1.0,https://registry.npmjs.org/proxy-from-env/-/proxy-from-env-2.1.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/punycode,2.3.1,https://registry.npmjs.org/punycode/-/punycode-2.3.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/qified,0.10.1,https://registry.npmjs.org/qified/-/qified-0.10.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/qified/node_modules/hookified,2.2.0,https://registry.npmjs.org/hookified/-/hookified-2.2.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/qs,6.16.1,https://registry.npmjs.org/qs/-/qs-6.16.1.tgz,BSD-3-Clause,lock metadata; notice review pending
+npm,node_modules/queue-microtask,1.2.3,https://registry.npmjs.org/queue-microtask/-/queue-microtask-1.2.3.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/radix-ui,1.8.1,https://registry.npmjs.org/radix-ui/-/radix-ui-1.8.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/range-parser,1.3.0,https://registry.npmjs.org/range-parser/-/range-parser-1.3.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/raw-body,3.0.2,https://registry.npmjs.org/raw-body/-/raw-body-3.0.2.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/react,19.3.1,https://registry.npmjs.org/react/-/react-19.3.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/react-dom,19.3.1,https://registry.npmjs.org/react-dom/-/react-dom-19.3.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/react-hook-form,7.90.0,https://registry.npmjs.org/react-hook-form/-/react-hook-form-7.90.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/react-remove-scroll,2.7.2,https://registry.npmjs.org/react-remove-scroll/-/react-remove-scroll-2.7.2.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/react-remove-scroll-bar,2.3.8,https://registry.npmjs.org/react-remove-scroll-bar/-/react-remove-scroll-bar-2.3.8.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/react-router,7.18.4,https://registry.npmjs.org/react-router/-/react-router-7.18.4.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/react-style-singleton,2.2.3,https://registry.npmjs.org/react-style-singleton/-/react-style-singleton-2.2.3.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/recast,0.23.21,https://registry.npmjs.org/recast/-/recast-0.23.21.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/require-from-string,2.0.2,https://registry.npmjs.org/require-from-string/-/require-from-string-2.0.2.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/restore-cursor,5.1.0,https://registry.npmjs.org/restore-cursor/-/restore-cursor-5.1.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/restore-cursor/node_modules/onetime,7.0.0,https://registry.npmjs.org/onetime/-/onetime-7.0.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/reusify,1.1.0,https://registry.npmjs.org/reusify/-/reusify-1.1.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/rolldown,1.2.14,https://registry.npmjs.org/rolldown/-/rolldown-1.2.14.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/router,2.2.0,https://registry.npmjs.org/router/-/router-2.2.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/run-applescript,7.1.0,https://registry.npmjs.org/run-applescript/-/run-applescript-7.1.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/run-parallel,1.2.0,https://registry.npmjs.org/run-parallel/-/run-parallel-1.2.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/safer-buffer,2.1.2,https://registry.npmjs.org/safer-buffer/-/safer-buffer-2.1.2.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/scheduler,0.28.0,https://registry.npmjs.org/scheduler/-/scheduler-0.28.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/semver,6.3.1,https://registry.npmjs.org/semver/-/semver-6.3.1.tgz,ISC,lock metadata; notice review pending
+npm,node_modules/send,1.2.1,https://registry.npmjs.org/send/-/send-1.2.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/serve-static,2.2.1,https://registry.npmjs.org/serve-static/-/serve-static-2.2.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/set-cookie-parser,2.7.2,https://registry.npmjs.org/set-cookie-parser/-/set-cookie-parser-2.7.2.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/setprototypeof,1.2.0,https://registry.npmjs.org/setprototypeof/-/setprototypeof-1.2.0.tgz,ISC,lock metadata; notice review pending
+npm,node_modules/shadcn,4.22.1,https://registry.npmjs.org/shadcn/-/shadcn-4.22.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/shadcn/node_modules/cn,0.2.6,https://registry.npmjs.org/cn/-/cn-0.2.6.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/shadcn/node_modules/zod,4.6.7,https://registry.npmjs.org/zod/-/zod-4.6.7.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/shebang-command,2.0.0,https://registry.npmjs.org/shebang-command/-/shebang-command-2.0.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/shebang-regex,3.0.0,https://registry.npmjs.org/shebang-regex/-/shebang-regex-3.0.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/side-channel,1.1.1,https://registry.npmjs.org/side-channel/-/side-channel-1.1.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/side-channel-list,1.0.1,https://registry.npmjs.org/side-channel-list/-/side-channel-list-1.0.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/side-channel-map,1.0.1,https://registry.npmjs.org/side-channel-map/-/side-channel-map-1.0.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/side-channel-weakmap,1.0.2,https://registry.npmjs.org/side-channel-weakmap/-/side-channel-weakmap-1.0.2.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/signal-exit,4.1.0,https://registry.npmjs.org/signal-exit/-/signal-exit-4.1.0.tgz,ISC,lock metadata; notice review pending
+npm,node_modules/sisteransi,1.0.5,https://registry.npmjs.org/sisteransi/-/sisteransi-1.0.5.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/smart-buffer,4.2.0,https://registry.npmjs.org/smart-buffer/-/smart-buffer-4.2.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/socks,2.8.10,https://registry.npmjs.org/socks/-/socks-2.8.10.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/sonner,2.0.8,https://registry.npmjs.org/sonner/-/sonner-2.0.8.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/source-map,0.6.1,https://registry.npmjs.org/source-map/-/source-map-0.6.1.tgz,BSD-3-Clause,lock metadata; notice review pending
+npm,node_modules/source-map-js,1.2.2,https://registry.npmjs.org/source-map-js/-/source-map-js-1.2.2.tgz,BSD-3-Clause,lock metadata; notice review pending
+npm,node_modules/statuses,2.0.2,https://registry.npmjs.org/statuses/-/statuses-2.0.2.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/std-env,4.3.0,https://registry.npmjs.org/std-env/-/std-env-4.3.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/stdin-discarder,0.2.2,https://registry.npmjs.org/stdin-discarder/-/stdin-discarder-0.2.2.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/string-width,7.2.0,https://registry.npmjs.org/string-width/-/string-width-7.2.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/string-width/node_modules/ansi-regex,6.4.0,https://registry.npmjs.org/ansi-regex/-/ansi-regex-6.4.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/string-width/node_modules/strip-ansi,7.2.0,https://registry.npmjs.org/strip-ansi/-/strip-ansi-7.2.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/stringify-object,5.0.0,https://registry.npmjs.org/stringify-object/-/stringify-object-5.0.0.tgz,BSD-2-Clause,lock metadata; notice review pending
+npm,node_modules/stringify-object/node_modules/is-obj,3.0.0,https://registry.npmjs.org/is-obj/-/is-obj-3.0.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/strip-ansi,6.0.1,https://registry.npmjs.org/strip-ansi/-/strip-ansi-6.0.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/strip-bom,3.0.0,https://registry.npmjs.org/strip-bom/-/strip-bom-3.0.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/strip-final-newline,4.0.0,https://registry.npmjs.org/strip-final-newline/-/strip-final-newline-4.0.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/systeminformation,5.33.16,https://registry.npmjs.org/systeminformation/-/systeminformation-5.33.16.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/tailwindcss,4.3.3,https://registry.npmjs.org/tailwindcss/-/tailwindcss-4.3.3.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/tapable,2.3.3,https://registry.npmjs.org/tapable/-/tapable-2.3.3.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/tiny-invariant,1.3.3,https://registry.npmjs.org/tiny-invariant/-/tiny-invariant-1.3.3.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/tinybench,6.2.2,https://registry.npmjs.org/tinybench/-/tinybench-6.2.2.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/tinyexec,1.3.1,https://registry.npmjs.org/tinyexec/-/tinyexec-1.3.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/tinyglobby,0.2.17,https://registry.npmjs.org/tinyglobby/-/tinyglobby-0.2.17.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/to-regex-range,5.0.1,https://registry.npmjs.org/to-regex-range/-/to-regex-range-5.0.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/toidentifier,1.0.1,https://registry.npmjs.org/toidentifier/-/toidentifier-1.0.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/ts-api-utils,2.5.0,https://registry.npmjs.org/ts-api-utils/-/ts-api-utils-2.5.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/ts-morph,26.0.0,https://registry.npmjs.org/ts-morph/-/ts-morph-26.0.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/tsconfig-paths,4.2.0,https://registry.npmjs.org/tsconfig-paths/-/tsconfig-paths-4.2.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/tslib,2.8.1,https://registry.npmjs.org/tslib/-/tslib-2.8.1.tgz,0BSD,lock metadata; notice review pending
+npm,node_modules/tw-animate-css,1.4.0,https://registry.npmjs.org/tw-animate-css/-/tw-animate-css-1.4.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/type-check,0.4.0,https://registry.npmjs.org/type-check/-/type-check-0.4.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/type-fest,4.41.0,https://registry.npmjs.org/type-fest/-/type-fest-4.41.0.tgz,(MIT OR CC0-1.0),lock metadata; notice review pending
+npm,node_modules/type-is,2.1.0,https://registry.npmjs.org/type-is/-/type-is-2.1.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/type-is/node_modules/content-type,2.1.0,https://registry.npmjs.org/content-type/-/content-type-2.1.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/typescript,6.0.3,https://registry.npmjs.org/typescript/-/typescript-6.0.3.tgz,Apache-2.0,lock metadata; notice review pending
+npm,node_modules/typescript-eslint,8.71.2,https://registry.npmjs.org/typescript-eslint/-/typescript-eslint-8.71.2.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/undici,7.30.1,https://registry.npmjs.org/undici/-/undici-7.30.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/undici-types,7.24.6,https://registry.npmjs.org/undici-types/-/undici-types-7.24.6.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/unicorn-magic,0.3.0,https://registry.npmjs.org/unicorn-magic/-/unicorn-magic-0.3.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/universalify,2.0.1,https://registry.npmjs.org/universalify/-/universalify-2.0.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/unpipe,1.0.0,https://registry.npmjs.org/unpipe/-/unpipe-1.0.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/update-browserslist-db,1.3.4,https://registry.npmjs.org/update-browserslist-db/-/update-browserslist-db-1.3.4.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/uri-js,4.4.1,https://registry.npmjs.org/uri-js/-/uri-js-4.4.1.tgz,BSD-2-Clause,lock metadata; notice review pending
+npm,node_modules/use-callback-ref,1.3.3,https://registry.npmjs.org/use-callback-ref/-/use-callback-ref-1.3.3.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/use-sidecar,1.1.3,https://registry.npmjs.org/use-sidecar/-/use-sidecar-1.1.3.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/use-sync-external-store,1.7.0,https://registry.npmjs.org/use-sync-external-store/-/use-sync-external-store-1.7.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/util-deprecate,1.0.2,https://registry.npmjs.org/util-deprecate/-/util-deprecate-1.0.2.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/validate-npm-package-name,7.0.2,https://registry.npmjs.org/validate-npm-package-name/-/validate-npm-package-name-7.0.2.tgz,ISC,lock metadata; notice review pending
+npm,node_modules/vary,1.1.2,https://registry.npmjs.org/vary/-/vary-1.1.2.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/vite,8.3.4,https://registry.npmjs.org/vite/-/vite-8.3.4.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/vitest,5.0.5,https://registry.npmjs.org/vitest/-/vitest-5.0.5.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/which,2.0.2,https://registry.npmjs.org/which/-/which-2.0.2.tgz,ISC,lock metadata; notice review pending
+npm,node_modules/why-is-node-running,3.2.1,https://registry.npmjs.org/why-is-node-running/-/why-is-node-running-3.2.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/word-wrap,1.2.5,https://registry.npmjs.org/word-wrap/-/word-wrap-1.2.5.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/wrappy,1.0.2,https://registry.npmjs.org/wrappy/-/wrappy-1.0.2.tgz,ISC,lock metadata; notice review pending
+npm,node_modules/wsl-utils,1.0.1,https://registry.npmjs.org/wsl-utils/-/wsl-utils-1.0.1.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/yallist,3.1.1,https://registry.npmjs.org/yallist/-/yallist-3.1.1.tgz,ISC,lock metadata; notice review pending
+npm,node_modules/yocto-queue,0.1.0,https://registry.npmjs.org/yocto-queue/-/yocto-queue-0.1.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/yocto-spinner,1.2.2,https://registry.npmjs.org/yocto-spinner/-/yocto-spinner-1.2.2.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/yoctocolors,2.2.0,https://registry.npmjs.org/yoctocolors/-/yoctocolors-2.2.0.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/zod,3.25.76,https://registry.npmjs.org/zod/-/zod-3.25.76.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/zod-to-json-schema,3.25.2,https://registry.npmjs.org/zod-to-json-schema/-/zod-to-json-schema-3.25.2.tgz,ISC,lock metadata; notice review pending
+npm,node_modules/zod-validation-error,4.0.2,https://registry.npmjs.org/zod-validation-error/-/zod-validation-error-4.0.2.tgz,MIT,lock metadata; notice review pending
+npm,node_modules/zustand,5.0.15,https://registry.npmjs.org/zustand/-/zustand-5.0.15.tgz,MIT,lock metadata; notice review pending
+python,attrs,24.2.0,https://files.pythonhosted.org/packages/6a/21/5b6702a7f963e95456c0de2d495f67bf5fd62840ac655dc451586d23d39a/attrs-24.2.0-py3-none-any.whl,"[""License :: OSI Approved :: MIT License""]",intelligence\docs\governance\ai02-dependency-resolution.json
+python,build,1.2.2.post1,https://files.pythonhosted.org/packages/84/c2/80633736cd183ee4a62107413def345f7e6e3c01563dbca1417363cf957e/build-1.2.2.post1-py3-none-any.whl,"[""License :: OSI Approved :: MIT License""]",intelligence\docs\governance\ai02-dependency-resolution.json
+python,colorama,0.4.6,https://files.pythonhosted.org/packages/d1/d6/3965ed04c63042e047cb6a3e6ed1a63a35087b6a609aa3a15ed8ac56c221/colorama-0.4.6-py2.py3-none-any.whl,"[""License :: OSI Approved :: BSD License""]",intelligence\docs\governance\ai02-dependency-resolution.json
+python,iniconfig,2.0.0,https://files.pythonhosted.org/packages/ef/a6/62565a6e1cf69e10f5727360368e451d4b7f58beeac6173dc9db836a5b46/iniconfig-2.0.0-py3-none-any.whl,"[""License :: OSI Approved :: MIT License""]",intelligence\docs\governance\ai02-dependency-resolution.json
+python,jsonschema,4.23.0,https://files.pythonhosted.org/packages/69/4a/4f9dbeb84e8850557c02365a0eee0649abe5eb1d84af92a25731c6c0f922/jsonschema-4.23.0-py3-none-any.whl,"""MIT""",intelligence\docs\governance\ai02-dependency-resolution.json
+python,jsonschema-specifications,2023.12.1,https://files.pythonhosted.org/packages/ee/07/44bd408781594c4d0a027666ef27fab1e441b109dc3b76b4f836f8fd04fe/jsonschema_specifications-2023.12.1-py3-none-any.whl,"""MIT""",intelligence\docs\governance\ai02-dependency-resolution.json
+python,packaging,24.1,https://files.pythonhosted.org/packages/08/aa/cc0199a5f0ad350994d660967a8efb233fe0416e4639146c089643407ce6/packaging-24.1-py3-none-any.whl,"[""License :: OSI Approved :: Apache Software License"", ""License :: OSI Approved :: BSD License""]",intelligence\docs\governance\ai02-dependency-resolution.json
+python,pluggy,1.5.0,https://files.pythonhosted.org/packages/88/5f/e351af9a41f866ac3f1fac4ca0613908d9a41741cfcf2228f4ad853b697d/pluggy-1.5.0-py3-none-any.whl,"""MIT""",intelligence\docs\governance\ai02-dependency-resolution.json
+python,pyproject_hooks,1.2.0,https://files.pythonhosted.org/packages/bd/24/12818598c362d7f300f18e74db45963dbcb85150324092410c8b49405e42/pyproject_hooks-1.2.0-py3-none-any.whl,"[""License :: OSI Approved :: MIT License""]",intelligence\docs\governance\ai02-dependency-resolution.json
+python,pytest,8.3.5,https://files.pythonhosted.org/packages/30/3d/64ad57c803f1fa1e963a7946b6e0fea4a70df53c1a7fed304586539c2bac/pytest-8.3.5-py3-none-any.whl,"""MIT""",intelligence\docs\governance\ai02-dependency-resolution.json
+python,PyYAML,6.0.2,https://files.pythonhosted.org/packages/0c/e8/4f648c598b17c3d06e8753d7d13d57542b30d56e6c2dedf9c331ae56312e/PyYAML-6.0.2-cp312-cp312-win_amd64.whl,"""MIT""",intelligence\docs\governance\ai02-dependency-resolution.json
+python,referencing,0.35.1,https://files.pythonhosted.org/packages/b7/59/2056f61236782a2c86b33906c025d4f4a0b17be0161b63b70fd9e8775d36/referencing-0.35.1-py3-none-any.whl,"[""License :: OSI Approved :: MIT License""]",intelligence\docs\governance\ai02-dependency-resolution.json
+python,rpds-py,0.20.0,https://files.pythonhosted.org/packages/ec/2f/b938864d66b86a6e4acadefdc56de75ef56f7cafdfd568a6464605457bd5/rpds_py-0.20.0-cp312-none-win_amd64.whl,"""MIT""",intelligence\docs\governance\ai02-dependency-resolution.json
+python,setuptools,75.1.0,https://files.pythonhosted.org/packages/ff/ae/f19306b5a221f6a436d8f2238d5b80925004093fa3edea59835b514d9057/setuptools-75.1.0-py3-none-any.whl,"[""License :: OSI Approved :: MIT License""]",intelligence\docs\governance\ai02-dependency-resolution.json
+python,wheel,0.44.0,https://files.pythonhosted.org/packages/1b/d1/9babe2ccaecff775992753d8686970b1e2755d21c8a63be73aba7a4e7d77/wheel-0.44.0-py3-none-any.whl,"[""License :: OSI Approved :: MIT License""]",intelligence\docs\governance\ai02-dependency-resolution.json
+python,scikit-learn,1.6.1,https://files.pythonhosted.org/packages/62/27/585859e72e117fe861c2079bcba35591a84f801e21bc1ab85bce6ce60305/scikit_learn-1.6.1-cp312-cp312-win_amd64.whl,"[""License :: OSI Approved :: BSD License""]",intelligence\docs\governance\ai03-dependency-resolution.json
+python,numpy,2.2.6,https://files.pythonhosted.org/packages/36/fa/8c9210162ca1b88529ab76b41ba02d433fd54fecaf6feb70ef9f124683f1/numpy-2.2.6-cp312-cp312-win_amd64.whl,"[""License :: OSI Approved :: BSD License""]",intelligence\docs\governance\ai03-dependency-resolution.json
+python,scipy,1.15.3,https://files.pythonhosted.org/packages/e6/eb/3bf6ea8ab7f1503dca3a10df2e4b9c3f6b3316df07f6c0ded94b281c7101/scipy-1.15.3-cp312-cp312-win_amd64.whl,"[""License :: OSI Approved :: BSD License""]",intelligence\docs\governance\ai03-dependency-resolution.json
+python,joblib,1.4.2,https://files.pythonhosted.org/packages/91/29/df4b9b42f2be0b623cbd5e2140cafcaa2bef0759a00b7b70104dcfe2fb51/joblib-1.4.2-py3-none-any.whl,"[""License :: OSI Approved :: BSD License""]",intelligence\docs\governance\ai03-dependency-resolution.json
+python,threadpoolctl,3.6.0,https://files.pythonhosted.org/packages/32/d5/f9a850d79b0851d1d4ef6456097579a9005b31fea68726a4ae5f2d82ddd9/threadpoolctl-3.6.0-py3-none-any.whl,"[""License :: OSI Approved :: BSD License""]",intelligence\docs\governance\ai03-dependency-resolution.json
+python,PyYAML,6.0.2,https://files.pythonhosted.org/packages/0c/e8/4f648c598b17c3d06e8753d7d13d57542b30d56e6c2dedf9c331ae56312e/PyYAML-6.0.2-cp312-cp312-win_amd64.whl,"[""License :: OSI Approved :: MIT License""]",intelligence\docs\governance\ai03-dependency-resolution.json
+python,jsonschema,4.23.0,https://files.pythonhosted.org/packages/69/4a/4f9dbeb84e8850557c02365a0eee0649abe5eb1d84af92a25731c6c0f922/jsonschema-4.23.0-py3-none-any.whl,"[""License :: OSI Approved :: MIT License""]",intelligence\docs\governance\ai03-dependency-resolution.json
+python,attrs,24.2.0,https://files.pythonhosted.org/packages/6a/21/5b6702a7f963e95456c0de2d495f67bf5fd62840ac655dc451586d23d39a/attrs-24.2.0-py3-none-any.whl,"[""License :: OSI Approved :: MIT License""]",intelligence\docs\governance\ai03-dependency-resolution.json
+python,jsonschema-specifications,2023.12.1,https://files.pythonhosted.org/packages/ee/07/44bd408781594c4d0a027666ef27fab1e441b109dc3b76b4f836f8fd04fe/jsonschema_specifications-2023.12.1-py3-none-any.whl,"[""License :: OSI Approved :: MIT License""]",intelligence\docs\governance\ai03-dependency-resolution.json
+python,referencing,0.35.1,https://files.pythonhosted.org/packages/b7/59/2056f61236782a2c86b33906c025d4f4a0b17be0161b63b70fd9e8775d36/referencing-0.35.1-py3-none-any.whl,"[""License :: OSI Approved :: MIT License""]",intelligence\docs\governance\ai03-dependency-resolution.json
+python,rpds-py,0.20.0,https://files.pythonhosted.org/packages/ec/2f/b938864d66b86a6e4acadefdc56de75ef56f7cafdfd568a6464605457bd5/rpds_py-0.20.0-cp312-none-win_amd64.whl,"[""License :: OSI Approved :: MIT License""]",intelligence\docs\governance\ai03-dependency-resolution.json
+python,pytest,8.3.5,https://files.pythonhosted.org/packages/30/3d/64ad57c803f1fa1e963a7946b6e0fea4a70df53c1a7fed304586539c2bac/pytest-8.3.5-py3-none-any.whl,"[""License :: OSI Approved :: MIT License""]",intelligence\docs\governance\ai03-dependency-resolution.json
+python,iniconfig,2.0.0,https://files.pythonhosted.org/packages/ef/a6/62565a6e1cf69e10f5727360368e451d4b7f58beeac6173dc9db836a5b46/iniconfig-2.0.0-py3-none-any.whl,"[""License :: OSI Approved :: MIT License""]",intelligence\docs\governance\ai03-dependency-resolution.json
+python,packaging,24.1,https://files.pythonhosted.org/packages/08/aa/cc0199a5f0ad350994d660967a8efb233fe0416e4639146c089643407ce6/packaging-24.1-py3-none-any.whl,"[""License :: OSI Approved :: Apache Software License"", ""License :: OSI Approved :: BSD License""]",intelligence\docs\governance\ai03-dependency-resolution.json
+python,pluggy,1.5.0,https://files.pythonhosted.org/packages/88/5f/e351af9a41f866ac3f1fac4ca0613908d9a41741cfcf2228f4ad853b697d/pluggy-1.5.0-py3-none-any.whl,"[""License :: OSI Approved :: MIT License""]",intelligence\docs\governance\ai03-dependency-resolution.json
+python,colorama,0.4.6,https://files.pythonhosted.org/packages/d1/d6/3965ed04c63042e047cb6a3e6ed1a63a35087b6a609aa3a15ed8ac56c221/colorama-0.4.6-py2.py3-none-any.whl,"[""License :: OSI Approved :: BSD License""]",intelligence\docs\governance\ai03-dependency-resolution.json
+python,build,1.2.2.post1,https://files.pythonhosted.org/packages/84/c2/80633736cd183ee4a62107413def345f7e6e3c01563dbca1417363cf957e/build-1.2.2.post1-py3-none-any.whl,"[""License :: OSI Approved :: MIT License""]",intelligence\docs\governance\ai03-dependency-resolution.json
+python,pyproject_hooks,1.2.0,https://files.pythonhosted.org/packages/bd/24/12818598c362d7f300f18e74db45963dbcb85150324092410c8b49405e42/pyproject_hooks-1.2.0-py3-none-any.whl,"[""License :: OSI Approved :: MIT License""]",intelligence\docs\governance\ai03-dependency-resolution.json
+python,setuptools,75.1.0,https://files.pythonhosted.org/packages/ff/ae/f19306b5a221f6a436d8f2238d5b80925004093fa3edea59835b514d9057/setuptools-75.1.0-py3-none-any.whl,"[""License :: OSI Approved :: MIT License""]",intelligence\docs\governance\ai03-dependency-resolution.json
+python,wheel,0.44.0,https://files.pythonhosted.org/packages/1b/d1/9babe2ccaecff775992753d8686970b1e2755d21c8a63be73aba7a4e7d77/wheel-0.44.0-py3-none-any.whl,"[""License :: OSI Approved :: MIT License""]",intelligence\docs\governance\ai03-dependency-resolution.json
+python,scikit-learn,1.6.1,https://files.pythonhosted.org/packages/29/7a/8bce8968883e9465de20be15542f4c7e221952441727c4dad24d534c6d99/scikit_learn-1.6.1-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl,"[""License :: OSI Approved :: BSD License""]",intelligence\docs\governance\ai03-linux-dependency-resolution.json
+python,numpy,2.2.6,https://files.pythonhosted.org/packages/8c/3d/1e1db36cfd41f895d266b103df00ca5b3cbe965184df824dec5c08c6b803/numpy-2.2.6-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl,"[""License :: OSI Approved :: BSD License""]",intelligence\docs\governance\ai03-linux-dependency-resolution.json
+python,scipy,1.15.3,https://files.pythonhosted.org/packages/0b/1f/03f52c282437a168ee2c7c14a1a0d0781a9a4a8962d84ac05c06b4c5b555/scipy-1.15.3-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl,"[""License :: OSI Approved :: BSD License""]",intelligence\docs\governance\ai03-linux-dependency-resolution.json
+python,joblib,1.4.2,https://files.pythonhosted.org/packages/91/29/df4b9b42f2be0b623cbd5e2140cafcaa2bef0759a00b7b70104dcfe2fb51/joblib-1.4.2-py3-none-any.whl,"[""License :: OSI Approved :: BSD License""]",intelligence\docs\governance\ai03-linux-dependency-resolution.json
+python,threadpoolctl,3.6.0,https://files.pythonhosted.org/packages/32/d5/f9a850d79b0851d1d4ef6456097579a9005b31fea68726a4ae5f2d82ddd9/threadpoolctl-3.6.0-py3-none-any.whl,"[""License :: OSI Approved :: BSD License""]",intelligence\docs\governance\ai03-linux-dependency-resolution.json
+python,PyYAML,6.0.2,https://files.pythonhosted.org/packages/b9/2b/614b4752f2e127db5cc206abc23a8c19678e92b23c3db30fc86ab731d3bd/PyYAML-6.0.2-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl,"[""License :: OSI Approved :: MIT License""]",intelligence\docs\governance\ai03-linux-dependency-resolution.json
+python,jsonschema,4.23.0,https://files.pythonhosted.org/packages/69/4a/4f9dbeb84e8850557c02365a0eee0649abe5eb1d84af92a25731c6c0f922/jsonschema-4.23.0-py3-none-any.whl,"[""License :: OSI Approved :: MIT License""]",intelligence\docs\governance\ai03-linux-dependency-resolution.json
+python,attrs,24.2.0,https://files.pythonhosted.org/packages/6a/21/5b6702a7f963e95456c0de2d495f67bf5fd62840ac655dc451586d23d39a/attrs-24.2.0-py3-none-any.whl,"[""License :: OSI Approved :: MIT License""]",intelligence\docs\governance\ai03-linux-dependency-resolution.json
+python,jsonschema-specifications,2023.12.1,https://files.pythonhosted.org/packages/ee/07/44bd408781594c4d0a027666ef27fab1e441b109dc3b76b4f836f8fd04fe/jsonschema_specifications-2023.12.1-py3-none-any.whl,"[""License :: OSI Approved :: MIT License""]",intelligence\docs\governance\ai03-linux-dependency-resolution.json
+python,referencing,0.35.1,https://files.pythonhosted.org/packages/b7/59/2056f61236782a2c86b33906c025d4f4a0b17be0161b63b70fd9e8775d36/referencing-0.35.1-py3-none-any.whl,"[""License :: OSI Approved :: MIT License""]",intelligence\docs\governance\ai03-linux-dependency-resolution.json
+python,rpds-py,0.20.0,https://files.pythonhosted.org/packages/0f/f7/a59a673594e6c2ff2dbc44b00fd4ecdec2fc399bb6a7bd82d612699a0121/rpds_py-0.20.0-cp312-cp312-manylinux_2_17_x86_64.manylinux2014_x86_64.whl,"[""License :: OSI Approved :: MIT License""]",intelligence\docs\governance\ai03-linux-dependency-resolution.json
+python,pytest,8.3.5,https://files.pythonhosted.org/packages/30/3d/64ad57c803f1fa1e963a7946b6e0fea4a70df53c1a7fed304586539c2bac/pytest-8.3.5-py3-none-any.whl,"[""License :: OSI Approved :: MIT License""]",intelligence\docs\governance\ai03-linux-dependency-resolution.json
+python,iniconfig,2.0.0,https://files.pythonhosted.org/packages/ef/a6/62565a6e1cf69e10f5727360368e451d4b7f58beeac6173dc9db836a5b46/iniconfig-2.0.0-py3-none-any.whl,"[""License :: OSI Approved :: MIT License""]",intelligence\docs\governance\ai03-linux-dependency-resolution.json
+python,packaging,24.1,https://files.pythonhosted.org/packages/08/aa/cc0199a5f0ad350994d660967a8efb233fe0416e4639146c089643407ce6/packaging-24.1-py3-none-any.whl,"[""License :: OSI Approved :: Apache Software License"", ""License :: OSI Approved :: BSD License""]",intelligence\docs\governance\ai03-linux-dependency-resolution.json
+python,pluggy,1.5.0,https://files.pythonhosted.org/packages/88/5f/e351af9a41f866ac3f1fac4ca0613908d9a41741cfcf2228f4ad853b697d/pluggy-1.5.0-py3-none-any.whl,"[""License :: OSI Approved :: MIT License""]",intelligence\docs\governance\ai03-linux-dependency-resolution.json
+python,build,1.2.2.post1,https://files.pythonhosted.org/packages/84/c2/80633736cd183ee4a62107413def345f7e6e3c01563dbca1417363cf957e/build-1.2.2.post1-py3-none-any.whl,"[""License :: OSI Approved :: MIT License""]",intelligence\docs\governance\ai03-linux-dependency-resolution.json
+python,pyproject_hooks,1.2.0,https://files.pythonhosted.org/packages/bd/24/12818598c362d7f300f18e74db45963dbcb85150324092410c8b49405e42/pyproject_hooks-1.2.0-py3-none-any.whl,"[""License :: OSI Approved :: MIT License""]",intelligence\docs\governance\ai03-linux-dependency-resolution.json
+python,setuptools,75.1.0,https://files.pythonhosted.org/packages/ff/ae/f19306b5a221f6a436d8f2238d5b80925004093fa3edea59835b514d9057/setuptools-75.1.0-py3-none-any.whl,"[""License :: OSI Approved :: MIT License""]",intelligence\docs\governance\ai03-linux-dependency-resolution.json
+python,wheel,0.44.0,https://files.pythonhosted.org/packages/1b/d1/9babe2ccaecff775992753d8686970b1e2755d21c8a63be73aba7a4e7d77/wheel-0.44.0-py3-none-any.whl,"[""License :: OSI Approved :: MIT License""]",intelligence\docs\governance\ai03-linux-dependency-resolution.json
+python,certifi,2026.10.19,https://files.pythonhosted.org/packages/c4/51/29046e48f693c54e5b7412216d447a1d8362c9653148d98c02cdf65fa733/certifi-2026.10.19-py3-none-any.whl,"""MPL-2.0""",intelligence\docs\governance\ai05-dense-windows-dependencies.json
+python,charset-normalizer,3.5.2,https://files.pythonhosted.org/packages/eb/e6/e6e083884cbcfd49c64865af05027fe7011be7b2d9179524f099a1b611f3/charset_normalizer-3.5.2-cp312-cp312-win_amd64.whl,"""MIT""",intelligence\docs\governance\ai05-dense-windows-dependencies.json
+python,coloredlogs,15.0.1,https://files.pythonhosted.org/packages/a7/06/3d6badcf13db419e25b07041d9c7b4a2c331d3f4e7134445ec5df57714cd/coloredlogs-15.0.1-py2.py3-none-any.whl,"""MIT""",intelligence\docs\governance\ai05-dense-windows-dependencies.json
+python,filelock,4.2.4,https://files.pythonhosted.org/packages/e0/1b/5e74289a1878e666bb4b65fe5805a04cafcac2aa5f519ef1ead67ef91c56/filelock-4.2.4-py3-none-any.whl,"""MIT""",intelligence\docs\governance\ai05-dense-windows-dependencies.json
+python,flatbuffers,25.12.19,https://files.pythonhosted.org/packages/e8/2d/d2a548598be01649e2d46231d151a6c56d10b964d94043a335ae56ea2d92/flatbuffers-25.12.19-py2.py3-none-any.whl,"""Apache 2.0""",intelligence\docs\governance\ai05-dense-windows-dependencies.json
+python,fsspec,2026.9.0,https://files.pythonhosted.org/packages/6c/c0/a98505f18594f1bce828bb159cec0fcf9860562f1a2c85913409fc8f3d9e/fsspec-2026.9.0-py3-none-any.whl,"""BSD-3-Clause""",intelligence\docs\governance\ai05-dense-windows-dependencies.json
+python,huggingface_hub,0.36.2,https://files.pythonhosted.org/packages/a8/af/48ac8483240de756d2438c380746e7130d1c6f75802ef22f3c6d49982787/huggingface_hub-0.36.2-py3-none-any.whl,"""Apache""",intelligence\docs\governance\ai05-dense-windows-dependencies.json
+python,humanfriendly,10.0,https://files.pythonhosted.org/packages/f0/0f/310fb31e39e2d734ccaa2c0fb981ee41f7bd5056ce9bc29b2248bd569169/humanfriendly-10.0-py2.py3-none-any.whl,"""MIT""",intelligence\docs\governance\ai05-dense-windows-dependencies.json
+python,idna,3.20,https://files.pythonhosted.org/packages/58/a2/bb081bab032533a855d44de1d56f8e8426114ff1ba5d1f07a438a0a654f8/idna-3.20-py3-none-any.whl,"""BSD-3-Clause""",intelligence\docs\governance\ai05-dense-windows-dependencies.json
+python,mpmath,1.3.0,https://files.pythonhosted.org/packages/43/e3/7d92a15f894aa0c9c4b49b8ee9ac9850d6e63b03c9c32c0367a13ae62209/mpmath-1.3.0-py3-none-any.whl,"""BSD""",intelligence\docs\governance\ai05-dense-windows-dependencies.json
+python,onnxruntime,1.20.1,https://files.pythonhosted.org/packages/dd/80/76979e0b744307d488c79e41051117634b956612cc731f1028eb17ee7294/onnxruntime-1.20.1-cp312-cp312-win_amd64.whl,"""MIT License""",intelligence\docs\governance\ai05-dense-windows-dependencies.json
+python,protobuf,7.36.2,https://files.pythonhosted.org/packages/8a/55/b77bda4e5e5f5971fb51b07663694690e9afdb9402136c16a522bd621cad/protobuf-7.36.2-cp310-abi3-win_amd64.whl,"""3-Clause BSD License""",intelligence\docs\governance\ai05-dense-windows-dependencies.json
+python,pyreadline3,3.5.6,https://files.pythonhosted.org/packages/f7/5e/35c856e186b74678c24927847ad9895a51f1bc02a0c6126477a6c6040064/pyreadline3-3.5.6-py3-none-any.whl,"""BSD""",intelligence\docs\governance\ai05-dense-windows-dependencies.json
+python,requests,2.34.2,https://files.pythonhosted.org/packages/a0/f4/c67b0b3f1b9245e8d266f0f112c500d50e5b4e83cb6f3b71b6528104182a/requests-2.34.2-py3-none-any.whl,"""Apache-2.0""",intelligence\docs\governance\ai05-dense-windows-dependencies.json
+python,sympy,1.14.0,https://files.pythonhosted.org/packages/a2/09/77d55d46fd61b4a135c444fc97158ef34a095e5681d0a6c10b75bf356191/sympy-1.14.0-py3-none-any.whl,"""BSD""",intelligence\docs\governance\ai05-dense-windows-dependencies.json
+python,tokenizers,0.21.0,https://files.pythonhosted.org/packages/44/69/d21eb253fa91622da25585d362a874fa4710be600f0ea9446d8d0217cec1/tokenizers-0.21.0-cp39-abi3-win_amd64.whl,"""UNKNOWN""",intelligence\docs\governance\ai05-dense-windows-dependencies.json
+python,tqdm,4.70.1,https://files.pythonhosted.org/packages/a7/03/921a3d3c75785aca9ebfbfcabfbc3a1be12e2ab5265deb026d55a5a3f83e/tqdm-4.70.1-py3-none-any.whl,"""MPL-2.0 AND MIT""",intelligence\docs\governance\ai05-dense-windows-dependencies.json
+python,typing_extensions,4.16.0,https://files.pythonhosted.org/packages/49/d3/b8441a820a491ddfc024b0b0cf0393375b75ea13866d9c66727e54c2fc80/typing_extensions-4.16.0-py3-none-any.whl,"""PSF-2.0""",intelligence\docs\governance\ai05-dense-windows-dependencies.json
+python,urllib3,2.8.0,https://files.pythonhosted.org/packages/92/9d/c4e665119135114480843e7ab388fa94d8480650450e6f8e26b70d323a4c/urllib3-2.8.0-py3-none-any.whl,"""MIT""",intelligence\docs\governance\ai05-dense-windows-dependencies.json
+java,com.networknt:json-schema-validator,1.5.9,Maven Central / backend/pom.xml,UNKNOWN_REVIEW_UPSTREAM_POM_AND_NOTICES,Direct declarations only; resolved Java report separate
+java,org.springframework.boot:spring-boot-starter-web,BOM_MANAGED_SEE_RESOLUTION,Maven Central / backend/pom.xml,UNKNOWN_REVIEW_UPSTREAM_POM_AND_NOTICES,Direct declarations only; resolved Java report separate
+java,org.springframework.boot:spring-boot-starter-oauth2-resource-server,BOM_MANAGED_SEE_RESOLUTION,Maven Central / backend/pom.xml,UNKNOWN_REVIEW_UPSTREAM_POM_AND_NOTICES,Direct declarations only; resolved Java report separate
+java,org.springframework.boot:spring-boot-starter-validation,BOM_MANAGED_SEE_RESOLUTION,Maven Central / backend/pom.xml,UNKNOWN_REVIEW_UPSTREAM_POM_AND_NOTICES,Direct declarations only; resolved Java report separate
+java,org.springframework.boot:spring-boot-starter-actuator,BOM_MANAGED_SEE_RESOLUTION,Maven Central / backend/pom.xml,UNKNOWN_REVIEW_UPSTREAM_POM_AND_NOTICES,Direct declarations only; resolved Java report separate
+java,org.flowable:flowable-spring-boot-starter-process,7.1.0,Maven Central / backend/pom.xml,UNKNOWN_REVIEW_UPSTREAM_POM_AND_NOTICES,Direct declarations only; resolved Java report separate
+java,org.flywaydb:flyway-core,BOM_MANAGED_SEE_RESOLUTION,Maven Central / backend/pom.xml,UNKNOWN_REVIEW_UPSTREAM_POM_AND_NOTICES,Direct declarations only; resolved Java report separate
+java,org.flywaydb:flyway-database-postgresql,BOM_MANAGED_SEE_RESOLUTION,Maven Central / backend/pom.xml,UNKNOWN_REVIEW_UPSTREAM_POM_AND_NOTICES,Direct declarations only; resolved Java report separate
+java,org.postgresql:postgresql,BOM_MANAGED_SEE_RESOLUTION,Maven Central / backend/pom.xml,UNKNOWN_REVIEW_UPSTREAM_POM_AND_NOTICES,Direct declarations only; resolved Java report separate
+java,org.springframework.boot:spring-boot-starter-test,BOM_MANAGED_SEE_RESOLUTION,Maven Central / backend/pom.xml,UNKNOWN_REVIEW_UPSTREAM_POM_AND_NOTICES,Direct declarations only; resolved Java report separate
+java,org.springframework.security:spring-security-test,BOM_MANAGED_SEE_RESOLUTION,Maven Central / backend/pom.xml,UNKNOWN_REVIEW_UPSTREAM_POM_AND_NOTICES,Direct declarations only; resolved Java report separate
+java,com.tngtech.archunit:archunit,1.3.0,Maven Central / backend/pom.xml,UNKNOWN_REVIEW_UPSTREAM_POM_AND_NOTICES,Direct declarations only; resolved Java report separate
+container,postgres:16.15-bookworm@sha256:0ea6700a3b4f0ae6ce746519073558aed4d88a79d8d07622a9a644946c7319c4,See exact tag/digest,compose.yaml,MIXED_IMAGE_PACKAGE_TERMS_REVIEW_REQUIRED,"Reference only, no image redistributed"
+container,quay.io/keycloak/keycloak:26.0.8@sha256:09a381c715ab0b111835b70f2905955274843a219c6f27efb348e4d9f4086858,See exact tag/digest,compose.yaml,MIXED_IMAGE_PACKAGE_TERMS_REVIEW_REQUIRED,"Reference only, no image redistributed"
+container,dx-platform:0.1.0,See exact tag/digest,compose.yaml,MIXED_IMAGE_PACKAGE_TERMS_REVIEW_REQUIRED,"Reference only, no image redistributed"
+container,dx-apisix:3.11.0-sec01,See exact tag/digest,compose.yaml,MIXED_IMAGE_PACKAGE_TERMS_REVIEW_REQUIRED,"Reference only, no image redistributed"
+container,dx-frontend:0.1.0,See exact tag/digest,compose.yaml,MIXED_IMAGE_PACKAGE_TERMS_REVIEW_REQUIRED,"Reference only, no image redistributed"
+container,maven:3.9.9-eclipse-temurin-17@sha256:f58d59b6273e785ac0a4477f6e9b5ba1d7731c75b906c0f7b34076f1851318cc,See exact tag/digest,backend\Dockerfile,MIXED_IMAGE_PACKAGE_TERMS_REVIEW_REQUIRED,"Reference only, no image redistributed"
+container,eclipse-temurin:17.0.20.1_1-jre-jammy@sha256:b3054a20e1a851574cdb1692dd0db5310c647e62214a2a7abecbec1b9e3ae8f1,See exact tag/digest,backend\Dockerfile,MIXED_IMAGE_PACKAGE_TERMS_REVIEW_REQUIRED,"Reference only, no image redistributed"
+container,node:22.14.0-alpine,See exact tag/digest,frontend\Dockerfile,MIXED_IMAGE_PACKAGE_TERMS_REVIEW_REQUIRED,"Reference only, no image redistributed"
+container,nginxinc/nginx-unprivileged:1.27.4-alpine,See exact tag/digest,frontend\Dockerfile,MIXED_IMAGE_PACKAGE_TERMS_REVIEW_REQUIRED,"Reference only, no image redistributed"
+container,apache/apisix:3.11.0-redhat@sha256:d3c86dc739ade96bdcd0acaee0ab36b846a3ea2ce21ecf78c897d15500d19db0,See exact tag/digest,infra\apisix\Dockerfile,MIXED_IMAGE_PACKAGE_TERMS_REVIEW_REQUIRED,"Reference only, no image redistributed"
+container,${AI07_QWEN_DISTRIBUTION_IMAGE:?Verified,See exact tag/digest,infra\compose\compose.ai-d2-release.yaml,MIXED_IMAGE_PACKAGE_TERMS_REVIEW_REQUIRED,"Reference only, no image redistributed"
+container,${AI_D2_PLATFORM_IMAGE:?Verified,See exact tag/digest,infra\compose\compose.ai-d2-release.yaml,MIXED_IMAGE_PACKAGE_TERMS_REVIEW_REQUIRED,"Reference only, no image redistributed"
+container,${AI_D2_TRIAGE_IMAGE:?Verified,See exact tag/digest,infra\compose\compose.ai-d2-release.yaml,MIXED_IMAGE_PACKAGE_TERMS_REVIEW_REQUIRED,"Reference only, no image redistributed"
+container,${AI_D2_FRONTEND_IMAGE:?Verified,See exact tag/digest,infra\compose\compose.ai-d2-release.yaml,MIXED_IMAGE_PACKAGE_TERMS_REVIEW_REQUIRED,"Reference only, no image redistributed"
+container,${AI_D2_GATEWAY_IMAGE:?Verified,See exact tag/digest,infra\compose\compose.ai-d2-release.yaml,MIXED_IMAGE_PACKAGE_TERMS_REVIEW_REQUIRED,"Reference only, no image redistributed"
+container,${AI_D2_POSTGRES_IMAGE:?Verified,See exact tag/digest,infra\compose\compose.ai-d2-release.yaml,MIXED_IMAGE_PACKAGE_TERMS_REVIEW_REQUIRED,"Reference only, no image redistributed"
+container,${AI_D2_KEYCLOAK_IMAGE:?Verified,See exact tag/digest,infra\compose\compose.ai-d2-release.yaml,MIXED_IMAGE_PACKAGE_TERMS_REVIEW_REQUIRED,"Reference only, no image redistributed"
+container,ollama/ollama:0.40.8@sha256:242721b8a8dbb71c38fdc0a07ed60ca78363f278d33fdf171a48728abf40743a,See exact tag/digest,infra\compose\compose.ai07-local-models.yaml,MIXED_IMAGE_PACKAGE_TERMS_REVIEW_REQUIRED,"Reference only, no image redistributed"
+container,${AI07_BRIDGE_IMAGE:?Build,See exact tag/digest,infra\compose\compose.ai07-local-models.yaml,MIXED_IMAGE_PACKAGE_TERMS_REVIEW_REQUIRED,"Reference only, no image redistributed"
+container,ollama/ollama:0.40.8@sha256:242721b8a8dbb71c38fdc0a07ed60ca78363f278d33fdf171a48728abf40743a,See exact tag/digest,infra\compose\compose.ai07-local-provision.yaml,MIXED_IMAGE_PACKAGE_TERMS_REVIEW_REQUIRED,"Reference only, no image redistributed"
+container,${AI07_QWEN_IMAGE:?Specify,See exact tag/digest,infra\compose\compose.ai07-qwen-lora.yaml,MIXED_IMAGE_PACKAGE_TERMS_REVIEW_REQUIRED,"Reference only, no image redistributed"
+container,${CODE_IMAGE_REF},See exact tag/digest,infra\docker\ai07-qwen-full\Dockerfile,MIXED_IMAGE_PACKAGE_TERMS_REVIEW_REQUIRED,"Reference only, no image redistributed"
+container,python:3.12.15-slim-bookworm@sha256:34386ef0cb081344d7ec1c103ba398e6e9f64e9ab3a1509accc92a4e24a07258,See exact tag/digest,intelligence\Dockerfile,MIXED_IMAGE_PACKAGE_TERMS_REVIEW_REQUIRED,"Reference only, no image redistributed"
+container,python:3.12.15-slim-bookworm@sha256:34386ef0cb081344d7ec1c103ba398e6e9f64e9ab3a1509accc92a4e24a07258,See exact tag/digest,intelligence\Dockerfile,MIXED_IMAGE_PACKAGE_TERMS_REVIEW_REQUIRED,"Reference only, no image redistributed"
+container,python:3.12.15-slim-bookworm@sha256:34386ef0cb081344d7ec1c103ba398e6e9f64e9ab3a1509accc92a4e24a07258,See exact tag/digest,intelligence\Dockerfile.cloud,MIXED_IMAGE_PACKAGE_TERMS_REVIEW_REQUIRED,"Reference only, no image redistributed"
+container,python:3.12.15-slim-bookworm@sha256:34386ef0cb081344d7ec1c103ba398e6e9f64e9ab3a1509accc92a4e24a07258,See exact tag/digest,intelligence\Dockerfile.cloud,MIXED_IMAGE_PACKAGE_TERMS_REVIEW_REQUIRED,"Reference only, no image redistributed"
+container,python:3.12.15-slim-bookworm@sha256:34386ef0cb081344d7ec1c103ba398e6e9f64e9ab3a1509accc92a4e24a07258,See exact tag/digest,intelligence\Dockerfile.e5,MIXED_IMAGE_PACKAGE_TERMS_REVIEW_REQUIRED,"Reference only, no image redistributed"
+container,${TRIAGE_BASE_IMAGE},See exact tag/digest,intelligence\Dockerfile.e5,MIXED_IMAGE_PACKAGE_TERMS_REVIEW_REQUIRED,"Reference only, no image redistributed"
+container,python:3.12.7-slim@sha256:60d9996b6a8a3689d36db740b49f4327be3be09a21122bd02fb8895abb38b50d,See exact tag/digest,intelligence\integrations\local_classification\Dockerfile,MIXED_IMAGE_PACKAGE_TERMS_REVIEW_REQUIRED,"Reference only, no image redistributed"
+container,python:3.12.7-slim@sha256:60d9996b6a8a3689d36db740b49f4327be3be09a21122bd02fb8895abb38b50d,See exact tag/digest,intelligence\integrations\local_classification\Dockerfile.qwen,MIXED_IMAGE_PACKAGE_TERMS_REVIEW_REQUIRED,"Reference only, no image redistributed"
+container,${INT01_PROJECT:?Use,See exact tag/digest,scripts\acceptance\integration-compose.yaml,MIXED_IMAGE_PACKAGE_TERMS_REVIEW_REQUIRED,"Reference only, no image redistributed"
+container,${INT01_PROJECT:?Use,See exact tag/digest,scripts\acceptance\integration-compose.yaml,MIXED_IMAGE_PACKAGE_TERMS_REVIEW_REQUIRED,"Reference only, no image redistributed"
+container,${INT01_PROJECT:?Use,See exact tag/digest,scripts\acceptance\integration-compose.yaml,MIXED_IMAGE_PACKAGE_TERMS_REVIEW_REQUIRED,"Reference only, no image redistributed"

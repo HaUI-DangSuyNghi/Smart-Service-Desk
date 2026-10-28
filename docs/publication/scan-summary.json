@@ -1,0 +1,30 @@
+{
+  "baseline": "ef047a31abfd8e35ce9b6155e3a06c224262269d",
+  "scope": "All locally reachable refs at snapshot; no fetch; original repositories read-only",
+  "refs": 99,
+  "baseline_commits": 369,
+  "local_all_ref_commits": 406,
+  "objects": 9113,
+  "blobs": 3512,
+  "blob_bytes": 30220589,
+  "binary_blobs_not_content_scanned": 4,
+  "findings_by_rule": {
+    "credential_assignment_review": 136,
+    "private_key": 3,
+    "google_api_key": 1,
+    "aws_access_key": 2
+  },
+  "restricted_asset_blobs": 4,
+  "limitations": [
+    "Patterns are not proof of absence; assignments include test/placeholders",
+    "No private server-only refs, LFS payloads, untracked/runtime files, issue attachments or unknown secret formats",
+    "Representative path only: objects can occur under multiple names",
+    "No original history rewriting or asset deletion performed"
+  ],
+  "triage": {
+    "strong_pattern_matches_reviewed_as_negative_test_literals": 6,
+    "credential_assignment_candidates_remaining_for_final_disposition": 136,
+    "live_credentials_confirmed_by_this_review": 0,
+    "no_clean_history_certification": true
+  }
+}

@@ -1,5 +1,45 @@
 # DX-Lab HaUI: DX-OS platform
 
+## Proposed public submission (2026-10-28)
+
+**HOLD: source license approval and publication authorization are pending.**
+Apache-2.0 is intended, not currently granted. Do not make the existing private
+repository public: historical reference/data rights need review. See
+[evaluation readiness](docs/publication/EVALUATION_READINESS.md),
+[history options](docs/publication/HISTORY_OPTIONS.md),
+[dependency/license summary](docs/publication/DEPENDENCIES.md) and
+[release plan](docs/publication/RELEASE_PLAN.md).
+
+Source layout: headless `backend/.../core` supplies identity, workflow, data and
+audit; `hpdi` capabilities serve Service Desk/Room Request applications; reusable
+Python `intelligence/src/hdpi` and the React platform complete the three tiers.
+Contracts/OpenAPI are under `contracts/`; architecture/startup details follow.
+
+Public source candidate excludes pending-rights fixtures and references. Its
+fixture-dependent tests, corpus evaluation and demo data are NOT release-certified.
+Photo is replaced by a native CSS gradient in the candidate only. Historical
+acceptance reports are not proof of current demo health. See BUILD_VALIDATION.md
+under docs/publication for this preparation's actual build results.
+
+For an authorized clean-machine review use Java 17/Maven 3.9.9, Node >=22.12,
+Python 3.12 and Docker/Compose as documented below. Build source with
+`mvn -f backend/pom.xml verify`, `npm ci --prefix frontend` then
+`npm run build --prefix frontend`, and
+`python -m pip wheel --no-deps ./intelligence -w <outside-source-wheel-directory>`.
+Run `scripts/setup.ps1` to generate local-only secrets, then `scripts/start.ps1`
+on a new isolated installation; `-Intelligence` enables the triage overlay.
+Do not use reset flags or these startup commands against an existing shared demo.
+For outside-source invocation, first `Set-Location <clone-path>` inside a fresh
+PowerShell process; built jar/wheel/static artifacts should then be tested from a
+separate directory with explicit configuration. This run path is a verification
+requirement, not a claim that it has passed.
+
+API schemas: `contracts/openapi/`; browser http://localhost:5173, gateway
+http://localhost:9080, Keycloak http://localhost:8081 on the local development
+stack. Demo users `user1`-`user7` use locally generated `DEMO_PASSWORD` in ignored
+`.env`; never commit/share a live password or replace the source gate with hosted
+demo access. Issue tracker availability requires owner verification.
+
 Post-merge integration: see [BE-POSTMERGE-01](docs/BE_POSTMERGE01.md) for the
 isolated Java/Python demo, FE proxy, acceptance evidence and release blockers.
 The default startup assembles Core, HPDI and applications; enable the private Python runtime with the documented overlays.

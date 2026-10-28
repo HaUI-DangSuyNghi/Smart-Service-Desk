@@ -1,5 +1,16 @@
 # Changelog
 
+## v0.1.0 (proposed, unreleased - 2026-10-28)
+
+- Prepare source-only publication from ef047a31abfd8e35ce9b6155e3a06c224262269d;
+  no license grant, tag, visibility change, original history rewrite or release.
+- Inventory exclusions and dependency provenance; compare genuine-history
+  publication routes against all eight committee gates and eleven criteria.
+- Exclude uncleared references, photo, fixtures and internal operational evidence;
+  replace removed hero photo with CSS gradient in the candidate only.
+- Release remains blocked on rights/license approval, safe history decision,
+  notice closure and clean source build/install/run verification.
+
 ## Backend release readiness (unreleased, 2026-10-26)
 
 - Align Jackson modules on BOM 2.18.11; add a red/green malformed DataInput token regression and remove eight HIGH source-scan findings.
