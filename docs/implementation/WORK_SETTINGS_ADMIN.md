@@ -594,3 +594,22 @@ Targeted Second-domain run PASS: 40 tests, zero FAIL/ERROR/SKIP;
 checksums/data preservation, CAS race, overflow and transactional audit failure.
 Earlier run had one test ERROR from Mockito restubbing an already-throwing mock;
 fixed test with doThrow, not production authorization. Full acceptance follows.
+
+## 12. Phase 2 Commit 3 - Service Desk Settings Foundation
+
+V33 adds Service Desk's singleton JSONB settings with runtime-compatible ET
+seeds. The application owns its table/controller/validation; it calls only the
+public HPDI SettingsAdministration facade, with no App-to-Core imports and no
+HPDI dependency on Service Desk. Both methods require fresh administrator
+authorization; CAS, overflow and transactional before/after audit match V32.
+OTHER remains null and requires Coordinator selection. Specialty names are
+validated syntactically, not falsely asserted to exist in every workspace.
+
+All values remain PERSISTED_NOT_ENFORCED, including defaults for NEW tickets.
+Existing TicketReview.defaultMinutes, eligibility and approved estimate rows
+are unchanged. There is no runtime wiring or policy re-interpretation.
+Full targeted PASS: 20 tests, zero FAIL/ERROR/SKIP;
+.local/fresh-admin-a2b1459fd373 (all category/priority seeds, validation,
+HTTP/CAS/concurrency/overflow/audit rollback and clean/upgrade V31->V33).
+Tier boundaries PASS after using the HPDI error response contract for 503,
+rather than a forbidden direct App-to-Core DTO reference. Full acceptance next.
