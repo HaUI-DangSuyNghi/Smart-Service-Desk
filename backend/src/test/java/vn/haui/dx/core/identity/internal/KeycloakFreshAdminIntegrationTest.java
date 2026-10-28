@@ -159,8 +159,40 @@ class KeycloakFreshAdminIntegrationTest {
             "standardFlowEnabled", false, "protocol", "openid-connect", "protocolMappers", new Object[]{Map.of(
                 "name", "core-audience", "protocol", "openid-connect", "protocolMapper", "oidc-audience-mapper",
                 "config", Map.of("included.custom.audience", "dx-core", "access.token.claim", "true"))})), 201);
-        useJwt(token(realm, client, "grant_type=client_credentials&client_secret=" + encode(clientSecret)));
-        assertDenied();
+        String clientId = api("GET", "/clients?clientId=" + client, null, 200).get(0).path("id").asText();
+        String serviceSubject = null;
+        try {
+            serviceSubject = api("GET", "/clients/" + clientId + "/service-account-user", null, 200).path("id").asText();
+            api("POST", "/users/" + serviceSubject + "/role-mappings/realm", array(platformRole), 204);
+            JsonNode effectiveRoles = api("GET", "/users/" + serviceSubject
+                + "/role-mappings/realm/composite?briefRepresentation=true", null, 200);
+            boolean effectiveAdmin = false;
+            for (JsonNode effectiveRole : effectiveRoles) {
+                if ("platform-admin".equals(effectiveRole.path("name").asText())
+                        && !effectiveRole.path("clientRole").asBoolean()) effectiveAdmin = true;
+            }
+            assertTrue(effectiveAdmin, "Service account must have the effective realm admin role");
+            String directoryToken = token(realm, "dx-directory", "grant_type=client_credentials&client_secret=" + encode(secret));
+            var representation = send("GET", "/admin/realms/" + realm + "/users/" + serviceSubject,
+                directoryToken, null, null);
+            assertEquals(200, representation.statusCode());
+            JsonNode account = json.readTree(representation.body());
+            assertEquals(serviceSubject, account.path("id").asText());
+            assertTrue(account.path("enabled").asBoolean());
+            assertFalse(account.hasNonNull("serviceAccountClientId"),
+                "Keycloak 26.0.8 omits this field; absence must not establish a human account");
+            var humans = send("GET", "/admin/realms/" + realm + "/users?search="
+                + encode("\"" + account.path("username").asText() + "\"") + "&max=2&briefRepresentation=true",
+                directoryToken, null, null);
+            assertEquals(200, humans.statusCode());
+            assertEquals(0, json.readTree(humans.body()).size(), "Human search must exclude the service account");
+            useJwt(token(realm, client, "grant_type=client_credentials&client_secret=" + encode(clientSecret)));
+            assertEquals(serviceSubject, new WorkspaceAccessImpl().current().sub());
+            assertDenied();
+        } finally {
+            api("DELETE", "/clients/" + clientId, null, 204);
+            if (serviceSubject != null) api("GET", "/users/" + serviceSubject, null, 404);
+        }
     }
     private JsonNode role(String name) throws Exception {
         api("POST", "/roles", json.writeValueAsString(Map.of("name", name)), 201);

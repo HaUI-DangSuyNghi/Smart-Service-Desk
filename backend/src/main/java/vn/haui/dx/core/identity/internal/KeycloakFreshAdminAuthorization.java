@@ -93,6 +93,21 @@ final class KeycloakFreshAdminAuthorization implements FreshAdminAuthorization {
             }
             if (System.nanoTime() >= deadline) throw unavailable();
             if (!admin) throw denied();
+            String username = account.path("username").asText();
+            if (username.isBlank() || username.contains("\"")) throw unavailable();
+            var humanResponse = send(HttpRequest.newBuilder(URI.create(uri("admin", "realms", realm, "users")
+                    + "?search=" + form("\"" + username + "\"") + "&max=2&briefRepresentation=true"))
+                .header("Authorization", bearer).GET(), deadline);
+            if (humanResponse.statusCode() != 200) throw unavailable();
+            JsonNode humans = read(humanResponse.body());
+            if (humans == null || !humans.isArray()) throw unavailable();
+            boolean human = false;
+            for (JsonNode candidate : humans) {
+                if (!candidate.isObject() || !candidate.path("id").isTextual()) throw unavailable();
+                if (subject.equals(candidate.path("id").asText())) human = true;
+            }
+            if (System.nanoTime() >= deadline) throw unavailable();
+            if (!human) throw denied();
             return subject;
         } catch (IOException | IllegalArgumentException failure) {
             throw unavailable();

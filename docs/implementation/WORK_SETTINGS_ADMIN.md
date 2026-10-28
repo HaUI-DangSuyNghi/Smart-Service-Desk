@@ -56,8 +56,10 @@ Same policy for EVERY GET and PUT of BOTH settings APIs:
    Never trust body/query/header userId, username, actor or roles. Stale JWT admin
    claim neither overrides a live denial nor is the sole grant source.
 3. Freshly authorized: fetch `GET /admin/realms/{realm}/users/{sub}`; require
-   matching id, enabled=true, human account (no serviceAccountClientId), then
-   effective realm roles containing exact platform-admin. No positive account/
+   matching id, enabled=true, effective realm roles containing exact
+   platform-admin, and positive live human-search membership by the same id.
+   Absence of serviceAccountClientId does NOT establish a human account in
+   Keycloak 26.0.8 (see security correction below). No positive account/
    role cache, stale directory fallback or cross-request decision reuse.
 
 This checks enabled-account and role state, not current login-session validity.
@@ -423,7 +425,7 @@ per invocation, reads current user, rejects missing/disabled/service account,
 then reads effective realm/composite roles. No account/role/decision cache and
 no service-token cache, so no refresh/retry path is needed; service 401 fails
 closed immediately. Production HttpClient disables redirects, connects within
-2s and shares a monotonic 5s budget across token/user/role requests and body
+2s and shares a monotonic 5s budget across token/user/role/human-search requests and body
 completion. Timeout/interruption cancels the pending request; interrupt status
 is preserved. Strict JSON rejects duplicate keys/trailing content, malformed
 account/roles and mismatched identity. Errors do not disclose tokens/secrets.
@@ -452,7 +454,7 @@ targets an existing realm or changes production grants. Directory gets exactly
 the template view-users/query-users/query-groups grants. The live test removes
 and restores view-users in its own fixture to prove dependency fail-closed.
 User/role mutations by dx-directory return 403; user/effective-role reads work.
-Test-only users/groups/composites and an unprivileged service client are created
+Test-only users/groups/composites and a disposable service client are created
 using bootstrap admin ONLY in the disposable test realm. No privileged roles
 are added to dx-directory. Import credential file and containers are removed
 in finally; logs/XML/summaries remain under .local/fresh-admin-* (not secrets).
@@ -463,7 +465,8 @@ the test SecurityContext. It proves newly granted effective roles work without
 refreshing claims, then obtains an admin-bearing JWT, revokes the direct/group/
 composite/nested grant and reuses the SAME JWT to prove denial. Also tests
 disabled/deleted accounts, actual Requester/Agent/Coordinator users and a signed
-service-account JWT. This is capability integration, NOT nonexistent Settings
+service-account JWT (privileged-account coverage was added by the correction
+below). This is capability integration, NOT nonexistent Settings
 HTTP/Gateway acceptance. Unit tests use a local HTTP fixture for failure status,
 strict JSON, subject encoding, no cache, time budget and interruption cases.
 
@@ -507,3 +510,63 @@ P2/limits remain: account-enabled/effective-role checks are not login-session or
 temporary lockout validation; revocation can race an in-flight check; deployments
 must verify actual service identity grants match template. Hosted CI NOT_VERIFIED.
 Stop after Commit 1; no Commit 2, new PR, merge or force-push.
+
+### Commit 1 security correction - privileged service account
+
+Independent review correctly identified that the original live service-account
+test had no platform-admin grant. Its denial did not establish human-only
+authorization. The strengthened test grants the disposable service account the
+realm role using bootstrap admin, verifies the effective composite endpoint,
+and validates the real signed service JWT and dx-core audience before denial.
+Client deletion runs in finally; a subsequent GET verifies account deletion.
+No existing accounts or production/directory grants are changed.
+
+The first strengthened run exposed a production defect: the user representation
+returned to dx-directory by Keycloak 26.0.8 does NOT expose serviceAccountClientId.
+An assertion expecting the client id failed. The original guard trusted that
+absence and would admit an enabled privileged service account. This is a real
+correction, not merely a test-only change. The original live-test evidence above
+must not be read as proof that privileged service accounts were excluded.
+
+Pinned source inspection: Keycloak tag 26.0.8, UserResource.getUser returns a
+user-profile representation; UsersResource.getUsers with a non-id search calls
+searchForUser with includeServiceAccounts=false. In contrast, search=id: and
+username/exact parameter paths must NOT be substituted: they can include service
+accounts. The guard now uses a quoted, URL-encoded search derived from the LIVE
+account username and requires the authenticated subject among returned ids.
+It still rejects an explicit serviceAccountClientId if present. No inference
+from username prefixes or JWT role/client claims establishes human status.
+The live test explicitly asserts the observed field omission, proves the
+privileged service account is excluded by this search using dx-directory,
+and then requires FORBIDDEN from the production guard.
+
+Human search shares the existing 5-second deadline and fail-closed status/JSON
+handling; its result is never cached. Eight failure cases plus fresh-proof and
+timeout tests cover the additional trust boundary. The search is bounded to two
+results: a username containing a quote is rejected with 503, and rare ambiguous
+exact matches where the subject is outside the first two results are denied,
+never granted. This is an availability limitation, not a fallback grant; broader
+username/search support requires explicit bounded pagination design and tests.
+
+Initial focused/Core-only/Full runs each had one FAIL on the absent field,
+zero ERROR/SKIP. The initial Second-domain setup hit Docker address-pool
+exhaustion (ERROR before tests); no unrelated networks were pruned. These runs
+are diagnostic evidence, not final acceptance.
+
+Final correction evidence (same final Java sources, documentation finalized
+after these runs; all use real pinned Keycloak 26.0.8):
+
+| Run | Total/PASS | FAIL | ERROR | SKIP | Evidence |
+| --- | ---: | ---: | ---: | ---: | --- |
+| Focused: 41 unit + 7 live | 48/48 | 0 | 0 | 0 | .local/fresh-admin-cc08591e819a |
+| Core-only clean verify | 154/154 | 0 | 0 | 0 | .local/fresh-admin-40f4bc2ae93a |
+| Full clean verify | 897/897 | 0 | 0 | 0 | .local/fresh-admin-fd4402aa0103 |
+| Unfiltered Second-domain clean verify | 334/334 | 0 | 0 | 0 | .local/fresh-admin-2c2d93537a68 |
+
+Boundary checker PASS; boundary regression 43/43 PASS. No production API,
+Keycloak grant, migration, settings controller or transaction boundary changed.
+The correction is limited to privileged service-account exclusion and its
+regression evidence. Self-review found no remaining P0/P1 in this diff; the
+bounded-search availability limitation above remains P2. Independent review is
+still required; hosted CI NOT_VERIFIED. A final focused run on the committed
+SHA and its evidence directory are reported with delivery. Stop after this fix.

@@ -67,8 +67,9 @@ class KeycloakFreshAdminAuthorizationTest {
     }
 
     private void token() { replies.add(new Reply(200, "{\"access_token\":\"directory-token\"}")); }
-    private void account() { replies.add(new Reply(200, "{\"id\":\"caller\",\"enabled\":true}")); }
-    private void granted() { token(); account(); replies.add(new Reply(200, "[{\"name\":\"platform-admin\"}]")); }
+    private void account() { replies.add(new Reply(200, "{\"id\":\"caller\",\"username\":\"caller\",\"enabled\":true}")); }
+    private void admin() { token(); account(); replies.add(new Reply(200, "[{\"name\":\"platform-admin\"}]")); }
+    private void granted() { admin(); replies.add(new Reply(200, "[{\"id\":\"caller\"}]")); }
 
     @Test void readsAuthenticatedSubjectAndEffectiveRolesNotSignedAdminClaim() {
         granted();
@@ -76,6 +77,7 @@ class KeycloakFreshAdminAuthorizationTest {
         assertTrue(requests.get(0).contains("client_id=dx-directory&client_secret=secret%26%3Dvalue"));
         assertTrue(requests.get(1).contains("GET /admin/realms/dx-lab/users/caller Bearer directory-token"));
         assertTrue(requests.get(2).contains("/role-mappings/realm/composite?briefRepresentation=true"));
+        assertTrue(requests.get(3).contains("/users?search=%22caller%22&max=2&briefRepresentation=true"));
         verify(user, never()).platformAdmin();
         verify(access, never()).requireMember(anyString());
     }
@@ -86,7 +88,44 @@ class KeycloakFreshAdminAuthorizationTest {
         assertEquals("caller", guard.requirePlatformAdmin());
         token(); account(); replies.add(new Reply(200, "[]"));
         assertEquals(ErrorCode.FORBIDDEN, assertThrows(CoreException.class, guard::requirePlatformAdmin).code());
-        assertEquals(6, requests.size());
+        assertEquals(7, requests.size());
+    }
+
+    static Stream<Arguments> humanFailures() {
+        return Stream.of(
+            Arguments.of(200, "[]", ErrorCode.FORBIDDEN),
+            Arguments.of(200, "[{\"id\":\"another-human\"}]", ErrorCode.FORBIDDEN),
+            Arguments.of(200, "{}", ErrorCode.SERVICE_UNAVAILABLE),
+            Arguments.of(200, "[{}]", ErrorCode.SERVICE_UNAVAILABLE),
+            Arguments.of(200, "not-json", ErrorCode.SERVICE_UNAVAILABLE),
+            Arguments.of(403, "{}", ErrorCode.SERVICE_UNAVAILABLE),
+            Arguments.of(404, "{}", ErrorCode.SERVICE_UNAVAILABLE),
+            Arguments.of(500, "{}", ErrorCode.SERVICE_UNAVAILABLE));
+    }
+
+    @ParameterizedTest @MethodSource("humanFailures")
+    void adminRoleWithoutLiveHumanProofCannotAuthorize(int status, String body, ErrorCode expected) {
+        admin();
+        replies.add(new Reply(status, body));
+        assertEquals(expected, assertThrows(CoreException.class,
+            () -> guard(Duration.ofSeconds(5)).requirePlatformAdmin()).code());
+    }
+
+    @Test void humanProofIsFreshEvenWhenRoleRemainsAdmin() {
+        var guard = guard(Duration.ofSeconds(5));
+        granted();
+        assertEquals("caller", guard.requirePlatformAdmin());
+        admin();
+        replies.add(new Reply(200, "[]"));
+        assertEquals(ErrorCode.FORBIDDEN, assertThrows(CoreException.class, guard::requirePlatformAdmin).code());
+        assertEquals(8, requests.size());
+    }
+
+    @Test void humanProofSharesTotalTimeoutBudget() {
+        admin();
+        replies.add(new Reply(200, "[{\"id\":\"caller\"}]", 700));
+        assertEquals(ErrorCode.SERVICE_UNAVAILABLE, assertThrows(CoreException.class,
+            () -> guard(Duration.ofMillis(500)).requirePlatformAdmin()).code());
     }
 
     static Stream<Arguments> failures() {
