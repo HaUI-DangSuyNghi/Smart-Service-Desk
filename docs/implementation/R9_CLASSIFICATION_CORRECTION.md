@@ -240,7 +240,14 @@ Local raw output is under `.local/task-execution-{full,core-only,second-domain,f
 `.local/r9-final-smoke.log`, and `.local/r9-final-db-consistency.txt`.
 Those artifacts, secrets, tokens and generated realms are deliberately not committed.
 Full reports: `.local/task-execution-full/task-execution-25965c947c3f`.
-Hosted CI: NOT_VERIFIED; no HOSTED_CI_WAIVED owner decision is assumed.
+Hosted CI: HOSTED_CI_BLOCKED_BILLING, not PASS and not HOSTED_CI_WAIVED.
+On delivery commit `d1890fbc8a65bb0a7c748f178fb0abb205bd77f0`, GitHub reports
+21 check runs: 18 failures, 2 skipped and 1 cancelled. Annotations on sampled
+failed jobs (assistance-integration, second-domain-python and combined-head)
+state that the job was not started because account payments failed or the
+spending limit must be increased. No hosted test execution is claimed from
+those failures. Account/billing remediation requires the owner; no billing
+settings, spending limits or repository protections are changed by this PR.
 
 The default scripts/start.ps1 build succeeds but startup encounters the existing
 local pinned PostgreSQL image error: postgres is not a known user. No existing
@@ -279,8 +286,12 @@ CLASSIFICATION_CHANGED is a Coordinator warning, not a new-critical event.
 - Merge gate: BUSINESS_DECISION_REQUIRED for the stated priority/SLA convention.
 - Existing environment gate: default pinned PostgreSQL startup fails locally;
   isolated-image proof is not a release waiver for that image.
+- Hosted CI gate: GitHub jobs are blocked by account billing/spending limits,
+  not a local test failure. Owner remediation and rerun, or an explicit recorded
+  owner waiver, are required before treating this merge gate as satisfied.
 - P2 baseline contract debt: unchanged HPDI structural errors described above.
 - READY FOR INTERNAL REVIEW as a Draft PR; not approved for merge or production.
+- Draft PR: https://github.com/HaUI-DangSuyNghi/Smart-Service-Desk/pull/58.
 - Baseline re-fetched before delivery and remains
   `84a479456b683ccb1d1bf745a909bcd1c41e1201`. Branch:
   `feature/r9-classification-correction`, base `develop`. MERGE COMMIT ONLY.
