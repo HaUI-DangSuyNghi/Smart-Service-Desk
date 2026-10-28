@@ -25,6 +25,7 @@ def main():
     parser.add_argument("--assignment-evidence", type=Path)
     parser.add_argument("--sla-evidence", type=Path)
     parser.add_argument("--estimate-evidence", type=Path)
+    parser.add_argument("--correction-evidence", type=Path)
     parser.add_argument("--baseline", help="Git ref for whole-document OpenAPI regression comparison")
     arguments = parser.parse_args()
     import json
@@ -139,6 +140,27 @@ def main():
     assert not decision.is_valid({"category": "HARDWARE", "priority": "HIGH", "assignee": None})
     print(f"PASS promoted paths and API subset validation; {count + 2} response/request positive and negative checks")
     print("Whole HPDI live/target validation is separate: known baseline errors are not waived by this subset check.")
+    if arguments.correction_evidence:
+        correction_path = "/workspaces/{workspace}/tickets/{id}/classification"
+        assert correction_path in app["paths"]
+        assert correction_path not in documents[(ROOT / "contracts/openapi/servicedesk-target.yaml").as_uri()]["paths"]
+        operation = app["paths"][correction_path]["patch"]
+        request_validator = OAS30Validator(operation["requestBody"]["content"]["application/json"]["schema"], registry=registry)
+        for payload in ({"category": "NETWORK", "reason": "Verified"}, {"priority": "CRITICAL", "reason": "Verified"},
+                        {"category": "NETWORK", "priority": "HIGH", "reason": "Verified"}):
+            request_validator.validate(payload)
+        for payload in ({}, {"reason": "Missing change"}, {"priority": 0, "reason": "Invalid"},
+                        {"priority": "HIGH", "reason": " "}, {"priority": "HIGH", "reason": "x" * 1001},
+                        {"priority": "HIGH", "reason": "Verified", "assignee": "other"}):
+            assert not request_validator.is_valid(payload), payload
+        runtime = json.loads(arguments.correction_evidence.read_text(encoding="utf-8"))
+        count = 0
+        for response in runtime["responses"]:
+            if response["method"] == "PATCH" and response["path"].endswith("/classification") and response["status"] == 200:
+                ticket_validator.validate(response["body"])
+                count += 1
+        assert count >= 4
+        print("PASS R9 promoted contract:", count, "real Keycloak HTTP responses and 9 request checks")
     if arguments.assessment_evidence:
         ticket = json.loads(arguments.assessment_evidence.read_text(encoding="utf-8-sig"))
         validator = OAS30Validator({"$ref": APP.as_uri() + "#/components/schemas/Ticket"}, registry=registry)

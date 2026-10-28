@@ -15,6 +15,9 @@ import vn.haui.dx.hpdi.process.api.ProcessSummary;
 @Service
 public class CoreProcessCapabilities implements ProcessCapability, WorkInbox, WorkExecution {
     private final WorkflowService workflow;
+    public void returnForCorrection(String workspace, String taskId, String note) {
+        workflow.returnForCorrection(workspace, taskId, note);
+    }
     public void release(String workspace, String taskId, String reason, String note) {
         if (!java.util.Set.of("WRONG_GROUP", "HANDOVER", "OTHER").contains(reason == null ? "" : reason)
                 || note == null || note.isBlank() || note.length() > 1000)

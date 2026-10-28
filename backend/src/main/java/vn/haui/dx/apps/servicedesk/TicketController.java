@@ -13,8 +13,17 @@ import static org.springframework.http.HttpStatus.CREATED;
 public class TicketController {
     private final TicketService tickets;
     private final TicketReviewService reviews;
+    private final TicketCorrectionService corrections;
 
-    public TicketController(TicketService tickets, TicketReviewService reviews) { this.tickets = tickets; this.reviews = reviews; }
+    public TicketController(TicketService tickets, TicketReviewService reviews, TicketCorrectionService corrections) {
+        this.tickets = tickets; this.reviews = reviews; this.corrections = corrections;
+    }
+
+    @PatchMapping("/{id}/classification")
+    public TicketReview.View correctClassification(@PathVariable String workspace, @PathVariable UUID id,
+            @RequestBody com.fasterxml.jackson.databind.JsonNode input) {
+        return corrections.correct(workspace, id, TicketCorrection.parse(input));
+    }
 
     @PostMapping
     @ResponseStatus(CREATED)

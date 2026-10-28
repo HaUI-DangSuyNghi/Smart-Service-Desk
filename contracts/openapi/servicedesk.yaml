@@ -8,6 +8,49 @@ servers:
 security:
   - bearer: []
 paths:
+  /workspaces/{workspace}/tickets/{id}/classification:
+    parameters:
+    - {$ref: 'core.yaml#/components/parameters/Workspace'}
+    - {$ref: '#/components/parameters/TicketId'}
+    patch:
+      operationId: correctClassification
+      description: >-
+        R9. Current independent Coordinator with task:handle and task:assign, or current Agent holding
+        the active handle with task:handle. A nonblank reason and either an actual business classification
+        change or explicit reaffirmation of business priority against a different auto-escalated effective
+        priority are required. Reaffirmation records a manual override audit and SLA amendment, not a
+        fictitious unchanged-field correction. Repeating an already effective manual priority is a 409 no-op.
+        Group change before START returns the same process to a fresh review using native Flowable state change.
+        IN_PROGRESS and PENDING retain assignment and pending episode. Active canonical links fail closed.
+        Priority amendments preserve policy, approval, elapsed budget and historical breach; manual priority
+        takes precedence over automatic escalation for this handle and its handover continuation.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [reason]
+              anyOf:
+              - {required: [category]}
+              - {required: [priority]}
+              properties:
+                category: {type: string, enum: [HARDWARE, NETWORK, SOFTWARE, ACCOUNT, OTHER]}
+                priority: {type: string, enum: [LOW, MEDIUM, HIGH, CRITICAL]}
+                reason: {type: string, minLength: 1, maxLength: 1000, pattern: '\S'}
+      responses:
+        '200':
+          description: Updated ticket with private correction history for authorized staff.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Ticket'}
+        '400': {$ref: 'core.yaml#/components/responses/BadRequest'}
+        '401': {$ref: 'core.yaml#/components/responses/Unauthorized'}
+        '403': {$ref: 'core.yaml#/components/responses/Forbidden'}
+        '404': {$ref: 'core.yaml#/components/responses/NotFound'}
+        '409': {$ref: 'core.yaml#/components/responses/Conflict'}
+        '503': {$ref: '../hpdi/openapi.yaml#/components/responses/ServiceUnavailable'}
   /workspaces/{workspace}/tickets/{id}/assignment-suggestion:
     parameters:
     - $ref: core.yaml#/components/parameters/Workspace
@@ -797,6 +840,22 @@ components:
         awaitingConfirmation: {type: integer, format: int64, minimum: 0, description: Exactly one active confirm task.}
         completed: {type: integer, format: int64, minimum: 0, description: Normal ticket completion with no remaining work; excludes cancelled processes.}
         unclassified: {type: integer, format: int64, minimum: 0, description: 'Missing or mismatched scope/history, suspended, deleted or unexpected task configuration; never assumed completed.'}
+    Correction:
+      type: object
+      additionalProperties: false
+      required: [operationId, processInstanceId, reviewTaskId, handleTaskId, field, previousValue, newValue, fromAi, by, reason, at]
+      properties:
+        operationId: {type: string, format: uuid}
+        processInstanceId: {type: string}
+        reviewTaskId: {type: string}
+        handleTaskId: {type: string}
+        field: {type: string, enum: [category, priority]}
+        previousValue: {type: string}
+        newValue: {type: string}
+        fromAi: {type: boolean, enum: [false], description: Previous authoritative values are human-reviewed; no unproven AI attribution.}
+        by: {type: string}
+        reason: {type: string, minLength: 1, maxLength: 1000}
+        at: {type: string, format: date-time}
     NewTicket:
       type: object
       additionalProperties: false
@@ -882,6 +941,10 @@ components:
         reopenCount:
           type: integer
           minimum: 0
+        corrections:
+          type: array
+          description: Present for current staff only; omitted for Requester and ticket creator. Ordered by time, operation and field.
+          items: {$ref: '#/components/schemas/Correction'}
         classification:
           anyOf:
           - $ref: '#/components/schemas/Classification'

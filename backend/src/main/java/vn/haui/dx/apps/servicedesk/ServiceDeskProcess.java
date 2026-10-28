@@ -68,6 +68,8 @@ public class ServiceDeskProcess implements ProcessContribution {
 
     @Override public void afterAssign(String workspace, String processKey, String processId, String taskKey, String subject) {
         if (!reviewed(processKey) || !"handle".equals(taskKey)) return;
+        jdbc.update("update servicedesk_review r set correction_incumbent=null from servicedesk_ticket t"
+            + " where t.id=r.ticket_id and t.workspace=? and t.process_instance_id=?", workspace, processId);
         alerts.getObject().assigned(workspace, processId, subject);
         var group = jdbc.queryForObject("select r.category from servicedesk_review r join servicedesk_ticket t on t.id=r.ticket_id"
             + " where t.workspace=? and t.process_instance_id=?", String.class, workspace, processId);

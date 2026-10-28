@@ -13,7 +13,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @EnabledIfEnvironmentVariable(named = "FILE_TEST_JDBC_URL", matches = ".+/file_storage")
 class ServiceDeskMigrationIntegrationTest {
     @ParameterizedTest
-    @ValueSource(ints = {23,24})
+    @ValueSource(ints = {23,24,25})
     void v25PreservesExistingRequestsAndPermitsAuditedSupersession(int version) {
         var source = new DriverManagerDataSource(System.getenv("FILE_TEST_JDBC_URL"),"workflow",System.getenv("FILE_TEST_DB_PASSWORD"));
         String schema = "estimate_upgrade_" + UUID.randomUUID().toString().replace("-", "");
@@ -27,9 +27,9 @@ class ServiceDeskMigrationIntegrationTest {
                 + " values(?,'lab-a','process','task','review','ticket','Estimate','agent-a',90,120,'More work',?,'coordinator',clock_timestamp())",UUID.randomUUID(),status);
         var before = jdbc.queryForList("select * from " + schema + ".hpdi_estimate_request order by id");
         var upgraded = Flyway.configure().dataSource(source).schemas(schema).load();
-        assertEquals(25-version,upgraded.migrate().migrationsExecuted);
+        assertEquals(27-version,upgraded.migrate().migrationsExecuted);
         var after = jdbc.queryForList("select * from " + schema + ".hpdi_estimate_request order by id");
-        after.forEach(row -> { row.remove("superseded_by"); row.remove("superseded_at"); row.remove("superseded_reason"); });
+        if (version<25) after.forEach(row -> { row.remove("superseded_by"); row.remove("superseded_at"); row.remove("superseded_reason"); });
         assertEquals(before,after);
         assertThrows(org.springframework.dao.DataIntegrityViolationException.class, () -> jdbc.update(
             "update " + schema + ".hpdi_estimate_request set status='SUPERSEDED' where id=?",pending));
@@ -94,7 +94,7 @@ class ServiceDeskMigrationIntegrationTest {
     }
 
     @ParameterizedTest
-    @ValueSource(ints = {9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24})
+    @ValueSource(ints = {9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25})
     void upgradesDevelopWithoutChangingPersistedWork(int baselineVersion) {
         var source = new DriverManagerDataSource(System.getenv("FILE_TEST_JDBC_URL"),
                 "workflow", System.getenv("FILE_TEST_DB_PASSWORD"));
@@ -133,7 +133,7 @@ class ServiceDeskMigrationIntegrationTest {
                 ? jdbc.queryForList("select * from " + schema + ".servicedesk_assessment_history where ticket_id=?", ticket) : null;
 
         var upgraded = Flyway.configure().dataSource(source).schemas(schema).load();
-        assertEquals(25 - baselineVersion, upgraded.migrate().migrationsExecuted);
+        assertEquals(27 - baselineVersion, upgraded.migrate().migrationsExecuted);
         assertEquals(0L, jdbc.queryForObject("select count(*) from " + schema + ".servicedesk_sla", Long.class));
         assertEquals(0L, jdbc.queryForObject("select count(*) from " + schema + ".hpdi_alert_event", Long.class));
         assertEquals(0L, jdbc.queryForObject("select count(*) from " + schema + ".hpdi_alert_recipient", Long.class));
@@ -142,7 +142,10 @@ class ServiceDeskMigrationIntegrationTest {
         var after = jdbc.queryForMap("select * from " + schema + ".servicedesk_ticket where id=?", ticket);
         if (baselineVersion < 11) assertEquals(0L, after.remove("context_revision"));
         assertEquals(before, after);
-        assertEquals(review, jdbc.queryForMap("select * from " + schema + ".servicedesk_review where ticket_id=?", ticket));
+        var amendedReview = jdbc.queryForMap("select * from " + schema + ".servicedesk_review where ticket_id=?", ticket);
+        assertNull(amendedReview.remove("estimate_generation"));
+        assertNull(amendedReview.remove("correction_incumbent"));
+        assertEquals(review, amendedReview);
         assertEquals(history, jdbc.queryForList("select * from " + schema + ".servicedesk_estimate_history where ticket_id=?", ticket));
         if (baselineVersion >= 10) {
             assertEquals(assessment, jdbc.queryForMap("select * from " + schema + ".servicedesk_assessment where ticket_id=?", ticket));

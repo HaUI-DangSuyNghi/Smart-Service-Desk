@@ -124,7 +124,22 @@ public class TicketReviewService implements WorkProjection {
         return new TicketReview.View(ticket,state,task==null?null:task.id(),task==null?null:task.assignee(),
             estimates.isEmpty()?null:estimates.get(0),item==null?null:item.workState(),item==null?closedWork/60_000:item.workedMinutes(),
             item==null?null:item.remainingMinutes(),reopened,classification,assessments.read(workspace,ticket.id()),
-            slaState == null ? null : slaState.project(sla.now()));
+            slaState == null ? null : slaState.project(sla.now()), correctionHistory(workspace, ticket));
+    }
+
+    private List<TicketCorrection.History> correctionHistory(String workspace, Ticket ticket) {
+        var actor = humans.currentActor(workspace);
+        if (!actor.hasRole("agent", "coordinator") || actor.subject().equals(ticket.creator())) return null;
+        if (!Boolean.TRUE.equals(jdbc.queryForObject("select exists(select 1 from servicedesk_classification_correction where workspace=? and ticket_id=?)",
+                Boolean.class, workspace, ticket.id()))) return List.of();
+        var current = humans.currentMember(workspace);
+        if (!current.hasRole("agent", "coordinator")) return null;
+        permissions.requireCurrent(workspace, current.hasRole("coordinator") ? "coordinator" : "agent", Permissions.TASK_HANDLE);
+        return jdbc.query("select * from servicedesk_classification_correction where workspace=? and ticket_id=? order by changed_at,operation_id,field",
+            (row,index) -> new TicketCorrection.History(row.getObject("operation_id", UUID.class), row.getString("process_instance_id"),
+                row.getString("review_task_id"), row.getString("handle_task_id"), row.getString("field"), row.getString("previous_value"),
+                row.getString("new_value"), row.getBoolean("from_ai"), row.getString("changed_by"), row.getString("reason"),
+                row.getTimestamp("changed_at").toInstant()), workspace, ticket.id());
     }
 
     @Override public QueueItem project(String workspace, WorkExecution.Item execution) {

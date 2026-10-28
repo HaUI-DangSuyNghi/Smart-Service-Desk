@@ -22,7 +22,9 @@ public final class TicketReview {
                        String taskId, String assignee, QueueItem.Estimate estimate,
                        String workState, Long workedMinutes, Long remainingMinutes, int reopenCount, Classification classification,
                        vn.haui.dx.apps.servicedesk.intelligence.StoredAssessment assessment,
-                       vn.haui.dx.hpdi.process.api.Sla sla) {}
+                       vn.haui.dx.hpdi.process.api.Sla sla,
+                       @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
+                       java.util.List<TicketCorrection.History> corrections) {}
     public record Classification(String category, String priority, String basePriority, boolean escalated,
                                  String group, String source, String impact, String urgency,
                                  String reviewedBy, java.time.Instant reviewedAt) {}

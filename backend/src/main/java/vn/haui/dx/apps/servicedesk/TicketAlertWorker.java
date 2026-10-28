@@ -24,7 +24,8 @@ public class TicketAlertWorker {
             String task = (String) row.get("handle_task_id");
             jdbc.update("update servicedesk_alert_monitor set checked_at=current_timestamp where workspace=? and handle_task_id=?", workspace, task);
             try { processing.run(workspace, () -> alerts.check(workspace, (String) row.get("process_instance_id"), task,
-                "OTHER".equals(row.get("category")) ? null : processing.duty(workspace, TicketAssignmentEligibility.supportGroup(TicketReview.Category.valueOf((String) row.get("category")))))); }
+                "OTHER".equals(row.get("category")) ? null : processing.duty(workspace, TicketAssignmentEligibility.supportGroup(TicketReview.Category.valueOf((String) row.get("category")))),
+                processing.duty(workspace, null), (String) row.get("category"))); }
             catch (RuntimeException failure) { LOG.warn("Ticket alert evaluation deferred for task {}", task); }
         }
     }

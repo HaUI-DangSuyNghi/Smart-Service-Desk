@@ -930,7 +930,7 @@ components:
         decisionNote: {type: string, nullable: true}
         supersededBy: {type: string, nullable: true, description: Actor triggering assignment supersession; not a decision.}
         supersededAt: {type: string, format: date-time, nullable: true}
-        supersededReason: {type: string, nullable: true, description: ASSIGNMENT_CHANGED for superseded requests; otherwise null.}
+        supersededReason: {type: string, nullable: true, enum: [ASSIGNMENT_CHANGED, CLASSIFICATION_CHANGED, null], description: Persisted invalidation reason; null unless superseded.}
         createdAt: {type: string, format: date-time}
     Alert:
       type: object
@@ -943,7 +943,7 @@ components:
           description: >-
             Persistent deadline, pending, duty and critical notifications. CRITICAL_NEW labels
             distinguish unapproved AI advice from a Coordinator-approved decision. No emergency auto-queue producer.
-          enum: [START_OVERDUE, SLA_WARNING, SLA_BREACHED, PENDING_TOO_LONG, CRITICAL_NEW, ASSIGNEE_OFF_DUTY, NO_ONE_ON_DUTY]
+          enum: [START_OVERDUE, SLA_WARNING, SLA_BREACHED, PENDING_TOO_LONG, CRITICAL_NEW, ASSIGNEE_OFF_DUTY, NO_ONE_ON_DUTY, CLASSIFICATION_CHANGED]
         severity: {type: string, enum: [INFO, WARNING, CRITICAL]}
         taskId: {type: string, nullable: true}
         processInstanceId: {type: string}
@@ -1037,8 +1037,8 @@ components:
       properties:
         startBy: {type: string, format: date-time}
         resolveBy: {type: string, format: date-time}
-        startBreached: {type: boolean}
-        resolveBreached: {type: boolean}
+        startBreached: {type: boolean, description: 'Ever breached the start SLA in this generation or its handover lineage; remains true after a priority amendment. Not a current-overdue indicator.'}
+        resolveBreached: {type: boolean, description: 'Ever breached the resolution SLA in this generation or its handover lineage; remains true after a priority amendment. Not a current-overdue indicator.'}
         warning: {type: boolean}
         clockPaused: {type: boolean}
     QueueItem:
