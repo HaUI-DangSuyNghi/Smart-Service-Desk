@@ -140,8 +140,12 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup.ps1
 notepad .env
 ```
 
-Script tự tạo `.env`, mật khẩu và các ô cấu hình AI còn thiếu; giữ nguyên giá trị
-đã có trên máy cũ. Mỗi thành viên dùng `.env` riêng, không cần sao chép file chứa
+Script tạo `.env` từ **toàn bộ `.env.example`**, giữ cả chú thích và giá trị mặc định,
+rồi sinh mật khẩu nội bộ còn trống. Với máy đã có `.env`, script chỉ thêm biến
+còn thiếu từ template; giữ nguyên mật khẩu, API key, giá trị trống có sẵn và lựa
+chọn AI đã lưu (trừ mật khẩu nội bộ bắt buộc còn trống sẽ được sinh tự động).
+Khi cập nhật source, chạy lại `setup.ps1` hoặc `start.ps1` để nhận các biến mới,
+không cần xóa `.env`. Mỗi thành viên dùng `.env` riêng, không cần sao chép file chứa
 mật khẩu/key của người khác. Không sửa `.env.example` để cấu hình máy đang chạy.
 
 #### Bước 2 — Điền API để dùng “Hỏi AI”

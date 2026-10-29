@@ -45,8 +45,10 @@ AI_API_KEY_FILE=
 Có thể chọn `openai` hoặc `groq` thay `gemini`. Với API chính thức, để trống
 `AI_API_BASE_URL`; endpoint khác cần HTTPS và định dạng tương thích. Nếu dùng
 file key, đặt `AI_API_KEY_FILE` và để trống key trực tiếp. Không gửi key cho người
-khác, không đưa vào `VITE_` hay Git. `setup.ps1` bổ sung các ô cấu hình còn thiếu
-vào `.env` của máy cũ, giữ nguyên mọi giá trị đã có.
+khác, không đưa vào `VITE_` hay Git. `setup.ps1` dùng `.env.example` làm nguồn cấu
+hình: máy mới nhận đủ biến và chú thích; máy cũ chỉ được thêm biến còn thiếu,
+giữ nguyên giá trị đã có. Chỉ mật khẩu/token nội bộ bắt buộc còn trống được sinh
+tự động; API key luôn do thành viên tự điền. Không cần xóa `.env` để đồng bộ.
 
 ```powershell
 .\scripts\start.ps1 -Model -AskApi
@@ -133,6 +135,13 @@ quyền tương ứng trong Keycloak. Đặt biến không tự mở quyền wor
   theo cờ model; chúng giữ cấu hình riêng của ứng dụng.
 
 ## Kiểm tra
+
+Có thể kiểm tra riêng việc tạo/đồng bộ `.env` bằng fixture cô lập. Phép thử không
+đọc `.env` thật của máy, không gọi Docker hoặc provider:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test-setup-env.ps1
+```
 
 Nếu có Python trên host, chạy phép thử xuyên suốt bằng fixture synthetic cố định:
 
