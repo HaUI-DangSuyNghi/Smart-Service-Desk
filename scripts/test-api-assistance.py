@@ -2,6 +2,7 @@
 
 import argparse
 import json
+import re
 from pathlib import Path
 import uuid
 
@@ -17,6 +18,9 @@ def main():
         "ticket", type=uuid.UUID, help="Existing synthetic fixture owned by user1"
     )
     parser.add_argument("--expect-unavailable", action="store_true")
+    parser.add_argument("--workspace", default="lab-a")
+    parser.add_argument("--username", default="user1")
+    parser.add_argument("--foreign-username", default="user4")
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
     config = dict(
@@ -26,8 +30,14 @@ def main():
         .splitlines()
         if line and not line.startswith("#") and "=" in line
     )
-    token = login("user1", config["DEMO_PASSWORD"])
-    code, status = request("/workspaces/lab-a/intelligence/status", token)
+    require(
+        bool(re.fullmatch(r"[a-zA-Z0-9_-]{1,100}", args.workspace)),
+        "Invalid synthetic workspace",
+    )
+    token = login(args.username, config["DEMO_PASSWORD"])
+    code, status = request(
+        "/workspaces/" + args.workspace + "/intelligence/status", token
+    )
     require(
         code == 200 and status["assistanceMode"] == "api",
         "API assistance is not configured (HTTP "
@@ -36,7 +46,7 @@ def main():
         + str((status or {}).get("assistanceMode"))
         + ")",
     )
-    path = "/workspaces/lab-a/tickets/" + str(args.ticket)
+    path = "/workspaces/" + args.workspace + "/tickets/" + str(args.ticket)
     code, before = request(path, token)
     require(code == 200, "Synthetic ticket must be readable")
     question = {
@@ -67,7 +77,7 @@ def main():
             isinstance(result["answer"], str) and bool(result["answer"].strip()),
             "Empty model answer",
         )
-        foreign = login("user4", config["DEMO_PASSWORD"])
+        foreign = login(args.foreign_username, config["DEMO_PASSWORD"])
         require(
             request(path + "/assistance", foreign, question)[0] in (403, 404),
             "Foreign workspace must not call AI for this ticket",

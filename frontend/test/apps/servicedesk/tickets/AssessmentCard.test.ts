@@ -27,6 +27,22 @@ const model: Assessment = {
 };
 
 describe("AssessmentCard model advice", () => {
+  it("can retry a formerly excluded workspace after AI is enabled there", () => {
+    const assessment: Assessment = {
+      status: "DEGRADED",
+      version: 1,
+      result: null,
+      errorCode: "AI_WORKSPACE_NOT_ENABLED",
+    };
+    const enabled = renderToStaticMarkup(
+      createElement(AssessmentCard, { assessment, modelEnabled: true, onRetry: () => {} }),
+    );
+    const disabled = renderToStaticMarkup(
+      createElement(AssessmentCard, { assessment, modelEnabled: false, onRetry: () => {} }),
+    );
+    expect(enabled).toContain("Phân tích lại bằng model");
+    expect(disabled).not.toContain("<button");
+  });
   it("shows model/rules conflicts without silently choosing a category", () => {
     const assessment: Assessment = {
       ...model,

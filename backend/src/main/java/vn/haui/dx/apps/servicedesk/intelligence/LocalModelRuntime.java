@@ -21,7 +21,7 @@ public final class LocalModelRuntime {
 
     public LocalModelRuntime(
             @Value("${dx.ai.runtime-mode:EXTERNAL}") String mode,
-            @Value("${dx.ai.local-workspaces:lab-a}") List<String> workspaces,
+            @Value("${dx.ai.local-workspaces:auto}") List<String> workspaces,
             @Value("${intelligence.classification.base-url:}") String endpoint,
             Environment environment) {
         if (!Set.of("EXTERNAL", "LOCAL_DEV").contains(mode)) {
@@ -42,8 +42,9 @@ public final class LocalModelRuntime {
                     || uri.getQuery() != null || uri.getFragment() != null
                     || !(uri.getPath().isEmpty() || "/".equals(uri.getPath()))
                     || this.workspaces.isEmpty()
-                    || this.workspaces.stream().anyMatch(value -> !value.matches("[a-z0-9-]{1,50}"))) {
-                throw new IllegalStateException("LOCAL_DEV requires a local Qwen endpoint and explicit workspace scope");
+                    || (this.workspaces.contains("auto") && this.workspaces.size() != 1)
+                    || this.workspaces.stream().anyMatch(value -> !value.matches("[a-zA-Z0-9_-]{1,100}"))) {
+                throw new IllegalStateException("LOCAL_DEV requires a local classifier endpoint and valid workspace configuration");
             }
         }
     }
@@ -56,7 +57,11 @@ public final class LocalModelRuntime {
     @org.springframework.beans.factory.annotation.Value("${dx.ai.provider-label:Qwen}")
     private String providerLabel = "Qwen";
     public String providerLabel() { return providerLabel; }
-    public boolean supports(String workspace) { return enabled && workspaces.contains(workspace); }
+    public boolean automaticWorkspaces() { return enabled && workspaces.contains("auto"); }
+    public boolean supports(String workspace) {
+        return enabled && workspace != null && workspace.matches("[a-zA-Z0-9_-]{1,100}")
+                && (automaticWorkspaces() || workspaces.contains(workspace));
+    }
 
     public String authorize(String workspace, String purpose, String identity) {
         if (!supports(workspace)) {

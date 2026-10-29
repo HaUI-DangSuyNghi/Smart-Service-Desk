@@ -33,6 +33,20 @@ class LocalModelRuntimeTest {
         }
     }
 
+    @Test void automaticModeCoversNewValidWorkspacesWithoutChangingTheAllowlist() {
+        var environment = new StandardEnvironment(); environment.setActiveProfiles("local-dev");
+        var runtime = new LocalModelRuntime("LOCAL_DEV", List.of("auto"), "http://intelligence-classification:8003", environment);
+        assertTrue(runtime.automaticWorkspaces());
+        for (String workspace : List.of("lab-a", "lab-b", "new_workspace_2030", "Room-C")) {
+            assertTrue(runtime.supports(workspace));
+            assertTrue(runtime.authorize(workspace, "API_ASSISTANCE", "pin").matches("[a-f0-9]{64}"));
+        }
+        for (String workspace : List.of("", "../lab-a", "*", "a".repeat(101))) assertFalse(runtime.supports(workspace));
+        assertFalse(runtime.supports(null));
+        assertFalse(LocalModelRuntime.external().automaticWorkspaces());
+        assertThrows(IllegalStateException.class, () -> new LocalModelRuntime("LOCAL_DEV", List.of("auto", "lab-a"), "http://intelligence-classification:8003", environment));
+    }
+
     @Test void localProcessingDoesNotForgeExternalGrantsAndCannotPromoteModels() {
         var settings = new ClassifierConfiguration.Settings(ClassifierConfiguration.Mode.ASSISTED, "QWEN", "a".repeat(64), "b".repeat(64), "", "");
         var json = new ObjectMapper();

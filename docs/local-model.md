@@ -112,9 +112,30 @@ trỏ tới địa chỉ backend cũ trong DNS cache.
 Các digest/image ID hiệu lực được lưu tại `.local/model/runtime.env`; không có
 token trong file này. Mỗi máy giữ `.env` và `.local` riêng, không commit/chia sẻ.
 
-Mặc định model xử lý `lab-a`. `LOCAL_MODEL_WORKSPACES` giới hạn workspace local;
-nếu thêm workspace, service-account `dx-assessment-worker` cũng phải được cấp
-quyền tương ứng trong Keycloak. Đặt biến không tự mở quyền workspace.
+Mặc định `LOCAL_MODEL_WORKSPACES=auto`: phân loại và hỏi đáp dùng được trong mọi
+workspace người dùng được phép truy cập, bao gồm workspace tạo sau startup.
+Không phải thêm từng workspace vào `.env` hoặc khởi động lại khi tạo workspace.
+
+Trong local-dev, overlay `compose.workspaces-auto.yaml` chạy service bootstrap
+nội bộ. Khi worker xử lý ticket lần đầu, bootstrap xác minh workspace đã tồn tại
+trong Keycloak, tạo nhóm `assessment-worker`/`alert-worker` còn thiếu và gán riêng
+tài khoản `dx-assessment-worker`. Backend vẫn lấy JWT thật và kiểm tra quyền
+worker cùng quyền người tạo trước/sau inference; không có wildcard JWT hoặc mở
+quyền đọc ticket cho người dùng khác. Bootstrap không tạo người dùng/workspace,
+không đổi nhóm người dùng, không reset realm. Nếu quản trị viên thu hồi quyền
+worker sau khi thiết lập, bootstrap không tự cấp lại; quyền phải được khôi phục
+chủ động trước khi thử lại.
+
+Token bootstrap tách khỏi token classifier. Mật khẩu admin Keycloak chỉ được
+mount vào service bootstrap, không vào backend/model/API adapter. Trạng thái
+thiết lập nằm trong volume riêng; chế độ này bị chặn ngoài profile local-dev.
+`SERVICE_DESK_BACKGROUND_WORKSPACES` của các timer/workflow khác giữ cấu hình riêng.
+
+Muốn cố ý giới hạn AI, đặt `LOCAL_MODEL_WORKSPACES=lab-a,lab-b`; danh sách này
+giữ cơ chế cấp quyền worker thủ công như trước. Máy cũ còn giá trị `lab-a` sẽ được
+giữ nguyên khi chạy setup; đổi một lần thành `auto` rồi chạy `start.ps1` để dùng
+mặc định mới. Ticket trước đây bị loại bởi giới hạn workspace có thể phân tích
+lại khi AI đã được bật tại workspace đó.
 
 ## Luồng người dùng
 
@@ -168,6 +189,13 @@ GPU. Sau khi GPU worker quá deadline và hạ readiness, khởi động lại:
 khi đồng thời có profile `prod`/`production`, hoặc endpoint model không phải
 loopback/service classifier nội bộ đã allowlist. Token, model digest và policy pin vẫn bắt buộc.
 Runtime không tạo hay giả mạo external processing grant.
+
+Kiểm tra auto scope bằng `python scripts/test-auto-workspaces.py --output
+.local/auto-workspaces-proof.json` trên máy DEV. Phép thử đăng nhập thật, tạo
+ticket ở `lab-b`, tạo thêm workspace thử cho user4 sau startup, xác nhận cả hai
+chạy model + rules và tài khoản khác bị từ chối. Nó cũng kiểm tra thu hồi/khôi
+phục quyền worker và retry; không reset realm hoặc xóa dữ liệu. Workspace và
+ticket synthetic được giữ lại để kiểm tra, không dùng trên dữ liệu thật.
 
 Chế độ `EXTERNAL` giữ nguyên kiểm tra grant/chữ ký/scope/expiry. `PROMOTED` vẫn bị
 chặn; local mode không cho model duyệt, phân công hay tự thay đổi workflow. Model
@@ -246,12 +274,14 @@ Kiểm tra tại máy phát triển ngày 2026-10-29 với dữ liệu thử:
 | Kết quả lưu và quyền truy cập | Ba lần đọc giữ nguyên kết quả; từ chối đọc/retry khác workspace và retry kết quả model đã hoàn tất |
 | Giao diện trình duyệt thật | Đăng nhập điều phối viên, hiển thị kết quả hybrid cùng hai nguồn |
 | Enrichment và contextual assessment | HTTP 200, enrichment READY, model trả HARDWARE |
-| Backend Maven verify | 920 tests: 591 chạy đạt, 329 được cấu hình bỏ qua; không lỗi |
-| Background assessment với PostgreSQL riêng | 21/21 đạt, không bỏ qua |
-| Python classification / API Q&A | 100/100 đạt, gồm cả ba vendor với upstream giả lập |
-| Frontend | TypeScript/lint/build đạt; 29/29 test AI/ticket liên quan đạt; lần kiểm toàn bộ suite trước thay đổi hỏi đáp có 149 đạt, 2 lỗi board/dropTargets tái hiện nguyên trạng trên develop |
+| Backend Maven verify | 928 tests: 598 chạy đạt, 330 được cấu hình bỏ qua; không lỗi |
+| Background assessment với PostgreSQL riêng | 22/22 đạt, không bỏ qua; có kiểm tra auto scope ngoài danh sách legacy |
+| Python classification / API Q&A / workspace bootstrap | 113/113 đạt, gồm cả ba vendor với upstream giả lập và kiểm tra IAM bootstrap |
+| Frontend | TypeScript/lint/build đạt; 30/30 test AI/ticket liên quan đạt; lần kiểm toàn bộ suite trước thay đổi hỏi đáp có 149 đạt, 2 lỗi board/dropTargets tái hiện nguyên trạng trên develop |
 | Gemini/OpenAI/Groq | Cấu hình cả ba hợp lệ; API container healthy không cần GPU; chưa kiểm inference thật bằng key của vendor |
 | API hỏi đáp xuyên suốt qua HTTPS upstream giả lập | Đăng nhập user1, hỏi trên ticket thật, UI hiển thị câu trả lời; không trích dẫn giả, không đổi phân loại; key bị từ chối trả 503; Qwen + rules cùng hoạt động |
+| Auto workspace qua Keycloak/Qwen thật | lab-b và workspace tạo sau startup đều trả hybrid HARDWARE/HIGH; giữ cách ly người dùng, tôn trọng thu hồi quyền worker, retry đạt sau khôi phục quyền |
+| Hỏi đáp API trong auto scope | user4 hỏi trên ticket lab-b qua HTTPS upstream giả lập; không đổi phân loại, từ chối user1 khác workspace; chưa gọi API vendor thật |
 
 Các script tái kiểm tra: `scripts/test-local-model.py` và
 `scripts/test-local-model-ui.mjs`; Q&A dùng `scripts/test-api-assistance.py <UUID-ticket-thu>`

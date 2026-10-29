@@ -198,6 +198,25 @@ class BackgroundTicketAssessmentTest {
             assertEquals("READY",state(id));
         } finally { executor.shutdownNow(); }
     }
+    @Test void automaticModelScopeClaimsAuthorizedJobsOutsideTheLegacyList() throws Exception {
+        var reference = create();
+        assertTrue(worker.processOne());
+        var result = worker.read("background-a", reference).result();
+        var id = create();
+        var model = mock(BackgroundModelAssessment.class);
+        when(model.enabled()).thenReturn(true);
+        when(model.automaticWorkspaces()).thenReturn(true);
+        when(model.assess(any())).thenReturn(result);
+        @SuppressWarnings("unchecked")
+        org.springframework.beans.factory.ObjectProvider<BackgroundModelAssessment> provider = mock(org.springframework.beans.factory.ObjectProvider.class);
+        when(provider.getObject()).thenReturn(model);
+        var automatic = new BackgroundTicketAssessment(jdbc, json, capability, processing, audit, manager,
+                false, List.of("unrelated-workspace"), intake, alertProvider, provider);
+        assertTrue(automatic.processOne());
+        assertEquals("READY", state(id));
+        verify(model).assess(argThat(ticket -> ticket.id().equals(id) && ticket.workspace().equals("background-a")));
+        assertNull(SecurityContextHolder.getContext().getAuthentication());
+    }
     @Test void futureAvailabilityAndActiveLeaseAreNotClaimed() throws Exception {
         var id=create(false);
         jdbc.update("update servicedesk_assessment set available_at=clock_timestamp()+interval '1 hour' where ticket_id=?",id);

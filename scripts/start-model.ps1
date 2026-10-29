@@ -100,8 +100,31 @@ $assessmentDigest = Get-TextDigest ((Get-PolicyDigest 'taxonomy-v0.1.json') + ':
 $contextEntries = @('context-slots-v0.1.json', 'enrichment-questions-v0.1.json', 'duplicate-policy-v0.1.json', 'taxonomy-v0.1.json', 'assessment-policy-v0.1.json') | ForEach-Object { $_ + '=' + (Get-PolicyDigest $_) }
 $contextDigest = Get-TextDigest ('{' + ($contextEntries -join ', ') + '}')
 $contextualDigest = Get-TextDigest ((Get-PolicyDigest 'contextual-input-policy-v0.1.json') + ':' + (Get-PolicyDigest 'guard-policy-v0.1.json') + ':' + $contextDigest + ':' + $assessmentDigest + ':' + $modelDigest + ':' + $policyDigest)
-$workspaces = if ($settings['LOCAL_MODEL_WORKSPACES']) { $settings['LOCAL_MODEL_WORKSPACES'] } else { 'lab-a' }
-if ($workspaces -notmatch '^[a-z0-9-]{1,50}(,[a-z0-9-]{1,50})*$') { throw 'LOCAL_MODEL_WORKSPACES must be a comma-separated list of workspace IDs.' }
+$workspaces = if ($settings['LOCAL_MODEL_WORKSPACES']) { $settings['LOCAL_MODEL_WORKSPACES'] } else { 'auto' }
+if ($workspaces -eq 'auto') { $workspaces = 'auto' }
+if ($workspaces -ne 'auto' -and $workspaces -notmatch '^[a-zA-Z0-9_-]{1,100}(,[a-zA-Z0-9_-]{1,100})*$') { throw 'LOCAL_MODEL_WORKSPACES must be auto or a comma-separated list of workspace IDs.' }
+if ($workspaces -ne 'auto' -and $workspaces.Split(',') -contains 'auto') { throw 'auto cannot be combined with an explicit workspace list.' }
+if ($workspaces -eq 'auto') {
+    $bootstrapToken = $runtimeDirectory + '/workspace-bootstrap-token'
+    if (-not (Test-Path -LiteralPath $bootstrapToken)) {
+        $bytes = New-Object byte[] 32
+        $random = [Security.Cryptography.RandomNumberGenerator]::Create()
+        try { $random.GetBytes($bytes) } finally { $random.Dispose() }
+        [IO.File]::WriteAllText((Join-Path $PWD $bootstrapToken), [BitConverter]::ToString($bytes).Replace('-', '').ToLowerInvariant(), [Text.Encoding]::ASCII)
+    }
+    if ([IO.File]::ReadAllText((Join-Path $PWD $bootstrapToken)) -notmatch '^[a-f0-9]{64}$') { throw 'Invalid workspace bootstrap token.' }
+    $adminPassword = $settings['KC_ADMIN_PASSWORD']
+    if (-not $adminPassword) {
+        Get-Content .env -Encoding UTF8 | ForEach-Object { if ($_ -match '^KC_ADMIN_PASSWORD=(.*)$') { $adminPassword=$Matches[1] } }
+        if ($adminPassword.Length -ge 2 -and $adminPassword[0] -in @([char]34,[char]39) -and $adminPassword[0] -eq $adminPassword[$adminPassword.Length-1]) { $adminPassword=$adminPassword.Substring(1,$adminPassword.Length-2) }
+    }
+    if (-not $adminPassword) { throw 'Automatic workspace setup requires KC_ADMIN_PASSWORD in the local .env.' }
+    $bootstrapAdminFile = $runtimeDirectory + '/workspace-keycloak-admin'
+    [IO.File]::WriteAllText((Join-Path $PWD $bootstrapAdminFile), $adminPassword, (New-Object Text.UTF8Encoding $false))
+    $adminPassword = $null
+    $bootstrapDigest = Get-TextDigest ((Get-FileHash -Algorithm SHA256 -LiteralPath 'scripts/intelligence/workspace-bootstrap.py').Hash.ToLowerInvariant() + ':' + (Get-FileHash -Algorithm SHA256 -LiteralPath 'infra/keycloak/automatic-workspaces-policy.json').Hash.ToLowerInvariant())
+    $extraRuntime += @("SSD_WORKSPACE_BOOTSTRAP_TOKEN_FILE=./$bootstrapToken", "SSD_WORKSPACE_KEYCLOAK_ADMIN_FILE=./$bootstrapAdminFile", "SSD_WORKSPACE_BOOTSTRAP_CODE_DIGEST=$bootstrapDigest")
+}
 $tokenRelativePath = $runtimeDirectory + '/classification-token'
 $tokenPath = Join-Path $PWD $tokenRelativePath
 if (-not (Test-Path -LiteralPath $tokenPath)) {
@@ -115,6 +138,7 @@ $runtime = @(
     "SSD_LOCAL_MODEL_IMAGE=$($image.Id)", "SSD_LOCAL_MODEL_DIGEST=$modelDigest", "SSD_LOCAL_MODEL_POLICY_DIGEST=$policyDigest",
     "SSD_LOCAL_CODE_IMAGE=$codeImage", "SSD_LOCAL_ASSESSMENT_DIGEST=$assessmentDigest", "SSD_LOCAL_CONTEXT_DIGEST=$contextDigest",
     "SSD_LOCAL_CONTEXTUAL_DIGEST=$contextualDigest", "SSD_LOCAL_WORKSPACES=$workspaces",
+    "SSD_LOCAL_BACKGROUND_WORKSPACES=$(if ($workspaces -eq 'auto') { if ($settings['SERVICE_DESK_BACKGROUND_WORKSPACES']) { $settings['SERVICE_DESK_BACKGROUND_WORKSPACES'] } else { 'lab-a' } } else { $workspaces })",
     "SSD_LOCAL_PROVIDER_LABEL=$providerLabel", "SSD_LOCAL_PROVIDER_ID=$providerId", "SSD_CLASSIFICATION_TIMEOUT_MS=$deadline",
     "SSD_AI_CLASSIFICATION_TOKEN_FILE=./$tokenRelativePath"
 ) + $extraRuntime
@@ -123,6 +147,7 @@ $runtimeFile = $runtimeDirectory + '/runtime.env'
 $compose = @('compose', '--env-file', '.env', '--env-file', $runtimeFile, '-f', 'compose.yaml')
 if (Test-Path compose.override.yaml) { $compose += @('-f', 'compose.override.yaml') }
 $compose += @('-f', 'infra/compose/compose.triage.yaml', '-f', 'infra/compose/compose.hybrid.yaml')
+if ($workspaces -eq 'auto') { $compose += @('-f', 'infra/compose/compose.workspaces-auto.yaml') }
 if ($useApi) { $compose += @('-f', 'infra/compose/compose.api-assistance.yaml') }
 $compose += @('-f', $overlay, '--profile', 'intelligence', '--profile', 'local-model')
 $resolvedConfiguration = Invoke-Docker @compose config --format json
@@ -133,6 +158,7 @@ if ($ValidateOnly) {
     return $runtimeFile
 }
 $requiredServices = if ($useApi -and -not $Api) { @($service, 'intelligence-api') } else { @($service) }
+if ($workspaces -eq 'auto') { $requiredServices += 'workspace-bootstrap' }
 & "$PSScriptRoot/stop-unused-model.ps1" -KeepService $requiredServices -ProjectName $resolvedProject
 if ($useApi) {
     Invoke-Docker @compose build intelligence-api
