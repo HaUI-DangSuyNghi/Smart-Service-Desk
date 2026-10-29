@@ -1,6 +1,5 @@
-import { IconClipboardCheck, IconTicket } from "@tabler/icons-react";
+import { IconTicket } from "@tabler/icons-react";
 import { lazy } from "react";
-import { PERMISSIONS } from "../../platform/human/workspace";
 import type { AppRegistry } from "../../platform/shell/router/registry";
 import { TicketStatsWidget } from "./dashboard/TicketStatsWidget";
 import { ServiceDeskSettingsSection } from "./settings/ServiceDeskSettingsSection";
@@ -8,44 +7,26 @@ import { ServiceDeskSettingsSection } from "./settings/ServiceDeskSettingsSectio
 // Trang lazy hiện skeleton của AppLayout trong lúc tải, không cần giữ thời gian tối thiểu
 const TicketListPage = lazy(() => import("./pages/TicketListPage"));
 const TicketDetailPage = lazy(() => import("./pages/TicketDetailPage"));
-const EnrichmentPendingPage = lazy(() => import("./pages/EnrichmentPendingPage"));
-const IntakePendingPage = lazy(() => import("./pages/IntakePendingPage"));
-const ReviewQueuePage = lazy(() => import("./pages/ReviewQueuePage"));
 
 export const registerServiceDesk = (registry: AppRegistry) => {
   registry.register({
     id: "servicedesk",
     routes: [
       { path: "servicedesk/tickets", component: TicketListPage },
-      // Hai hàng chờ của luồng AI (backend tắt tính năng thì trang báo chưa bật)
-      {
-        path: "servicedesk/enrichment-pending",
-        component: EnrichmentPendingPage,
-        requiredPermissions: [PERMISSIONS.taskAssign],
-      },
-      {
-        path: "servicedesk/intake-pending",
-        component: IntakePendingPage,
-        requiredPermissions: [PERMISSIONS.taskAssign],
-      },
       // Không có workspace trong đường dẫn: dùng workspace đang chọn (link từ inbox, danh sách)
       { path: "servicedesk/tickets/:ticketId", component: TicketDetailPage },
       { path: "servicedesk/workspaces/:workspace/tickets/:ticketId", component: TicketDetailPage },
-      // Hàng chờ duyệt (R4)
-      {
-        path: "servicedesk/review",
-        component: ReviewQueuePage,
-        requiredPermissions: [PERMISSIONS.taskAssign],
-      },
     ],
+    // Nhóm xổ ra trên sidebar; tiếp nhận / chờ duyệt là các view trong trang Ticket
     menu: [
-      { label: "Service Desk", path: "/servicedesk/tickets", icon: IconTicket, tone: "orange" },
       {
-        label: "Chờ duyệt",
-        path: "/servicedesk/review",
-        icon: IconClipboardCheck,
-        tone: "purple",
-        requiredPermissions: [PERMISSIONS.taskAssign],
+        label: "Service Desk",
+        path: "/servicedesk",
+        icon: IconTicket,
+        tone: "orange",
+        // App chính: mở sẵn để thấy ngay các trang ticket
+        defaultOpen: true,
+        children: [{ label: "Ticket", path: "/servicedesk/tickets", icon: IconTicket }],
       },
     ],
     // businessKey của quy trình service-desk là id ticket

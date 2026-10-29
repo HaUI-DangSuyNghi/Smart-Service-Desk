@@ -239,11 +239,3 @@ export const assessCurrentContext = async (workspace: string, id: string) => {
   );
   return sameTicket(contextualAssessmentSchema.parse(data), id);
 };
-
-export const getPendingEnrichment = async (workspace: string, page = 0, signal?: AbortSignal) => {
-  const { data } = await apiClient.get<unknown>(
-    `/apps/servicedesk/v1/workspaces/${encodeURIComponent(workspace)}/enrichment-pending`,
-    { signal, params: { page } },
-  );
-  return z.array(enrichmentStateSchema).max(50).parse(data);
-};

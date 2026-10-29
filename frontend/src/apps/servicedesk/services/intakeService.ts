@@ -93,22 +93,6 @@ export const reviewIntake = async (
     expectedIntakeVersion: state.version,
   });
 
-export const getPendingIntake = async (
-  workspace: string,
-  page: number,
-  signal?: AbortSignal,
-): Promise<string[]> =>
-  z
-    .array(z.string().uuid())
-    .parse(
-      (
-        await apiClient.get(
-          `/apps/servicedesk/v1/workspaces/${encodeURIComponent(workspace)}/intake-pending`,
-          { params: { page, size: 50 }, signal },
-        )
-      ).data,
-    );
-
 export const preflightIntake = async (workspace: string, id: string) =>
   z
     .object({

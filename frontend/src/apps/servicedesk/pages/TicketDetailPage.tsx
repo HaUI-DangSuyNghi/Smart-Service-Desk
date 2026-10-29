@@ -1,5 +1,4 @@
 import { Link, useParams } from "react-router";
-import { useState } from "react";
 import { IconArrowLeft, IconTicket } from "@tabler/icons-react";
 import { useAuth } from "../../../platform/human/auth";
 import {
@@ -22,8 +21,9 @@ import { StatusBlock } from "../tickets/detail/StatusBlock";
 import { ticketCode } from "../tickets/ticketLabels";
 import { TicketSummary } from "../tickets/TicketSummary";
 import { useTicket, useIntelligenceStatus, useRetryTicketAssessment } from "../tickets/useTickets";
-import { EnrichmentPanel } from "../tickets/EnrichmentPanel";
+import { EnrichmentDialog } from "../tickets/EnrichmentDialog";
 import { IntakePanel } from "../tickets/IntakePanel";
+import { useContextRevision } from "../tickets/useContextRevision";
 import { useIntake } from "../tickets/useIntake";
 
 const WORKSPACE_PATTERN = /^[a-zA-Z0-9_-]{1,100}$/;
@@ -96,9 +96,9 @@ const TicketDetail = ({ workspace, ticketId }: { workspace: string; ticketId: st
   const assessment = ticket.data?.assessment;
   const { user } = useAuth();
   const intake = useIntake(workspace, ticketId, { poll: true });
-  const [contextRevision, setContextRevision] = useState<number | null>(null);
+  const revision = useContextRevision(workspace, ticketId);
   // Gọi AI tay chỉ khi chưa có kết quả lưu sẵn, không qua luồng tiếp nhận và chưa bổ sung ngữ cảnh
-  const manualTriage = intake.isSuccess && !intake.data && contextRevision === 0;
+  const manualTriage = intake.isSuccess && !intake.data && revision.data === 0;
 
   return (
     // Màn rộng: hai cột cố định chiều cao, mỗi cột tự cuộn (cột phải đứng yên khi đọc nội dung bên trái);
@@ -187,10 +187,9 @@ const TicketDetail = ({ workspace, ticketId }: { workspace: string; ticketId: st
               />
             )}
             {intake.isSuccess && (
-              <EnrichmentPanel
+              <EnrichmentDialog
                 workspace={workspace}
                 ticketId={ticketId}
-                onRevisionChange={setContextRevision}
                 managedIntake={!!intake.data}
               />
             )}

@@ -49,6 +49,7 @@ public class IntakeCoordinator {
     private final List<String> workspaces;
     private final boolean scheduled;
     private final vn.haui.dx.hpdi.human.api.HumanContext human;
+    private final vn.haui.dx.apps.servicedesk.intelligence.LocalModelRuntime local;
     private record Plan(ContextReadinessView readiness, DuplicatePreflightService.View duplicates,
             String identity, String grants, String status, String reason, String taskId) {}
 
@@ -59,8 +60,10 @@ public class IntakeCoordinator {
             ClassifierProcessingGate modelRights, AssessmentPolicy assessmentPolicy, ProcessCapability processes,
             ActivityJournal audit, BackgroundProcessing processing, vn.haui.dx.hpdi.human.api.HumanContext human,
             @Value("${service-desk.background.workspaces:}") List<String> workspaces,
-            @Value("${service-desk.background.scheduled:true}") boolean scheduled, vn.haui.dx.apps.servicedesk.TicketAlerts alerts) {
+            @Value("${service-desk.background.scheduled:true}") boolean scheduled, vn.haui.dx.apps.servicedesk.TicketAlerts alerts,
+            vn.haui.dx.apps.servicedesk.intelligence.LocalModelRuntime local) {
         this.jdbc = jdbc;
+        this.local = local;
         this.alerts = alerts;
         this.json = json;
         this.transaction = new TransactionTemplate(manager);
@@ -90,7 +93,12 @@ public class IntakeCoordinator {
     @Scheduled(fixedDelayString = "${serviceDesk.intake.poll-ms:60000}")
     public void poll() {
         if (!scheduled) return;
-        for (String workspace : workspaces) {
+        // Máy dev chế độ auto: quét mọi workspace có ticket chờ, giống worker AI nền
+        var targets = local.automaticWorkspaces()
+                ? jdbc.queryForList("select distinct workspace from servicedesk_intake_admission where status='NEW'", String.class)
+                : workspaces;
+        for (String workspace : targets) {
+            if (local.automaticWorkspaces() && !local.supports(workspace)) continue;
             var ids = jdbc.query("select ticket_id from servicedesk_intake_admission where workspace=? and status='NEW' "
                     + "order by deadline_at,ticket_id limit 50", (row, index) -> row.getObject(1, UUID.class), workspace);
             for (UUID id : ids) {

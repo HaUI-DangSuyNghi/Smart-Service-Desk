@@ -468,7 +468,7 @@ paths:
           enum:
           - createdAt
           - priority
-        description: createdAt = newest first (default). priority = effective priority, then nearest SLA deadline, then oldest first.
+        description: createdAt = newest first (default). priority = queue order (R4) - IN_PROGRESS first, then effective priority, then nearest SLA deadline, then oldest first.
       responses:
         '200':
           description: Authorized tickets only; total uses the same access filter.

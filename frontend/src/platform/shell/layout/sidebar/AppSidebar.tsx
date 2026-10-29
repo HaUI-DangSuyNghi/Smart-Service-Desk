@@ -9,7 +9,6 @@ import {
   IconInbox,
   IconLayoutSidebarLeftCollapse,
   IconLayoutSidebarLeftExpand,
-  IconListNumbers,
   IconSend,
   IconUsers,
 } from "@tabler/icons-react";
@@ -18,12 +17,17 @@ import { hasAnyRole, PERMISSIONS, useActor, usePermissions } from "@/platform/hu
 import { AlertBadge, InboxBadge } from "@/platform/process";
 import { useIsMobile } from "@/platform/shared/lib/useMediaQuery";
 import type { MenuItem } from "../../router/registry";
+import { visibleMenu } from "./menuTree";
+import { NavGroup } from "./NavGroup";
 import { NavItem } from "./NavItem";
 import { NavSection } from "./NavSection";
 import { useSidebarStore } from "./sidebarStore";
 import { WorkspaceSwitcher } from "./WorkspaceSwitcher";
 
-/** Trang của Tầng 2; chỉ liệt kê trang đã có thật. */
+/**
+ * Trang của Tầng 2; chỉ liệt kê trang đã có thật. Trang cùng việc gom thành nhóm xổ ra; nhóm
+ * hiện khi người dùng thấy được ít nhất một trang con.
+ */
 const PLATFORM_MENU: readonly MenuItem[] = [
   { label: "Trang chủ", path: "/home", icon: IconHome },
   {
@@ -34,47 +38,19 @@ const PLATFORM_MENU: readonly MenuItem[] = [
     requiredPermissions: [PERMISSIONS.dashboardView],
   },
   {
-    label: "Công việc",
-    path: "/inbox",
-    icon: IconInbox,
-    tone: "red",
-    badge: InboxBadge,
-    requiredPermissions: [PERMISSIONS.taskHandle],
-  },
-  {
     label: "Yêu cầu",
     path: "/requests",
     icon: IconSend,
     tone: "green",
     requiredPermissions: [PERMISSIONS.requestCreate],
   },
+  // Hộp việc chung của mọi quy trình (duyệt đặt phòng, duyệt ticket...); việc riêng xem ở từng app
   {
-    label: "Thành viên",
-    path: "/members",
-    icon: IconUsers,
-    tone: "purple",
-    requiredPermissions: [PERMISSIONS.memberView],
-  },
-  {
-    label: "Tài liệu",
-    path: "/knowledge",
-    icon: IconBook,
-    tone: "blue",
-    requiredPermissions: [PERMISSIONS.documentView],
-  },
-  {
-    label: "Nhật ký",
-    path: "/audit",
-    icon: IconHistory,
-    tone: "gray",
-    requiredPermissions: [PERMISSIONS.auditView],
-  },
-  // Hàng đợi, cảnh báo, ca trực, yêu cầu sửa ước tính (plan nghiệp vụ R2–R8)
-  {
-    label: "Hàng đợi",
-    path: "/queue",
-    icon: IconListNumbers,
-    tone: "blue",
+    label: "Công việc",
+    path: "/inbox",
+    icon: IconInbox,
+    tone: "red",
+    badge: InboxBadge,
     requiredPermissions: [PERMISSIONS.taskHandle],
   },
   {
@@ -85,21 +61,65 @@ const PLATFORM_MENU: readonly MenuItem[] = [
     badge: AlertBadge,
     requiredPermissions: [PERMISSIONS.taskHandle],
   },
+  // Việc của điều phối viên (R2, R3)
   {
-    label: "Ca trực",
-    path: "/duty",
+    label: "Điều phối",
+    path: "/coordination",
     icon: IconCalendarUser,
     tone: "turquoise",
-    requiredPermissions: [PERMISSIONS.taskAssign],
+    children: [
+      {
+        label: "Ca trực",
+        path: "/duty",
+        icon: IconCalendarUser,
+        requiredPermissions: [PERMISSIONS.taskAssign],
+      },
+      {
+        label: "Sửa ước tính",
+        path: "/estimate-requests",
+        icon: IconHourglass,
+        requiredPermissions: [PERMISSIONS.taskAssign],
+      },
+    ],
   },
   {
-    label: "Sửa ước tính",
-    path: "/estimate-requests",
-    icon: IconHourglass,
+    label: "Tài liệu",
+    path: "/knowledge",
+    icon: IconBook,
+    tone: "blue",
+    requiredPermissions: [PERMISSIONS.documentView],
+  },
+  {
+    label: "Quản trị",
+    path: "/administration",
+    icon: IconUsers,
     tone: "purple",
-    requiredPermissions: [PERMISSIONS.taskAssign],
+    children: [
+      {
+        label: "Thành viên",
+        path: "/members",
+        icon: IconUsers,
+        requiredPermissions: [PERMISSIONS.memberView],
+      },
+      {
+        label: "Nhật ký",
+        path: "/audit",
+        icon: IconHistory,
+        requiredPermissions: [PERMISSIONS.auditView],
+      },
+    ],
   },
 ];
+
+/** Mục menu: nhóm thì xổ ra; sidebar thu gọn (và điện thoại) không có chỗ xổ nên hiện thẳng icon từng trang con. */
+const MenuEntries = ({ items, collapsed }: { items: readonly MenuItem[]; collapsed: boolean }) =>
+  items.map((item) => {
+    if (!item.children) return <NavItem key={item.path} item={item} collapsed={collapsed} />;
+    if (!collapsed) return <NavGroup key={item.path} item={item} />;
+    return item.children.map((child) => (
+      <NavItem key={child.path} item={{ tone: item.tone, ...child }} collapsed />
+    ));
+  });
 
 interface Props {
   /** Menu do các app (Tầng 3) đăng ký qua registry. */
@@ -122,8 +142,8 @@ export const AppSidebar = ({ appMenu }: Props) => {
   const { can } = usePermissions();
   const isVisible = (item: MenuItem) =>
     hasAnyRole(roles, item.requiredRoles) && can(...(item.requiredPermissions ?? []));
-  const visiblePlatformMenu = PLATFORM_MENU.filter(isVisible);
-  const visibleAppMenu = appMenu.filter(isVisible);
+  const visiblePlatformMenu = visibleMenu(PLATFORM_MENU, isVisible);
+  const visibleAppMenu = visibleMenu(appMenu, isVisible);
 
   return (
     <aside
@@ -150,16 +170,12 @@ export const AppSidebar = ({ appMenu }: Props) => {
 
       <nav className="flex min-h-0 flex-1 flex-col gap-4 overflow-y-auto">
         <NavSection title="Nền tảng" collapsed={collapsed}>
-          {visiblePlatformMenu.map((item) => (
-            <NavItem key={item.path} item={item} collapsed={collapsed} />
-          ))}
+          <MenuEntries items={visiblePlatformMenu} collapsed={collapsed} />
         </NavSection>
 
         {visibleAppMenu.length > 0 && (
           <NavSection title="Ứng dụng" collapsed={collapsed}>
-            {visibleAppMenu.map((item) => (
-              <NavItem key={item.path} item={item} collapsed={collapsed} />
-            ))}
+            <MenuEntries items={visibleAppMenu} collapsed={collapsed} />
           </NavSection>
         )}
       </nav>

@@ -210,7 +210,7 @@ export interface TicketQuery {
   /** "me" là chính mình. */
   assignee?: string;
   overdue?: boolean;
-  /** createdAt: mới nhất trước; priority: theo thứ tự hàng đợi (R4). */
+  /** createdAt: mới nhất trước; priority: thứ tự hàng đợi (R4), việc Đang làm lên đầu. */
   sort?: "createdAt" | "priority";
 }
 

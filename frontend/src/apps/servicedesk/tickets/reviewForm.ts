@@ -2,8 +2,10 @@ import { z } from "zod";
 import { WAIT_FOR_SHIFT } from "../../../platform/process";
 import type { AssessmentResult, ReviewDecision } from "../services/ticketService";
 import {
+  CATEGORIES,
   MAX_ESTIMATE_MINUTES,
   MAX_REASON,
+  PRIORITIES,
   priorityOf,
   type Category,
 } from "./ticketRules";
@@ -25,21 +27,29 @@ export const reviewSchema = z.object({
     .max(MAX_ESTIMATE_MINUTES, `Tối đa ${MAX_ESTIMATE_MINUTES} phút`),
   /** subject; WAIT_FOR_SHIFT là để chờ ca sau. */
   assignee: z.string({ message: "Chọn người xử lý hoặc để chờ ca sau" }),
-  reason: z
-    .string()
-    .trim()
-    .min(1, "Ghi lý do duyệt")
-    .max(MAX_REASON, `Tối đa ${MAX_REASON} ký tự`),
+  reason: z.string().trim().min(1, "Ghi lý do duyệt").max(MAX_REASON, `Tối đa ${MAX_REASON} ký tự`),
 });
 
 export type ReviewInput = z.input<typeof reviewSchema>;
+
+/** Phần gợi ý AI form cần: kết quả chạy nền hoặc đề xuất cuối của luồng tiếp nhận. */
+export type Suggestion = Pick<AssessmentResult, "category" | "priority" | "impact" | "urgency">;
+
+/** Đề xuất cuối của tiếp nhận (ai07, chuỗi tự do) → gợi ý; bỏ giá trị lạ. */
+export const intakeSuggestion = (
+  ai07?: { category?: string | null; priority?: string | null } | null,
+): Suggestion | null => {
+  const category = CATEGORIES.find((item) => item === ai07?.category) ?? null;
+  const priority = PRIORITIES.find((item) => item === ai07?.priority) ?? null;
+  return category || priority ? { category, priority, impact: null, urgency: null } : null;
+};
 export type ReviewValues = z.output<typeof reviewSchema>;
 
 /**
  * Điền sẵn từ gợi ý AI (đã lọc bằng aiSuggestion); không có gợi ý thì để trống cho điều phối viên chọn.
  * ET điền sau khi tải ET mặc định của backend (bảng cấu hình hoặc trung vị việc tương tự).
  */
-export const reviewDefaults = (suggestion?: AssessmentResult | null): Partial<ReviewInput> => {
+export const reviewDefaults = (suggestion?: Suggestion | null): Partial<ReviewInput> => {
   const category = suggestion?.category ?? undefined;
   return {
     category,
@@ -49,7 +59,7 @@ export const reviewDefaults = (suggestion?: AssessmentResult | null): Partial<Re
 };
 
 /** Ưu tiên theo bảng ảnh hưởng × độ gấp của AI, để gợi ý cạnh ô chọn. */
-export const suggestedPriority = (suggestion?: AssessmentResult | null) =>
+export const suggestedPriority = (suggestion?: Suggestion | null) =>
   suggestion?.impact && suggestion.urgency
     ? priorityOf(suggestion.impact, suggestion.urgency)
     : null;
@@ -57,7 +67,7 @@ export const suggestedPriority = (suggestion?: AssessmentResult | null) =>
 /** Có khác gợi ý AI không: khác thì phải ghi lý do thật, không dùng câu điền sẵn (R9). */
 export const differsFromAi = (
   values: { category: Category; priority: ReviewValues["priority"] },
-  suggestion?: AssessmentResult | null,
+  suggestion?: Suggestion | null,
 ) =>
   Boolean(suggestion?.category) &&
   (values.category !== suggestion?.category || values.priority !== suggestion?.priority);
@@ -74,7 +84,7 @@ export interface IntakeVersion {
  */
 export const toDecision = (
   values: ReviewValues,
-  suggestion?: AssessmentResult | null,
+  suggestion?: Suggestion | null,
   intake?: IntakeVersion | null,
   defaultMinutes?: number,
 ): ReviewDecision => ({

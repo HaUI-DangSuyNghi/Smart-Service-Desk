@@ -47,12 +47,13 @@ class TicketSearchService {
         }
     }
 
-    private record Match(UUID id, Instant createdAt, int rank, Instant deadline) {}
+    private record Match(UUID id, Instant createdAt, boolean inProgress, int rank, Instant deadline) {}
 
     private static final Comparator<Match> NEWEST = Comparator.comparing(Match::createdAt).reversed()
         .thenComparing(Match::id, Comparator.reverseOrder());
-    // R4: ưu tiên hiệu lực → hạn SLA gần nhất → tạo trước
-    private static final Comparator<Match> QUEUE_ORDER = Comparator.comparingInt(Match::rank).reversed()
+    // R4 như hàng đợi: việc Đang làm ghim đầu → ưu tiên hiệu lực → hạn SLA gần nhất → tạo trước
+    private static final Comparator<Match> QUEUE_ORDER = Comparator.<Match, Boolean>comparing(Match::inProgress, Comparator.reverseOrder())
+        .thenComparing(Comparator.comparingInt(Match::rank).reversed())
         .thenComparing(Match::deadline, Comparator.nullsLast(Comparator.naturalOrder()))
         .thenComparing(Match::createdAt).thenComparing(Match::id);
 
@@ -110,6 +111,7 @@ class TicketSearchService {
             var projected = state.project(now);
             deadline = state.firstStarted() == null ? projected.startBy() : projected.resolveBy();
         }
-        return new Match(row.link().id(), row.createdAt(), priority == null ? 0 : PRIORITIES.indexOf(priority) + 1, deadline);
+        return new Match(row.link().id(), row.createdAt(), status == TicketStatisticsService.Status.IN_PROGRESS,
+            priority == null ? 0 : PRIORITIES.indexOf(priority) + 1, deadline);
     }
 }

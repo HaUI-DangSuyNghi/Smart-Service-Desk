@@ -3,7 +3,7 @@ import { cn } from "cn";
 import type { MenuItem, MenuTone } from "../../router/registry";
 
 // Viết đủ tên class để Tailwind sinh ra được
-const TONE_CLASS: Record<MenuTone, string> = {
+export const TONE_CLASS: Record<MenuTone, string> = {
   gray: "text-crm-tone-gray",
   blue: "text-crm-tone-blue",
   red: "text-crm-tone-red",

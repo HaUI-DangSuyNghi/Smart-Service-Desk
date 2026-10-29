@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router";
-import { IconAlertTriangle, IconBell, IconClock, IconTypography } from "@tabler/icons-react";
+import { IconAbc, IconAlertTriangle, IconBell, IconClock } from "@tabler/icons-react";
 import { cn } from "cn";
 import { useCurrentWorkspace } from "@/platform/human/workspace";
 import type { Alert } from "@/platform/services";
@@ -52,7 +52,7 @@ const AlertsPage = () => {
     {
       key: "label",
       header: "Việc",
-      icon: IconTypography,
+      icon: IconAbc,
       width: "300px",
       cell: (alert) => <span className="block truncate">{alertSubject(alert)}</span>,
     },

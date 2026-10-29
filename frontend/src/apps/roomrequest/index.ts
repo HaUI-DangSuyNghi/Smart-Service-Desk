@@ -17,7 +17,16 @@ export const registerRoomRequest = (registry: AppRegistry) => {
       { path: "roomrequest", component: RoomRequestHomePage },
       { path: "roomrequest/requests/:id", component: RoomRequestDetailPage },
     ],
-    menu: [{ label: "Đặt phòng", path: "/roomrequest", icon: IconDoor, tone: "turquoise" }],
+    // Nhóm xổ ra như Service Desk; thêm trang thì thêm mục con
+    menu: [
+      {
+        label: "Đặt phòng",
+        path: "/roomrequest-app",
+        icon: IconDoor,
+        tone: "turquoise",
+        children: [{ label: "Yêu cầu đặt phòng", path: "/roomrequest", icon: IconDoor }],
+      },
+    ],
     // businessKey của quy trình room-request là id yêu cầu
     processLinks: {
       "room-request": (businessKey) => `/roomrequest/requests/${encodeURIComponent(businessKey)}`,

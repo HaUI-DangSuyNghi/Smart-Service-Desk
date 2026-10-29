@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useMemo } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -25,6 +25,7 @@ import type { TicketView } from "../services/ticketService";
 import {
   AGREE_WITH_AI,
   differsFromAi,
+  intakeSuggestion,
   reviewDefaults,
   reviewSchema,
   suggestedPriority,
@@ -48,17 +49,24 @@ const reviewErrorMessage = (error: unknown) => {
   const detail = error.detail ?? "";
   if (detail.includes("off duty")) return "Người được chọn vừa nghỉ trực, chọn người khác.";
   if (detail.includes("support group")) return "Người được chọn không thuộc tổ của loại sự cố này.";
-  if (detail.includes("intake")) return "Tiếp nhận vừa thay đổi, đóng lại và mở lại để duyệt bản mới.";
+  if (detail.includes("intake"))
+    return "Tiếp nhận vừa thay đổi, đóng lại và mở lại để duyệt bản mới.";
   if (error.status === 409) return "Ticket không còn chờ duyệt (có thể người khác đã duyệt).";
-  if (error.status === 403) return "Bạn không duyệt được ticket này (không tự duyệt ticket mình tạo).";
+  if (error.status === 403)
+    return "Bạn không duyệt được ticket này (không tự duyệt ticket mình tạo).";
   return "Không duyệt được.";
 };
 
 const ReviewForm = ({ ticket, onDone }: FormProps) => {
   const review = useReviewTicket();
-  const suggestion = aiSuggestion(ticket.assessment);
   // Ticket qua tiếp nhận: chỉ duyệt được khi đã thả sang bước duyệt, gửi kèm revision/version
   const intake = useIntake(ticket.workspace, ticket.id);
+  // Gợi ý AI: kết quả chạy nền, không có thì lấy đề xuất cuối của tiếp nhận
+  const intakeProposal = useMemo(
+    () => intakeSuggestion(intake.data?.finalAssessment?.ai07),
+    [intake.data],
+  );
+  const suggestion = aiSuggestion(ticket.assessment) ?? intakeProposal;
   const intakeBlocked = Boolean(intake.data && intake.data.status !== "REVIEW_RELEASED");
   const form = useForm<ReviewInput, unknown, ReviewValues>({
     resolver: zodResolver(reviewSchema),
@@ -81,6 +89,17 @@ const ReviewForm = ({ ticket, onDone }: FormProps) => {
   // ET mặc định của backend (bảng cấu hình hoặc trung vị việc tương tự) theo loại / ưu tiên đang chọn
   const estimateDefault = useEstimateDefault(ticket.id, category, priority);
   const defaultMinutes = estimateDefault.data?.minutes;
+
+  // Đề xuất tiếp nhận tải sau khi mở form: điền bù các ô điều phối viên chưa chọn
+  useEffect(() => {
+    if (!suggestion) return;
+    const defaults = reviewDefaults(suggestion);
+    if (defaults.category && !form.getValues("category"))
+      form.setValue("category", defaults.category);
+    if (defaults.priority && !form.getValues("priority"))
+      form.setValue("priority", defaults.priority);
+    if (defaults.reason && !form.getValues("reason")) form.setValue("reason", defaults.reason);
+  }, [suggestion, form]);
 
   // Đổi loại / ưu tiên mà chưa tự sửa ET thì điền lại theo ET mặc định mới (R2)
   useEffect(() => {
@@ -119,11 +138,7 @@ const ReviewForm = ({ ticket, onDone }: FormProps) => {
           </legend>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
             {CATEGORIES.map((item) => (
-              <ChoiceCard
-                key={item}
-                value={item}
-                {...form.register("category")}
-              >
+              <ChoiceCard key={item} value={item} {...form.register("category")}>
                 {CATEGORY_LABELS[item]}
                 {suggestion?.category === item && (
                   <span className="text-crm-xs text-crm-accent"> · AI</span>
@@ -145,11 +160,7 @@ const ReviewForm = ({ ticket, onDone }: FormProps) => {
           </legend>
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
             {PRIORITIES.map((item) => (
-              <ChoiceCard
-                key={item}
-                value={item}
-                {...form.register("priority")}
-              >
+              <ChoiceCard key={item} value={item} {...form.register("priority")}>
                 {PRIORITY_LABELS[item]}
               </ChoiceCard>
             ))}

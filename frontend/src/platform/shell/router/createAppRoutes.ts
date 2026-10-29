@@ -14,7 +14,6 @@ import {
   InboxPage,
   MyRequestsPage,
   ProcessTimelinePage,
-  QueuePage,
 } from "@/platform/process";
 // Landing nạp cùng app (không lazy): là trang đầu tiên và trang quay về sau đăng xuất,
 // tránh thêm một lượt loading nữa sau khi Keycloak chuyển về
@@ -67,8 +66,7 @@ const PLATFORM_ROUTES: readonly AppRoute[] = [
     component: KnowledgeDetailPage,
     requiredPermissions: [PERMISSIONS.documentView],
   },
-  // Hàng đợi, cảnh báo, ca trực, sửa ước tính (plan nghiệp vụ R2–R8)
-  { path: "queue", component: QueuePage, requiredPermissions: [PERMISSIONS.taskHandle] },
+  // Cảnh báo, ca trực, sửa ước tính (plan nghiệp vụ R2–R8); việc theo hàng đợi xem ở từng app
   { path: "alerts", component: AlertsPage, requiredPermissions: [PERMISSIONS.taskHandle] },
   { path: "duty", component: DutyPage, requiredPermissions: [PERMISSIONS.taskAssign] },
   {

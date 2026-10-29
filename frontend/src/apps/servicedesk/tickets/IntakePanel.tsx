@@ -3,6 +3,8 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useActor } from "../../../platform/human/workspace";
 import { Button } from "../../../platform/shared/ui/button";
 import { Input } from "../../../platform/shared/ui/input";
+import { SelectField } from "../../../platform/shared/ui/SelectField";
+import { PRIORITY_LABELS } from "../../../platform/process";
 import { ErrorState } from "../../../platform/shared/ui/ErrorState";
 import {
   evaluateIntake,
@@ -11,6 +13,14 @@ import {
   type Intake,
 } from "../services/intakeService";
 import { CanonicalPanel } from "./CanonicalPanel";
+import { intakeSuggestion } from "./reviewForm";
+import { CATEGORY_LABELS } from "./ticketLabels";
+import { CATEGORIES, PRIORITIES } from "./ticketRules";
+
+const CATEGORY_OPTIONS = CATEGORIES.map((value) => ({ value, label: CATEGORY_LABELS[value] }));
+const PRIORITY_OPTIONS = PRIORITIES.map((value) => ({ value, label: PRIORITY_LABELS[value] }));
+// Dropdown trong form: rộng hết ô
+const FORM_SELECT = "h-11 w-full max-w-none sm:h-9";
 
 const STATUS: Record<Intake["status"], string> = {
   NEW: "Đang chờ kiểm tra thông tin",
@@ -38,8 +48,12 @@ export const IntakePanel = ({
   const { roles } = useActor();
   const cache = useQueryClient();
   const [reason, setReason] = useState("");
-  const [category, setCategory] = useState("HARDWARE");
-  const [priority, setPriority] = useState("MEDIUM");
+  // null: chưa tự chọn → theo đề xuất AI (đề xuất có thể tới sau khi mở trang)
+  const [pickedCategory, setCategory] = useState<string | null>(null);
+  const [pickedPriority, setPriority] = useState<string | null>(null);
+  const suggestion = intakeSuggestion(state.finalAssessment?.ai07);
+  const category = pickedCategory ?? suggestion?.category ?? "OTHER";
+  const priority = pickedPriority ?? suggestion?.priority ?? "MEDIUM";
   const release = useRef<{ fingerprint: string; operation: string } | null>(null);
   const refresh = async () => {
     await cache.invalidateQueries({ queryKey: ["servicedesk"] });
@@ -87,8 +101,9 @@ export const IntakePanel = ({
           <div className="space-y-2 rounded-lg border border-crm-line p-3">
             <p className="font-medium">Đề xuất đã lưu, cần người kiểm tra</p>
             <p>
-              Loại: {proposal.category ?? "Chưa xác định"} · Ưu tiên:{" "}
-              {proposal.priority ?? "Cần xem xét"}
+              Loại: {suggestion?.category ? CATEGORY_LABELS[suggestion.category] : "Chưa xác định"}{" "}
+              · Ưu tiên:{" "}
+              {suggestion?.priority ? PRIORITY_LABELS[suggestion.priority] : "Cần xem xét"}
             </p>
           </div>
         )}
@@ -107,47 +122,26 @@ export const IntakePanel = ({
             <legend className="mb-3 font-medium">Quyết định của điều phối viên</legend>
             {released && (
               <>
-                <label className="block space-y-1">
-                  <span>Loại sự cố</span>
-                  <select
+                <div className="space-y-1">
+                  <p>Loại sự cố</p>
+                  <SelectField
                     aria-label="Loại sự cố"
-                    className="min-h-11 w-full rounded-lg border border-input bg-background px-3"
+                    options={CATEGORY_OPTIONS}
                     value={category}
-                    onChange={(event) => setCategory(event.target.value)}
-                  >
-                    {Object.entries({
-                      ACCOUNT: "Tài khoản",
-                      HARDWARE: "Phần cứng",
-                      NETWORK: "Mạng",
-                      SOFTWARE: "Phần mềm",
-                      OTHER: "Khác",
-                    }).map(([value, label]) => (
-                      <option key={value} value={value}>
-                        {label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="block space-y-1">
-                  <span>Mức ưu tiên</span>
-                  <select
+                    onValueChange={setCategory}
+                    className={FORM_SELECT}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <p>Mức ưu tiên</p>
+                  <SelectField
                     aria-label="Mức ưu tiên"
-                    className="min-h-11 w-full rounded-lg border border-input bg-background px-3"
+                    options={PRIORITY_OPTIONS}
                     value={priority}
-                    onChange={(event) => setPriority(event.target.value)}
-                  >
-                    {Object.entries({
-                      LOW: "Thấp",
-                      MEDIUM: "Trung bình",
-                      HIGH: "Cao",
-                      CRITICAL: "Khẩn cấp",
-                    }).map(([value, label]) => (
-                      <option key={value} value={value}>
-                        {label}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+                    onValueChange={setPriority}
+                    className={FORM_SELECT}
+                  />
+                </div>
               </>
             )}
             <label className="block space-y-1">

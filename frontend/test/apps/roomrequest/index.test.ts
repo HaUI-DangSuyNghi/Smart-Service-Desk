@@ -8,9 +8,8 @@ describe("registerRoomRequest", () => {
     const registry = createAppRegistry();
     registerRoomRequest(registry);
 
-    expect(registry.menu()).toContainEqual(
-      expect.objectContaining({ label: "Đặt phòng", path: "/roomrequest" }),
-    );
+    const group = registry.menu().find((item) => item.label === "Đặt phòng");
+    expect(group?.children).toContainEqual(expect.objectContaining({ path: "/roomrequest" }));
     expect(registry.processLink("room-request", "abc")).toBe("/roomrequest/requests/abc");
   });
 

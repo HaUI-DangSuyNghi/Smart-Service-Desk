@@ -20,7 +20,6 @@ export { AssignmentSuggestionPanel } from "./work/AssignmentSuggestionPanel";
 export { EstimateText } from "./work/EstimateText";
 export { default as EstimateRequestsPage } from "./work/EstimateRequestsPage";
 export { PriorityTag } from "./work/PriorityTag";
-export { default as QueuePage } from "./work/QueuePage";
 export { PauseDialog } from "./work/PauseDialog";
 export { ReleaseDialog } from "./work/ReleaseDialog";
 export { useQueue, useResumeWork, useStartWork } from "./work/useWork";

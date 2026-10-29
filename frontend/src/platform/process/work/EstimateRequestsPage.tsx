@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { useNavigate } from "react-router";
 import {
+  IconAbc,
   IconClock,
   IconHourglass,
   IconMessage,
   IconProgress,
-  IconTypography,
   IconUser,
 } from "@tabler/icons-react";
 import { personName, useCurrentWorkspace, usePeopleNames } from "@/platform/human/workspace";
@@ -70,7 +70,7 @@ const EstimateRequestsPage = () => {
     {
       key: "label",
       header: "Việc",
-      icon: IconTypography,
+      icon: IconAbc,
       width: "260px",
       cell: (request) => <span className="block truncate">{request.label}</span>,
     },
