@@ -7,6 +7,8 @@ import {
   getEstimateDefault,
   getReviewSuggestion,
   getTicket,
+  getIntelligenceStatus,
+  retryTicketAssessment,
   listTickets,
   reviewTicket,
   type ClassificationCorrection,
@@ -49,6 +51,23 @@ export const useTicketList = (
 
 const isAssessing = (ticket?: TicketView) => ticket?.assessment?.status === "PENDING";
 
+export const useIntelligenceStatus = (workspace: string) =>
+  useQuery({
+    queryKey: ["servicedesk", "intelligence", workspace],
+    queryFn: () => getIntelligenceStatus(workspace),
+    staleTime: 30_000,
+  });
+
+export const useRetryTicketAssessment = (workspace: string, id: string) => {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: () => retryTicketAssessment(workspace, id),
+    onSuccess: async () => {
+      await client.invalidateQueries({ queryKey: ticketKeys.all(workspace) });
+    },
+  });
+};
+
 /** Một ticket; 404 khi không tồn tại hoặc người xem không được thấy. */
 export const useTicket = (workspace: string, id: string) =>
   useQuery({
@@ -70,7 +89,12 @@ export const useReviewSuggestion = (
   return useQuery({
     queryKey: [...ticketKeys.all(current), "suggestion", id, category, priority, estimateMinutes],
     queryFn: ({ signal }) =>
-      getReviewSuggestion(current!, id, { category: category!, priority: priority!, estimateMinutes }, signal),
+      getReviewSuggestion(
+        current!,
+        id,
+        { category: category!, priority: priority!, estimateMinutes },
+        signal,
+      ),
     enabled: current !== null && category !== undefined && priority !== undefined,
     // Gõ ET thì giữ đề xuất cũ trong lúc tải lại, không nháy skeleton
     placeholderData: keepPreviousData,

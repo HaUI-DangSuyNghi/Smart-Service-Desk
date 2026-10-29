@@ -102,6 +102,16 @@ class TicketIntelligenceOrchestratorTest {
     }
 
     @Test
+    void apiChatCannotMasqueradeAsVerifiedGuidanceOrBreakTriage() {
+        when(assistance.apiAdviceMode()).thenReturn(true);
+        var result = assess(true);
+        assertEquals("PARTIAL", result.status());
+        assertEquals("NETWORK", result.triage().category());
+        assertEquals("UNAVAILABLE", result.guidance().status());
+        verify(assistance, never()).assist(anyString(), any(), anyString());
+    }
+
+    @Test
     void providerTimeoutKeepsTriageAndReauthorizesTicket() {
         when(assistance.assist(anyString(), any(), anyString())).thenThrow(IntelligenceFailure.timeout());
 

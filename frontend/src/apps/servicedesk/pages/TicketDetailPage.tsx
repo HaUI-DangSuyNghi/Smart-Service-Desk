@@ -21,7 +21,7 @@ import { ProgressCard } from "../tickets/detail/ProgressCard";
 import { StatusBlock } from "../tickets/detail/StatusBlock";
 import { ticketCode } from "../tickets/ticketLabels";
 import { TicketSummary } from "../tickets/TicketSummary";
-import { useTicket } from "../tickets/useTickets";
+import { useTicket, useIntelligenceStatus, useRetryTicketAssessment } from "../tickets/useTickets";
 import { EnrichmentPanel } from "../tickets/EnrichmentPanel";
 import { IntakePanel } from "../tickets/IntakePanel";
 import { useIntake } from "../tickets/useIntake";
@@ -87,6 +87,8 @@ const TicketDetailPage = () => {
 
 const TicketDetail = ({ workspace, ticketId }: { workspace: string; ticketId: string }) => {
   const ticket = useTicket(workspace, ticketId);
+  const aiStatus = useIntelligenceStatus(workspace);
+  const retryAssessment = useRetryTicketAssessment(workspace, ticketId);
   const { actor } = useActor();
   const { can } = usePermissions();
   // Người gửi không xử lý việc: không cần thấy tải, ước tính, lịch sử sửa
@@ -128,17 +130,44 @@ const TicketDetail = ({ workspace, ticketId }: { workspace: string; ticketId: st
             </div>
             <TicketSummary ticket={ticket.data} />
             {/* Có kết quả AI đã lưu (chạy nền lúc tạo) thì hiện cho người xử lý; backend cũ chưa có thì gọi tay */}
-            {assessment
-              ? !isRequesterView && <AssessmentCard assessment={assessment} />
-              : manualTriage && (
-                  <SuggestionCard
-                    fetchSuggestion={() => triageTicket(workspace, ticketId)}
-                    fieldLabels={SUGGESTION_LABELS}
-                    evidenceLabels={EVIDENCE_LABELS}
-                  />
-                )}
+            {assessment ? (
+              !isRequesterView && (
+                <AssessmentCard
+                  assessment={assessment}
+                  modelEnabled={aiStatus.data?.modelEnabled}
+                  onRetry={() => retryAssessment.mutate()}
+                  retrying={retryAssessment.isPending}
+                  retryError={retryAssessment.isError}
+                />
+              )
+            ) : aiStatus.data?.modelEnabled &&
+              !isRequesterView &&
+              intake.isSuccess &&
+              !intake.data ? (
+              <AssessmentCard
+                assessment={{
+                  status: "DEGRADED",
+                  version: 1,
+                  result: null,
+                  errorCode: "ASSESSMENT_NOT_QUEUED",
+                }}
+                modelEnabled
+                onRetry={() => retryAssessment.mutate()}
+                retrying={retryAssessment.isPending}
+                retryError={retryAssessment.isError}
+              />
+            ) : (
+              manualTriage && (
+                <SuggestionCard
+                  fetchSuggestion={() => triageTicket(workspace, ticketId)}
+                  fieldLabels={SUGGESTION_LABELS}
+                  evidenceLabels={EVIDENCE_LABELS}
+                />
+              )
+            )}
             <DetailTabs
               workspace={workspace}
+              assistanceMode={aiStatus.data?.assistanceMode}
               ticket={ticket.data}
               isRequesterView={isRequesterView}
             />

@@ -73,7 +73,7 @@ public class TicketService {
 
     @Transactional(readOnly = true)
     public boolean requiresFinalAdmission(String workspace, UUID id) {
-        get(workspace, id);
+        getForIntelligence(workspace, id);
         return repository.hasIntake(workspace, id);
     }
 

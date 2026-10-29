@@ -1,0 +1,73 @@
+# Workstation GPU provider; include compose.hybrid.yaml before this overlay.
+services:
+  ai07-qwen:
+    profiles:
+    - local-model
+    image: ${SSD_LOCAL_MODEL_IMAGE:?Run scripts/start.ps1 -Model}
+    pull_policy: never
+    entrypoint:
+    - python
+    - -m
+    - local_classification.qwen_lora_server
+    command:
+    - --bundle
+    - /opt/model
+    - --model-digest
+    - ${SSD_LOCAL_MODEL_DIGEST:?}
+    - --runtime-identity
+    - ${SSD_LOCAL_CODE_IMAGE:?}
+    - --token-file
+    - /run/secrets/local-classification-token
+    - --bind
+    - 0.0.0.0
+    environment:
+      AI07_QWEN_ENABLED: '1'
+      AI07_QWEN_TOKEN_FILE: /run/secrets/local-classification-token
+      PYTHONPATH: /opt/apps
+      HF_HUB_OFFLINE: '1'
+      TRANSFORMERS_OFFLINE: '1'
+      HF_HUB_DISABLE_TELEMETRY: '1'
+      DO_NOT_TRACK: '1'
+      HOME: /tmp/qwen
+    secrets:
+    - local-classification-token
+    networks:
+      local-model-private:
+        aliases:
+        - intelligence-classification
+    user: 10001:10001
+    read_only: true
+    tmpfs:
+    - /tmp:rw,noexec,nosuid,size=256m
+    shm_size: 256m
+    mem_limit: 6g
+    cpus: 4
+    pids_limit: 96
+    cap_drop:
+    - ALL
+    security_opt:
+    - no-new-privileges:true
+    logging:
+      driver: none
+    deploy:
+      resources:
+        reservations:
+          devices:
+          - driver: nvidia
+            count: 1
+            capabilities:
+            - gpu
+    healthcheck:
+      test:
+      - CMD
+      - python
+      - -m
+      - local_classification.qwen_lora_health
+      interval: 15s
+      timeout: 3s
+      retries: 5
+      start_period: 180s
+  platform:
+    depends_on:
+      ai07-qwen:
+        condition: service_healthy

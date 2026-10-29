@@ -8,6 +8,45 @@ servers:
 security:
   - bearer: []
 paths:
+  /workspaces/{workspace}/intelligence/status:
+    get:
+      operationId: getServiceDeskIntelligenceStatus
+      description: Authenticated workspace-scoped runtime configuration. modelEnabled describes the selected pipeline, not a live GPU readiness probe. No inference or secrets are returned.
+      parameters:
+        - {$ref: 'core.yaml#/components/parameters/Workspace'}
+      responses:
+        '200':
+          description: Current configured runtime
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [mode, engine, modelEnabled, assistanceMode]
+                properties:
+                  mode: {type: string, enum: [LOCAL_DEV, EXTERNAL]}
+                  engine: {type: string, enum: [hybrid, rules, disabled]}
+                  modelEnabled: {type: boolean}
+                  assistanceMode: {type: string, enum: [disabled, api, grounded]}
+        '401': {$ref: 'core.yaml#/components/responses/Unauthorized'}
+        '403': {$ref: 'core.yaml#/components/responses/Forbidden'}
+  /workspaces/{workspace}/tickets/{id}/assessment/retry:
+    post:
+      operationId: retryStoredTicketAssessment
+      description: Requeue failed background advice, or upgrade stored rules advice when LOCAL_DEV model processing is enabled. Rechecks ticket visibility. An active job or completed model result returns 409; sealed intake tickets use their own assessment flow. Never changes human classification or workflow state.
+      parameters:
+        - {$ref: 'core.yaml#/components/parameters/Workspace'}
+        - {$ref: '#/components/parameters/TicketId'}
+      responses:
+        '200':
+          description: Requeued assessment
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/StoredAssessment'}
+        '401': {$ref: 'core.yaml#/components/responses/Unauthorized'}
+        '403': {$ref: 'core.yaml#/components/responses/Forbidden'}
+        '404': {$ref: 'core.yaml#/components/responses/NotFound'}
+        '409': {$ref: 'core.yaml#/components/responses/Conflict'}
   /settings:
     get:
       operationId: getServiceDeskSettings
@@ -288,7 +327,7 @@ paths:
       - {$ref: '#/components/parameters/TicketId'}
     post:
       operationId: assistTicket
-      description: 'Disabled by default (404). Current opt-in deployment is synthetic-reference only. Ticket visibility is checked before AI and again before returning. Server-selected knowledge pins are authorized through HPDI Data and revalidated after inference. Only exact source quotations are returned; needsReview is always true. No ticket/workflow mutation. Citations expose display titles and versions without internal source IDs or links. No answer persistence or caching.'
+      description: 'Disabled by default (404). LOCAL_DEV API mode sends only the question and visible ticket title/description to the explicitly configured provider. API advice uses public contract 0.2.0, reason MODEL_ADVICE, no citations and needsReview=true; it does not claim knowledge retrieval. Existing grounded modes retain contract 0.1.0, authorized source pins and verified quotation checks. Ticket access is rechecked after inference; API mode also rechecks actor and ticket content. No workflow mutation, answer persistence or caching.'
       requestBody:
         required: true
         content:
@@ -296,7 +335,7 @@ paths:
             schema: {$ref: '#/components/schemas/AssistanceQuestion'}
       responses:
         '200':
-          description: Verified quotation or explicit insufficient evidence; Cache-Control no-store. Operational degradation uses 503/504.
+          description: Verified quotation, explicit insufficient evidence, or explicitly labelled API model advice; Cache-Control no-store. Operational degradation uses 503/504.
           content:
             application/json:
               schema: {$ref: '#/components/schemas/AssistanceResponse'}
@@ -950,6 +989,22 @@ components:
         displayTitle: {type: string, minLength: 1, maxLength: 200}
         sourceVersion: {type: string, minLength: 1, maxLength: 100}
     AssistanceResponse:
+      oneOf:
+        - {$ref: '#/components/schemas/GroundedAssistanceResponse'}
+        - {$ref: '#/components/schemas/ApiAdvisoryAssistanceResponse'}
+    ApiAdvisoryAssistanceResponse:
+      type: object
+      additionalProperties: false
+      required: [contractVersion, requestId, status, answer, citations, needsReview, reasonCode]
+      properties:
+        contractVersion: {type: string, enum: ['0.2.0']}
+        requestId: {type: string, format: uuid}
+        status: {type: string, enum: [SUCCESS]}
+        answer: {type: string, minLength: 1, maxLength: 16000}
+        citations: {type: array, maxItems: 0, items: {$ref: '#/components/schemas/AssistanceCitation'}}
+        needsReview: {type: boolean, enum: [true]}
+        reasonCode: {type: string, enum: [MODEL_ADVICE]}
+    GroundedAssistanceResponse:
       type: object
       additionalProperties: false
       required: [contractVersion, requestId, status, answer, citations, needsReview, reasonCode]
@@ -1223,19 +1278,31 @@ components:
       required: [contractVersion, profileVersion, engine, rulesVersion, modelVersion, category, priority, impact, urgency, reasonCode, evidence, explanation, needsReview, nextQuestions]
       properties:
         contractVersion: {type: string, enum: ['0.1.0']}
-        profileVersion: {type: string, enum: ['service-desk@0.3.0']}
-        engine: {type: string, enum: [rules]}
-        rulesVersion: {type: string, enum: ['0.3.0']}
-        modelVersion: {type: string, nullable: true, enum: [null], description: No model is invoked by the current rules triage profile.}
-        category: {type: string, enum: [NETWORK, SOFTWARE, HARDWARE, ACCOUNT, OTHER]}
-        priority: {type: string, enum: [LOW, MEDIUM, HIGH, CRITICAL]}
+        profileVersion: {type: string, enum: ['service-desk@0.3.0', 'service-desk-local@1.0.0', 'service-desk-hybrid@1.0.0']}
+        engine: {type: string, enum: [rules, model, hybrid]}
+        rulesVersion: {type: string, enum: ['0.3.0', 'servicedesk-local-facts@0.1.0', '0.3.0+local-facts@0.1.0']}
+        modelVersion: {type: string, nullable: true, description: 'SHA-256 model identity for model advice; null for the rules pipeline.'}
+        category: {type: string, nullable: true, enum: [NETWORK, SOFTWARE, HARDWARE, ACCOUNT, OTHER, null]}
+        priority: {type: string, nullable: true, enum: [LOW, MEDIUM, HIGH, CRITICAL, null]}
         impact: {type: string, nullable: true, enum: [I1, I2, I3, I4, null]}
         urgency: {type: string, nullable: true, enum: [U1, U2, U3, U4, null]}
-        reasonCode: {type: string, enum: [CLASSIFIED, ROOT_CAUSE_CONFLICT, INSUFFICIENT_INFORMATION]}
+        reasonCode: {type: string, enum: [CLASSIFIED, ROOT_CAUSE_CONFLICT, INSUFFICIENT_INFORMATION, MODEL_CLASSIFIED, MODEL_ABSTAINED, MODEL_REVIEW_REQUIRED, MODEL_UNAVAILABLE, HYBRID_CONFLICT, RULES_SUPPORTED]}
+        cooperation:
+          type: object
+          nullable: true
+          additionalProperties: false
+          required: [provider, modelCategory, rulesCategory, modelStatus, rulesStatus, decision]
+          properties:
+            provider: {type: string}
+            modelCategory: {type: string, nullable: true}
+            rulesCategory: {type: string, nullable: true}
+            modelStatus: {type: string, enum: [AVAILABLE, UNAVAILABLE, ABSTAINED, BLOCKED]}
+            rulesStatus: {type: string, enum: [CLASSIFIED, UNAVAILABLE, INSUFFICIENT_INFORMATION]}
+            decision: {type: string, enum: [AGREEMENT, CONFLICT, MODEL_SUPPORTED, RULES_SUPPORTED, MANUAL_REVIEW, INSUFFICIENT_INFORMATION]}
         evidence:
           type: array
-          minItems: 1
-          maxItems: 16
+          minItems: 0
+          maxItems: 64
           items:
             type: object
             additionalProperties: false

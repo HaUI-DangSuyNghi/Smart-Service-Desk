@@ -11,10 +11,11 @@ interface Props {
   ticket: TicketView;
   /** Người gửi không thấy lịch sử sửa. */
   isRequesterView: boolean;
+  assistanceMode?: "api" | "grounded" | "disabled";
 }
 
 /** Dưới phần mô tả: Lịch sử sửa / Hỏi AI (kiểu Activity của Jira); chỉ còn một mục thì hiện thẳng, không tab. */
-export const DetailTabs = ({ workspace, ticket, isRequesterView }: Props) => {
+export const DetailTabs = ({ workspace, ticket, isRequesterView, assistanceMode }: Props) => {
   const [tab, setTab] = useState<Tab>("ask");
   const hasCorrections = !isRequesterView && (ticket.corrections?.length ?? 0) > 0;
   const tabs: ViewTab<Tab>[] = [
@@ -41,6 +42,8 @@ export const DetailTabs = ({ workspace, ticket, isRequesterView }: Props) => {
         <AssistantPanel
           ask={(question, signal) => askTicketAssistance(workspace, ticket.id, question, signal)}
           subjectLabel="ticket"
+          mode={assistanceMode === "grounded" || assistanceMode === undefined ? "grounded" : "api"}
+          available={assistanceMode !== "disabled"}
         />
       )}
     </div>

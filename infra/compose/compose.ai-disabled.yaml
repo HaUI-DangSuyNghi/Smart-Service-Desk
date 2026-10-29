@@ -1,0 +1,12 @@
+# Explicitly clear stale AI settings when AI_MODE=disabled / -NoAi is selected.
+services:
+  platform:
+    environment:
+      DX_AI_RUNTIME_MODE: EXTERNAL
+      INTELLIGENCE_TRIAGE_BASE_URL: ''
+      INTELLIGENCE_CLASSIFICATION_BASE_URL: ''
+      SERVICE_DESK_CLASSIFIER_MODE: DISABLED
+      SERVICE_DESK_ASSESSMENT_ENABLED: 'false'
+      SERVICE_DESK_CONTEXT_ENABLED: 'false'
+      SERVICE_DESK_CONTEXTUAL_ASSESSMENT_ENABLED: 'false'
+      SERVICE_DESK_ASSISTANCE_ENABLED: 'false'

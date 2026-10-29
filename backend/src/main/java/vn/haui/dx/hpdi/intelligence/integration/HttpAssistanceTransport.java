@@ -74,8 +74,7 @@ public class HttpAssistanceTransport implements AssistanceTransport {
                     || base.getQuery() != null
                     || base.getFragment() != null
                     || !(base.getPath().isEmpty() || "/".equals(base.getPath()))
-                    || settings.token() == null
-                    || !settings.token().matches("[A-Za-z0-9._~+/-]{32,}=*")) {
+                    || !settings.bearer().matches("[A-Za-z0-9._~+/-]{32,}=*")) {
                 throw IntelligenceFailure.configuration();
             }
 
@@ -115,7 +114,7 @@ public class HttpAssistanceTransport implements AssistanceTransport {
         var request =
                 HttpRequest.newBuilder(target)
                         .timeout(Duration.ofSeconds(15))
-                        .header("Authorization", "Bearer " + settings.token())
+                        .header("Authorization", "Bearer " + settings.bearer())
                         .header("Content-Type", "application/json")
                         .header("Accept", "application/json")
                         .POST(HttpRequest.BodyPublishers.ofByteArray(body))

@@ -1,33 +1,67 @@
 $ErrorActionPreference = 'Stop'
 Set-Location (Split-Path $PSScriptRoot -Parent)
 
-# Moi bi mat sinh ngau nhien vao .env (Git bo qua). May da co .env thi chi bo sung bien con thieu,
-# khong doi bien da co (doi mat khau Postgres sau khi tao DB se lam backend mat ket noi).
-# INTELLIGENCE_TRIAGE_TOKEN: backend dung de goi service AI noi bo (start.ps1 chay kem AI)
-$secretKeys = @('POSTGRES_PASSWORD', 'KC_ADMIN_PASSWORD', 'DEMO_PASSWORD', 'DIRECTORY_CLIENT_SECRET', 'INTELLIGENCE_TRIAGE_TOKEN', 'BACKGROUND_CLIENT_SECRET')
-$existing = if (Test-Path .env) { @(Get-Content .env) } else { @() }
-$present = @{}
-foreach ($line in $existing) {
-    if ($line -match '^([A-Z_]+)=(.+)$') { $present[$Matches[1]] = $true }
+# .env.example is the source of defaults; preserve workstation values on every run.
+$templatePath = Join-Path $PWD '.env.example'
+if (-not (Test-Path -LiteralPath $templatePath -PathType Leaf)) { throw 'Missing .env.example; restore the template before running setup.' }
+$template = @(Get-Content -LiteralPath $templatePath -Encoding UTF8)
+$envExists = Test-Path -LiteralPath '.env' -PathType Leaf
+$envLines = if ($envExists) { @(Get-Content .env -Encoding UTF8) } else { @($template) }
+$knownNames = @{}
+foreach ($line in $envLines) {
+    if ($line -match '^([A-Z][A-Z0-9_]*)=(.*)$') { $knownNames[$Matches[1]] = $Matches[2] }
 }
-$missing = @($secretKeys | Where-Object { -not $present[$_] })
-if ($missing.Count -gt 0) {
-    $rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
-    # Bo dong "KEY=" de trong (vd copy tu .env.example) truoc khi ghi gia tri moi
-    $kept = @($existing | Where-Object { -not ($_ -match '^([A-Z_]+)=$' -and $missing -contains $Matches[1]) })
-    $added = foreach ($key in $missing) {
-        $bytes = New-Object byte[] 32
-        $rng.GetBytes($bytes)
-        "$key=$([BitConverter]::ToString($bytes).Replace('-', '').ToLowerInvariant())"
+$addedDefaults = @()
+foreach ($line in $template) {
+    if ($line -match '^([A-Z][A-Z0-9_]*)=(.*)$' -and -not $knownNames.ContainsKey($Matches[1])) {
+        $knownNames[$Matches[1]] = $Matches[2]
+        $addedDefaults += $line
     }
-    $rng.Dispose()
-    [IO.File]::WriteAllLines((Join-Path $PWD '.env'), [string[]]($kept + $added))
-    Write-Host "Generated in .env: $($missing -join ', ')"
+}
+if ($addedDefaults.Count -gt 0) {
+    $envLines += @('', '# Defaults added from .env.example; existing values are preserved.') + $addedDefaults
 }
 
+function Get-EnvValue([string]$Value) {
+    if ($Value.Length -ge 2 -and (($Value[0] -eq [char]34 -and $Value[$Value.Length-1] -eq [char]34) -or ($Value[0] -eq [char]39 -and $Value[$Value.Length-1] -eq [char]39))) {
+        return $Value.Substring(1, $Value.Length-2)
+    }
+    return $Value
+}
+
+# Generate only missing/empty internal credentials, never a provider API key.
+# Existing database passwords must not change after the database has been created.
+$secretKeys = @('POSTGRES_PASSWORD', 'KC_ADMIN_PASSWORD', 'DEMO_PASSWORD', 'DIRECTORY_CLIENT_SECRET', 'INTELLIGENCE_TRIAGE_TOKEN', 'BACKGROUND_CLIENT_SECRET')
+$missing = @($secretKeys | Where-Object { [string]::IsNullOrWhiteSpace((Get-EnvValue $knownNames[$_])) })
+if ($missing.Count -gt 0) {
+    $rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
+    $generated = @{}
+    try {
+        foreach ($key in $missing) {
+            $bytes = New-Object byte[] 32
+            $rng.GetBytes($bytes)
+            $generated[$key] = [BitConverter]::ToString($bytes).Replace('-', '').ToLowerInvariant()
+        }
+    } finally { $rng.Dispose() }
+    $envLines = @($envLines | ForEach-Object {
+        if ($_ -match '^([A-Z][A-Z0-9_]*)=' -and $generated.ContainsKey($Matches[1])) {
+            $Matches[1] + '=' + $generated[$Matches[1]]
+        } else { $_ }
+    })
+    foreach ($key in $missing) {
+        if (-not $knownNames.ContainsKey($key)) { $envLines += $key + '=' + $generated[$key] }
+    }
+}
+if (-not $envExists -or $addedDefaults.Count -gt 0 -or $missing.Count -gt 0) {
+    [IO.File]::WriteAllLines((Join-Path $PWD '.env'), [string[]]$envLines, (New-Object Text.UTF8Encoding $false))
+}
+if (-not $envExists) { Write-Host 'Created .env from .env.example.' }
+if ($addedDefaults.Count -gt 0) { Write-Host "Added $($addedDefaults.Count) missing settings from .env.example." }
+if ($missing.Count -gt 0) { Write-Host "Generated internal credentials in .env: $($missing -join ', ')" }
+
 $config = @{}
-Get-Content .env | ForEach-Object {
-    if ($_ -match '^([A-Z_]+)=(.+)$') { $config[$Matches[1]] = $Matches[2] }
+foreach ($line in $envLines) {
+    if ($line -match '^([A-Z][A-Z0-9_]*)=(.*)$') { $config[$Matches[1]] = Get-EnvValue $Matches[2] }
 }
 foreach ($key in $secretKeys) {
     if (!$config[$key]) { throw "Missing $key in .env" }

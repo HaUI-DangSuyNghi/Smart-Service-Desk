@@ -37,12 +37,26 @@ const envelope = z
     }
   });
 
-/** Câu trả lời của trợ lý tri thức: trích dẫn nguyên văn hoặc báo thiếu bằng chứng. */
-export type Assistance = z.infer<typeof envelope>;
+// API advice has its own version; it must never masquerade as verified source quotations.
+const advice = z
+  .object({
+    contractVersion: z.literal("0.2.0"),
+    requestId: z.string().uuid(),
+    status: z.literal("SUCCESS"),
+    answer: z.string().trim().min(1).max(16000),
+    citations: z.array(citation).length(0),
+    needsReview: z.literal(true),
+    reasonCode: z.literal("MODEL_ADVICE"),
+  })
+  .strict();
+const response = z.union([envelope, advice]);
+
+/** Verified quotations or explicitly labelled model advice. */
+export type Assistance = z.infer<typeof response>;
 
 /** Kiểm tra phản hồi trợ lý; sai hợp đồng thì coi như 502, không hiện gì. */
 export const parseAssistance = (value: unknown): Assistance => {
-  const parsed = envelope.safeParse(value);
+  const parsed = response.safeParse(value);
   if (!parsed.success) throw new ApiError(502, { title: "ASSISTANCE_CONTRACT_FAILED" }, null);
 
   return parsed.data;

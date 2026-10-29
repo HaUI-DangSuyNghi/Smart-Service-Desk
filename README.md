@@ -122,21 +122,110 @@ APISIX routes /api/apps/*, /api/hpdi/v1/* and /api/core/v1/*.
 ## 🚀 Khởi chạy nhanh
 
 ### Yêu cầu tiên quyết
+
 - **Hệ điều hành:** Windows 10/11 với PowerShell 5.1+ (hoặc PowerShell Core).
 - **Docker Desktop:** Thiết lập chạy Linux containers, Docker Compose v2 hỗ trợ cờ `--wait`.
 - **Mạng:** Kết nối Internet trong lần chạy đầu tiên để tải container images và thư viện Maven (Java/Maven được chứa trong container build, host không cần cài đặt).
+- **Nếu dùng Qwen local:** GPU NVIDIA truy cập được từ Docker và image chứa model do nhóm bàn giao. Chế độ chỉ dùng API không cần GPU hoặc image Qwen.
 
 ### 1. Khởi chạy toàn bộ hệ thống
-Mở PowerShell tại thư mục gốc dự án và thực thi:
+
+#### Bước 1 — Chuẩn bị cấu hình riêng của máy
+
+Checkout nhánh có tính năng này (`feature/local-model-self-service` khi chưa merge).
+Mở PowerShell tại **thư mục gốc repo đã clone**, nơi có `compose.yaml`, rồi chạy:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup.ps1
+notepad .env
+```
+
+Script tạo `.env` từ **toàn bộ `.env.example`**, giữ cả chú thích và giá trị mặc định,
+rồi sinh mật khẩu nội bộ còn trống. Với máy đã có `.env`, script chỉ thêm biến
+còn thiếu từ template; giữ nguyên mật khẩu, API key, giá trị trống có sẵn và lựa
+chọn AI đã lưu (trừ mật khẩu nội bộ bắt buộc còn trống sẽ được sinh tự động).
+Khi cập nhật source, chạy lại `setup.ps1` hoặc `start.ps1` để nhận các biến mới,
+không cần xóa `.env`. Mỗi thành viên dùng `.env` riêng, không cần sao chép file chứa
+mật khẩu/key của người khác. Không sửa `.env.example` để cấu hình máy đang chạy.
+
+#### Bước 2 — Điền API để dùng “Hỏi AI”
+
+Trong `.env`, điền các dòng sau nếu muốn hỏi đáp qua API:
+
+```dotenv
+AI_API_PROVIDER=gemini
+AI_API_MODEL=model-id-cua-ban
+AI_API_KEY=key-rieng-cua-ban
+AI_API_KEY_FILE=
+AI_API_BASE_URL=
+```
+
+Thay model/key bằng thông tin trong tài khoản của thành viên. Provider hỗ trợ
+`gemini`, `openai`, `groq`. Để trống `AI_API_BASE_URL` khi dùng API chính thức;
+endpoint tương thích khác cần HTTPS. Có thể dùng `AI_API_KEY_FILE` trỏ đến file
+key thay cho key trực tiếp; file được ưu tiên. Không đưa key vào biến `VITE_`
+hoặc commit `.env`/`.local` vào Git. Bỏ qua bước này nếu chỉ dùng bộ luật hoặc
+Qwen để phân loại.
+
+#### Bước 3 — Chọn cách chạy
+
+**Không có GPU, dùng API để phân loại và hỏi đáp:**
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start.ps1 -Api
+```
+
+**Giữ Qwen + bộ luật phân loại, dùng API để hỏi đáp:** nạp image chứa model một
+lần từ bộ bàn giao của nhóm (thay đường dẫn bằng file thực tế), rồi khởi động:
+
+```powershell
+docker load -i D:\Model\qwen-full-image.tar
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start.ps1 -Model -AskApi
+```
+
+Clone source không tự tải model. Nếu image có tên khác mặc định, điền
+`LOCAL_MODEL_IMAGE` trong `.env`; xem yêu cầu image/GPU ở
+[hướng dẫn model và API](docs/local-model.md).
+
+| Cờ khởi động | Phân loại ticket | Hỏi AI |
+| --- | --- | --- |
+| `-Api` | API + bộ luật | API |
+| `-Model -AskApi` | Qwen + bộ luật | API |
+| `-Model` | Qwen + bộ luật | Theo `AI_ASSISTANCE_MODE` đã lưu |
+| `-Intelligence` | Chỉ bộ luật | Tắt |
+| `-NoAi` | Xử lý thủ công | Tắt |
+
+**Trên máy mới, chạy không có cờ thì AI mặc định tắt.** `-Model` một mình không
+tự bật hỏi đáp API nếu chưa cấu hình trước đó. Trong cả chế độ Qwen và API,
+model vẫn phối hợp với rule engine; không thay bộ luật bằng model.
+
+Sau khi khởi động thành công, script lưu lựa chọn vào `.env`: `AI_MODE` cho
+phân loại và `AI_ASSISTANCE_MODE` cho hỏi đáp. Các lần sau chỉ cần:
 
 ```powershell
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start.ps1
 ```
 
-Script sẽ tự động:
-1. Gọi `scripts/setup.ps1`: Tự sinh mật khẩu ngẫu nhiên lưu tại `.env` và xuất cấu hình realm an toàn tại `.local/dx-lab-realm.json`.
-2. Kiểm tra tính hợp lệ của `compose.yaml`.
-3. Build và khởi động các container với cơ chế chờ healthcheck hoàn tất.
+Script tự chuẩn bị cấu hình, chọn Compose overlay, build ứng dụng và đợi các
+dịch vụ healthy. Lần đầu build hoặc warmup Qwen có thể mất vài phút.
+`docker compose up` thuần không đọc lựa chọn AI để tự chọn overlay. Mỗi máy tự sinh token
+nội bộ; chế độ phát triển `local-dev` không cần người khác cấp processing grant.
+
+#### Bước 4 — Đăng nhập và thử hỏi đáp
+
+Mở `http://localhost:5173`. Đăng nhập `user1` để tạo ticket trong `lab-a`, hoặc
+`user3` để xem gợi ý phân loại với vai trò điều phối viên. Mật khẩu nằm ở
+**`DEMO_PASSWORD` trong `.env`**; các file JSON trong `.local` là cấu hình tự sinh.
+Xem đầy đủ vai trò tại [Tài khoản mẫu & Phân quyền](#-tài-khoản-mẫu--phân-quyền).
+
+Mở ticket → **Hỏi AI** → nhập câu hỏi → **Gửi câu hỏi**. Nếu vừa đổi cấu hình,
+tải lại trang. API nhận câu hỏi và title/description của ticket người dùng được
+phép xem; câu trả lời là gợi ý từ model, chưa đối chiếu tài liệu nội bộ. Hỏi đáp
+không sửa ticket hoặc kết quả phân loại. Model mặc định xử lý workspace `lab-a`;
+muốn mở rộng workspace, xem [cấu hình phạm vi](docs/local-model.md).
+
+Container healthy xác nhận dịch vụ đã khởi động, chưa xác nhận key/model/quota
+ở provider hoạt động: startup không gửi lần hỏi thử tính phí.
 
 #### Làm mới realm Keycloak (`-Reset`)
 
@@ -251,12 +340,17 @@ docker compose logs --tail 100 -f platform keycloak gateway
 # Dừng cụm dịch vụ (giữ nguyên dữ liệu volumes)
 docker compose stop
 
-# Khởi động lại cụm dịch vụ
-docker compose up -d --wait --wait-timeout 300
+# Khởi động lại với chế độ AI đã lưu trong .env
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start.ps1
 ```
 
 ### Xử lý sự cố thường gặp (Troubleshooting)
+
 - **Lỗi kết nối Docker:** Khởi động Docker Desktop trước khi chạy lệnh.
+- **“Hỏi AI” chưa bật:** Điền provider/model/key vào `.env`, chạy `scripts/start.ps1 -Api` hoặc `scripts/start.ps1 -Model -AskApi`, rồi tải lại trang. Chỉ bật bộ luật không bật hỏi đáp.
+- **Hỏi đáp trả 503/504:** Kiểm tra key, quyền sử dụng model, hạn mức và kết nối provider; xem log bằng `docker logs --tail 50 dx-platform-intelligence-api-1` (tên project mặc định). Không gửi key khi chia sẻ lỗi.
+- **Không có image Qwen / GPU không sẵn sàng:** Nạp image chứa model từ bộ bàn giao và kiểm tra GPU Docker, hoặc dùng `scripts/start.ps1 -Api` để chạy bằng API mà không cần Qwen.
+- **`No such image: dx-apisix:3.11.0-sec01`:** Chạy `docker compose build gateway`, rồi khởi động lại bằng `scripts/start.ps1`; đây là image được build từ source trong repo.
 - **Lỗi 401 Unauthorized:** Kiểm tra JWT issuer (`http://localhost:8081/realms/dx-lab`), audience (`dx-core`), thời hạn token và kết nối mạng nội bộ tới JWKS.
 - **Lỗi 403 Forbidden:** Kiểm tra phân nhóm người dùng và vai trò tương ứng với workspace đang truy cập.
 - **Keycloak báo "Client not found" / tài khoản demo không đăng nhập được:** realm cũ, chạy `scripts/start.ps1 -Reset` (xem mục *Làm mới realm Keycloak*).
