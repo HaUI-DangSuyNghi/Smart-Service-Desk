@@ -119,11 +119,28 @@ export interface AssessmentResult {
   impact: Impact | null;
   urgency: Urgency | null;
   /** INSUFFICIENT_INFORMATION: OTHER/MEDIUM chỉ là mặc định, không phải gợi ý. */
-  reasonCode: "CLASSIFIED" | "ROOT_CAUSE_CONFLICT" | "INSUFFICIENT_INFORMATION";
+  reasonCode:
+    | "CLASSIFIED"
+    | "ROOT_CAUSE_CONFLICT"
+    | "INSUFFICIENT_INFORMATION"
+    | "MODEL_CLASSIFIED"
+    | "MODEL_UNAVAILABLE"
+    | "HYBRID_CONFLICT"
+    | "RULES_SUPPORTED"
+    | "MODEL_ABSTAINED"
+    | "MODEL_REVIEW_REQUIRED";
   evidence: { field: "title" | "description"; text: string }[];
   explanation: { classificationReason: string; priorityReason: string } | null;
   needsReview: boolean;
   nextQuestions: string[];
+  cooperation?: {
+    provider: string;
+    modelCategory: Category | null;
+    rulesCategory: Category | null;
+    modelStatus: "AVAILABLE" | "UNAVAILABLE" | "ABSTAINED" | "BLOCKED";
+    rulesStatus: "CLASSIFIED" | "UNAVAILABLE" | "INSUFFICIENT_INFORMATION";
+    decision: string;
+  } | null;
 }
 
 /**
@@ -241,6 +258,26 @@ const ticketsPath = (workspace: string) =>
 const ticketPath = (workspace: string, id: string) =>
   `${ticketsPath(workspace)}/${encodeURIComponent(id)}`;
 
+export interface IntelligenceStatus {
+  mode: "LOCAL_DEV" | "EXTERNAL";
+  engine: "hybrid" | "rules" | "disabled";
+  modelEnabled: boolean;
+}
+
+export const getIntelligenceStatus = async (workspace: string): Promise<IntelligenceStatus> => {
+  const { data } = await apiClient.get<IntelligenceStatus>(
+    `/apps/servicedesk/v1/workspaces/${encodeURIComponent(workspace)}/intelligence/status`,
+  );
+  return data;
+};
+
+export const retryTicketAssessment = async (workspace: string, id: string): Promise<Assessment> => {
+  const { data } = await apiClient.post<Assessment>(
+    `${ticketPath(workspace, id)}/assessment/retry`,
+  );
+  return data;
+};
+
 /** Danh sách ticket người xem được thấy (người yêu cầu: của mình; kỹ thuật viên/điều phối: cả workspace). */
 export const listTickets = async (
   workspace: string,
@@ -281,7 +318,10 @@ export const reviewTicket = async (
   id: string,
   decision: ReviewDecision,
 ): Promise<TicketView> => {
-  const { data } = await apiClient.post<TicketView>(`${ticketPath(workspace, id)}/review`, decision);
+  const { data } = await apiClient.post<TicketView>(
+    `${ticketPath(workspace, id)}/review`,
+    decision,
+  );
   return data;
 };
 
@@ -352,7 +392,9 @@ export const askTicketAssistance = async (
 };
 
 /** GET cấu hình riêng của Service Desk (quản trị nền tảng). */
-export const getServiceDeskSettings = async (signal?: AbortSignal): Promise<ServiceDeskSettings> => {
+export const getServiceDeskSettings = async (
+  signal?: AbortSignal,
+): Promise<ServiceDeskSettings> => {
   const { data } = await apiClient.get<ServiceDeskSettings>("/apps/servicedesk/v1/settings", {
     signal,
   });

@@ -1,0 +1,5 @@
+{
+  "version": "servicedesk-local-facts@0.1.0",
+  "deviceIdentifierPattern": "(?<![\\p{L}\\p{N}])(?:máy(?: tính)?|thiết bị|computer|PC)\\s+(?:số\\s+|số hiệu\\s+|#\\s*)?[A-Z]?[0-9]{1,5}(?![\\p{L}\\p{N}])",
+  "eventPattern": "(?<![\\p{L}\\p{N}])(?:thi|bài thi|tiết học|buổi học|bài kiểm tra|hạn nộp|đến hạn|deadline|exam|class|lesson)(?:\\s+(?:sẽ\\s+)?(?:bắt đầu|diễn ra|starts?|begins?|is due))?(?:\\s+gấp)?\\s*$"
+}

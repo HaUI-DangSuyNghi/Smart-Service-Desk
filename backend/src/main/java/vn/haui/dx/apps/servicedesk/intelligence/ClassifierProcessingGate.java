@@ -26,9 +26,16 @@ import javax.crypto.spec.SecretKeySpec;
 public class ClassifierProcessingGate {
     private final ClassifierConfiguration.Settings settings;
     private final ObjectMapper json;
+    private final LocalModelRuntime local;
 
     public ClassifierProcessingGate(ClassifierConfiguration.Settings settings, ObjectMapper json) {
+        this(settings, json, LocalModelRuntime.external());
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public ClassifierProcessingGate(ClassifierConfiguration.Settings settings, ObjectMapper json, LocalModelRuntime local) {
         this.settings = settings;
+        this.local = local;
         this.json =
                 json.copy()
                         .enable(JsonParser.Feature.STRICT_DUPLICATE_DETECTION)
@@ -47,6 +54,13 @@ public class ClassifierProcessingGate {
     }
 
     private String verify(String workspace, String policyBundleDigest) {
+        if (local.enabled()) {
+            if (!settings.modelDigest().matches("[0-9a-f]{64}") || !settings.policyDigest().matches("[0-9a-f]{64}")
+                    || settings.mode() != ClassifierConfiguration.Mode.ASSISTED) {
+                throw CapabilityException.forbidden("A pinned assisted local model is required");
+            }
+            return local.authorize(workspace, "CLASSIFIER", settings.modelDigest() + ":" + settings.policyDigest() + ":" + policyBundleDigest);
+        }
         try {
             if (settings.processingVerificationKey().length() < 32) {
                 throw new IllegalArgumentException();

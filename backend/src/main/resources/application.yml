@@ -93,6 +93,7 @@ serviceDesk:
     processing-verification-key-file: ${SERVICE_DESK_CLASSIFIER_PROCESSING_VERIFICATION_KEY_FILE:}
 intelligence:
   classification:
+    timeout-ms: ${INTELLIGENCE_CLASSIFICATION_TIMEOUT_MS:4000}
     base-url: ${INTELLIGENCE_CLASSIFICATION_BASE_URL:}
     token: ${INTELLIGENCE_CLASSIFICATION_TOKEN:}
     token-file: ${INTELLIGENCE_CLASSIFICATION_TOKEN_FILE:}

@@ -35,6 +35,7 @@ public class BackgroundTicketAssessment {
     private final List<String> workspaces;
     private final org.springframework.beans.factory.ObjectProvider<vn.haui.dx.apps.servicedesk.intake.IntakeCoordinator> intake;
     private final org.springframework.beans.factory.ObjectProvider<vn.haui.dx.apps.servicedesk.TicketAlerts> alerts;
+    private final org.springframework.beans.factory.ObjectProvider<BackgroundModelAssessment> model;
 
     public BackgroundTicketAssessment(JdbcTemplate jdbc, ObjectMapper json, IntelligenceCapability intelligence,
             BackgroundProcessing processing, ActivityJournal audit, PlatformTransactionManager manager,
@@ -42,17 +43,31 @@ public class BackgroundTicketAssessment {
             @Value("${service-desk.background.workspaces:}") List<String> workspaces,
             org.springframework.beans.factory.ObjectProvider<vn.haui.dx.apps.servicedesk.intake.IntakeCoordinator> intake,
             org.springframework.beans.factory.ObjectProvider<vn.haui.dx.apps.servicedesk.TicketAlerts> alerts) {
+        this(jdbc, json, intelligence, processing, audit, manager, scheduled, workspaces, intake, alerts, null);
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public BackgroundTicketAssessment(JdbcTemplate jdbc, ObjectMapper json, IntelligenceCapability intelligence,
+            BackgroundProcessing processing, ActivityJournal audit, PlatformTransactionManager manager,
+            @Value("${service-desk.background.scheduled:true}") boolean scheduled,
+            @Value("${service-desk.background.workspaces:}") List<String> workspaces,
+            org.springframework.beans.factory.ObjectProvider<vn.haui.dx.apps.servicedesk.intake.IntakeCoordinator> intake,
+            org.springframework.beans.factory.ObjectProvider<vn.haui.dx.apps.servicedesk.TicketAlerts> alerts,
+            org.springframework.beans.factory.ObjectProvider<BackgroundModelAssessment> model) {
         this.jdbc=jdbc; this.json=json; this.intelligence=intelligence; this.processing=processing;
         this.audit=audit; this.transaction=new TransactionTemplate(manager);
         this.projection=new TicketTriageProjection(json); this.scheduled=scheduled;
         this.workspaces=workspaces.stream().filter(value -> !value.isBlank()).distinct().toList();
         this.intake=intake;
         this.alerts=alerts;
+        this.model=model;
     }
 
     @Transactional(propagation=Propagation.MANDATORY)
     public void enqueue(Ticket ticket) {
-        jdbc.update("insert into servicedesk_assessment(ticket_id) values(?)",ticket.id());
+        boolean unsupported = model != null && model.getObject().enabled() && !model.getObject().supports(ticket.workspace());
+        jdbc.update("insert into servicedesk_assessment(ticket_id,status,error_code) values(?,?,?)",ticket.id(),
+                unsupported ? "DEGRADED" : "PENDING", unsupported ? "AI_WORKSPACE_NOT_ENABLED" : null);
         history(ticket.id(),0,"QUEUED",null);
     }
 
@@ -61,6 +76,26 @@ public class BackgroundTicketAssessment {
             + " join servicedesk_ticket t on t.id=a.ticket_id where t.workspace=? and t.id=?",(row,index) ->
                 new StoredAssessment(row.getString(1),row.getInt(2),decode(row.getString(3)),row.getString(4)),workspace,id);
         return rows.isEmpty()?null:rows.get(0);
+    }
+
+    @Transactional
+    public StoredAssessment retry(Ticket ticket) {
+        if (intake.getObject().enrolled(ticket)) throw CapabilityException.conflict("Use intake assessment for this ticket");
+        boolean modelEnabled = model != null && model.getObject().enabled();
+        if (modelEnabled) model.getObject().requireScope(ticket.workspace());
+        int changed = jdbc.update("update servicedesk_assessment set status='PENDING',attempts=0,result=null,error_code=null,"
+                + "lease_token=null,lease_until=null,available_at=clock_timestamp(),updated_at=clock_timestamp()"
+                + " where ticket_id=? and (status='DEGRADED' or (status='READY' and ? and (result->>'engine'='rules'"
+                + " or result#>>'{cooperation,modelStatus}'='UNAVAILABLE')))",
+                ticket.id(), modelEnabled);
+        if (changed == 0 && modelEnabled) {
+            changed = jdbc.update("insert into servicedesk_assessment(ticket_id) values(?) on conflict(ticket_id) do nothing", ticket.id());
+        }
+        if (changed != 1) throw CapabilityException.conflict("Assessment is already pending or complete");
+        history(ticket.id(), 0, "QUEUED", null);
+        audit.record(ticket.workspace(), new BusinessActivity("servicedesk.assessment.retry", "servicedesk.ticket",
+                ticket.id().toString(), java.util.Map.of()));
+        return read(ticket.workspace(), ticket.id());
     }
 
     private StoredAssessment.Result decode(String value) {
@@ -116,16 +151,8 @@ public class BackgroundTicketAssessment {
                             () -> finish(job, null, "USE_FINAL_CONTEXT_ASSESSMENT", false));
                     return;
                 }
-                var suggestion=intelligence.suggest(job.ticket().workspace(),new TriageInput("service-desk","0.3.0",job.ticket().title(),job.ticket().description()));
-                var triage=projection.project(suggestion,job.ticket());
-                if (!"SUCCESS".equals(triage.status())) throw IntelligenceFailure.unavailable();
-                var source=json.valueToTree(suggestion.attributes());
-                var runtime=source.path("runtime");
-                var result=new StoredAssessment.Result(source.path("contractVersion").asText(),runtime.path("profileVersion").asText(),
-                    runtime.path("engine").asText(),runtime.path("rulesVersion").asText(null),runtime.path("modelVersion").asText(null),
-                    triage.category(),triage.priority(),triage.impact(),triage.urgency(),triage.reasonCode(),triage.inputEvidence(),triage.explanation(),
-                    triage.needsReview(),"INSUFFICIENT_INFORMATION".equals(triage.reasonCode())?List.of(
-                        "Which device or service is affected?","How many users are affected and is work blocked?"):List.of());
+                var result = model != null && model.getObject().enabled()
+                        ? model.getObject().assess(job.ticket()) : rulesAssessment(job.ticket());
                 transaction.executeWithoutResult(status -> {
                     processing.authorize(job.ticket().workspace(),job.ticket().creator());
                     if (finish(job,result,null,false))
@@ -145,6 +172,19 @@ public class BackgroundTicketAssessment {
             transaction.executeWithoutResult(status -> finish(job,null,code,retry));
         }
         return true;
+    }
+
+    private StoredAssessment.Result rulesAssessment(Ticket ticket) {
+                var suggestion=intelligence.suggest(ticket.workspace(),new TriageInput("service-desk","0.3.0",ticket.title(),ticket.description()));
+                var triage=projection.project(suggestion,ticket);
+                if (!"SUCCESS".equals(triage.status())) throw IntelligenceFailure.unavailable();
+                var source=json.valueToTree(suggestion.attributes());
+                var runtime=source.path("runtime");
+                return new StoredAssessment.Result(source.path("contractVersion").asText(),runtime.path("profileVersion").asText(),
+                    runtime.path("engine").asText(),runtime.path("rulesVersion").asText(null),runtime.path("modelVersion").asText(null),
+                    triage.category(),triage.priority(),triage.impact(),triage.urgency(),triage.reasonCode(),triage.inputEvidence(),triage.explanation(),
+                    triage.needsReview(),"INSUFFICIENT_INFORMATION".equals(triage.reasonCode())?List.of(
+                        "Thiết bị hoặc dịch vụ nào bị ảnh hưởng?","Có bao nhiêu người bị ảnh hưởng và công việc có đang bị chặn không?"):List.of());
     }
 
     private vn.haui.dx.apps.servicedesk.intake.IntakeAdmission.View intakeState(Ticket ticket) {

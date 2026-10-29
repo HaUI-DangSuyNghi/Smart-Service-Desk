@@ -235,7 +235,7 @@ export const assessCurrentContext = async (workspace: string, id: string) => {
   const { data } = await apiClient.post<unknown>(
     `${ticketPath(workspace, id)}/assistant/assessment-contextual`,
     { contractVersion: "ticket-assessment-contextual@0.1.0" },
-    { timeout: 12000 },
+    { timeout: 25000 },
   );
   return sameTicket(contextualAssessmentSchema.parse(data), id);
 };

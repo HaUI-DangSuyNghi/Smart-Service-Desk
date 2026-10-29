@@ -31,10 +31,18 @@ public class ContextProcessingGate {
     private final ContextIntelligenceConfiguration.Settings settings;
     private final ContextPolicyCatalog policy;
     private final ObjectMapper json;
+    private final vn.haui.dx.apps.servicedesk.intelligence.LocalModelRuntime local;
 
     public ContextProcessingGate(
             ContextIntelligenceConfiguration.Settings settings, ContextPolicyCatalog policy, ObjectMapper json) {
+        this(settings, policy, json, vn.haui.dx.apps.servicedesk.intelligence.LocalModelRuntime.external());
+    }
+
+    @org.springframework.beans.factory.annotation.Autowired
+    public ContextProcessingGate(ContextIntelligenceConfiguration.Settings settings, ContextPolicyCatalog policy,
+            ObjectMapper json, vn.haui.dx.apps.servicedesk.intelligence.LocalModelRuntime local) {
         this.settings = settings;
+        this.local = local;
         this.policy = policy;
         this.json = json.copy().enable(JsonParser.Feature.STRICT_DUPLICATE_DETECTION)
                 .enable(DeserializationFeature.FAIL_ON_TRAILING_TOKENS);
@@ -56,6 +64,12 @@ public class ContextProcessingGate {
     }
 
     private String verify(String workspace, String scope, String readinessDigest, String contextualDigest) {
+        if (local.enabled()) {
+            if (!policy.bundleDigest().equals(settings.policyBundleDigest()) || !Set.of(OWN_TICKET, WORKSPACE_REVIEW).contains(scope)) {
+                throw CapabilityException.forbidden("A pinned local context policy and scope are required");
+            }
+            return local.authorize(workspace, scope, policy.bundleDigest() + ":" + readinessDigest + ":" + contextualDigest);
+        }
         try {
             if (!policy.bundleDigest().equals(settings.policyBundleDigest())
                     || settings.verificationKey().length() < 32

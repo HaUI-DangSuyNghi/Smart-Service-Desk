@@ -90,7 +90,7 @@ public class HttpClassificationTransport implements ClassificationTransport {
             require(bearer != null && bearer.matches("[A-Za-z0-9._~+/-]{32,}=*"));
             var request =
                     HttpRequest.newBuilder(endpoint())
-                            .timeout(Duration.ofSeconds(4))
+                            .timeout(Duration.ofMillis(settings.timeoutMillis()))
                             .header("Authorization", "Bearer " + bearer)
                             .header("Content-Type", "application/json")
                             .header("Accept", "application/json")
@@ -98,7 +98,7 @@ public class HttpClassificationTransport implements ClassificationTransport {
                             .build();
             var pending = http.sendAsync(request, info -> new BoundedBody());
             try {
-                var response = pending.get(4, TimeUnit.SECONDS);
+                var response = pending.get(settings.timeoutMillis(), TimeUnit.MILLISECONDS);
                 if (response.statusCode() == 429 || response.statusCode() >= 500) {
                     throw IntelligenceFailure.unavailable();
                 }

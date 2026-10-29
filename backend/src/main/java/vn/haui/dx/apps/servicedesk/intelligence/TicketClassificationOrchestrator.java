@@ -90,7 +90,19 @@ public class TicketClassificationOrchestrator {
             UUID id,
             java.util.function.BiFunction<Ticket, TicketClassificationView, T> compose,
             Runnable verifyAdditionalPermission) {
-        Ticket snapshot = tickets.get(workspace, id);
+        return withSnapshot(workspace, id, compose, verifyAdditionalPermission, false);
+    }
+
+    <T> T withBackgroundSnapshot(String workspace, UUID id,
+            java.util.function.BiFunction<Ticket, TicketClassificationView, T> compose,
+            Runnable verifyAdditionalPermission) {
+        return withSnapshot(workspace, id, compose, verifyAdditionalPermission, true);
+    }
+
+    private <T> T withSnapshot(String workspace, UUID id,
+            java.util.function.BiFunction<Ticket, TicketClassificationView, T> compose,
+            Runnable verifyAdditionalPermission, boolean background) {
+        Ticket snapshot = background ? tickets.getForIntelligence(workspace, id) : tickets.get(workspace, id);
         requireIdentity(snapshot, workspace, id);
         if (tickets.requiresFinalAdmission(workspace, id)) {
             throw CapabilityException.conflict("Use the sealed intake final assessment for this ticket");
@@ -199,7 +211,7 @@ public class TicketClassificationOrchestrator {
                         true,
                         false);
         T result = compose.apply(snapshot, view);
-        Ticket current = tickets.get(workspace, id);
+        Ticket current = background ? tickets.getForIntelligence(workspace, id) : tickets.get(workspace, id);
         requireIdentity(current, workspace, id);
         if (!actor.equals(human.currentActor(workspace))) {
             throw CapabilityException.forbidden("Actor changed during classification");

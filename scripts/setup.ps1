@@ -5,7 +5,7 @@ Set-Location (Split-Path $PSScriptRoot -Parent)
 # khong doi bien da co (doi mat khau Postgres sau khi tao DB se lam backend mat ket noi).
 # INTELLIGENCE_TRIAGE_TOKEN: backend dung de goi service AI noi bo (start.ps1 chay kem AI)
 $secretKeys = @('POSTGRES_PASSWORD', 'KC_ADMIN_PASSWORD', 'DEMO_PASSWORD', 'DIRECTORY_CLIENT_SECRET', 'INTELLIGENCE_TRIAGE_TOKEN', 'BACKGROUND_CLIENT_SECRET')
-$existing = if (Test-Path .env) { @(Get-Content .env) } else { @() }
+$existing = if (Test-Path .env) { @(Get-Content .env -Encoding UTF8) } else { @() }
 $present = @{}
 foreach ($line in $existing) {
     if ($line -match '^([A-Z_]+)=(.+)$') { $present[$Matches[1]] = $true }
@@ -21,12 +21,12 @@ if ($missing.Count -gt 0) {
         "$key=$([BitConverter]::ToString($bytes).Replace('-', '').ToLowerInvariant())"
     }
     $rng.Dispose()
-    [IO.File]::WriteAllLines((Join-Path $PWD '.env'), [string[]]($kept + $added))
+    [IO.File]::WriteAllLines((Join-Path $PWD '.env'), [string[]]($kept + $added), (New-Object Text.UTF8Encoding $false))
     Write-Host "Generated in .env: $($missing -join ', ')"
 }
 
 $config = @{}
-Get-Content .env | ForEach-Object {
+Get-Content .env -Encoding UTF8 | ForEach-Object {
     if ($_ -match '^([A-Z_]+)=(.+)$') { $config[$Matches[1]] = $Matches[2] }
 }
 foreach ($key in $secretKeys) {

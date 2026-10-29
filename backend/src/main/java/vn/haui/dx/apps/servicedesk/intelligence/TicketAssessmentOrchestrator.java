@@ -29,6 +29,8 @@ public final class TicketAssessmentOrchestrator {
     private final String bundleDigest;
     private final ClassifierProcessingGate processing;
     private final LongSupplier clock;
+    @Value("${intelligence.classification.timeout-ms:4000}")
+    private long classificationTimeoutMillis = 4000;
 
     @org.springframework.beans.factory.annotation.Autowired
     public TicketAssessmentOrchestrator(
@@ -83,7 +85,7 @@ public final class TicketAssessmentOrchestrator {
                         workspace,
                         id,
                         (snapshot, classification) -> {
-                            checkDeadline(started, 5);
+                            checkDeadline(started, Math.max(5, (classificationTimeoutMillis + 999) / 1000 + 1));
                             long compositionStarted = clock.getAsLong();
                             var composed = compose(snapshot, classification);
                             policy.verifyUnchanged();
@@ -91,7 +93,7 @@ public final class TicketAssessmentOrchestrator {
                             return composed;
                         },
                         () -> processing.verifyAssessment(workspace, bundleDigest));
-        checkDeadline(started, 5);
+        checkDeadline(started, Math.max(5, (classificationTimeoutMillis + 999) / 1000 + 1));
         return result;
     }
 

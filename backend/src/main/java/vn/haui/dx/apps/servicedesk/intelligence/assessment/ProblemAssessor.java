@@ -37,9 +37,14 @@ public final class ProblemAssessor {
     private final AssessmentPolicy policy;
     private final FactualSignalExtractor extractor;
 
+    @org.springframework.beans.factory.annotation.Autowired
     public ProblemAssessor(AssessmentPolicy policy) {
+        this(policy, new FactualSignalExtractor(policy.structuredExtraction()));
+    }
+
+    public ProblemAssessor(AssessmentPolicy policy, FactualSignalExtractor extractor) {
         this.policy = policy;
-        this.extractor = new FactualSignalExtractor(policy.structuredExtraction());
+        this.extractor = extractor;
     }
 
     public Result assess(Map<String, String> fields) {

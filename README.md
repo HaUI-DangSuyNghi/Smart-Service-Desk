@@ -127,6 +127,13 @@ APISIX routes /api/apps/*, /api/hpdi/v1/* and /api/core/v1/*.
 - **Mạng:** Kết nối Internet trong lần chạy đầu tiên để tải container images và thư viện Maven (Java/Maven được chứa trong container build, host không cần cài đặt).
 
 ### 1. Khởi chạy toàn bộ hệ thống
+
+Muốn dùng model Qwen trên GPU, xem [hướng dẫn model local](docs/local-model.md).
+Lệnh `scripts/start.ps1 -Model` cấu hình Qwen + rule engine và lưu `AI_MODE=model`
+trong `.env`; mỗi máy tự tạo token, không cần external processing grant ở chế độ
+`local-dev`. `-Api` chọn Gemini hoặc API tương thích OpenAI/Groq và vẫn giữ rule
+engine. `-Intelligence` chỉ bật bộ luật. `-NoAi` tắt AI.
+
 Mở PowerShell tại thư mục gốc dự án và thực thi:
 
 ```powershell

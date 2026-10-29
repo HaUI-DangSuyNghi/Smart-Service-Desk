@@ -25,6 +25,7 @@ public final class FactualSignalExtractor {
     private final Pattern deadlines;
     private final Pattern events;
     private final Pattern exclusions;
+    private final Pattern identifiers;
     private static final Pattern CLAUSE_END =
             Pattern.compile("[;!?\\n]|(?<![0-9])\\.|\\.(?![0-9])");
 
@@ -42,6 +43,7 @@ public final class FactualSignalExtractor {
         deadlines = pattern("relativeTimePattern");
         events = pattern("eventPattern");
         exclusions = pattern("nonFactualPattern");
+        identifiers = configuration.hasNonNull("deviceIdentifierPattern") ? pattern("deviceIdentifierPattern") : null;
         if (!configuration.path("imminentWindowMinutes").canConvertToInt()
                 || configuration.path("imminentWindowMinutes").asInt() < 1
                 || configuration.path("imminentWindowMinutes").asInt() > 60
@@ -110,6 +112,7 @@ public final class FactualSignalExtractor {
             String count = null, unit = null;
             int quantityStart = -1;
             while (quantity.find()) {
+                if (belongsToDeviceIdentifier(prefix, quantity.start())) continue;
                 count = quantity.group("count");
                 unit = quantity.group("unit");
                 quantityStart = quantity.start();
@@ -122,6 +125,15 @@ public final class FactualSignalExtractor {
                 continue;
             }
             int start = Math.max(wholeStart, quantityStart);
+            if (start < 0 && identifiers != null) {
+                var identifier = identifiers.matcher(prefix);
+                int identifierStart = identifier.find() ? identifier.start() : -1;
+                boolean multipleIdentifiers = identifierStart >= 0 && identifier.find();
+                if (identifierStart >= 0 && !multipleIdentifiers && failure.start() - identifierStart <= configuration.path("maxRelationChars").asInt()) {
+                    var span = span(field, source, offset + identifierStart, offset + failure.end(), "impact", "FACT-IDENTIFIED-DEVICE");
+                    result.add(new Signal("impact", "I1", span, List.of(new Fact("affectedCount", "1", span))));
+                }
+            }
             if (start < 0
                     || failure.start() - start > configuration.path("maxRelationChars").asInt()) {
                 continue;
@@ -165,6 +177,15 @@ public final class FactualSignalExtractor {
             }
             result.add(new Signal("impact", level, span, facts));
         }
+    }
+
+    private boolean belongsToDeviceIdentifier(String source, int start) {
+        if (identifiers == null) return false;
+        var matches = identifiers.matcher(source);
+        while (matches.find()) {
+            if (start >= matches.start() && start < matches.end()) return true;
+        }
+        return false;
     }
 
     private void extractDeadlines(
