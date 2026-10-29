@@ -50,6 +50,7 @@ public final class BackgroundModelAssessment {
     }
 
     public boolean enabled() { return runtime.enabled(); }
+    public boolean automaticWorkspaces() { return runtime.automaticWorkspaces(); }
     public boolean supports(String workspace) { return runtime.supports(workspace); }
     public void requireScope(String workspace) { runtime.authorize(workspace, "BACKGROUND", classifier.modelDigest()); }
 

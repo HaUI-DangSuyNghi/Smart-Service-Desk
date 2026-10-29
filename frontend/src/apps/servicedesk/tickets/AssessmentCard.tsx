@@ -90,7 +90,9 @@ export const AssessmentCard = ({
   if (assessment.status === "DEGRADED" || !assessment.result) {
     const errorMessage =
       assessment.errorCode === "AI_WORKSPACE_NOT_ENABLED"
-        ? "AI chưa được bật cho không gian này. Điều phối viên vẫn có thể xử lý thủ công."
+        ? modelEnabled
+          ? "Ticket chưa được phân tích khi AI bị giới hạn ở không gian khác. Bạn có thể yêu cầu phân tích lại."
+          : "AI chưa được bật cho không gian này. Điều phối viên vẫn có thể xử lý thủ công."
         : assessment.errorCode === "ASSESSMENT_NOT_QUEUED"
           ? "Ticket chưa có kết quả AI. Bạn có thể yêu cầu model phân tích."
           : assessment.errorCode === "INTELLIGENCE_INTEGRATION_FAILED"
@@ -103,9 +105,8 @@ export const AssessmentCard = ({
     return (
       <Notice
         action={
-          ["USE_FINAL_CONTEXT_ASSESSMENT", "AI_WORKSPACE_NOT_ENABLED"].includes(
-            assessment.errorCode ?? "",
-          )
+          assessment.errorCode === "USE_FINAL_CONTEXT_ASSESSMENT" ||
+          (assessment.errorCode === "AI_WORKSPACE_NOT_ENABLED" && !modelEnabled)
             ? undefined
             : retry
         }

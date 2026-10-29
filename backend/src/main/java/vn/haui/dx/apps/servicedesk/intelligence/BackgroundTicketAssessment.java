@@ -106,14 +106,16 @@ public class BackgroundTicketAssessment {
     private record Job(Ticket ticket, int attempt, UUID lease, boolean exhausted) {}
 
     private Job claim() {
-        if (workspaces.isEmpty()) return null;
+        boolean automatic = model != null && model.getObject().automaticWorkspaces();
+        if (workspaces.isEmpty() && !automatic) return null;
+        String scope = automatic ? "" : " and t.workspace in ("+String.join(",",java.util.Collections.nCopies(workspaces.size(),"?"))+")";
         return transaction.execute(status -> {
             var rows=jdbc.query("select t.*,a.attempts from servicedesk_assessment a join servicedesk_ticket t on t.id=a.ticket_id"
                 + " where a.status='PENDING' and a.available_at<=clock_timestamp() and (a.lease_until is null or a.lease_until<=clock_timestamp())"
                 + " and (not exists(select 1 from servicedesk_intake_admission i where i.ticket_id=t.id)"
                 + " or exists(select 1 from servicedesk_intake_admission i where i.ticket_id=t.id"
                 + " and i.status in ('FINAL_ASSESSMENT_QUEUED','ASSESSING')))"
-                + " and t.workspace in ("+String.join(",",java.util.Collections.nCopies(workspaces.size(),"?"))+")"
+                + scope
                 + " order by a.available_at,a.ticket_id limit 1 for update of a skip locked",(row,index) -> {
                     UUID id=row.getObject("id",UUID.class);
                     String workspace=row.getString("workspace");
@@ -122,7 +124,7 @@ public class BackgroundTicketAssessment {
                         new TicketProcessView(row.getString("process_instance_id"),row.getString("process_key"),id.toString(),workspace));
                     int attempts=row.getInt("attempts");
                     return new Job(ticket,Math.min(3,attempts+1),UUID.randomUUID(),attempts==3);
-                },workspaces.toArray());
+                },automatic ? new Object[0] : workspaces.toArray());
             if (rows.isEmpty()) return null;
             var job=rows.get(0);
             jdbc.update("update servicedesk_assessment set attempts=?,lease_token=?,lease_until=clock_timestamp()+interval '30 seconds' where ticket_id=?",

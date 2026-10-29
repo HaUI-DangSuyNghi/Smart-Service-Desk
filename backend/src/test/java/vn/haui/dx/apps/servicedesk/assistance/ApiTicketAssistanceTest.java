@@ -91,4 +91,15 @@ class ApiTicketAssistanceTest {
         assertThrows(IllegalStateException.class, () -> configuration.configuredServiceDeskAssistanceSettings(
                 true, "local-api", "", new com.fasterxml.jackson.databind.ObjectMapper(), LocalModelRuntime.external()));
     }
+    @Test void automaticAdviceAppliesToAnotherVisibleWorkspaceWithoutNewConfiguration() {
+        var environment = new MockEnvironment(); environment.setActiveProfiles("local-dev");
+        var runtime = new LocalModelRuntime("LOCAL_DEV", List.of("auto"), "http://intelligence-classification:8003", environment);
+        var automatic = new TicketAssistanceService(tickets, grounded,
+                new ServiceDeskAssistanceConfiguration.Settings(true, Map.of(), "local-api"), null, human, advisory, runtime);
+        when(tickets.get("lab-b", id)).thenReturn(new Ticket(id, "lab-b", "owner", ticket.clientRequestId(), ticket.title(), ticket.description(), ticket.createdAt(), null));
+        when(human.currentActor("lab-b")).thenReturn(new Actor("owner", "lab-b", Set.of("requester"), Set.of()));
+        assertTrue(automatic.availableFor("lab-b"));
+        assertEquals("MODEL_ADVICE", automatic.assist("lab-b", id, "help").reasonCode());
+        verify(tickets, times(2)).get("lab-b", id);
+    }
 }

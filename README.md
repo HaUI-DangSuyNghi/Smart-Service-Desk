@@ -221,8 +221,11 @@ Xem đầy đủ vai trò tại [Tài khoản mẫu & Phân quyền](#-tài-kho�
 Mở ticket → **Hỏi AI** → nhập câu hỏi → **Gửi câu hỏi**. Nếu vừa đổi cấu hình,
 tải lại trang. API nhận câu hỏi và title/description của ticket người dùng được
 phép xem; câu trả lời là gợi ý từ model, chưa đối chiếu tài liệu nội bộ. Hỏi đáp
-không sửa ticket hoặc kết quả phân loại. Model mặc định xử lý workspace `lab-a`;
-muốn mở rộng workspace, xem [cấu hình phạm vi](docs/local-model.md).
+không sửa ticket hoặc kết quả phân loại. Mặc định `LOCAL_MODEL_WORKSPACES=auto`:
+AI áp dụng trong mọi workspace người dùng có quyền truy cập, kể cả workspace tạo
+sau khi ứng dụng đã chạy. Quyền worker được chuẩn bị tự động ở lần xử lý đầu tiên,
+không cần sửa danh sách hoặc reset realm. Có thể cố ý giới hạn bằng danh sách ID;
+xem [cấu hình phạm vi](docs/local-model.md).
 
 Container healthy xác nhận dịch vụ đã khởi động, chưa xác nhận key/model/quota
 ở provider hoạt động: startup không gửi lần hỏi thử tính phí.

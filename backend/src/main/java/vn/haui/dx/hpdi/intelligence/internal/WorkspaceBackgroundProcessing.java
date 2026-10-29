@@ -11,13 +11,24 @@ public class WorkspaceBackgroundProcessing implements BackgroundProcessing {
     private final WorkspaceAccess access;
     private final WorkspaceDirectory directory;
     private final WorkspacePermissions permissions;
+    private final vn.haui.dx.hpdi.intelligence.integration.AutomaticWorkspaceProvisioning provisioning;
 
     public WorkspaceBackgroundProcessing(ServiceIdentity identity, WorkspaceAccess access,
             WorkspaceDirectory directory, WorkspacePermissions permissions) {
+        this(identity, access, directory, permissions, null);
+    }
+    @org.springframework.beans.factory.annotation.Autowired
+    public WorkspaceBackgroundProcessing(ServiceIdentity identity, WorkspaceAccess access,
+            WorkspaceDirectory directory, WorkspacePermissions permissions,
+            vn.haui.dx.hpdi.intelligence.integration.AutomaticWorkspaceProvisioning provisioning) {
         this.identity=identity; this.access=access; this.directory=directory; this.permissions=permissions;
+        this.provisioning=provisioning;
     }
     @Override public void run(String workspace, Runnable operation) {
-        try { identity.run(workspace,"intelligence:process",operation); }
+        try {
+            if (provisioning != null) provisioning.prepare(workspace);
+            identity.run(workspace,"intelligence:process",operation);
+        }
         catch (vn.haui.dx.core.common.CoreException failure) {
             if (failure.code().status()==401 || failure.code().status()==403)
                 throw CapabilityException.forbidden("Background processing authorization revoked");

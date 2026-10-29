@@ -1,0 +1,9 @@
+{
+  "version": "servicedesk-workspace-bootstrap@0.1.0",
+  "clientId": "dx-assessment-worker",
+  "permissionClient": "dx-permissions",
+  "groups": {
+    "assessment-worker": ["intelligence:process", "task:handle"],
+    "alert-worker": ["alerts:process"]
+  }
+}
