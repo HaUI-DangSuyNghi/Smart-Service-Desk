@@ -122,7 +122,8 @@ public class TicketIntelligenceOrchestrator {
             return emptyGuidance("UNAVAILABLE", "TRIAGE_UNAVAILABLE");
         }
 
-        if (!assistance.availableFor(ticket.workspace())) {
+        // This response contract promises verified citations; API chat advice has its own endpoint.
+        if (!assistance.availableFor(ticket.workspace()) || assistance.apiAdviceMode()) {
             return emptyGuidance("UNAVAILABLE", "ASSISTANCE_DISABLED");
         }
 

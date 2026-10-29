@@ -1,5 +1,5 @@
 # Invoked by start.ps1 after setup; no host Python/Java is needed.
-param([switch]$Reset, [switch]$Api, [switch]$ValidateOnly, [string]$SettingsFile = '.env')
+param([switch]$Reset, [switch]$Api, [switch]$AskApi, [switch]$ValidateOnly, [string]$SettingsFile = '.env')
 $ErrorActionPreference = 'Stop'
 Set-Location (Split-Path $PSScriptRoot -Parent)
 . "$PSScriptRoot/docker-native.ps1"
@@ -19,6 +19,9 @@ function Get-TextDigest([string]$Value) {
     try { return [BitConverter]::ToString($hasher.ComputeHash([Text.Encoding]::UTF8.GetBytes($Value))).Replace('-', '').ToLowerInvariant() }
     finally { $hasher.Dispose() }
 }
+$assistanceMode = if ($settings['AI_ASSISTANCE_MODE']) { $settings['AI_ASSISTANCE_MODE'] } else { 'disabled' }
+if ($assistanceMode -notin @('disabled', 'api')) { throw 'AI_ASSISTANCE_MODE must be disabled or api.' }
+$useApi = $Api -or $AskApi -or $assistanceMode -eq 'api'
 $runtimeDirectory = if ($ValidateOnly) { '.local/model/validation-' + [guid]::NewGuid().ToString('N').Substring(0,12) } else { '.local/model' }
 New-Item -ItemType Directory -Force -Path $runtimeDirectory | Out-Null
 $extraRuntime = @()
@@ -27,7 +30,7 @@ $providerId = 'qwen35-08b-lora-labops-silver-r1'
 $deadline = 4000
 $service = 'ai07-qwen'
 $overlay = 'infra/compose/compose.model-local.yaml'
-if ($Api) {
+if ($useApi) {
     $vendor = $settings['AI_API_PROVIDER']
     if ($vendor -notin @('openai', 'groq', 'gemini')) { throw 'Set AI_API_PROVIDER to openai, groq, or gemini in .env.' }
     $defaults = @{openai='https://api.openai.com/v1'; groq='https://api.groq.com/openai/v1'; gemini='https://generativelanguage.googleapis.com/v1beta'}
@@ -55,17 +58,24 @@ if ($Api) {
     if ($format -notin @('json_object', 'json_schema')) { throw 'AI_API_RESPONSE_FORMAT must be json_object or json_schema.' }
     $maxTokens = if ($settings['AI_API_MAX_TOKENS']) { [int]$settings['AI_API_MAX_TOKENS'] } else { 1024 }
     if ($maxTokens -lt 64 -or $maxTokens -gt 2048) { throw 'AI_API_MAX_TOKENS must be 64..2048.' }
-    $modelDigest = Get-TextDigest ($vendor + "`n" + $base + "`n" + $apiModel)
-    $policyDigest = (Get-FileHash -Algorithm SHA256 -LiteralPath 'intelligence/src/apps/servicedesk/intelligence/api-classifier-policy-v0.1.json').Hash.ToLowerInvariant()
+    $apiModelDigest = Get-TextDigest ($vendor + "`n" + $base + "`n" + $apiModel)
+    $apiPolicyDigest = (Get-FileHash -Algorithm SHA256 -LiteralPath 'intelligence/src/apps/servicedesk/intelligence/api-classifier-policy-v0.1.json').Hash.ToLowerInvariant()
+    $advicePolicyDigest = (Get-FileHash -Algorithm SHA256 -LiteralPath 'intelligence/src/apps/servicedesk/intelligence/api-assistance-policy-v0.1.json').Hash.ToLowerInvariant()
+    $adviceTokens = if ($settings['AI_ASSISTANCE_MAX_TOKENS']) { [int]$settings['AI_ASSISTANCE_MAX_TOKENS'] } else { 2048 }
+    if ($adviceTokens -lt 64 -or $adviceTokens -gt 2048) { throw 'AI_ASSISTANCE_MAX_TOKENS must be 64..2048.' }
+    $extraRuntime = @("SSD_AI_API_PROVIDER=$vendor", "SSD_AI_API_BASE_URL=$base", "SSD_AI_API_MODEL=$apiModel", "SSD_AI_API_KEY_FILE=./$keyFile", "SSD_AI_API_RESPONSE_FORMAT=$format", "SSD_AI_API_MAX_TOKENS=$maxTokens", "SSD_API_MODEL_DIGEST=$apiModelDigest", "SSD_API_POLICY_DIGEST=$apiPolicyDigest", "SSD_AI_ASSISTANCE_POLICY_DIGEST=$advicePolicyDigest", "SSD_AI_ASSISTANCE_MAX_TOKENS=$adviceTokens")
+    Write-Host 'API Q&A selected: questions and ticket title/description go to the configured provider; keys stay server-side.'
+}
+if ($Api) {
+    $modelDigest = $apiModelDigest
+    $policyDigest = $apiPolicyDigest
     $codeImage = ''
     $image = [PSCustomObject]@{Id=''}
-    $extraRuntime = @("SSD_AI_API_PROVIDER=$vendor", "SSD_AI_API_BASE_URL=$base", "SSD_AI_API_MODEL=$apiModel", "SSD_AI_API_KEY_FILE=./$keyFile", "SSD_AI_API_RESPONSE_FORMAT=$format", "SSD_AI_API_MAX_TOKENS=$maxTokens")
     $providerLabel = $vendor + ' API'
     $providerId = $vendor + '-api'
     $deadline = 15000
     $service = 'intelligence-api'
     $overlay = 'infra/compose/compose.model-api.yaml'
-    Write-Host 'API mode selected: ticket title/description will be sent to the configured provider; rules and human review remain active.'
 } else {
 $modelImage = if ($env:LOCAL_MODEL_IMAGE) { $env:LOCAL_MODEL_IMAGE } elseif ($settings['LOCAL_MODEL_IMAGE']) { $settings['LOCAL_MODEL_IMAGE'] } else { 'ssd-ai07-qwen-full:a40d655f95f8ed6b' }
 $metadata = $null
@@ -112,7 +122,9 @@ $runtimeFile = $runtimeDirectory + '/runtime.env'
 [IO.File]::WriteAllLines((Join-Path $PWD $runtimeFile), [string[]]$runtime, (New-Object Text.UTF8Encoding $false))
 $compose = @('compose', '--env-file', '.env', '--env-file', $runtimeFile, '-f', 'compose.yaml')
 if (Test-Path compose.override.yaml) { $compose += @('-f', 'compose.override.yaml') }
-$compose += @('-f', 'infra/compose/compose.triage.yaml', '-f', 'infra/compose/compose.hybrid.yaml', '-f', $overlay, '--profile', 'intelligence', '--profile', 'local-model')
+$compose += @('-f', 'infra/compose/compose.triage.yaml', '-f', 'infra/compose/compose.hybrid.yaml')
+if ($useApi) { $compose += @('-f', 'infra/compose/compose.api-assistance.yaml') }
+$compose += @('-f', $overlay, '--profile', 'intelligence', '--profile', 'local-model')
 $resolvedConfiguration = Invoke-Docker @compose config --format json
 if ($LASTEXITCODE -ne 0) { throw 'Local model Compose configuration is invalid.' }
 $resolvedProject = (($resolvedConfiguration -join "`n") | ConvertFrom-Json).name
@@ -120,9 +132,10 @@ if ($ValidateOnly) {
     Write-Host "Hybrid AI configuration valid: $runtimeFile. No application containers were changed and no upstream request was sent."
     return $runtimeFile
 }
-& "$PSScriptRoot/stop-unused-model.ps1" -KeepService $service -ProjectName $resolvedProject
-if ($Api) {
-    Invoke-Docker @compose build $service
+$requiredServices = if ($useApi -and -not $Api) { @($service, 'intelligence-api') } else { @($service) }
+& "$PSScriptRoot/stop-unused-model.ps1" -KeepService $requiredServices -ProjectName $resolvedProject
+if ($useApi) {
+    Invoke-Docker @compose build intelligence-api
     if ($LASTEXITCODE -ne 0) { throw 'Cannot build the API classification service.' }
 }
 Write-Host 'Starting the selected classification provider. GPU warmup may take several minutes...'
@@ -135,8 +148,10 @@ if ($existingModel) {
         if ($LASTEXITCODE -ne 0) { throw 'Cannot restart the unhealthy local model worker.' }
     }
 }
-Invoke-Docker @compose up -d --no-build --wait --wait-timeout 300 $service
+Invoke-Docker @compose up -d --no-build --wait --wait-timeout 300 @requiredServices
 if ($LASTEXITCODE -ne 0) { throw 'The classification provider did not become ready. Check its configuration and restart; application data is preserved.' }
+$previousPlatform = Invoke-Docker @compose ps -a -q platform
+if ($LASTEXITCODE -ne 0) { throw 'Cannot inspect the previous backend.' }
 Invoke-Docker @compose up -d --build --wait --wait-timeout 300
 if ($LASTEXITCODE -ne 0) { throw 'Application startup failed. Inspect docker compose logs platform; the selected model configuration is in .local/model/runtime.env.' }
 if ($Reset) {
@@ -144,5 +159,6 @@ if ($Reset) {
     Invoke-Docker @compose up -d --wait --wait-timeout 300
     if ($LASTEXITCODE -ne 0) { throw 'Cannot restore model configuration after realm reset.' }
 }
+Sync-GatewayUpstream -ComposeArgs $compose -PreviousPlatform $previousPlatform
 Write-Host "Hybrid AI ready: $providerLabel + rules, factual priority and context/enrichment."
-if ($Api) { Write-Host 'API healthcheck verifies configuration; no billable upstream probe is sent at startup.' }
+if ($useApi) { Write-Host 'API Q&A enabled. Healthcheck verifies configuration; no billable upstream probe is sent at startup.' }

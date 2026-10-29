@@ -20,6 +20,8 @@ public class TicketAssistanceService {
     private final ServiceDeskAssistanceConfiguration.Settings settings;
     private final AssistanceRouting routing;
     private final HumanContext human;
+    private final vn.haui.dx.hpdi.intelligence.api.AdvisoryAssistanceCapability advisory;
+    private final vn.haui.dx.apps.servicedesk.intelligence.LocalModelRuntime runtime;
 
     @Autowired
     public TicketAssistanceService(
@@ -27,12 +29,22 @@ public class TicketAssistanceService {
             GroundedAssistanceCapability intelligence,
             ServiceDeskAssistanceConfiguration.Settings settings,
             AssistanceRouting routing,
-            HumanContext human) {
+            HumanContext human,
+            vn.haui.dx.hpdi.intelligence.api.AdvisoryAssistanceCapability advisory,
+            vn.haui.dx.apps.servicedesk.intelligence.LocalModelRuntime runtime) {
         this.tickets = tickets;
         this.intelligence = intelligence;
         this.settings = settings;
         this.routing = routing;
         this.human = human;
+        this.advisory = advisory;
+        this.runtime = runtime;
+    }
+
+    public TicketAssistanceService(TicketService tickets, GroundedAssistanceCapability intelligence,
+            ServiceDeskAssistanceConfiguration.Settings settings, AssistanceRouting routing, HumanContext human) {
+        this(tickets, intelligence, settings, routing, human, null,
+                vn.haui.dx.apps.servicedesk.intelligence.LocalModelRuntime.external());
     }
 
     public TicketAssistanceService(
@@ -46,7 +58,7 @@ public class TicketAssistanceService {
         // Enforce ticket visibility before any AI or knowledge access.
         var ticket = tickets.get(workspace, id);
 
-        if (!settings.enabled() || !settings.catalogs().containsKey(ticket.workspace())) {
+        if (!availableFor(ticket.workspace())) {
             throw CapabilityException.notFound("Assistance is unavailable");
         }
 
@@ -62,6 +74,21 @@ public class TicketAssistanceService {
                                                 && value != '\t')) {
             throw CapabilityException.validation(
                     "A question of at most 2000 characters is required");
+        }
+
+        if ("local-api".equals(settings.mode())) {
+            runtime.authorize(workspace, "API_ASSISTANCE", "advisory@0.1.0");
+            var actor = human.currentActor(workspace);
+            if (actor == null) throw CapabilityException.forbidden("Authenticated actor required");
+            var result = advisory.advise(question, java.util.Map.of("title", ticket.title(), "description", ticket.description()));
+            var current = tickets.get(workspace, id);
+            if (!actor.equals(human.currentActor(workspace))) throw CapabilityException.forbidden("Actor changed during assistance");
+            runtime.authorize(workspace, "API_ASSISTANCE", "advisory@0.1.0");
+            if (!ticket.id().equals(current.id()) || !ticket.workspace().equals(current.workspace())
+                    || !ticket.title().equals(current.title()) || !ticket.description().equals(current.description())) {
+                throw CapabilityException.conflict("Ticket changed during assistance; ask again");
+            }
+            return result;
         }
 
         var pins = settings.catalogs().get(ticket.workspace());
@@ -106,8 +133,11 @@ public class TicketAssistanceService {
     }
 
     /** Configuration availability only; callers must still authorize ticket and sources. */
+    public boolean apiAdviceMode() { return "local-api".equals(settings.mode()); }
+
     public boolean availableFor(String workspace) {
-        return settings.enabled() && settings.catalogs().containsKey(workspace);
+        return settings.enabled() && ("local-api".equals(settings.mode())
+                ? runtime.supports(workspace) : settings.catalogs().containsKey(workspace));
     }
 
     private static String digest(String value) {

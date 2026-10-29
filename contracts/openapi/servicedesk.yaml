@@ -22,11 +22,12 @@ paths:
               schema:
                 type: object
                 additionalProperties: false
-                required: [mode, engine, modelEnabled]
+                required: [mode, engine, modelEnabled, assistanceMode]
                 properties:
                   mode: {type: string, enum: [LOCAL_DEV, EXTERNAL]}
                   engine: {type: string, enum: [hybrid, rules, disabled]}
                   modelEnabled: {type: boolean}
+                  assistanceMode: {type: string, enum: [disabled, api, grounded]}
         '401': {$ref: 'core.yaml#/components/responses/Unauthorized'}
         '403': {$ref: 'core.yaml#/components/responses/Forbidden'}
   /workspaces/{workspace}/tickets/{id}/assessment/retry:
@@ -326,7 +327,7 @@ paths:
       - {$ref: '#/components/parameters/TicketId'}
     post:
       operationId: assistTicket
-      description: 'Disabled by default (404). Current opt-in deployment is synthetic-reference only. Ticket visibility is checked before AI and again before returning. Server-selected knowledge pins are authorized through HPDI Data and revalidated after inference. Only exact source quotations are returned; needsReview is always true. No ticket/workflow mutation. Citations expose display titles and versions without internal source IDs or links. No answer persistence or caching.'
+      description: 'Disabled by default (404). LOCAL_DEV API mode sends only the question and visible ticket title/description to the explicitly configured provider. API advice uses public contract 0.2.0, reason MODEL_ADVICE, no citations and needsReview=true; it does not claim knowledge retrieval. Existing grounded modes retain contract 0.1.0, authorized source pins and verified quotation checks. Ticket access is rechecked after inference; API mode also rechecks actor and ticket content. No workflow mutation, answer persistence or caching.'
       requestBody:
         required: true
         content:
@@ -334,7 +335,7 @@ paths:
             schema: {$ref: '#/components/schemas/AssistanceQuestion'}
       responses:
         '200':
-          description: Verified quotation or explicit insufficient evidence; Cache-Control no-store. Operational degradation uses 503/504.
+          description: Verified quotation, explicit insufficient evidence, or explicitly labelled API model advice; Cache-Control no-store. Operational degradation uses 503/504.
           content:
             application/json:
               schema: {$ref: '#/components/schemas/AssistanceResponse'}
@@ -988,6 +989,22 @@ components:
         displayTitle: {type: string, minLength: 1, maxLength: 200}
         sourceVersion: {type: string, minLength: 1, maxLength: 100}
     AssistanceResponse:
+      oneOf:
+        - {$ref: '#/components/schemas/GroundedAssistanceResponse'}
+        - {$ref: '#/components/schemas/ApiAdvisoryAssistanceResponse'}
+    ApiAdvisoryAssistanceResponse:
+      type: object
+      additionalProperties: false
+      required: [contractVersion, requestId, status, answer, citations, needsReview, reasonCode]
+      properties:
+        contractVersion: {type: string, enum: ['0.2.0']}
+        requestId: {type: string, format: uuid}
+        status: {type: string, enum: [SUCCESS]}
+        answer: {type: string, minLength: 1, maxLength: 16000}
+        citations: {type: array, maxItems: 0, items: {$ref: '#/components/schemas/AssistanceCitation'}}
+        needsReview: {type: boolean, enum: [true]}
+        reasonCode: {type: string, enum: [MODEL_ADVICE]}
+    GroundedAssistanceResponse:
       type: object
       additionalProperties: false
       required: [contractVersion, requestId, status, answer, citations, needsReview, reasonCode]

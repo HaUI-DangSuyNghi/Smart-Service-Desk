@@ -167,6 +167,7 @@ const TicketDetail = ({ workspace, ticketId }: { workspace: string; ticketId: st
             )}
             <DetailTabs
               workspace={workspace}
+              assistanceMode={aiStatus.data?.assistanceMode}
               ticket={ticket.data}
               isRequesterView={isRequesterView}
             />

@@ -1,4 +1,4 @@
-param([string]$KeepService = '', [string]$ProjectName = '')
+param([string[]]$KeepService = @(), [string]$ProjectName = '')
 $ErrorActionPreference = 'Stop'
 . "$PSScriptRoot/docker-native.ps1"
 # Limit operations to the selected Compose project and the two known AI services.
@@ -12,7 +12,7 @@ if (-not $project) {
 }
 if ($project -notmatch '^[a-z0-9][a-z0-9_-]*$') { throw 'Invalid Compose project identity.' }
 foreach ($service in @('ai07-qwen', 'intelligence-api')) {
-    if ($service -eq $KeepService) { continue }
+    if ($service -in $KeepService) { continue }
     $containers = @(Invoke-Docker ps -q --filter "label=com.docker.compose.project=$project" --filter "label=com.docker.compose.service=$service")
     if ($LASTEXITCODE -ne 0) { throw 'Cannot inspect the previous AI service.' }
     if ($containers.Count -gt 0) {

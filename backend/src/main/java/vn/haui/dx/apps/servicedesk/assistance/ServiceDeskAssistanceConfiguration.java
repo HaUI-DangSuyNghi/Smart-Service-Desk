@@ -34,6 +34,19 @@ public class ServiceDeskAssistanceConfiguration {
     }
 
     @Bean
+    Settings configuredServiceDeskAssistanceSettings(
+            @Value("${serviceDesk.assistance.enabled:false}") boolean enabled,
+            @Value("${serviceDesk.assistance.mode:disabled}") String mode,
+            @Value("${serviceDesk.assistance.source-pins:}") String sourcePins,
+            ObjectMapper json,
+            vn.haui.dx.apps.servicedesk.intelligence.LocalModelRuntime runtime) {
+        if (enabled && "local-api".equals(mode)) {
+            if (!runtime.enabled()) throw new IllegalStateException("API advice requires explicit LOCAL_DEV runtime");
+            return new Settings(true, Map.of(), mode);
+        }
+        return serviceDeskAssistanceSettings(enabled, mode, sourcePins, json);
+    }
+
     Settings serviceDeskAssistanceSettings(
             @Value("${serviceDesk.assistance.enabled:false}") boolean enabled,
             @Value("${serviceDesk.assistance.mode:disabled}") String mode,

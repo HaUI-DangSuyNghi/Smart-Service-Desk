@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Internal API advisory question; authorized context supplied by caller",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contractVersion", "requestId", "question", "context"],
+  "properties": {
+    "contractVersion": {"const": "advisory@0.1.0"},
+    "requestId": {"type": "string", "format": "uuid"},
+    "question": {"type": "string", "minLength": 1, "maxLength": 2000},
+    "context": {
+      "type": "object", "additionalProperties": false, "required": ["title", "description"],
+      "properties": {
+        "title": {"type": "string", "maxLength": 4000},
+        "description": {"type": "string", "maxLength": 4000}
+      }
+    }
+  }
+}

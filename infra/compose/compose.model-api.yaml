@@ -1,50 +1,6 @@
-# Same hybrid backend pipeline as local Qwen; only the classifier provider changes.
+# Apply after compose.api-assistance.yaml when API also classifies tickets.
 services:
   intelligence-api:
-    profiles: [local-model]
-    image: dx-platform-classification-api:dev
-    build:
-      context: .
-      dockerfile: intelligence/Dockerfile
-    entrypoint: [python, -m, hdpi.classification.api_provider]
-    environment:
-      AI_API_ENABLED: '1'
-      AI_API_PROVIDER: ${SSD_AI_API_PROVIDER:?}
-      AI_API_BASE_URL: ${SSD_AI_API_BASE_URL:?}
-      AI_API_MODEL: ${SSD_AI_API_MODEL:?}
-      AI_API_MODEL_DIGEST: ${SSD_LOCAL_MODEL_DIGEST:?}
-      AI_API_POLICY_DIGEST: ${SSD_LOCAL_MODEL_POLICY_DIGEST:?}
-      AI_API_POLICY_FILE: /run/config/api-classifier-policy.json
-      AI_API_KEY_FILE: /run/secrets/api-provider-key
-      AI_API_RESPONSE_FORMAT: ${SSD_AI_API_RESPONSE_FORMAT:-json_object}
-      AI_API_MAX_TOKENS: ${SSD_AI_API_MAX_TOKENS:-1024}
-      AI_CLASSIFICATION_TOKEN_FILE: /run/secrets/local-classification-token
-    volumes:
-      - ./intelligence/src/apps/servicedesk/intelligence/api-classifier-policy-v0.1.json:/run/config/api-classifier-policy.json:ro
-    secrets: [local-classification-token, api-provider-key]
     networks:
-      default: {}
       local-model-private:
         aliases: [intelligence-classification]
-    user: '10001:10001'
-    read_only: true
-    tmpfs: ['/tmp:rw,noexec,nosuid,size=32m']
-    mem_limit: 256m
-    cpus: 1
-    pids_limit: 64
-    cap_drop: [ALL]
-    security_opt: [no-new-privileges:true]
-    logging:
-      driver: json-file
-      options: {max-size: 1m, max-file: '2'}
-    healthcheck:
-      test: [CMD, python, -m, hdpi.classification.api_provider, --health]
-      interval: 10s
-      timeout: 3s
-      retries: 5
-  platform:
-    depends_on:
-      intelligence-api: {condition: service_healthy}
-secrets:
-  api-provider-key:
-    file: ${SSD_AI_API_KEY_FILE:?}

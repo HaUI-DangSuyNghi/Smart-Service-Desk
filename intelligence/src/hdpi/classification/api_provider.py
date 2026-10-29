@@ -266,7 +266,8 @@ class ApiHandler(BaseHTTPRequestHandler):
         if not self.authorized():
             self.reply(403, {"code": "CLASSIFICATION_REJECTED"})
             return
-        if self.path != "/internal/intelligence/v1/classify":
+        advice = self.path == "/internal/intelligence/v1/assistance"
+        if self.path != "/internal/intelligence/v1/classify" and not advice:
             self.reply(404, {"code": "CLASSIFICATION_ROUTE_NOT_FOUND"})
             return
         status = 502
@@ -277,11 +278,19 @@ class ApiHandler(BaseHTTPRequestHandler):
                 len(lengths) == 1 and lengths[0].isascii() and lengths[0].isdecimal()
             )
             size = int(lengths[0])
-            require(0 < size <= 16384 and self.headers.get("Transfer-Encoding") is None)
+            require(
+                0 < size <= (32768 if advice else 16384)
+                and self.headers.get("Transfer-Encoding") is None
+            )
             require(self.headers.get("Content-Type") == "application/json")
             raw = self.rfile.read(size)
             require(len(raw) == size)
-            result = self.server.service.infer(strict_json(raw))
+            if advice:
+                if self.server.assistance is None:
+                    raise GenerationUnavailable("Assistance is disabled")
+                result = self.server.assistance.answer(strict_json(raw))
+            else:
+                result = self.server.service.infer(strict_json(raw))
             self.reply(200, result)
             return
         except GenerationTimeout:
@@ -297,8 +306,9 @@ class ApiServer(ThreadingHTTPServer):
     daemon_threads = True
     request_queue_size = 4
 
-    def __init__(self, address, *, service, token):
+    def __init__(self, address, *, service, token, assistance=None):
         self.service, self.token = service, token
+        self.assistance = assistance
         super().__init__(address, ApiHandler)
 
     def handle_error(self, *_args):
@@ -342,7 +352,26 @@ def main():
         abstain_id=policy["abstainId"],
         observe=provider.observe,
     )
-    with ApiServer(("0.0.0.0", 8003), service=service, token=token) as server:
+    assistance = None
+    if os.environ.get("AI_API_ASSISTANCE_ENABLED") == "1":
+        from ..advisory_api import ApiAssistanceProvider
+
+        advice_raw = Path(os.environ["AI_API_ASSISTANCE_POLICY_FILE"]).read_bytes()
+        require(
+            sha256(advice_raw).hexdigest()
+            == os.environ["AI_API_ASSISTANCE_POLICY_DIGEST"]
+        )
+        assistance = ApiAssistanceProvider(
+            vendor=provider.vendor,
+            base_url=provider.base_url,
+            model=provider.model,
+            credential_file=provider.credential_file,
+            policy=strict_json(advice_raw),
+            max_tokens=int(os.environ.get("AI_API_ASSISTANCE_MAX_TOKENS", "2048")),
+        )
+    with ApiServer(
+        ("0.0.0.0", 8003), service=service, token=token, assistance=assistance
+    ) as server:
         server.serve_forever(poll_interval=0.2)
 
 

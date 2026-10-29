@@ -13,6 +13,19 @@ const response = {
 };
 
 describe("assistance contract", () => {
+  it("accepts model advice only with its own version and no fabricated citations", () => {
+    const advice = {
+      ...response,
+      contractVersion: "0.2.0",
+      reasonCode: "MODEL_ADVICE",
+      citations: [],
+    };
+    expect(parseAssistance(advice).reasonCode).toBe("MODEL_ADVICE");
+    expect(() => parseAssistance({ ...advice, contractVersion: "0.1.0" })).toThrow();
+    expect(() => parseAssistance({ ...advice, citations: response.citations })).toThrow();
+    expect(() => parseAssistance({ ...advice, needsReview: false })).toThrow();
+    expect(() => parseAssistance({ ...advice, answer: "  " })).toThrow();
+  });
   it("accepts escaped text as data and never transforms it into HTML", () => {
     const value = parseAssistance({ ...response, answer: "<script>synthetic</script> [C1]" });
     expect(value.answer).toContain("<script>");

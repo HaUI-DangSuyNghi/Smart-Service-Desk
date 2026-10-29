@@ -31,6 +31,55 @@ Mặc định là `ssd-ai07-qwen-full:a40d655f95f8ed6b`. Script yêu cầu image
 Runtime tự kiểm checksum model đã đóng gói trước khi ready. Không tự tải weights
 hoặc tải một model khác thay thế khi có lỗi.
 
+## Hỏi đáp bằng API, giữ Qwen + bộ luật để phân loại
+
+Trong `.env` ở thư mục gốc, điền provider, model có quyền sử dụng và key của bạn:
+
+```dotenv
+AI_API_PROVIDER=gemini
+AI_API_MODEL=model-id-cua-ban
+AI_API_KEY=key-rieng-cua-ban
+AI_API_KEY_FILE=
+```
+
+Có thể chọn `openai` hoặc `groq` thay `gemini`. Với API chính thức, để trống
+`AI_API_BASE_URL`; endpoint khác cần HTTPS và định dạng tương thích. Nếu dùng
+file key, đặt `AI_API_KEY_FILE` và để trống key trực tiếp. Không gửi key cho người
+khác, không đưa vào `VITE_` hay Git. `setup.ps1` bổ sung các ô cấu hình còn thiếu
+vào `.env` của máy cũ, giữ nguyên mọi giá trị đã có.
+
+```powershell
+.\scripts\start.ps1 -Model -AskApi
+```
+
+Lệnh này giữ **Qwen + rule engine để phân loại**, chạy thêm adapter CPU để **hỏi
+đáp qua API**. Không tải thêm model/GPU thứ hai. Khi khởi động thành công, script
+lưu `AI_MODE=model` và `AI_ASSISTANCE_MODE=api`; lần sau chỉ chạy `start.ps1`.
+Nếu muốn dùng API cho cả phân loại lẫn hỏi đáp và không dùng GPU, chọn `-Api`.
+
+Mở ticket → **Hỏi AI** → nhập câu hỏi → **Gửi câu hỏi**. Người dùng được xem
+ticket có thể hỏi; backend lấy title/description của chính ticket đó, không nhận
+context hoặc provider do trình duyệt tự gửi. Chỉ câu hỏi và hai trường này được
+gửi ra provider; không gửi ticket khác, tệp đính kèm, credential hay danh sách
+người dùng. Quyền truy cập, actor và nội dung ticket được kiểm tra lại trước khi
+trả lời. Không lưu câu hỏi/câu trả lời và không sửa ticket hoặc kết quả phân loại.
+
+Câu trả lời hiện là **gợi ý từ model, chưa đối chiếu tài liệu nội bộ**. Không tạo
+trích dẫn giả hay giả là truy xuất RAG. Các chế độ grounded có sẵn vẫn giữ hợp đồng
+và quyền nguồn riêng; phần guidance trong assessment có cấu trúc chỉ chấp nhận
+trích dẫn đã xác minh, không gọi API chat để thay thế. Q&A trả public contract
+`0.2.0` / `MODEL_ADVICE`; grounded giữ `0.1.0`.
+
+API chờ tối đa 12 giây, backend 15 giây. `AI_ASSISTANCE_MAX_TOKENS` mặc định 2048,
+giới hạn 64..2048, độc lập với giới hạn output classifier. Key sai/hết hạn mức
+hoặc provider lỗi trả 503; hết deadline trả 504. UI cho phép thử lại và không tự
+lặp các yêu cầu tính phí. Healthcheck không kiểm quyền model/quota bằng một lần
+inference trả phí.
+
+Tắt hỏi đáp riêng khi đang dùng Qwen: đặt `AI_ASSISTANCE_MODE=disabled` rồi chạy
+`start.ps1 -Model`. `-NoAi` tắt cả hai phần. API-only (`AI_MODE=api`) luôn bật cả
+phân loại và hỏi đáp; muốn giữ một classifier Qwen riêng hãy dùng chế độ mixed.
+
 ## Bật và lưu cấu hình
 
 Tại thư mục dự án:
@@ -51,10 +100,13 @@ Khi thành công, script lưu `AI_MODE=model` vào `.env`. Những lần sau ch�
 ```
 
 `-Intelligence` lưu lựa chọn `AI_MODE=rules`; `-NoAi` lưu `AI_MODE=disabled`.
-`-Api` lưu lựa chọn `AI_MODE=api`. Khi đổi provider, script dừng riêng classifier
-cũ của đúng Compose project để tránh DNS trỏ nhầm hai model. Rule engine vẫn chạy.
+`-Api` lưu lựa chọn `AI_MODE=api` và bật hỏi đáp API. Khi đổi chế độ, script chỉ
+dừng những service AI không còn được chọn trong đúng Compose project. Mixed mode
+giữ cả Qwen và API; mỗi service có DNS riêng để không thay classifier ngoài ý muốn.
 `AI_MODE` chỉ được script khởi động đọc; lệnh `docker compose up` thuần không tự
 chọn overlay model. Không đổi các cờ model rời rạc trong `.env` để thay cho script.
+Khi Compose thay container backend, script làm mới gateway để tránh tiếp tục
+trỏ tới địa chỉ backend cũ trong DNS cache.
 Các digest/image ID hiệu lực được lưu tại `.local/model/runtime.env`; không có
 token trong file này. Mỗi máy giữ `.env` và `.local` riêng, không commit/chia sẻ.
 
@@ -166,7 +218,7 @@ tiến trình bình thường trên stderr của Docker là lỗi; exit code kh�
 khởi động thất bại.
 
 ```powershell
-docker compose -f compose.yaml -f infra/compose/compose.triage.yaml -f infra/compose/compose.hybrid.yaml -f infra/compose/compose.model-api.yaml --env-file .env --env-file .local/model/runtime.env logs --tail 30 intelligence-api
+docker compose -f compose.yaml -f infra/compose/compose.triage.yaml -f infra/compose/compose.hybrid.yaml -f infra/compose/compose.api-assistance.yaml -f infra/compose/compose.model-api.yaml --env-file .env --env-file .local/model/runtime.env logs --tail 30 intelligence-api
 python -m pytest intelligence/tests/classification/test_api_provider.py -q
 ```
 
@@ -185,14 +237,18 @@ Kiểm tra tại máy phát triển ngày 2026-10-29 với dữ liệu thử:
 | Kết quả lưu và quyền truy cập | Ba lần đọc giữ nguyên kết quả; từ chối đọc/retry khác workspace và retry kết quả model đã hoàn tất |
 | Giao diện trình duyệt thật | Đăng nhập điều phối viên, hiển thị kết quả hybrid cùng hai nguồn |
 | Enrichment và contextual assessment | HTTP 200, enrichment READY, model trả HARDWARE |
-| Backend Maven verify | 908 tests: 579 chạy đạt, 329 được cấu hình bỏ qua; không lỗi |
+| Backend Maven verify | 920 tests: 591 chạy đạt, 329 được cấu hình bỏ qua; không lỗi |
 | Background assessment với PostgreSQL riêng | 21/21 đạt, không bỏ qua |
-| Python classification | 82/82 đạt, gồm adapter API với upstream giả lập |
-| Frontend | TypeScript/lint đạt; 15/15 test AI/ticket liên quan đạt; toàn bộ suite 149 đạt, 2 lỗi board/dropTargets tái hiện nguyên trạng trên develop |
+| Python classification / API Q&A | 100/100 đạt, gồm cả ba vendor với upstream giả lập |
+| Frontend | TypeScript/lint/build đạt; 29/29 test AI/ticket liên quan đạt; lần kiểm toàn bộ suite trước thay đổi hỏi đáp có 149 đạt, 2 lỗi board/dropTargets tái hiện nguyên trạng trên develop |
 | Gemini/OpenAI/Groq | Cấu hình cả ba hợp lệ; API container healthy không cần GPU; chưa kiểm inference thật bằng key của vendor |
+| API hỏi đáp xuyên suốt qua HTTPS upstream giả lập | Đăng nhập user1, hỏi trên ticket thật, UI hiển thị câu trả lời; không trích dẫn giả, không đổi phân loại; key bị từ chối trả 503; Qwen + rules cùng hoạt động |
 
 Các script tái kiểm tra: `scripts/test-local-model.py` và
-`scripts/test-local-model-ui.mjs`. Bằng chứng cục bộ nằm trong `.local`, không
+`scripts/test-local-model-ui.mjs`; Q&A dùng `scripts/test-api-assistance.py <UUID-ticket-thu>`
+và `node scripts/test-local-model-ui.mjs <UUID-ticket-thu> --ask`.
+Các phép thử Q&A sẽ gọi provider đang cấu hình; chỉ chạy với ticket thử và chấp
+nhận chi phí API tương ứng. Bằng chứng cục bộ nằm trong `.local`, không
 commit credential, nội dung ticket hay dữ liệu kiểm thử vào Git.
 
 Định dạng request được đối chiếu với tài liệu chính thức:

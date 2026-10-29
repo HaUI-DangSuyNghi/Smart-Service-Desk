@@ -24,6 +24,11 @@ services:
       INTELLIGENCE_TRIAGE_BASE_URL: http://intelligence:8000
       DX_AI_PROVIDER_LABEL: ${SSD_LOCAL_PROVIDER_LABEL:-Qwen}
       INTELLIGENCE_CLASSIFICATION_TIMEOUT_MS: ${SSD_CLASSIFICATION_TIMEOUT_MS:-4000}
+      serviceDesk.assistance.enabled: 'false'
+      serviceDesk.assistance.mode: disabled
+      INTELLIGENCE_ASSISTANCE_BASE_URL: ''
+      INTELLIGENCE_ASSISTANCE_TOKEN: ''
+      INTELLIGENCE_ASSISTANCE_TOKEN_FILE: ''
     secrets:
     - local-classification-token
     networks:

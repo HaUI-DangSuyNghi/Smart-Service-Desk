@@ -262,6 +262,7 @@ export interface IntelligenceStatus {
   mode: "LOCAL_DEV" | "EXTERNAL";
   engine: "hybrid" | "rules" | "disabled";
   modelEnabled: boolean;
+  assistanceMode: "api" | "grounded" | "disabled";
 }
 
 export const getIntelligenceStatus = async (workspace: string): Promise<IntelligenceStatus> => {

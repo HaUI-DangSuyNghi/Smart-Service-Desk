@@ -25,6 +25,19 @@ if ($missing.Count -gt 0) {
     Write-Host "Generated in .env: $($missing -join ', ')"
 }
 
+# Expose editable AI settings on existing installations without replacing any value.
+$aiDefaults = [ordered]@{
+    AI_MODE='disabled'; AI_ASSISTANCE_MODE='disabled'; AI_API_PROVIDER=''; AI_API_MODEL='';
+    AI_API_KEY=''; AI_API_KEY_FILE=''; AI_API_BASE_URL=''; AI_ASSISTANCE_MAX_TOKENS='2048'
+}
+$envLines = @(Get-Content .env -Encoding UTF8)
+$knownNames = @{}
+foreach ($line in $envLines) { if ($line -match '^([A-Z0-9_]+)=') { $knownNames[$Matches[1]] = $true } }
+$aiAdded = @($aiDefaults.Keys | Where-Object { -not $knownNames[$_] } | ForEach-Object { $_ + '=' + $aiDefaults[$_] })
+if ($aiAdded.Count -gt 0) {
+    [IO.File]::WriteAllLines((Join-Path $PWD '.env'), [string[]]($envLines + '# API Q&A: set provider/model/key, then scripts/start.ps1 -Model -AskApi' + $aiAdded), (New-Object Text.UTF8Encoding $false))
+}
+
 $config = @{}
 Get-Content .env -Encoding UTF8 | ForEach-Object {
     if ($_ -match '^([A-Z_]+)=(.+)$') { $config[$Matches[1]] = $Matches[2] }

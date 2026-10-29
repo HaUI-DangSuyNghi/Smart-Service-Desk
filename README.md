@@ -134,6 +134,11 @@ trong `.env`; mỗi máy tự tạo token, không cần external processing gran
 `local-dev`. `-Api` chọn Gemini hoặc API tương thích OpenAI/Groq và vẫn giữ rule
 engine. `-Intelligence` chỉ bật bộ luật. `-NoAi` tắt AI.
 
+Để dùng **API cho Hỏi AI** và vẫn giữ Qwen + bộ luật phân loại, điền
+`AI_API_PROVIDER`, `AI_API_MODEL`, `AI_API_KEY` trong `.env`, rồi chạy
+`scripts/start.ps1 -Model -AskApi`. Cấu hình hỏi đáp được lưu riêng bằng
+`AI_ASSISTANCE_MODE=api`; xem [hướng dẫn hỏi đáp API](docs/local-model.md).
+
 Mở PowerShell tại thư mục gốc dự án và thực thi:
 
 ```powershell
