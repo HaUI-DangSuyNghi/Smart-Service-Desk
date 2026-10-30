@@ -41,7 +41,7 @@ Dự án đồng thời là một hiện thực kiến trúc **DX-OS 3 tầng**:
 
 ## 🔄 Luồng xử lý ticket
 
-[![Sơ đồ hành trình xử lý ticket: intake, AI hỗ trợ, điều phối, xử lý, xác nhận và các nhánh kiểm duyệt](docs/assets/ticket-lifecycle.svg)](docs/assets/ticket-lifecycle.svg)
+[![Sơ đồ hành trình xử lý ticket: intake, AI hỗ trợ, điều phối, xử lý, xác nhận và các nhánh kiểm duyệt](docs/assets/ticket-flow-engineering.svg)](docs/assets/ticket-flow-engineering.svg)
 
 *Click vào sơ đồ để xem ảnh vector kích thước đầy đủ; xem [đặc tả luồng E2E](docs/LUONG_E2E_CHINH.md) để hiểu các điều kiện thực thi.*
 
@@ -51,7 +51,7 @@ Dự án đồng thời là một hiện thực kiến trúc **DX-OS 3 tầng**:
 
 ## 🏗️ Kiến trúc DX-OS
 
-[![Sơ đồ kiến trúc DX-OS: Applications T3, H-P-D-I T2 và Core headless T1 với các hợp đồng công khai](docs/assets/dxos-architecture.svg)](docs/assets/dxos-architecture.svg)
+[![Sơ đồ kiến trúc DX-OS: Applications T3, H-P-D-I T2 và Core headless T1 với các hợp đồng công khai](docs/assets/dxos-system-map.svg)](docs/assets/dxos-system-map.svg)
 
 *Click vào sơ đồ để xem đầy đủ kiến trúc; quy tắc phụ thuộc chuẩn nằm trong [ADR-005](docs/architecture/ADR-005-dxos-three-tier-boundary.md).*
 
