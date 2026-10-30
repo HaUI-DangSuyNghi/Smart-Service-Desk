@@ -117,7 +117,6 @@ try {
     if ($BuildImage) {
         docker run --rm --network "$name-network" -w /work/backend `
             --mount "type=bind,source=$root,target=/source,readonly" `
-            --mount "type=bind,source=$HOME/.m2/repository,target=/root/.m2/repository,readonly" `
             --mount "type=bind,source=$evidence,target=/evidence" `
             -e FRESH_ADMIN_TEST_URL -e FRESH_ADMIN_TEST_PASSWORD -e FRESH_ADMIN_TEST_DIRECTORY_SECRET `
             -e FILE_TEST_JDBC_URL -e WORKFLOW_TEST_JDBC_URL -e BACKGROUND_TEST_JDBC_URL `
