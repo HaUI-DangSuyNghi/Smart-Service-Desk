@@ -37,6 +37,7 @@ try {
     $results.postgresql = 'PASS'
     $stage = 'contracts'
     Run-Python scripts/test-core-contract.py
+    Run-Python scripts/acceptance/test-classification-contract.py
     Run-Python -m openapi_spec_validator contracts/openapi/core.yaml
     Run-Python -m openapi_spec_validator contracts/openapi/core-target.yaml
     Run-Python -m openapi_spec_validator contracts/openapi/servicedesk.yaml

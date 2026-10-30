@@ -38,6 +38,7 @@ class AI04TicketTriagePythonE2E {
     @Autowired MockMvc mvc;
     @Autowired ObjectMapper json;
     @Autowired JdbcTemplate jdbc;
+    @Autowired vn.haui.dx.core.identity.api.WorkspaceDirectory directory;
     @Autowired vn.haui.dx.core.workflow.internal.WorkflowStateFixture engineState;
 
     private RequestPostProcessor as(String subject, String workspace, String role) {
@@ -92,6 +93,11 @@ class AI04TicketTriagePythonE2E {
         assertArrayEquals(before, counts());
         mvc.perform(get(route).with(owner)).andExpect(status().isOk()).andExpect(content().json(ticket.toString()));
         var agent = as("synthetic-ai04-agent", workspace, "agent");
+        org.mockito.Mockito.when(directory.members(workspace)).thenReturn(List.of(
+            new vn.haui.dx.core.identity.api.DirectoryMember("synthetic-ai04-agent", "Synthetic agent", null,
+                java.util.Set.of(vn.haui.dx.core.identity.api.WorkspaceRole.AGENT)),
+            new vn.haui.dx.core.identity.api.DirectoryMember("synthetic-ai04-coordinator", "Synthetic coordinator", null,
+                java.util.Set.of(vn.haui.dx.core.identity.api.WorkspaceRole.COORDINATOR))));
         mvc.perform(put("/api/hpdi/v1/workspaces/" + workspace + "/duty/me").with(agent)
             .contentType("application/json").content("{\"onDuty\":true}"))
             .andExpect(status().isOk());

@@ -294,7 +294,8 @@ class ApiHandler(BaseHTTPRequestHandler):
         if not self.authorized():
             self.connection.settimeout(3)
             lengths = self.headers.get_all("Content-Length", [])
-            if (len(lengths) == 1 and lengths[0].isascii() and lengths[0].isdecimal()
+            if (len(lengths) == 1 and len(lengths[0]) <= 5
+                    and lengths[0].isascii() and lengths[0].isdecimal()
                     and int(lengths[0]) <= 32768
                     and self.headers.get("Transfer-Encoding") is None):
                 try:
