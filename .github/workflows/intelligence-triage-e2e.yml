@@ -17,6 +17,7 @@ jobs:
       HDPI_PROFILE_ROOT: ${{ github.workspace }}/intelligence/src/apps/servicedesk/intelligence/profiles
       FILE_TEST_JDBC_URL: jdbc:postgresql://localhost:15432/file_storage
       WORKFLOW_TEST_JDBC_URL: jdbc:postgresql://localhost:15432/workflow_approval
+      BACKGROUND_TEST_JDBC_URL: jdbc:postgresql://localhost:15432/background_assessment
       INTELLIGENCE_TRIAGE_BASE_URL: http://127.0.0.1:18000
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
@@ -52,7 +53,9 @@ jobs:
             sleep 1
           done
           docker exec "$INT01_PROJECT-regression" psql -U workflow -d file_storage -c 'CREATE DATABASE workflow_approval'
-          mvn -B -f backend/pom.xml verify
+          docker exec "$INT01_PROJECT-regression" psql -U workflow -d file_storage -c 'CREATE DATABASE duty_upgrade'
+          docker exec "$INT01_PROJECT-regression" psql -U workflow -d file_storage -c 'CREATE DATABASE background_assessment'
+          pwsh -File scripts/test-fresh-admin.ps1 -Profile full
           python - <<'PY'
           from pathlib import Path
           import json

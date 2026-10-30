@@ -33,7 +33,7 @@ try {
     Run-Python -c 'import yaml, openapi_spec_validator, openapi_schema_validator'
     & "$PSScriptRoot/setup.ps1"
     Run-Docker build --target build -t dx-platform-build:0.1.0 -f backend/Dockerfile .
-    & "$PSScriptRoot/test-file.ps1"
+    & "$PSScriptRoot/test-fresh-admin.ps1" -Profile full -BuildImage dx-platform-build:0.1.0
     $results.postgresql = 'PASS'
     $stage = 'contracts'
     Run-Python scripts/test-core-contract.py

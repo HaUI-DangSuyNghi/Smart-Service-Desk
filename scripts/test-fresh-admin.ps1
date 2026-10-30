@@ -105,7 +105,7 @@ try {
         $env:FILE_TEST_DB_PASSWORD = $password
         $env:WORKFLOW_TEST_DB_PASSWORD = $password
         $env:FRESH_ADMIN_TEST_URL = 'http://keycloak:8080'
-        $arguments[3] = '/work/backend/pom.xml'
+        $arguments[2] = '/work/backend/pom.xml'
         $command = 'tar -C /source --exclude=backend/target --exclude=backend/.local -cf - backend contracts docs/architecture | tar -C /work -xf -; mvn "$@"; result=$?; cp /work/backend/target/surefire-reports/TEST-*.xml /evidence/; '
         if ($PackagedProof) {
             if ($Profile -ne 'full' -or $Tests) { throw 'Packaged proof requires unfiltered Full' }

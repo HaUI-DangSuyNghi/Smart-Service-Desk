@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { mockTicketPage, ticketFixture } from "./ticketFixture";
 
 const id = "11111111-1111-4111-8111-111111111111";
 const path = `/servicedesk/workspaces/scope-a/tickets/${id}`;
@@ -81,9 +82,7 @@ const session = async (page: Page) => {
       },
     }),
   );
-  await page.route("**/api/apps/servicedesk/v1/workspaces/*/tickets/**", (route) =>
-    route.fulfill({ status: 404, json: { title: "Not Found" } }),
-  );
+  await mockTicketPage(page, id, "synthetic-enrichment-user");
 };
 
 test.beforeEach(async ({ page }) => {
@@ -124,9 +123,8 @@ test("answers on the existing ticket without claiming workflow pause", async ({ 
     await route.fulfill({ status: 201, json: saved(revision) });
   });
   await page.goto(path);
-  await expect(
-    page.getByText("Yêu cầu bổ sung không tạm dừng quy trình", { exact: false }),
-  ).toBeVisible();
+  await page.getByRole("button", { name: "Bổ sung thông tin", exact: true }).click();
+  await expect(page.getByLabel(question.text, { exact: true })).toBeVisible();
   await page.getByLabel(question.text, { exact: true }).fill("15");
   await page.getByRole("button", { name: "Gửi bổ sung", exact: true }).click();
   await expect(page.getByText("Đã lưu bổ sung vào ticket này.", { exact: false })).toBeVisible();
@@ -149,6 +147,7 @@ test("lost response keeps draft and replays the same clientAnswerId", async ({ p
     await route.fulfill({ json: saved(1, true) });
   });
   await page.goto(path);
+  await page.getByRole("button", { name: "Bổ sung thông tin", exact: true }).click();
   await page.getByLabel(question.text, { exact: true }).fill("15");
   await page.getByRole("button", { name: "Gửi bổ sung", exact: true }).click();
   await expect(page.getByText("Chưa xác nhận được việc lưu.", { exact: false })).toBeVisible();
@@ -182,6 +181,7 @@ test("409 refreshes revision but retains unsent content for an explicit retry", 
     return route.fulfill({ status: 201, json: saved(revision) });
   });
   await page.goto(path);
+  await page.getByRole("button", { name: "Bổ sung thông tin", exact: true }).click();
   await page.getByLabel(question.text, { exact: true }).fill("15");
   await page.getByRole("button", { name: "Gửi bổ sung", exact: true }).click();
   await expect(page.getByText("Nội dung của bạn vẫn được giữ", { exact: false })).toBeVisible();
@@ -201,13 +201,14 @@ test("forbidden lifecycle never displays hidden question text", async ({ page })
     }),
   );
   await page.goto(path);
+  await page.getByRole("button", { name: "Bổ sung thông tin", exact: true }).click();
   await expect(
     page.getByText("Chưa tải được trạng thái kiểm tra.", { exact: false }),
   ).toBeVisible();
   await expect(page.getByText("hidden-other-owner-question")).toHaveCount(0);
 });
 
-test("small screen asks for explicit correction and keeps the form usable", async ({ page }) => {
+test("small screen submits required correction and keeps the form usable", async ({ page }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   let revision = 0;
   await page.route("**/context-revision", (route) =>
@@ -225,15 +226,13 @@ test("small screen asks for explicit correction and keeps the form usable", asyn
     await route.fulfill({ status: 201, json: saved(1) });
   });
   await page.goto(path);
+  await page.getByRole("button", { name: "Bổ sung thông tin", exact: true }).click();
   await page.getByLabel(question.text, { exact: true }).fill("15");
   await page.getByRole("button", { name: "Gửi bổ sung", exact: true }).click();
-  await expect(page.getByText("Hãy xác nhận đính chính", { exact: false })).toBeVisible();
-  await page.getByRole("checkbox", { name: "Đính chính Mã hoặc số thiết bị" }).check();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(
     true,
   );
   await page.screenshot({ path: "../.local/ai08-05/enrichment-mobile.png", fullPage: true });
-  await page.getByRole("button", { name: "Gửi bổ sung", exact: true }).click();
   await expect(page.getByText("Đã lưu bổ sung vào ticket này.", { exact: false })).toBeVisible();
 });
 
@@ -250,36 +249,50 @@ test("coordinator can find a timed-out ticket without claiming a workflow hold",
       },
     }),
   );
+  await page.route("**/api/hpdi/v1/workspaces/*/permissions", (route) =>
+    route.fulfill({ json: [{ key: "task:assign", label: "Assign tasks" }] }),
+  );
   const nextId = "44444444-4444-4444-8444-444444444444";
-  await page.route("**/api/apps/servicedesk/v1/workspaces/*/enrichment-pending?*", (route) => {
-    const laterPage = new URL(route.request().url()).searchParams.get("page") === "1";
-    return route.fulfill({
-      json: Array.from({ length: laterPage ? 1 : 50 }, (_, index) => ({
-        ...state(0, false),
-        ticketId: laterPage
-          ? nextId
-          : index === 0
+  await page.route("**/api/apps/servicedesk/v1/workspaces/*/tickets?*", (route) => {
+    const pageIndex = Number(new URL(route.request().url()).searchParams.get("page") ?? "0");
+    const items = Array.from({ length: pageIndex === 0 ? 25 : 1 }, (_, index) => ({
+      ...ticketFixture(
+        pageIndex === 0
+          ? index === 0
             ? id
-            : `55555555-5555-4555-8555-${String(index).padStart(12, "0")}`,
-        status: "TIMED_OUT",
-        manualReviewRequired: true,
-        reasonCodes: ["CLARIFICATION_TIMEOUT"],
-        readiness: null,
-      })),
-    });
+            : `55555555-5555-4555-8555-${String(index).padStart(12, "0")}`
+          : nextId,
+        "another-requester",
+      ),
+      title: pageIndex === 0 ? `Timed-out ticket ${index}` : "Last timed-out ticket",
+    }));
+    return route.fulfill({ json: { items, page: pageIndex, size: 25, total: 26 } });
   });
-  await page.goto("/servicedesk/enrichment-pending");
-  await expect(
-    page.getByText("Đã chuyển điều phối viên vì hết thời gian chờ").first(),
-  ).toBeVisible();
-  await expect(page.getByRole("link", { name: "Xem ticket" }).first()).toHaveAttribute(
-    "href",
-    path,
+  await page.route("**/tickets/*/intake", (route) =>
+    route.fulfill({
+      json: {
+        contractVersion: "intake-admission@1.0.0",
+        ticketId: id,
+        contextRevision: 0,
+        version: 1,
+        reviewRound: 1,
+        deadlineAt: "2026-10-27T00:00:00Z",
+        lateNotice: false,
+        operationalAuthority: false,
+        readiness: null,
+        finalAssessment: null,
+        status: "MANUAL_REQUIRED",
+        reviewTaskMayExist: false,
+        reasonCodes: ["CLARIFICATION_TIMEOUT"],
+      },
+    }),
   );
+  await page.goto("/servicedesk/intake");
+  await expect(page.getByText("Cần điều phối viên xem xét").first()).toBeVisible();
+  await expect(page.getByText("Timed-out ticket 0", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Trang sau", exact: true }).click();
-  await expect(page.getByRole("link", { name: "Xem ticket" })).toHaveAttribute(
-    "href",
-    path.replace(id, nextId),
-  );
+  await expect(page.getByText("Last timed-out ticket", { exact: true })).toBeVisible();
   await expect(page.getByRole("button", { name: "Trang sau", exact: true })).toBeDisabled();
+  await page.getByText("Last timed-out ticket", { exact: true }).click();
+  await expect(page).toHaveURL(new RegExp(`/servicedesk/tickets/${nextId}$`));
 });

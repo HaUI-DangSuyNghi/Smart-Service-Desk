@@ -87,7 +87,9 @@ jobs:
       - name: Create isolated workflow database
         env:
           PGPASSWORD: isolated-boundary-ci
-        run: psql -h localhost -U workflow -d file_storage -c 'CREATE DATABASE workflow_approval'
+        run: |
+          psql -h localhost -U workflow -d file_storage -c 'CREATE DATABASE workflow_approval'
+          psql -h localhost -U workflow -d file_storage -c 'CREATE DATABASE duty_upgrade'
       - name: Core without upper tiers, including real fresh-admin Keycloak checks
         if: matrix.profile == 'core-only'
         shell: pwsh

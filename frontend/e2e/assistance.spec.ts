@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { mockTicketPage } from "./ticketFixture";
 
 const id = "11111111-1111-4111-8111-111111111111";
 const path = `/servicedesk/workspaces/scope-a/tickets/${id}`;
@@ -55,9 +56,7 @@ test.beforeEach(async ({ page }) => {
     }),
   );
   // Trang chi tiết tải ticket độc lập với trợ lý; 404 để không kéo theo timeline
-  await page.route("**/api/apps/servicedesk/v1/workspaces/*/tickets/**", (route) =>
-    route.fulfill({ status: 404, json: { title: "Not Found" } }),
-  );
+  await mockTicketPage(page, id, "synthetic-browser-actor");
   await page.route("**/api/core/v1/me", (route) =>
     route.fulfill({
       json: {
@@ -148,7 +147,7 @@ for (const status of [401, 403, 404, 409, 502, 503, 504]) {
     await expect(
       page.getByRole("region", { name: "Trợ lý tri thức" }).getByRole("status"),
     ).not.toBeEmpty();
-    await expect(page.getByRole("link", { name: "Về danh sách ticket" })).toBeEnabled();
+    await expect(page.getByRole("button", { name: "Quay lại", exact: true })).toBeEnabled();
   });
 }
 
