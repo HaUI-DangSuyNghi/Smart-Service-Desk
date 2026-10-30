@@ -33,6 +33,8 @@ const schema = z
           .object({
             category: z.string().nullable().optional(),
             priority: z.string().nullable().optional(),
+            impact: z.string().nullable().optional(),
+            urgency: z.string().nullable().optional(),
           })
           .passthrough()
           .optional(),
@@ -54,6 +56,9 @@ export const getIntake = async (workspace: string, id: string, signal?: AbortSig
     throw error;
   }
 };
+
+export const evaluateIntake = async (workspace: string, id: string) =>
+  schema.parse((await apiClient.post(`${path(workspace, id)}/intake/evaluate`)).data);
 
 export const releaseIntake = async (
   workspace: string,

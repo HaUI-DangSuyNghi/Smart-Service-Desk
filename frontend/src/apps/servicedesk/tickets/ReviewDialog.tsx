@@ -26,6 +26,7 @@ import {
   AGREE_WITH_AI,
   differsFromAi,
   intakeSuggestion,
+  labelSuggestion,
   reviewDefaults,
   reviewSchema,
   suggestedPriority,
@@ -61,16 +62,27 @@ const ReviewForm = ({ ticket, onDone }: FormProps) => {
   const review = useReviewTicket();
   // Ticket qua tiếp nhận: chỉ duyệt được khi đã thả sang bước duyệt, gửi kèm revision/version
   const intake = useIntake(ticket.workspace, ticket.id);
-  // Gợi ý AI: kết quả chạy nền, không có thì lấy đề xuất cuối của tiếp nhận
+  // Gợi ý AI: nhãn AI đã gán vào ticket; ticket cũ chưa có nhãn thì lấy kết quả chạy nền,
+  // rồi đề xuất cuối của tiếp nhận
   const intakeProposal = useMemo(
     () => intakeSuggestion(intake.data?.finalAssessment?.ai07),
     [intake.data],
   );
-  const suggestion = aiSuggestion(ticket.assessment) ?? intakeProposal;
+  const suggestion = useMemo(
+    () =>
+      labelSuggestion(ticket.classification) ?? aiSuggestion(ticket.assessment) ?? intakeProposal,
+    [ticket.classification, ticket.assessment, intakeProposal],
+  );
   const intakeBlocked = Boolean(intake.data && intake.data.status !== "REVIEW_RELEASED");
   const form = useForm<ReviewInput, unknown, ReviewValues>({
     resolver: zodResolver(reviewSchema),
-    defaultValues: reviewDefaults(suggestion),
+    defaultValues: {
+      ...reviewDefaults(suggestion),
+      // ET đã gán cùng nhãn AI: điền ngay, ET mặc định của backend tải xong sẽ thay nếu khác
+      ...(ticket.classification?.source === "AI" && ticket.estimate
+        ? { estimateMinutes: ticket.estimate.minutes }
+        : {}),
+    },
   });
   const [category, priority, estimateMinutes] = useWatch({
     control: form.control,

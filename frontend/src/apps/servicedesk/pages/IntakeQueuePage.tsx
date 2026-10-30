@@ -1,8 +1,7 @@
-import { useState, type MouseEvent } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router";
-import { IconClipboardList } from "@tabler/icons-react";
+import { IconClipboardList, IconInbox } from "@tabler/icons-react";
 import { useCurrentWorkspace, usePeopleNames } from "../../../platform/human/workspace";
-import { Button } from "../../../platform/shared/ui/button";
 import { DataTable, type DataTableColumn } from "../../../platform/shared/ui/DataTable";
 import { EmptyState } from "../../../platform/shared/ui/EmptyState";
 import { ErrorState } from "../../../platform/shared/ui/ErrorState";
@@ -10,45 +9,48 @@ import { Page, PageBody, PageHeader, PageToolbar } from "../../../platform/share
 import { Pagination } from "../../../platform/shared/ui/Pagination";
 import { TableSkeleton } from "../../../platform/shared/ui/Skeleton";
 import type { TicketView } from "../services/ticketService";
+import { CanonicalDialog } from "../tickets/CanonicalDialog";
+import { IntakeRowMenu, IntakeStatusCell, type IntakeAction } from "../tickets/IntakeRow";
 import { ReleaseIntakeDialog } from "../tickets/ReleaseIntakeDialog";
 import { createdAtColumn, creatorColumn, titleColumn } from "../tickets/ticketColumns";
 import { TICKETS_PAGE_SIZE, useTicketList, type TicketFilter } from "../tickets/useTickets";
 
-const INTAKE_FILTER: TicketFilter = { state: ["INTAKE"], sort: "priority" };
+// Đang tiếp nhận + đang theo ticket gốc (tách ra để tiếp nhận độc lập)
+const INTAKE_FILTER: TicketFilter = { state: ["INTAKE", "FOLLOWING"], sort: "priority" };
 
-/** Ticket đang tiếp nhận (AI hỏi bổ sung / đánh giá); điều phối viên chuyển sang Chờ duyệt ngay trên dòng. */
+/** Ticket đang tiếp nhận: tiếp nhận, đánh giá lại, kiểm tra trùng / gộp / tách ngay trên dòng. */
 const IntakeQueuePage = () => {
   const navigate = useNavigate();
   const { current } = useCurrentWorkspace();
   const [page, setPage] = useState(0);
-  const [releasing, setReleasing] = useState<TicketView | null>(null);
+  const [acting, setActing] = useState<{ ticket: TicketView; action: IntakeAction } | null>(null);
   const tickets = useTicketList(page, INTAKE_FILTER);
   const items = tickets.data?.items ?? [];
   const names = usePeopleNames(items.map((ticket) => ticket.creator));
 
   const columns: DataTableColumn<TicketView>[] = [
     titleColumn,
+    {
+      key: "intake",
+      header: "Tiếp nhận",
+      icon: IconInbox,
+      width: "260px",
+      cell: (ticket) => <IntakeStatusCell ticket={ticket} />,
+    },
     creatorColumn(names),
     createdAtColumn,
     {
       key: "action",
-      header: "Thao tác",
-      width: "104px",
+      header: "",
+      width: "48px",
       cell: (ticket) => (
-        <Button
-          size="xs"
-          className="w-full"
-          onClick={(event: MouseEvent) => {
-            // Không mở trang chi tiết khi bấm nút trong dòng
-            event.stopPropagation();
-            setReleasing(ticket);
-          }}
-        >
-          Tiếp nhận
-        </Button>
+        <IntakeRowMenu ticket={ticket} onAction={(row, action) => setActing({ ticket: row, action })} />
       ),
     },
   ];
+  const target = (action: IntakeAction) =>
+    acting?.action === action ? { workspace: acting.ticket.workspace, id: acting.ticket.id } : null;
+  const close = () => setActing(null);
 
   return (
     <Page>
@@ -91,9 +93,11 @@ const IntakeQueuePage = () => {
           />
         </div>
       )}
-      <ReleaseIntakeDialog
-        target={releasing && { workspace: releasing.workspace, id: releasing.id }}
-        onClose={() => setReleasing(null)}
+      <ReleaseIntakeDialog target={target("release")} onClose={close} />
+      <CanonicalDialog
+        target={target("canonical") ?? target("split")}
+        following={acting?.action === "split"}
+        onClose={close}
       />
     </Page>
   );

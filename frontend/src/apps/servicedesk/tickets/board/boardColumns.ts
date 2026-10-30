@@ -13,15 +13,21 @@ export interface BoardColumnDef {
 }
 
 /**
- * Thứ tự theo luồng R6. Đang tiếp nhận và Không xác định gộp vào cột Chờ duyệt,
+ * Thứ tự theo luồng R6 (Tiếp nhận → Chờ duyệt → Đã giao → ...). Không xác định gộp vào cột Chờ duyệt,
  * Mở lại gộp vào cột Đã giao (bắt đầu lại cũng là thao tác Bắt đầu),
  * Theo ticket gốc gộp vào cột Đang chờ (chờ ticket gốc xử lý xong).
  */
 export const BOARD_COLUMNS: readonly BoardColumnDef[] = [
   {
+    key: "intake",
+    label: "Tiếp nhận",
+    states: ["INTAKE"],
+    tone: TICKET_STATE_TONES.INTAKE,
+  },
+  {
     key: "review",
     label: "Chờ duyệt",
-    states: ["INTAKE", "AWAITING_REVIEW", "UNCLASSIFIED"],
+    states: ["AWAITING_REVIEW", "UNCLASSIFIED"],
     tone: TICKET_STATE_TONES.AWAITING_REVIEW,
   },
   {

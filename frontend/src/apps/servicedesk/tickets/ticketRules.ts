@@ -1,4 +1,5 @@
 import type { Priority } from "../../../platform/services";
+import type { Intake } from "../services/intakeService";
 import type { Assessment, TicketState, TicketView } from "../services/ticketService";
 
 // Luật nghiệp vụ thuần của ticket (plan ticket.md): R1 chọn tổ, mục 4 bảng ưu tiên, R2 ET mặc định
@@ -71,3 +72,17 @@ export const isHandling = (ticket: Pick<TicketView, "state" | "workState">) =>
 /** Đã bắt đầu làm (đang làm, đang chờ, hoặc đã có thời gian làm): hạn tính tới hạn xong. */
 export const isStarted = (ticket: Pick<TicketView, "state" | "workedMinutes">) =>
   ticket.state === "IN_PROGRESS" || ticket.state === "PENDING" || (ticket.workedMinutes ?? 0) > 0;
+
+// Đã sang bước duyệt (nút "Duyệt và giao việc") hoặc đã xong: không tiếp nhận nữa
+const PAST_INTAKE: ReadonlySet<Intake["status"]> = new Set([
+  "REVIEW_RELEASED",
+  "REVIEWED",
+  "CANONICAL_FOLLOWER",
+]);
+
+/** Còn tiếp nhận thủ công (chuyển sang Chờ duyệt) được. */
+export const canReleaseIntake = (state: Pick<Intake, "status">) => !PAST_INTAKE.has(state.status);
+
+/** Còn gộp / tách ticket trùng được: chưa có bước duyệt, chưa duyệt. */
+export const canLinkCanonical = (state: Pick<Intake, "status" | "reviewTaskMayExist">) =>
+  !state.reviewTaskMayExist && state.status !== "REVIEWED";

@@ -73,6 +73,19 @@ describe("ticketPermissions", () => {
     expect(reassigned.canReview).toBe(false);
   });
 
+  it("điều phối viên, siêu quản trị tiếp nhận ticket đang tiếp nhận của người khác", () => {
+    const intake = ticket({ state: "INTAKE", assignee: null, taskId: undefined });
+    const coordinator = viewer({ subject: "coord", canHandle: false, canAssign: true });
+    expect(ticketPermissions(intake, coordinator).canRelease).toBe(true);
+    expect(ticketPermissions(intake, coordinator).canReview).toBe(false);
+    const admin = viewer({ subject: "admin", canHandle: false, isPlatformAdmin: true });
+    expect(ticketPermissions(intake, admin).canRelease).toBe(true);
+    expect(ticketPermissions(intake, viewer({})).canRelease).toBe(false);
+    expect(
+      ticketPermissions(intake, viewer({ subject: "requester", canAssign: true })).canRelease,
+    ).toBe(false);
+  });
+
   it("người tạo ticket không tự duyệt, không tự sửa phân loại", () => {
     const coordinator = viewer({ subject: "requester", canAssign: true });
     expect(

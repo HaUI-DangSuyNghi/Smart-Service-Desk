@@ -30,6 +30,21 @@ const coordinator = viewer({ subject: "coord", canHandle: false, canAssign: true
 const requester = viewer({ subject: "requester", canHandle: false });
 
 describe("dropTargets", () => {
+  it("điều phối viên, siêu quản trị: Tiếp nhận chỉ thả được vào Chờ duyệt (tiếp nhận)", () => {
+    const intake = ticket({ state: "INTAKE", assignee: null, taskId: null });
+    expect(dropTargets(intake, coordinator)).toEqual({ review: "intake" });
+    expect(dropTargets(intake, viewer({ canHandle: false, isPlatformAdmin: true }))).toEqual({
+      review: "intake",
+    });
+  });
+
+  it("Tiếp nhận: kỹ thuật viên, người gửi, người tạo ticket không kéo được", () => {
+    const intake = ticket({ state: "INTAKE", assignee: null });
+    expect(dropTargets(intake, agentA)).toEqual({});
+    expect(dropTargets(intake, requester)).toEqual({});
+    expect(dropTargets(intake, viewer({ subject: "requester", canAssign: true }))).toEqual({});
+  });
+
   it("điều phối viên: Chờ duyệt chỉ thả được vào Đã giao (duyệt và giao việc)", () => {
     const waiting = ticket({ state: "AWAITING_REVIEW", assignee: null });
     expect(dropTargets(waiting, coordinator)).toEqual({ assigned: "review" });
@@ -96,6 +111,9 @@ describe("dropTargets", () => {
 
 describe("dropRejection", () => {
   it("nói rõ cột nào thả được", () => {
+    expect(dropRejection(ticket({ state: "INTAKE", assignee: null }), coordinator)).toBe(
+      'Từ "Tiếp nhận" chỉ chuyển được sang: Chờ duyệt.',
+    );
     expect(dropRejection(ticket({ state: "AWAITING_REVIEW", assignee: null }), coordinator)).toBe(
       'Từ "Chờ duyệt" chỉ chuyển được sang: Đã giao.',
     );

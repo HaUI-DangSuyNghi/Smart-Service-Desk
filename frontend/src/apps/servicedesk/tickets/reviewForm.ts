@@ -1,12 +1,14 @@
 import { z } from "zod";
 import { WAIT_FOR_SHIFT } from "../../../platform/process";
-import type { AssessmentResult, ReviewDecision } from "../services/ticketService";
+import type { AssessmentResult, Classification, ReviewDecision } from "../services/ticketService";
 import {
   CATEGORIES,
+  IMPACTS,
   MAX_ESTIMATE_MINUTES,
   MAX_REASON,
   PRIORITIES,
   priorityOf,
+  URGENCIES,
   type Category,
 } from "./ticketRules";
 
@@ -37,23 +39,44 @@ export type Suggestion = Pick<AssessmentResult, "category" | "priority" | "impac
 
 /** Đề xuất cuối của tiếp nhận (ai07, chuỗi tự do) → gợi ý; bỏ giá trị lạ. */
 export const intakeSuggestion = (
-  ai07?: { category?: string | null; priority?: string | null } | null,
+  ai07?: {
+    category?: string | null;
+    priority?: string | null;
+    impact?: string | null;
+    urgency?: string | null;
+  } | null,
 ): Suggestion | null => {
   const category = CATEGORIES.find((item) => item === ai07?.category) ?? null;
   const priority = PRIORITIES.find((item) => item === ai07?.priority) ?? null;
-  return category || priority ? { category, priority, impact: null, urgency: null } : null;
+  const impact = IMPACTS.find((item) => item === ai07?.impact) ?? null;
+  const urgency = URGENCIES.find((item) => item === ai07?.urgency) ?? null;
+  return category || priority ? { category, priority, impact, urgency } : null;
 };
 export type ReviewValues = z.output<typeof reviewSchema>;
 
+/** AI không tính được ưu tiên thì điền mức này (khớp mặc định của nhãn AI ở backend). */
+export const DEFAULT_PRIORITY = "MEDIUM";
+
+/** Nhãn AI đã gán vào ticket (chưa duyệt) → gợi ý; ưu tiên mặc định không tính là gợi ý. */
+export const labelSuggestion = (classification?: Classification | null): Suggestion | null =>
+  classification?.source === "AI"
+    ? {
+        category: classification.category,
+        priority: classification.priorityDefaulted ? null : classification.priority,
+        impact: classification.impact,
+        urgency: classification.urgency,
+      }
+    : null;
+
 /**
- * Điền sẵn từ gợi ý AI (đã lọc bằng aiSuggestion); không có gợi ý thì để trống cho điều phối viên chọn.
+ * Điền sẵn từ nhãn / gợi ý AI; thiếu ưu tiên thì điền mức mặc định, thiếu loại thì để trống.
  * ET điền sau khi tải ET mặc định của backend (bảng cấu hình hoặc trung vị việc tương tự).
  */
 export const reviewDefaults = (suggestion?: Suggestion | null): Partial<ReviewInput> => {
   const category = suggestion?.category ?? undefined;
   return {
     category,
-    priority: suggestion?.priority ?? undefined,
+    priority: suggestion?.priority ?? DEFAULT_PRIORITY,
     reason: category ? AGREE_WITH_AI : "",
   };
 };
@@ -70,7 +93,9 @@ export const differsFromAi = (
   suggestion?: Suggestion | null,
 ) =>
   Boolean(suggestion?.category) &&
-  (values.category !== suggestion?.category || values.priority !== suggestion?.priority);
+  (values.category !== suggestion?.category ||
+    // AI không có ưu tiên (đang mặc định) thì chọn mức nào cũng không tính là khác AI
+    (suggestion?.priority != null && values.priority !== suggestion.priority));
 
 /** Ticket qua luồng tiếp nhận: gửi revision / version đang xem để backend chặn duyệt bản cũ. */
 export interface IntakeVersion {

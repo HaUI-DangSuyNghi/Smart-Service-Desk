@@ -21,7 +21,6 @@ import { ticketCode } from "../tickets/ticketLabels";
 import { TicketSummary } from "../tickets/TicketSummary";
 import { useTicket, useIntelligenceStatus, useRetryTicketAssessment } from "../tickets/useTickets";
 import { EnrichmentDialog } from "../tickets/EnrichmentDialog";
-import { IntakePanel } from "../tickets/IntakePanel";
 import { useContextRevision } from "../tickets/useContextRevision";
 import { useIntake } from "../tickets/useIntake";
 
@@ -164,17 +163,8 @@ const TicketDetail = ({ workspace, ticketId }: { workspace: string; ticketId: st
           </div>
           <aside className="order-1 min-w-0 border-b border-crm-line lg:order-2 lg:overflow-x-hidden lg:overflow-y-auto lg:border-b-0 lg:border-l">
             <StatusBlock ticket={ticket.data} />
-            {/* Tiếp nhận: điều phối viên có nút Tiếp nhận; người gửi thấy trạng thái và câu hỏi của AI */}
             {intake.error && (
               <ErrorState error={intake.error} fallback="Chưa tải được trạng thái tiếp nhận." />
-            )}
-            {intake.data && (
-              <IntakePanel
-                workspace={workspace}
-                ticketId={ticketId}
-                state={intake.data}
-                independent={ticket.data.creator !== user?.profile.sub}
-              />
             )}
             {/* Chỉ người gửi bổ sung thông tin cho ticket của mình */}
             {intake.isSuccess && ticket.data.creator === user?.profile.sub && (

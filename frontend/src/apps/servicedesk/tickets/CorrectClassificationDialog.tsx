@@ -18,7 +18,7 @@ import { Textarea } from "../../../platform/shared/ui/textarea";
 import { toast, toastError } from "../../../platform/shared/ui/toast";
 import type { Classification, TicketView } from "../services/ticketService";
 import { CATEGORY_LABELS } from "./ticketLabels";
-import { CATEGORIES, MAX_REASON, PRIORITIES } from "./ticketRules";
+import { CATEGORIES, MAX_REASON, PRIORITIES, type Category } from "./ticketRules";
 import { useCorrectClassification } from "./useTickets";
 
 const schema = z.object({
@@ -31,7 +31,7 @@ type FormValues = z.infer<typeof schema>;
 
 interface FormProps {
   ticket: TicketView;
-  classification: Classification;
+  classification: Classification & { category: Category };
   onDone: () => void;
 }
 
@@ -144,7 +144,9 @@ interface Props {
 
 /** Kỹ thuật viên đang giữ hoặc điều phối viên sửa loại sự cố / ưu tiên (R9). */
 export const CorrectClassificationDialog = ({ ticket, onClose }: Props) => {
-  const classification = ticket?.classification ?? null;
+  // Chỉ sửa phân loại đã duyệt (luôn có loại)
+  const current = ticket?.classification;
+  const classification = current?.category ? { ...current, category: current.category } : null;
   return (
     <Dialog
       open={ticket !== null && classification !== null}

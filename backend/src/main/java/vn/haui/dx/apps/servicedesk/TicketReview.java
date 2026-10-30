@@ -26,9 +26,13 @@ public final class TicketReview {
                        @com.fasterxml.jackson.annotation.JsonInclude(com.fasterxml.jackson.annotation.JsonInclude.Include.NON_NULL)
                        java.util.List<TicketCorrection.History> corrections,
                        @com.fasterxml.jackson.annotation.JsonUnwrapped TicketConfirmation.State confirmation) {}
+    /**
+     * source: COORDINATOR (đã duyệt) hoặc AI (nhãn AI gán khi chạy nền, chưa duyệt; category có thể null).
+     * priorityDefaulted: AI không tính được ưu tiên, đang dùng mức mặc định.
+     */
     public record Classification(String category, String priority, String basePriority, boolean escalated,
                                  String group, String source, String impact, String urgency,
-                                 String reviewedBy, java.time.Instant reviewedAt) {}
+                                 String reviewedBy, java.time.Instant reviewedAt, boolean priorityDefaulted) {}
     public static int defaultMinutes(Category category, Priority priority) {
         return switch (category) {
             case HARDWARE -> switch (priority) { case LOW -> 45; case MEDIUM -> 60; case HIGH -> 90; case CRITICAL -> 120; };

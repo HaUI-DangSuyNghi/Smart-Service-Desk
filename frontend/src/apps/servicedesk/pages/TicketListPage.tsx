@@ -27,11 +27,12 @@ import { boardAccess } from "../tickets/board/boardAccess";
 import { TicketBoard } from "../tickets/board/TicketBoard";
 import { useBoardView, type ListMode } from "../tickets/board/useBoardView";
 import { CreateTicketDialog } from "../tickets/CreateTicketDialog";
+import { ReleaseIntakeDialog } from "../tickets/ReleaseIntakeDialog";
 import { ReviewDialog } from "../tickets/ReviewDialog";
 import { createdAtColumn, titleColumn, workflowColumns } from "../tickets/ticketColumns";
 import { TICKET_STATE_LABELS } from "../tickets/ticketLabels";
 import type { Viewer } from "../tickets/ticketPermissions";
-import { PRIORITIES } from "../tickets/ticketRules";
+import { awaitsReview, PRIORITIES } from "../tickets/ticketRules";
 import {
   TICKETS_PAGE_SIZE,
   useRefreshTickets,
@@ -39,11 +40,11 @@ import {
   type TicketFilter,
 } from "../tickets/useTickets";
 
-// Đang tiếp nhận là trang riêng (/servicedesk/intake)
-type View = "all" | "review" | "overdue" | "mine";
+type View = "all" | "intake" | "review" | "overdue" | "mine";
 
 const VIEW_LABELS: Record<View, string> = {
   all: "Tất cả",
+  intake: "Tiếp nhận",
   review: "Chờ duyệt",
   mine: "Giao cho tôi",
   overdue: "Quá hạn",
@@ -52,6 +53,8 @@ const VIEW_LABELS: Record<View, string> = {
 const VIEW_FILTERS: Record<View, TicketFilter> = {
   all: {},
   mine: { assignee: "me", sort: "priority" },
+  // Tiếp nhận xong ticket sang Chờ duyệt
+  intake: { state: ["INTAKE"], sort: "priority" },
   review: { state: ["AWAITING_REVIEW"], sort: "priority" },
   overdue: { overdue: true, sort: "priority" },
 };
@@ -71,13 +74,13 @@ const PRIORITY_OPTIONS = PRIORITIES.map((priority) => ({
 }));
 
 // Người yêu cầu chỉ thấy ticket của mình nên không cần chọn nhóm
-const viewsFor = (canAssign: boolean, canHandle: boolean): View[] => {
-  if (canAssign) return ["all", "review", "overdue", "mine"];
+const viewsFor = (canCoordinate: boolean, canHandle: boolean): View[] => {
+  if (canCoordinate) return ["all", "intake", "review", "overdue", "mine"];
   if (canHandle) return ["all", "mine"];
   return [];
 };
 
-/** Danh sách ticket; chọn nhóm xem theo vai trò (chờ duyệt, quá hạn, giao cho tôi), lọc theo trạng thái và ưu tiên. */
+/** Danh sách ticket; chọn nhóm xem theo vai trò (tiếp nhận, chờ duyệt, quá hạn, giao cho tôi), lọc theo trạng thái và ưu tiên. */
 const TicketListPage = () => {
   const navigate = useNavigate();
   const refresh = useRefreshTickets();
@@ -95,7 +98,8 @@ const TicketListPage = () => {
   const canBoard = boardAccess(viewer).canView;
   const [mode, setMode] = useBoardView(canBoard);
   const isBoard = mode === "board";
-  const views = viewsFor(viewer.canAssign, viewer.canHandle);
+  const canCoordinate = viewer.canAssign || viewer.isPlatformAdmin;
+  const views = viewsFor(canCoordinate, viewer.canHandle);
   const [selectedView, setView] = useState<View>("all");
   const view = views.includes(selectedView) ? selectedView : "all";
   const [state, setState] = useState("");
@@ -104,6 +108,7 @@ const TicketListPage = () => {
   const query = useDeferredValue(search.trim());
   const [page, setPage] = useState(0);
   const [reviewing, setReviewing] = useState<TicketView | null>(null);
+  const [releasing, setReleasing] = useState<TicketView | null>(null);
 
   // "Giao cho tôi" thay cho trang Hàng đợi: điều phối viên chọn được người để xem việc và tải của họ
   const isMine = view === "mine";
@@ -155,25 +160,32 @@ const TicketListPage = () => {
       },
     });
   }
-  // Chờ duyệt: duyệt và giao ngay trên dòng, form điền sẵn theo gợi ý AI
-  if (view === "review") {
+  // Điều phối viên, siêu quản trị: Tiếp nhận (sang Chờ duyệt) rồi Duyệt và giao ngay trên dòng
+  if (canCoordinate && !isMine) {
     columns.push({
       key: "action",
       header: "Thao tác",
       width: "104px",
-      cell: (ticket) => (
-        <Button
-          size="xs"
-          className="w-full"
-          onClick={(event) => {
-            // Không mở trang chi tiết khi bấm nút trong dòng
-            event.stopPropagation();
-            setReviewing(ticket);
-          }}
-        >
-          Duyệt
-        </Button>
-      ),
+      cell: (ticket) => {
+        // Người gửi không tự tiếp nhận ticket của mình (backend chặn)
+        const intake = ticket.state === "INTAKE" && ticket.creator !== viewer.subject;
+        if (!intake && !awaitsReview(ticket)) return null;
+        return (
+          <Button
+            size="xs"
+            variant={intake ? "outline" : "default"}
+            className="w-full"
+            onClick={(event) => {
+              // Không mở trang chi tiết khi bấm nút trong dòng
+              event.stopPropagation();
+              if (intake) setReleasing(ticket);
+              else setReviewing(ticket);
+            }}
+          >
+            {intake ? "Tiếp nhận" : "Duyệt"}
+          </Button>
+        );
+      },
     });
   }
   const personOptions = (duty.data ?? []).map((status) => {
@@ -298,6 +310,10 @@ const TicketListPage = () => {
         </div>
       )}
       <ReviewDialog ticket={reviewing} onClose={() => setReviewing(null)} />
+      <ReleaseIntakeDialog
+        target={releasing && { workspace: releasing.workspace, id: releasing.id }}
+        onClose={() => setReleasing(null)}
+      />
     </Page>
   );
 };

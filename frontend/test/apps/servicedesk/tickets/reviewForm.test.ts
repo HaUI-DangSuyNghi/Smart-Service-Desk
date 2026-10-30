@@ -1,8 +1,13 @@
 import { describe, expect, it } from "vitest";
-import type { AssessmentResult } from "../../../../src/apps/servicedesk/services/ticketService";
+import type {
+  AssessmentResult,
+  Classification,
+} from "../../../../src/apps/servicedesk/services/ticketService";
 import {
   AGREE_WITH_AI,
+  DEFAULT_PRIORITY,
   differsFromAi,
+  labelSuggestion,
   reviewDefaults,
   suggestedPriority,
   toDecision,
@@ -46,6 +51,38 @@ describe("reviewForm", () => {
     const empty = reviewDefaults(null);
     expect(empty.category).toBeUndefined();
     expect(empty.reason).toBe("");
+  });
+
+  it("AI không tính được ưu tiên thì điền Trung bình, chọn mức nào cũng không tính là khác AI", () => {
+    const noPriority = { ...suggestion, priority: null };
+    expect(reviewDefaults(noPriority).priority).toBe(DEFAULT_PRIORITY);
+    expect(reviewDefaults(null).priority).toBe(DEFAULT_PRIORITY);
+    expect(differsFromAi({ category: "HARDWARE", priority: "HIGH" }, noPriority)).toBe(false);
+  });
+
+  it("nhãn AI đã gán vào ticket làm gợi ý; ưu tiên mặc định không tính là gợi ý; đã duyệt thì bỏ qua", () => {
+    const label: Classification = {
+      category: "NETWORK",
+      impact: "I2",
+      urgency: null,
+      priority: "MEDIUM",
+      basePriority: "MEDIUM",
+      escalated: false,
+      group: "IT-NETWORK",
+      source: "AI",
+      reviewedBy: null,
+      reviewedAt: new Date().toISOString(),
+      priorityDefaulted: true,
+    };
+    expect(labelSuggestion(label)).toEqual({
+      category: "NETWORK",
+      priority: null,
+      impact: "I2",
+      urgency: null,
+    });
+    expect(labelSuggestion({ ...label, priorityDefaulted: false })?.priority).toBe("MEDIUM");
+    expect(labelSuggestion({ ...label, source: "COORDINATOR" })).toBeNull();
+    expect(labelSuggestion(null)).toBeNull();
   });
 
   it("gợi ý ưu tiên theo ảnh hưởng × độ gấp", () => {

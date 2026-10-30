@@ -71,6 +71,8 @@ const ReleaseForm = ({
           <Textarea
             id="release-reason"
             rows={3}
+            // Cách nhãn "Lý do" thêm một chút cho dễ đọc
+            className="mt-1"
             maxLength={MAX_REASON}
             value={reason}
             onChange={(event) => setReason(event.target.value)}

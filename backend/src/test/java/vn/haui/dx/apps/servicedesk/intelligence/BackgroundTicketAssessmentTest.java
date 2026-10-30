@@ -183,6 +183,34 @@ class BackgroundTicketAssessmentTest {
         var response=mvc.perform(get(BASE+"/"+id).with(as("owner","background-a","requester"))).andReturn().getResponse().getContentAsString();
         java.nio.file.Files.writeString(java.nio.file.Path.of("target/background-assessment-http-evidence.json"),response);
     }
+    @Test void readyResultLabelsTicketUntilCoordinatorReviews() throws Exception {
+        var id=create(false);
+        assertTrue(worker.processOne());
+        mvc.perform(get(BASE+"/"+id).with(as("owner","background-a","requester"))).andExpect(status().isOk())
+            .andExpect(jsonPath("$.classification.source").value("AI"))
+            .andExpect(jsonPath("$.classification.category").value("NETWORK"))
+            .andExpect(jsonPath("$.classification.priority").value("LOW"))
+            .andExpect(jsonPath("$.classification.priorityDefaulted").value(false))
+            .andExpect(jsonPath("$.estimate.minutes").isNumber())
+            .andExpect(jsonPath("$.state").value("AWAITING_REVIEW"));
+        assertNotNull(jdbc.queryForObject("select estimate_minutes from servicedesk_ticket_label where ticket_id=?",Integer.class,id));
+        mvc.perform(post(BASE+"/"+id+"/review").with(as("coordinator","background-a","coordinator")).contentType("application/json")
+            .content("{\"category\":\"HARDWARE\",\"priority\":\"HIGH\",\"assignee\":null,\"reason\":\"Coordinator decides\"}"))
+            .andExpect(status().isOk()).andExpect(jsonPath("$.classification.source").value("COORDINATOR"))
+            .andExpect(jsonPath("$.classification.category").value("HARDWARE"));
+    }
+    @Test void degradedResultLabelsOnlyDefaultPriority() throws Exception {
+        var id=create(false);
+        doThrow(IntelligenceFailure.invalid()).when(transport).triage(any());
+        assertTrue(worker.processOne()); assertEquals("DEGRADED",state(id));
+        mvc.perform(get(BASE+"/"+id).with(as("owner","background-a","requester"))).andExpect(status().isOk())
+            .andExpect(jsonPath("$.classification.source").value("AI"))
+            .andExpect(jsonPath("$.classification.category").isEmpty())
+            .andExpect(jsonPath("$.classification.priority").value("MEDIUM"))
+            .andExpect(jsonPath("$.classification.priorityDefaulted").value(true))
+            // Chưa có loại thì không tính ET
+            .andExpect(jsonPath("$.estimate").isEmpty());
+    }
     @Test void jobIsInvisibleBeforeCommitAndImmediatelyAvailableAfterCommit() throws Exception {
         var executor=Executors.newSingleThreadExecutor();
         try {

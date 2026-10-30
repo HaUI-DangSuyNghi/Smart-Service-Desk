@@ -29,6 +29,7 @@ import type { QueueItem } from "../../../../platform/services";
 import { toast, toastError } from "../../../../platform/shared/ui/toast";
 import type { TicketView } from "../../services/ticketService";
 import { CorrectClassificationDialog } from "../CorrectClassificationDialog";
+import { ReleaseIntakeDialog } from "../ReleaseIntakeDialog";
 import type { Viewer } from "../ticketPermissions";
 import { ReviewDialog } from "../ReviewDialog";
 import { useRefreshTickets, type TicketFilter } from "../useTickets";
@@ -111,7 +112,7 @@ export const TicketBoard = ({ filter, viewer }: Props) => {
     workDialog?.kind === kind ? workDialog.item : null;
 
   const run = (action: DropAction, ticket: TicketView) => {
-    if (action === "review") {
+    if (action === "intake" || action === "review") {
       setEditing({ ticket, action });
       return;
     }
@@ -205,6 +206,10 @@ export const TicketBoard = ({ filter, viewer }: Props) => {
         {active && <TicketCardOverlay ticket={active} names={names} />}
       </DragOverlay>
 
+      <ReleaseIntakeDialog
+        target={editing?.action === "intake" ? editing.ticket : null}
+        onClose={closeEditing}
+      />
       <ReviewDialog ticket={open("review")} onClose={closeEditing} />
       <CorrectClassificationDialog ticket={open("correct")} onClose={closeEditing} />
       {editing?.action === "reassign" && (
