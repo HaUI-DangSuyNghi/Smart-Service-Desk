@@ -824,6 +824,8 @@ components:
         escalated:
           type: boolean
           description: Được nâng bậc do chờ lâu (R5)
+        priorityDefaulted:
+          type: boolean
         group:
           type: string
           description: Support group of the category from Service Desk settings (categoryGroups); "manual" for OTHER (coordinator chooses).

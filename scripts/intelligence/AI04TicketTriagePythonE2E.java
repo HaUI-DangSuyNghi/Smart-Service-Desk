@@ -91,12 +91,19 @@ class AI04TicketTriagePythonE2E {
         }
         assertArrayEquals(before, counts());
         mvc.perform(get(route).with(owner)).andExpect(status().isOk()).andExpect(content().json(ticket.toString()));
+        var agent = as("synthetic-ai04-agent", workspace, "agent");
+        mvc.perform(put("/api/hpdi/v1/workspaces/" + workspace + "/duty/me").with(agent)
+            .contentType("application/json").content("{\"onDuty\":true}"))
+            .andExpect(status().isOk());
+        mvc.perform(post(route + "/review").with(as("synthetic-ai04-coordinator", workspace, "coordinator"))
+            .contentType("application/json")
+            .content("{\"category\":\"OTHER\",\"priority\":\"MEDIUM\",\"assignee\":null,\"reason\":\"Synthetic acceptance review\"}"))
+            .andExpect(status().isOk());
         JsonNode progress = json.readTree(mvc.perform(get(route + "/progress").with(owner))
             .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
         String task = progress.path("currentTasks").get(0).path("id").asText();
         String taskRoute = "/api/core/v1/workspaces/" + workspace + "/instances/"
             + ticket.path("process").path("processInstanceId").asText() + "/tasks/" + task;
-        var agent = as("synthetic-ai04-agent", workspace, "agent");
         mvc.perform(post(taskRoute + "/claim").with(agent)).andExpect(status().isOk());
         mvc.perform(post(taskRoute + "/complete").with(agent).contentType("application/json")
             .content("{\"expectedTaskKey\":\"handle\",\"outcome\":\"resolved\"}")).andExpect(status().isNoContent());

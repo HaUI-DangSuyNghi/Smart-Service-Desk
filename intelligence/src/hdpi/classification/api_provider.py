@@ -292,6 +292,15 @@ class ApiHandler(BaseHTTPRequestHandler):
 
     def do_POST(self):
         if not self.authorized():
+            self.connection.settimeout(3)
+            lengths = self.headers.get_all("Content-Length", [])
+            if (len(lengths) == 1 and lengths[0].isascii() and lengths[0].isdecimal()
+                    and int(lengths[0]) <= 32768
+                    and self.headers.get("Transfer-Encoding") is None):
+                try:
+                    self.rfile.read(int(lengths[0]))
+                except OSError:
+                    pass
             self.reply(403, {"code": "CLASSIFICATION_REJECTED"})
             return
         if self.path == "/internal/intelligence/v1/knowledge":
