@@ -111,6 +111,8 @@ class AI04TicketTriagePythonE2E {
         String taskRoute = "/api/core/v1/workspaces/" + workspace + "/instances/"
             + ticket.path("process").path("processInstanceId").asText() + "/tasks/" + task;
         mvc.perform(post(taskRoute + "/claim").with(agent)).andExpect(status().isOk());
+        mvc.perform(post("/api/hpdi/v1/workspaces/" + workspace + "/tasks/" + task + "/start")
+            .with(agent)).andExpect(status().isOk());
         mvc.perform(post(taskRoute + "/complete").with(agent).contentType("application/json")
             .content("{\"expectedTaskKey\":\"handle\",\"outcome\":\"resolved\"}")).andExpect(status().isNoContent());
     }
