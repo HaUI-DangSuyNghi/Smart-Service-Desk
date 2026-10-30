@@ -199,6 +199,14 @@ def main():
                 )
 
             if result.returncode:
+                for report in sorted((ROOT / "backend/target/surefire-reports").glob("TEST-*.xml")):
+                    suite = ET.parse(report).getroot()
+                    for case in suite.findall("testcase"):
+                        for kind in ("failure", "error", "skipped"):
+                            issue = case.find(kind)
+                            if issue is not None:
+                                print(json.dumps({"suite": suite.get("name"), "test": case.get("name"),
+                                                  "result": kind, "type": issue.get("type")}), flush=True)
                 raise RuntimeError("Java acceptance failed; inspect private local log")
 
         reports = ROOT / "backend/target/surefire-reports"
