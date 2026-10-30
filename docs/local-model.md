@@ -167,7 +167,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test-setup-env.ps1
 Nếu có Python trên host, chạy phép thử xuyên suốt bằng fixture synthetic cố định:
 
 ```powershell
-python scripts/test-local-model.py --output .local/local-model-proof.json
+python scripts/apps/servicedesk/acceptance/test-local-model.py --output .local/local-model-proof.json
 ```
 
 Kiểm thử đăng nhập thật bằng Authorization Code + PKCE, tạo ticket qua gateway,
@@ -283,7 +283,7 @@ Kiểm tra tại máy phát triển ngày 2026-10-29 với dữ liệu thử:
 | Auto workspace qua Keycloak/Qwen thật | lab-b và workspace tạo sau startup đều trả hybrid HARDWARE/HIGH; giữ cách ly người dùng, tôn trọng thu hồi quyền worker, retry đạt sau khôi phục quyền |
 | Hỏi đáp API trong auto scope | user4 hỏi trên ticket lab-b qua HTTPS upstream giả lập; không đổi phân loại, từ chối user1 khác workspace; chưa gọi API vendor thật |
 
-Các script tái kiểm tra: `scripts/test-local-model.py` và
+Các script tái kiểm tra: `scripts/apps/servicedesk/acceptance/test-local-model.py` và
 `scripts/test-local-model-ui.mjs`; Q&A dùng `scripts/test-api-assistance.py <UUID-ticket-thu>`
 và `node scripts/test-local-model-ui.mjs <UUID-ticket-thu> --ask`.
 Các phép thử Q&A sẽ gọi provider đang cấu hình; chỉ chạy với ticket thử và chấp

@@ -74,7 +74,7 @@ try {
         } catch { Start-Sleep -Seconds 2 }
     }
     if (!$ready) { throw 'Keycloak readiness timeout' }
-    $arguments = @('-B','-o','-f',(Join-Path $root 'backend/pom.xml'),'clean','verify')
+    $arguments = @('-B','-f',(Join-Path $root 'backend/pom.xml'),'clean','verify')
     if ($Profile -eq 'focused') {
         $arguments += '-Pcore-only'
         if (!$Tests) { $Tests = 'KeycloakFreshAdminAuthorizationTest,KeycloakFreshAdminIntegrationTest' }
@@ -83,6 +83,7 @@ try {
     $arguments += @('-Dservice-desk.background.scheduled=false','-Dservice-desk.sla.scheduled=false',
         '-Dspring.datasource.hikari.maximum-pool-size=3')
     if ($BuildImage) {
+        $arguments += '-o'
         docker run -d --name "$name-pg" --network "$name-network" --network-alias database `
             --tmpfs /var/lib/postgresql/data -e POSTGRES_DB=file_storage -e POSTGRES_USER=workflow `
             -e "POSTGRES_PASSWORD=$password" `

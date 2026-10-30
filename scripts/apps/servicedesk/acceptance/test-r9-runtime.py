@@ -20,7 +20,7 @@ def main():
     parser.add_argument("--verify-restart", action="store_true")
     parser.add_argument("--sla-fixture-container", help="Isolated test PostgreSQL container only; ages one synthetic ticket for real worker escalation")
     arguments = parser.parse_args()
-    root = Path(__file__).resolve().parents[1]
+    root = Path(__file__).resolve().parents[4]
     settings = dict(line.split("=", 1) for line in (root / ".env").read_text(encoding="utf-8-sig").splitlines()
                     if "=" in line and not line.startswith("#"))
     password = os.environ.get("R9_DEMO_PASSWORD", settings.get("DEMO_PASSWORD"))

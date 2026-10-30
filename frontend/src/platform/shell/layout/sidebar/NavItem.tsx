@@ -1,17 +1,8 @@
 import { NavLink } from "react-router";
 import { cn } from "cn";
-import type { MenuItem, MenuTone } from "../../router/registry";
+import type { MenuItem } from "../../router/registry";
+import { TONE_CLASS } from "./menuTree";
 
-// Viết đủ tên class để Tailwind sinh ra được
-export const TONE_CLASS: Record<MenuTone, string> = {
-  gray: "text-crm-tone-gray",
-  blue: "text-crm-tone-blue",
-  red: "text-crm-tone-red",
-  green: "text-crm-tone-green",
-  orange: "text-crm-tone-orange",
-  purple: "text-crm-tone-purple",
-  turquoise: "text-crm-tone-turquoise",
-};
 
 interface Props {
   item: MenuItem;

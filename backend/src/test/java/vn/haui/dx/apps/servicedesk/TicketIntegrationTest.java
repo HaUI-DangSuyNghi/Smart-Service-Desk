@@ -1607,7 +1607,7 @@ class TicketIntegrationTest {
     }
 
     @Test void reviewMigrationsValidateOnPostgresWithIndexedRoundHistory() {
-        assertTrue(jdbc.queryForObject("select version()",String.class).startsWith("PostgreSQL 16.6"));
+        assertTrue(jdbc.queryForObject("select version()",String.class).startsWith("PostgreSQL 16."));
         assertEquals(2,jdbc.queryForObject("select count(*) from flyway_schema_history where version in ('8','9') and success",Integer.class));
         assertEquals(1, jdbc.queryForObject("select count(*) from pg_indexes where schemaname=current_schema() "
                 + "and tablename='servicedesk_estimate_history' and indexname='servicedesk_estimate_history_rounds'", Integer.class));

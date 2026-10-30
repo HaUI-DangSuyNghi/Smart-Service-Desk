@@ -25,20 +25,20 @@ sys.dont_write_bytecode = True
 # Exported kits carry this exact helper as an inventoried, signed source file.
 HELPERS = Path(__file__).resolve().parent / "lib"
 if not HELPERS.exists():
-    HELPERS = Path(__file__).resolve().parents[1] / "apps/servicedesk/ai07"
+    HELPERS = Path(__file__).resolve().parent
 sys.path.insert(0, str(HELPERS))
 from full_model_release import (docker, file_digest, inspect, read_json, require,
                                 safe_file, verify_approval, verify_receipt, write_new)
 from e5_release import validate_receipt as verify_e5_receipt, verify_image as verify_e5_image
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[4]
 SERVICES = ("postgres", "keycloak", "platform", "gateway", "frontend", "intelligence", "ai07-qwen")
 AUX_IMAGES = ("model-code", "e5-base")
 STATIC_FILES = (
     "compose.yaml", "infra/compose/compose.triage.yaml", "infra/compose/compose.ai-d2-release.yaml",
     "infra/compose/compose.ai-d2-synthetic.yaml", "infra/postgres/init.sql",
     "infra/keycloak/realm-template.json", "infra/apisix/config.yaml", "infra/apisix/apisix.yaml",
-    "scripts/setup.ps1", "scripts/ai-d2/team_release.py", "scripts/ai-d2/runtime.env.example",
+    "scripts/setup.ps1", "scripts/apps/servicedesk/ai07/team_release.py", "scripts/ai-d2/runtime.env.example",
     "scripts/ai-d2/synthetic_acceptance.py",
     "scripts/ai-d2/Verify-Release.ps1", "scripts/ai-d2/Install-Team.ps1", "scripts/ai-d2/Start-Team.ps1",
     "scripts/ai-d2/Stop-Team.ps1", "scripts/ai-d2/Test-Team.ps1", "scripts/ai-d2/Export-Diagnostics.ps1",

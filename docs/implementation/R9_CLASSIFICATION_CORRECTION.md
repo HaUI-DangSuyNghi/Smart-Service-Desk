@@ -380,9 +380,9 @@ scripts/test-task-execution.ps1 -Profile second-domain -BuildImage maven:3.9.11-
 scripts/test-task-execution.ps1 -Profile full -Test 'TicketIntegrationTest,IntakeWorkflowIntegrationTest,ServiceDeskMigrationIntegrationTest,ClassificationSlaAmendmentTest,TicketAlertRulesTest,KeycloakPermissionGuardTest' -BuildImage maven:3.9.11-eclipse-temurin-21
 python scripts/check-tier-boundaries.py
 python scripts/test-tier-boundaries.py
-python scripts/test-r9-runtime.py --evidence .local/r9-final-runtime-evidence.json
+python scripts/apps/servicedesk/acceptance/test-r9-runtime.py --evidence .local/r9-final-runtime-evidence.json
 # Restart the isolated platform, wait for health, then:
-python scripts/test-r9-runtime.py --evidence .local/r9-final-runtime-evidence.json --verify-restart
+python scripts/apps/servicedesk/acceptance/test-r9-runtime.py --evidence .local/r9-final-runtime-evidence.json --verify-restart
 scripts/smoke.ps1 -ComposeProject r9-correction-final-20261028
 ```
 
