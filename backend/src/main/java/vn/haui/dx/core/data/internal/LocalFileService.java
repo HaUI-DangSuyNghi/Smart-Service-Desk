@@ -255,6 +255,7 @@ public final class LocalFileService implements FileService {
                 && ends(bytes, HexFormat.of().parseHex("ffd9"));
             case "text/plain" -> extension.equals("txt") && utf8Text(bytes);
             case "text/markdown" -> Set.of("md", "markdown").contains(extension) && utf8Text(bytes);
+            case "application/vnd.openxmlformats-officedocument.wordprocessingml.document" -> extension.equals("docx") && docx(bytes);
             default -> false;
         };
         if (!valid) throw unsupported();
@@ -262,6 +263,24 @@ public final class LocalFileService implements FileService {
 
     private static boolean starts(byte[] bytes, byte[] prefix) {
         return bytes.length >= prefix.length && java.util.Arrays.equals(bytes, 0, prefix.length, prefix, 0, prefix.length);
+    }
+
+    private static boolean docx(byte[] bytes) {
+        boolean document = false, types = false;
+        int entries = 0, total = 0;
+        try (var zip = new java.util.zip.ZipInputStream(new ByteArrayInputStream(bytes))) {
+            for (var entry = zip.getNextEntry(); entry != null; entry = zip.getNextEntry()) {
+                if (++entries > 512 || entry.getName().contains("..") || entry.getName().toLowerCase(Locale.ROOT).contains("vbaproject")) return false;
+                var buffer = new byte[8192];
+                for (int count; (count = zip.read(buffer)) != -1;) {
+                    total += count;
+                    if (total > 16 * 1024 * 1024) return false;
+                }
+                document |= entry.getName().equals("word/document.xml");
+                types |= entry.getName().equals("[Content_Types].xml");
+            }
+            return document && types;
+        } catch (IOException error) { return false; }
     }
 
     private static boolean ends(byte[] bytes, byte[] suffix) {

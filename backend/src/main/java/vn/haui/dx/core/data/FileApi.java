@@ -43,7 +43,7 @@ public class FileApi {
         return files.describe(workspace, fileId);
     }
     @GetMapping("/{fileId}/content")
-    @RequirePermission("document:view")
+    @RequirePermission("document:download")
     public ResponseEntity<Resource> download(@PathVariable String workspace, @PathVariable UUID fileId) {
         var file = files.describe(workspace, fileId);
         return ResponseEntity.ok()

@@ -16,6 +16,7 @@
         {"name": "task:handle", "description": "Xử lý công việc"},
         {"name": "task:assign", "description": "Giao việc cho người khác"},
         {"name": "document:view", "description": "Xem tài liệu"},
+        {"name": "document:download", "description": "Tải file tài liệu gốc"},
         {"name": "document:upload", "description": "Tải tài liệu lên"},
         {"name": "member:view", "description": "Xem danh sách thành viên"},
         {"name": "audit:view", "description": "Xem nhật ký hoạt động của mọi người trong workspace"},
@@ -31,14 +32,14 @@
         {"name": "assessment-worker", "clientRoles": {"dx-permissions": ["intelligence:process", "task:handle"]}},
         {"name": "alert-worker", "clientRoles": {"dx-permissions": ["alerts:process"]}},
         {"name": "workflow-timer", "clientRoles": {"dx-permissions": ["workflow:timer"]}},
-        {"name": "requester", "clientRoles": {"dx-permissions": ["request:create", "audit:view-own"]}},
-        {"name": "agent", "clientRoles": {"dx-permissions": ["request:create", "task:handle", "document:view", "document:upload", "audit:view-own"]}},
-        {"name": "coordinator", "clientRoles": {"dx-permissions": ["request:create", "request:view-all", "task:handle", "task:assign", "document:view", "document:upload", "member:view", "audit:view", "audit:view-own", "dashboard:view"]}}
+        {"name": "requester", "clientRoles": {"dx-permissions": ["request:create", "document:view", "audit:view-own"]}},
+        {"name": "agent", "clientRoles": {"dx-permissions": ["request:create", "task:handle", "document:view", "document:download", "document:upload", "audit:view-own"]}},
+        {"name": "coordinator", "clientRoles": {"dx-permissions": ["request:create", "request:view-all", "task:handle", "task:assign", "document:view", "document:download", "document:upload", "member:view", "audit:view", "audit:view-own", "dashboard:view"]}}
       ]},
       {"name": "lab-b", "attributes": {"displayName": ["Phòng máy B"]}, "subGroups": [
-        {"name": "requester", "clientRoles": {"dx-permissions": ["request:create", "audit:view-own"]}},
-        {"name": "agent", "clientRoles": {"dx-permissions": ["request:create", "task:handle", "document:view", "document:upload", "audit:view-own"]}},
-        {"name": "coordinator", "clientRoles": {"dx-permissions": ["request:create", "request:view-all", "task:handle", "task:assign", "document:view", "document:upload", "member:view", "audit:view", "audit:view-own", "dashboard:view"]}}
+        {"name": "requester", "clientRoles": {"dx-permissions": ["request:create", "document:view", "audit:view-own"]}},
+        {"name": "agent", "clientRoles": {"dx-permissions": ["request:create", "task:handle", "document:view", "document:download", "document:upload", "audit:view-own"]}},
+        {"name": "coordinator", "clientRoles": {"dx-permissions": ["request:create", "request:view-all", "task:handle", "task:assign", "document:view", "document:download", "document:upload", "member:view", "audit:view", "audit:view-own", "dashboard:view"]}}
       ]}
     ]
   }, {

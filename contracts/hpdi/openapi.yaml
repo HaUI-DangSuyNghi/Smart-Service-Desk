@@ -901,7 +901,7 @@ paths:
     parameters:
     - *id001
     get:
-      description: Knowledge Hub – tài liệu văn bản (text/plain, text/markdown) của workspace, mới nhất trước.
+      description: Requires document:view. TXT, Markdown, text PDFs and DOCX in the workspace, newest first.
       parameters:
       - name: q
         in: query
@@ -924,6 +924,37 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+  /api/hpdi/v1/workspaces/{workspace}/knowledge/chat:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+    post:
+      operationId: chatWithKnowledge
+      description: >-
+        Requires document:view. Server resolves authorized documents, retrieves exact excerpts,
+        then streams provider text. Data-only SSE events are status, sources, delta, done, error.
+        Sources include index, metadataId, title, version, excerpt. Delta includes text.
+        Done includes grounded; only a done event confirms successful completion.
+        Error leaves any partial answer unverified. No conversation or arbitrary context is accepted.
+        Empty documentIds searches the whole workspace, limited to 50 documents and 1 MB extracted UTF-8.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [question, documentIds]
+              properties:
+                question: {type: string, minLength: 1, maxLength: 2000}
+                documentIds: {type: array, maxItems: 50, uniqueItems: true, items: {type: string, format: uuid}}
+      responses:
+        '200':
+          description: SSE stream; original document bytes are never sent to the model.
+          content:
+            text/event-stream:
+              schema: {type: string}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
   /api/hpdi/v1/workspaces/{workspace}/knowledge/{id}:
     parameters:
     - *id001
@@ -940,7 +971,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AuthorizedKnowledge'
+                $ref: '#/components/schemas/KnowledgePreview'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -1971,6 +2002,16 @@ components:
             type: array
             items:
               $ref: '#/components/schemas/WorkItem'
+    KnowledgePreview:
+      type: object
+      additionalProperties: false
+      required: [metadataId, title, version, mediaType, text]
+      properties:
+        metadataId: {type: string, format: uuid}
+        title: {type: string}
+        version: {type: string}
+        mediaType: {type: string}
+        text: {type: string, description: Extracted text only. No original file or base64 bytes.}
     AuthorizedKnowledge:
       type: object
       required:

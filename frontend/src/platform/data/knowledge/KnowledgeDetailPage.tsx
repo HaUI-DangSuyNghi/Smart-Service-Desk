@@ -1,4 +1,5 @@
 import { useParams } from "react-router";
+import { PERMISSIONS, usePermissions } from "@/platform/human/workspace";
 import { IconDownload, IconFileText } from "@tabler/icons-react";
 import { ApiError } from "@/platform/shared/api";
 import { formatDateTime } from "@/platform/shared/lib/format";
@@ -17,6 +18,7 @@ const KnowledgeDetailPage = () => {
   const fileId = record.data?.fileId ?? null;
   const content = useKnowledgeContent(id, fileId !== null);
   const download = useDownloadKnowledgeFile();
+  const { can } = usePermissions();
 
   // Backend trả 400 khi file không phải văn bản: không phải lỗi, chỉ là không xem trước được
   const notPreviewable = content.error instanceof ApiError && content.error.status === 400;
@@ -29,7 +31,7 @@ const KnowledgeDetailPage = () => {
         backTo="/knowledge"
         actions={
           <>
-            {fileId && (
+            {fileId && can(PERMISSIONS.documentDownload) && (
               <Button
                 size="sm"
                 disabled={download.isPending}
@@ -70,7 +72,8 @@ const KnowledgeDetailPage = () => {
               )}
               {notPreviewable && (
                 <p className="text-crm-text-3">
-                  Định dạng này không xem trước được, hãy bấm Tải về.
+                  Không đọc được tài liệu. PDF scan cần OCR; hãy dùng PDF có chữ, .docx, .txt hoặc
+                  .md.
                 </p>
               )}
               {content.error && !notPreviewable && <ErrorState error={content.error} />}

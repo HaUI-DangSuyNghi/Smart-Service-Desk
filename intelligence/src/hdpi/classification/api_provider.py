@@ -294,6 +294,9 @@ class ApiHandler(BaseHTTPRequestHandler):
         if not self.authorized():
             self.reply(403, {"code": "CLASSIFICATION_REJECTED"})
             return
+        if self.path == "/internal/intelligence/v1/knowledge":
+            self.knowledge_stream()
+            return
         advice = self.path == "/internal/intelligence/v1/assistance"
         if self.path != "/internal/intelligence/v1/classify" and not advice:
             self.reply(404, {"code": "CLASSIFICATION_ROUTE_NOT_FOUND"})
@@ -328,6 +331,49 @@ class ApiHandler(BaseHTTPRequestHandler):
         except Exception:
             pass
         self.reply(status, {"code": "CLASSIFICATION_REJECTED"})
+
+    def knowledge_stream(self):
+        from ..knowledge_api import stream_answer
+
+        started = False
+        try:
+            self.connection.settimeout(3)
+            lengths = self.headers.get_all("Content-Length", [])
+            require(len(lengths) == 1 and lengths[0].isascii() and lengths[0].isdecimal())
+            size = int(lengths[0])
+            require(0 < size <= 2_000_000 and self.headers.get("Transfer-Encoding") is None)
+            require(self.headers.get("Content-Type") == "application/json")
+            require(self.server.assistance is not None)
+            raw = self.rfile.read(size)
+            require(len(raw) == size)
+            events = stream_answer(self.server.assistance, strict_json(raw))
+            first = next(events)
+            self.send_response(200)
+            self.send_header("Content-Type", "application/x-ndjson")
+            self.send_header("Cache-Control", "no-store")
+            self.end_headers()
+            started = True
+            self.connection.settimeout(45)
+            self.wfile.write((json.dumps(first, ensure_ascii=False) + "\n").encode())
+            self.wfile.flush()
+            try:
+                for event in events:
+                    self.wfile.write((json.dumps(event, ensure_ascii=False) + "\n").encode())
+                    self.wfile.flush()
+            finally:
+                events.close()
+        except (BrokenPipeError, ConnectionResetError):
+            pass
+        except Exception as error:
+            logging.warning("Knowledge stream failed (%s)", type(error).__name__)
+            if started:
+                try:
+                    self.wfile.write(b'{"type":"error","code":"KNOWLEDGE_UNAVAILABLE"}\n')
+                    self.wfile.flush()
+                except OSError:
+                    pass
+            else:
+                self.reply(503, {"code": "KNOWLEDGE_UNAVAILABLE"})
 
 
 class ApiServer(ThreadingHTTPServer):
