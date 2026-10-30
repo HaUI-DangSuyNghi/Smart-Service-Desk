@@ -75,12 +75,25 @@ jobs:
         run: |
           python -m pip install -r intelligence/requirements.lock
           python -m pip check
-          python -m pytest intelligence/tests -q -m "not dense_model" --junitxml=.local/int01/python-source.xml
+          python -m pytest intelligence/tests -q -m "not dense_model and not generation_model" --junitxml=.local/int01/python-source.xml
           python -m build --no-isolation --outdir .local/int01/dist intelligence
           python scripts/intelligence/install-built-wheel.py --dist .local/int01/dist
           python scripts/acceptance/test-triage-settlement.py
           python -I scripts/intelligence/verify-installed-package.py
-          python -I -m pytest -c scripts/intelligence/installed-pytest.ini intelligence/tests -q -m "not dense_model" --junitxml=.local/int01/python-wheel.xml
+          python -I -m pytest -c scripts/intelligence/installed-pytest.ini intelligence/tests -q -m "not dense_model and not generation_model" --junitxml=.local/int01/python-wheel.xml
+      - name: Record governed real-model validation as BLOCKED without owner approval
+        run: |
+          python - <<'PY'
+          import json, subprocess, sys
+          from pathlib import Path
+          output = Path('.local/int01/real-generation-readiness.json')
+          result = subprocess.run([sys.executable, 'scripts/intelligence/ai06-provider-evidence.py',
+                                   '--mode', 'approved-local-model', '--output', str(output)])
+          assert result.returncode == 2, 'Unapproved real-model validation must fail closed'
+          report = json.loads(output.read_text())
+          assert report['result'] == 'BLOCKED'
+          assert report['realModelValidation'] == 'REAL_MODEL_VALIDATION_BLOCKED'
+          PY
       - name: G3 clean metadata-driven Python image and installed runtime
         run: |
           token=$(openssl rand -hex 32)
@@ -171,6 +184,7 @@ jobs:
             .local/int01/images.json
             .local/int01/python-image.json
             .local/int01/python-*.xml
+            .local/int01/real-generation-readiness.json
             .local/ai04-e2e/summary.json
             .local/scan-int01-*/summary.json
             .local/scan-int01-*/scanner-version.txt

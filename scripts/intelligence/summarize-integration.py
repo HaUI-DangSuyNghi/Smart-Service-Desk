@@ -67,6 +67,7 @@ def main():
                'productionSecurity': 'PASS' if production_security else 'FAIL' if scan_complete else 'BLOCKED',
                'businessProfileApproval': 'PENDING', 'licenseGrant': 'PENDING', 'fixtureDataRights': 'PENDING',
                'browserUiE2E': 'NOT RUN', 'releaseApproval': 'BLOCKED',
+               'realModelValidation': load_json(directory / 'real-generation-readiness.json') or {'result': 'NOT RUN'},
                'faultInjection': 'Timeout/malformed after real Python SUCCESS; not natural Python failures',
                'scanFindings': security, 'javaRegression': java}
     (directory / 'integration-summary.json').write_text(json.dumps(summary, indent=2) + '\n')

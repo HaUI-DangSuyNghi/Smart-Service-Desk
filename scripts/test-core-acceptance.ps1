@@ -73,7 +73,7 @@ try {
     Copy-Item -LiteralPath (Join-Path $evidence 'verify-http.json') -Destination (Join-Path $evidence 'restart-http.json')
     $results.restart = 'PASS'
     $stage = 'storageInventory'
-    Run-Docker compose -p $Project stop gateway platform keycloak
+    Run-Docker compose -p $Project stop frontend gateway platform keycloak
     $core = (Run-Docker compose -p $Project ps -aq platform).Trim()
     $database = (Run-Docker compose -p $Project ps -q postgres).Trim()
     $inventory = Run-Docker exec $database psql -U core -d core -Atc "select coalesce(json_agg(files),'[]'::json) from (select storage_key::text,byte_size,checksum from file_object order by storage_key) files"
