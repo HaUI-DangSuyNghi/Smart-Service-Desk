@@ -81,7 +81,7 @@ try {
     } elseif ($Profile -ne 'full') { $arguments += "-P$Profile" }
     if ($Tests) { $arguments += "-Dtest=$Tests" }
     $arguments += @('-Dservice-desk.background.scheduled=false','-Dservice-desk.sla.scheduled=false',
-        '-Dspring.datasource.hikari.maximum-pool-size=3')
+        '-Dspring.datasource.hikari.maximum-pool-size=3','-Dspring.test.context.cache.maxSize=2')
     if ($BuildImage) {
         $arguments += '-o'
         docker run -d --name "$name-pg" --network "$name-network" --network-alias database `

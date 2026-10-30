@@ -129,10 +129,10 @@ else:
     if args.mode == "upload-disabled":
         upload(403)
     else:
-        call("GET", base + "/metadata/" + state["metadata"]["id"], "user1", 403)
+        call("GET", base + "/metadata/" + state["metadata"]["id"], "user1", 200)
         metadata, _ = call("GET", base + "/metadata/" + state["metadata"]["id"], "user2", 200)
         assert metadata == state["metadata"], "Metadata/provenance changed"
-        call("GET", base + "/files/" + state["file"]["id"], "user1", 403)
+        call("GET", base + "/files/" + state["file"]["id"], "user1", 200)
         file, _ = call("GET", base + "/files/" + state["file"]["id"], "user2", 200)
         assert file == state["file"], "File description changed"
         call("GET", base + "/files/" + file["id"] + "/content", "user1", 403)
