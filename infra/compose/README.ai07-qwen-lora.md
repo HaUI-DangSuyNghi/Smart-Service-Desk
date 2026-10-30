@@ -49,7 +49,7 @@ nằm trong mẫu số. Báo cáo chỉ là độ đồng thuận machine-silver
 GPU receipt ghi phần cứng, cold load/warmup, latency warm và VRAM allocated/reserved.
 Chữ ký độc lập và quyền xử lý dữ liệu vẫn là điều kiện bên ngoài.
 
-Provider có giới hạn inference 3,2 giây trong deadline HTTP Java 4 giây hiện có. Replay
+Provider có giới hạn inference 8 giây trong deadline HTTP Java 10 giây (GPU laptop rảnh hạ xung, lần đầu có thể quá 3 giây). Replay
 offline dùng bound nghiên cứu 120 giây để đo case chậm. Model chỉ ready sau load/warmup.
 Vượt bound phục vụ sẽ dừng worker và hạ readiness; cần restart. Không retry, tự chuyển
 CPU/cloud hoặc tự gán OTHER khi lỗi.

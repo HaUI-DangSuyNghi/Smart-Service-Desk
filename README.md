@@ -121,6 +121,47 @@ APISIX routes /api/apps/*, /api/hpdi/v1/* and /api/core/v1/*.
 
 ## 🚀 Khởi chạy nhanh
 
+### Lệnh ngắn
+
+Tại thư mục gốc repo, gõ `.\dx` (PowerShell, cmd) hoặc `./dx` (Git Bash). Không cần cài gì thêm.
+
+```powershell
+.\dx start
+```
+
+Menu hiện ra, chọn bằng phím ↑/↓ rồi Enter. Mục **Start project** chạy trọn quy trình khởi động:
+
+1. **Kiểm máy:** tạo `.env` nếu chưa có, kiểm Docker, ổ đĩa, cổng, GPU, API key. Có lỗi thì hỏi dừng hay chạy tiếp.
+2. **Chọn chế độ AI (bắt buộc có AI):** theo chế độ đã lưu, Qwen local, Qwen local + Ask AI, hoặc chỉ API. Máy không có GPU + image Qwen lẫn API key thì dừng và báo cần bổ sung.
+3. **Khởi động:** build, chạy và đợi mọi dịch vụ healthy.
+4. **Sẵn sàng:** in địa chỉ web, API, Keycloak, tài khoản demo, rồi hỏi có mở web luôn không.
+
+Các lệnh trực tiếp, không qua menu:
+
+```powershell
+.\dx launch         # quy trình khởi động đầy đủ như trên
+.\dx doctor         # kiểm máy; lỗi nào cũng kèm cách sửa
+.\dx up             # khởi động nhanh theo chế độ AI đã lưu (lần đầu tự chọn theo máy)
+.\dx down           # dừng, giữ dữ liệu
+.\dx help           # xem mọi lệnh
+```
+
+Lần đầu chạy `.\dx` (lệnh nào cũng được), dự án tự được thêm vào PATH của tài khoản. Từ terminal mở sau đó gõ thẳng `dx start` ở bất kỳ thư mục nào. Không muốn tự thêm thì đặt biến môi trường `DX_NO_PATH=1`; thêm tay bằng `.\dx install`.
+
+| Lệnh | Việc |
+| --- | --- |
+| `.\dx up model` | Phân loại bằng Qwen local (GPU) + bộ luật |
+| `.\dx up model ask` | Như trên, thêm Hỏi AI qua API |
+| `.\dx up api` | Phân loại và Hỏi AI đều qua API (không cần GPU) |
+| `.\dx restart` | Dừng rồi khởi động lại |
+| `.\dx ps`, `.\dx logs [service]` | Trạng thái container, xem log |
+| `.\dx realm` | Import lại realm Keycloak (`start.ps1 -Reset`) |
+| `.\dx qwen` | Khởi động lại Qwen khi thẻ AI báo "AI tạm không khả dụng" |
+| `.\dx smoke`, `.\dx check` | Kiểm thử nhanh, kiểm cấu hình Compose và CSDL |
+| `.\dx help` | Xem mọi lệnh |
+
+Các mục dưới giải thích chi tiết từng bước; lệnh dài `powershell -File scripts/...` vẫn dùng được như cũ.
+
 ### Yêu cầu tiên quyết
 
 - **Hệ điều hành:** Windows 10/11 với PowerShell 5.1+ (hoặc PowerShell Core).
@@ -136,7 +177,7 @@ Checkout nhánh có tính năng này (`feature/local-model-self-service` khi ch�
 Mở PowerShell tại **thư mục gốc repo đã clone**, nơi có `compose.yaml`, rồi chạy:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup.ps1
+.\dx env
 notepad .env
 ```
 
@@ -172,7 +213,7 @@ Qwen để phân loại.
 **Không có GPU, dùng API để phân loại và hỏi đáp:**
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start.ps1 -Api
+.\dx up api
 ```
 
 **Giữ Qwen + bộ luật phân loại, dùng API để hỏi đáp:** nạp image chứa model một
@@ -180,22 +221,20 @@ lần từ bộ bàn giao của nhóm (thay đường dẫn bằng file thực t
 
 ```powershell
 docker load -i D:\Model\qwen-full-image.tar
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start.ps1 -Model -AskApi
+.\dx up model ask
 ```
 
 Clone source không tự tải model. Nếu image có tên khác mặc định, điền
 `LOCAL_MODEL_IMAGE` trong `.env`; xem yêu cầu image/GPU ở
 [hướng dẫn model và API](docs/local-model.md).
 
-| Cờ khởi động | Phân loại ticket | Hỏi AI |
-| --- | --- | --- |
-| `-Api` | API + bộ luật | API |
-| `-Model -AskApi` | Qwen + bộ luật | API |
-| `-Model` | Qwen + bộ luật | Theo `AI_ASSISTANCE_MODE` đã lưu |
-| `-Intelligence` | Chỉ bộ luật | Tắt |
-| `-NoAi` | Xử lý thủ công | Tắt |
+| Lệnh | Cờ của `start.ps1` | Phân loại ticket | Hỏi AI |
+| --- | --- | --- | --- |
+| `.\dx up api` | `-Api` | API + bộ luật | API |
+| `.\dx up model ask` | `-Model -AskApi` | Qwen + bộ luật | API |
+| `.\dx up model` | `-Model` | Qwen + bộ luật | Theo `AI_ASSISTANCE_MODE` đã lưu |
 
-**Trên máy mới, chạy không có cờ thì AI mặc định tắt.** `-Model` một mình không
+**Trên máy mới, `.\dx up` không kèm gì sẽ tự chọn chế độ AI theo máy; gọi thẳng `scripts/start.ps1` không có cờ thì AI mặc định tắt.** `-Model` một mình không
 tự bật hỏi đáp API nếu chưa cấu hình trước đó. Trong cả chế độ Qwen và API,
 model vẫn phối hợp với rule engine; không thay bộ luật bằng model.
 
@@ -203,7 +242,7 @@ Sau khi khởi động thành công, script lưu lựa chọn vào `.env`: `AI_M
 phân loại và `AI_ASSISTANCE_MODE` cho hỏi đáp. Các lần sau chỉ cần:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start.ps1
+.\dx up
 ```
 
 Script tự chuẩn bị cấu hình, chọn Compose overlay, build ứng dụng và đợi các
@@ -237,7 +276,7 @@ Keycloak chỉ import `dx-lab` **lần đầu**, khi realm chưa tồn tại. M�
 Khởi động kèm xóa và import lại realm bằng một lệnh:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start.ps1 -Reset
+.\dx realm
 ```
 
 Stack đang chạy sẵn thì chỉ cần chạy riêng bước reset:
@@ -322,29 +361,18 @@ Mật khẩu của tất cả tài khoản mẫu được sinh ngẫu nhiên t�
 Thực thi kiểm thử tích hợp toàn diện thông qua Keycloak, APISIX, PostgreSQL và Flowable:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/smoke.ps1
+.\dx smoke
 ```
 
 ### Các lệnh vận hành thông dụng
 
 ```powershell
-# Kiểm tra tính hợp lệ của file cấu hình Compose
-docker compose config --quiet
-
-# Build lại container backend platform
-docker compose build platform
-
-# Kiểm tra cơ sở dữ liệu PostgreSQL trực tiếp
-Get-Content scripts/check-db.sql -Raw | docker compose exec -T postgres psql -U core -d core -v ON_ERROR_STOP=1
-
-# Theo dõi nhật ký hệ thống (logs)
-docker compose logs --tail 100 -f platform keycloak gateway
-
-# Dừng cụm dịch vụ (giữ nguyên dữ liệu volumes)
-docker compose stop
-
-# Khởi động lại với chế độ AI đã lưu trong .env
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start.ps1
+.\dx check              # cấu hình Compose + kiểm CSDL PostgreSQL
+.\dx ps                 # trạng thái container
+.\dx logs               # log platform, keycloak, gateway (hoặc: .\dx logs platform)
+.\dx down               # dừng toàn bộ, kể cả service AI, giữ dữ liệu volumes
+.\dx up                 # khởi động lại với chế độ AI đã lưu trong .env
+docker compose build platform   # chỉ build lại backend
 ```
 
 ### Xử lý sự cố thường gặp (Troubleshooting)

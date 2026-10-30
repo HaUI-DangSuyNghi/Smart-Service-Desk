@@ -64,8 +64,8 @@ describe("AssessmentCard model advice", () => {
     const html = renderToStaticMarkup(createElement(AssessmentCard, { assessment }));
     expect(html).toContain("Gemini API");
     expect(html).toContain("Bộ luật");
-    expect(html).toContain("Hai nguồn có kết quả khác nhau");
-    expect(html).not.toContain("Loại sự cố");
+    expect(html).toContain("Mâu thuẫn");
+    expect(html).toContain("Mạng");
   });
 
   it("keeps rules advice and a retry action when the model is down", () => {
@@ -98,7 +98,7 @@ describe("AssessmentCard model advice", () => {
     expect(html).toContain("Loại sự cố");
     expect(html).toContain("Độ gấp");
     expect(html).not.toContain("AI chưa đủ thông tin để phân loại");
-    expect(html).not.toContain("Ưu tiên");
+    expect(html).toContain("Ưu tiên");
     expect(html).toContain("Có bao nhiêu thiết bị bị ảnh hưởng?");
   });
 

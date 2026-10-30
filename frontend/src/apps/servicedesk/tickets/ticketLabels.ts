@@ -1,6 +1,19 @@
 import type { TagTone } from "../../../platform/shared/ui/Tag";
+import type { Intake } from "../services/intakeService";
 import type { TicketState } from "../services/ticketService";
 import type { Category, Impact, Urgency } from "./ticketRules";
+
+export const INTAKE_STATUS_LABELS: Readonly<Record<Intake["status"], string>> = {
+  NEW: "Đang chờ kiểm tra thông tin",
+  NEEDS_ENRICHMENT: "Cần bổ sung thông tin",
+  DUPLICATE_HOLD: "Cần kiểm tra ticket trùng",
+  FINAL_ASSESSMENT_QUEUED: "Đang chờ đánh giá cuối",
+  ASSESSING: "Đang đánh giá",
+  REVIEW_RELEASED: "Đã có đề xuất để điều phối viên duyệt",
+  MANUAL_REQUIRED: "Cần điều phối viên xem xét",
+  REVIEWED: "Điều phối viên đã duyệt",
+  CANONICAL_FOLLOWER: "Đang theo dõi sự cố đã được liên kết",
+};
 
 export const TICKET_STATE_LABELS: Readonly<Record<TicketState, string>> = {
   INTAKE: "Đang tiếp nhận",

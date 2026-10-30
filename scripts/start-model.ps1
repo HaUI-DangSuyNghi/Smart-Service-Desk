@@ -27,7 +27,7 @@ New-Item -ItemType Directory -Force -Path $runtimeDirectory | Out-Null
 $extraRuntime = @()
 $providerLabel = 'Qwen'
 $providerId = 'qwen35-08b-lora-labops-silver-r1'
-$deadline = 4000
+$deadline = 10000
 $service = 'ai07-qwen'
 $overlay = 'infra/compose/compose.model-local.yaml'
 if ($useApi) {

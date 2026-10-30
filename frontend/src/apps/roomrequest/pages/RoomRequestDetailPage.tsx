@@ -1,9 +1,8 @@
-import { Link, useParams } from "react-router";
-import { IconArrowLeft, IconDoor } from "@tabler/icons-react";
+import { useParams } from "react-router";
+import { IconDoor } from "@tabler/icons-react";
 import { useCurrentWorkspace } from "../../../platform/human/workspace";
 import { SuggestionCard } from "../../../platform/intelligence";
 import { ProcessTimeline, useTimeline } from "../../../platform/process";
-import { Button } from "../../../platform/shared/ui/button";
 import { ErrorState } from "../../../platform/shared/ui/ErrorState";
 import { FieldRow } from "../../../platform/shared/ui/FieldRow";
 import { Page, PageBody, PageHeader } from "../../../platform/shared/ui/page";
@@ -30,15 +29,7 @@ const RoomRequestDetailPage = () => {
       <PageHeader
         title={request.data ? `Phòng ${request.data.room}` : "Đặt phòng"}
         icon={IconDoor}
-        actions={
-          <Button variant="outline" size="sm" asChild>
-            <Link to="/requests" aria-label="Về danh sách yêu cầu">
-              <IconArrowLeft size={14} stroke={2} />
-              {/* Điện thoại chỉ giữ mũi tên để tiêu đề còn chỗ */}
-              <span className="hidden sm:inline">Yêu cầu</span>
-            </Link>
-          </Button>
-        }
+        backTo="/requests"
       />
       <PageBody>
         {request.isPending && <FieldsSkeleton rows={5} label="Đang tải yêu cầu" />}

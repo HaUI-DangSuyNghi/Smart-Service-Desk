@@ -6,6 +6,8 @@ import { BOARD_COLUMNS, columnOf } from "./boardColumns";
 
 /** Việc xảy ra khi thả thẻ vào một cột; mỗi việc là hàm nghiệp vụ hoặc dialog đã có. */
 export type DropAction =
+  /** Dialog tiếp nhận: chuyển ticket đang tiếp nhận sang Chờ duyệt. */
+  | "intake"
   /** Dialog duyệt và giao việc (R4). */
   | "review"
   /** Bắt đầu / Tiếp tục: chạy ngay, không hỏi thêm. */
@@ -24,12 +26,19 @@ const NONE: DropTargets = {};
 
 /**
  * Cột nào nhận được thẻ này, theo quyền của người đang kéo (khóa cột → việc xảy ra):
- * - điều phối viên, siêu quản trị: Chờ duyệt → Đã giao (duyệt và giao việc);
+ * - điều phối viên, siêu quản trị: Tiếp nhận → Chờ duyệt (tiếp nhận), Chờ duyệt → Đã giao
+ *   (duyệt và giao việc); không nhảy cóc từ Tiếp nhận sang Đã giao;
  * - kỹ thuật viên giữ việc (quyền task:handle): Bắt đầu / Tiếp tục / Tạm dừng / Báo xong / Trả việc.
  * Siêu quản trị thuộc nhóm đầu: không kéo thẻ của kỹ thuật viên dù ticket đang gán cho họ.
  * Chỉ tác động vào trạng thái mình sửa được; còn lại không kéo được.
  */
 export const dropTargets = (ticket: TicketView, viewer: Viewer): DropTargets => {
+  // Tiếp nhận không cần việc đang mở (backend tự tìm bước tiếp nhận / duyệt của quy trình)
+  if (ticket.state === "INTAKE") {
+    return boardAccess(viewer).canEdit && ticket.creator !== viewer.subject
+      ? { review: "intake" }
+      : NONE;
+  }
   if (!ticket.taskId) return NONE;
 
   if (awaitsReview(ticket)) {

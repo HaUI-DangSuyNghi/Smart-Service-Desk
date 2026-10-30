@@ -4,9 +4,9 @@ import { useAuth } from "../../../platform/human/auth";
 import { ApiError } from "../../../platform/shared/api";
 import { Button } from "../../../platform/shared/ui/button";
 import { Input } from "../../../platform/shared/ui/input";
+import { SelectField } from "../../../platform/shared/ui/SelectField";
 import {
   appendClarification,
-  assessCurrentContext,
   evaluateEnrichment,
   getContextRevision,
   getEnrichmentState,
@@ -17,9 +17,30 @@ import { ENRICHMENT_FIELDS, ENRICHMENT_STATUS } from "./enrichmentFields";
 interface Props {
   workspace: string;
   ticketId: string;
-  onRevisionChange: (revision: number) => void;
+  onRevisionChange?: (revision: number) => void;
   managedIntake?: boolean;
+  /** Đặt trong dialog đã có tiêu đề: bỏ tiêu đề và khung riêng của khối. */
+  embedded?: boolean;
 }
+
+const SLOT_OPTIONS = Object.entries(ENRICHMENT_FIELDS).map(([value, field]) => ({
+  value,
+  label: field.label,
+}));
+// Dropdown trong form: rộng hết ô, cao như input
+const FORM_SELECT = "h-11 w-full max-w-none sm:h-9";
+// Gợi ý cách nhập; backend nhận chữ tự do và tự chuẩn hóa
+const PLACEHOLDERS: Record<string, string> = {
+  "device.identifier": "VD: máy 15, PC-A201-07",
+  "location.room": "VD: 1304, A201",
+  "device.type": "VD: máy chiếu, máy in",
+  symptomCodes: "VD: không lên nguồn, mất mạng",
+  affectedScope: "VD: cả phòng, vài máy",
+  affectedCount: "VD: 30",
+  workBlocked: "Có / Không",
+  workaroundAvailable: "Có / Không",
+  timeWindow: "VD: trước 14h hôm nay",
+};
 
 /** Câu trả lời là dữ liệu người gửi, không phải lệnh tạm dừng hoặc phê duyệt xử lý. */
 export const EnrichmentPanel = ({
@@ -27,6 +48,7 @@ export const EnrichmentPanel = ({
   ticketId,
   onRevisionChange,
   managedIntake = false,
+  embedded = false,
 }: Props) => {
   const { user } = useAuth();
   const cache = useQueryClient();
@@ -51,7 +73,6 @@ export const EnrichmentPanel = ({
         : false,
   });
   const [drafts, setDrafts] = useState<Record<string, string>>({});
-  const [corrections, setCorrections] = useState<Record<string, boolean>>({});
   const [manualSlot, setManualSlot] = useState("device.identifier");
   const [message, setMessage] = useState("");
   const [formError, setFormError] = useState("");
@@ -61,14 +82,13 @@ export const EnrichmentPanel = ({
   const save = useMutation({
     mutationFn: (input: ClarificationInput) => appendClarification(workspace, ticketId, input),
   });
-  const check = useMutation({ mutationFn: () => assessCurrentContext(workspace, ticketId) });
-  const { mutate: runEvaluation, isPending: evaluating } = useMutation({
+  const { mutate: runEvaluation } = useMutation({
     mutationFn: () => evaluateEnrichment(workspace, ticketId),
     onSuccess: (state) => cache.setQueryData(stateKey, state),
   });
 
   useEffect(() => {
-    if (revision.data !== undefined) onRevisionChange(revision.data);
+    if (revision.data !== undefined) onRevisionChange?.(revision.data);
   }, [revision.data, onRevisionChange]);
 
   useEffect(() => {
@@ -129,10 +149,11 @@ export const EnrichmentPanel = ({
     setMessage("");
     const answers = [...fields.values()]
       .filter(({ slot }) => drafts[slot]?.trim())
-      .map(({ slot }) => ({
+      // AI hỏi lại do mâu thuẫn thì câu trả lời tự tính là đính chính
+      .map(({ slot, correctionRequired }) => ({
         slot,
         value: drafts[slot].trim(),
-        correction: corrections[slot] ?? false,
+        correction: correctionRequired,
       }));
     if (
       !answers.length ||
@@ -140,15 +161,6 @@ export const EnrichmentPanel = ({
       answers.some((answer) => answer.value.length > 256)
     ) {
       setFormError("Nhập từ một đến tám thông tin, mỗi nội dung tối đa 256 ký tự.");
-      return;
-    }
-    if (
-      [...fields.values()].some(
-        (field) =>
-          field.correctionRequired && drafts[field.slot]?.trim() && !corrections[field.slot],
-      )
-    ) {
-      setFormError("Hãy xác nhận đính chính cho thông tin đang mâu thuẫn trước khi gửi.");
       return;
     }
     if (revision.data === undefined || revision.error) return;
@@ -169,7 +181,6 @@ export const EnrichmentPanel = ({
       await save.mutateAsync(pendingRequest.current.input);
       pendingRequest.current = null;
       setDrafts({});
-      setCorrections({});
       await revision.refetch();
       if (!managedIntake) await lifecycle.refetch();
       await cache.invalidateQueries({ queryKey: ["servicedesk", "intake", workspace, ticketId] });
@@ -208,25 +219,23 @@ export const EnrichmentPanel = ({
       </div>
     );
 
-  const assessment =
-    !check.error && check.data?.contextRevision === revision.data ? check.data : null;
   const manual = current?.manualReviewRequired;
   return (
-    <section aria-labelledby="enrichment-title" className="space-y-4 border-b border-crm-line p-4">
+    <section
+      aria-labelledby={embedded ? undefined : "enrichment-title"}
+      className={embedded ? "space-y-4" : "space-y-4 border-b border-crm-line p-4"}
+    >
       <div className="space-y-2">
-        <h3 id="enrichment-title" className="text-crm-lg font-semibold">
-          Bổ sung thông tin
-        </h3>
+        {!embedded && (
+          <h3 id="enrichment-title" className="text-crm-lg font-semibold">
+            Bổ sung thông tin
+          </h3>
+        )}
         {current && (
           <p role="status" className="font-medium text-crm-text">
             {ENRICHMENT_STATUS[current.status]}
           </p>
         )}
-        <p className="text-crm-sm text-crm-text-2">
-          {managedIntake
-            ? "Thông tin bổ sung được lưu để kiểm tra trước quyết định duyệt. Nếu ticket đã được duyệt, điều phối viên sẽ xem xét thông tin mới."
-            : "Yêu cầu bổ sung không tạm dừng quy trình hoặc thay đổi hạn xử lý của ticket."}
-        </p>
         {manual && (
           <p className="text-crm-sm text-crm-text-2">
             Điều phối viên cần xem xét. Bạn vẫn có thể bổ sung; thông tin mới không tự mở lại hoặc
@@ -256,135 +265,56 @@ export const EnrichmentPanel = ({
         <fieldset disabled={save.isPending} className="space-y-4" aria-busy={save.isPending}>
           <legend className="sr-only">Nội dung bổ sung cho ticket hiện tại</legend>
           {!questions.length && (
-            <label className="block space-y-2 text-crm-sm">
-              <span>Loại thông tin bổ sung</span>
-              <select
+            <div className="space-y-2 text-crm-sm">
+              <p className="font-medium">Loại thông tin bổ sung</p>
+              <SelectField
+                aria-label="Loại thông tin bổ sung"
+                options={SLOT_OPTIONS}
                 value={manualSlot}
-                onChange={(event) => setManualSlot(event.target.value)}
-                className="min-h-11 w-full rounded-lg border border-input bg-background px-3"
-              >
-                {Object.entries(ENRICHMENT_FIELDS).map(([slot, value]) => (
-                  <option key={slot} value={slot}>
-                    {value.label}
-                  </option>
-                ))}
-              </select>
-            </label>
+                onValueChange={(slot) => {
+                  // Đổi loại thì giữ chữ đang nhập, không sinh thêm ô
+                  setDrafts((previous) => ({ [slot]: previous[manualSlot] ?? "" }));
+                  setManualSlot(slot);
+                }}
+                className={FORM_SELECT}
+              />
+            </div>
           )}
           {[...fields.values()].map((field) => {
-            const choices = ENRICHMENT_FIELDS[field.slot]?.choices;
             const id = `answer-${field.slot}`;
             return (
               <div key={field.slot} className="space-y-2">
-                <label htmlFor={id} className="block text-crm-sm font-medium">
+                {/* Tự chọn loại: dropdown đã là nhãn, chỉ còn ô nhập */}
+                <label
+                  htmlFor={id}
+                  className={questions.length ? "block text-crm-sm font-medium" : "sr-only"}
+                >
                   {field.text}
                 </label>
-                {choices ? (
-                  <select
-                    id={id}
-                    value={drafts[field.slot] ?? ""}
-                    onChange={(event) =>
-                      setDrafts((previous) => ({ ...previous, [field.slot]: event.target.value }))
-                    }
-                    className="min-h-11 w-full rounded-lg border border-input bg-background px-3"
-                  >
-                    <option value="">Chọn thông tin</option>
-                    {choices.map(([value, label]) => (
-                      <option key={value} value={value}>
-                        {label}
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <Input
-                    id={id}
-                    value={drafts[field.slot] ?? ""}
-                    maxLength={256}
-                    className="min-h-11"
-                    onChange={(event) =>
-                      setDrafts((previous) => ({ ...previous, [field.slot]: event.target.value }))
-                    }
-                  />
-                )}
-                <label className="flex min-h-8 items-center gap-2 text-crm-sm text-crm-text-2">
-                  <input
-                    type="checkbox"
-                    aria-label={`Đính chính ${ENRICHMENT_FIELDS[field.slot]?.label ?? field.text}`}
-                    checked={corrections[field.slot] ?? false}
-                    onChange={(event) =>
-                      setCorrections((previous) => ({
-                        ...previous,
-                        [field.slot]: event.target.checked,
-                      }))
-                    }
-                  />
-                  Thông tin này đính chính lời khai trước
-                </label>
+                <Input
+                  id={id}
+                  value={drafts[field.slot] ?? ""}
+                  maxLength={256}
+                  placeholder={PLACEHOLDERS[field.slot] ?? "Nhập thông tin"}
+                  className="h-11 sm:h-9"
+                  onChange={(event) =>
+                    setDrafts((previous) => ({ ...previous, [field.slot]: event.target.value }))
+                  }
+                />
               </div>
             );
           })}
-          <p className="text-crm-sm text-crm-text-3">
-            Không gửi mật khẩu, mã OTP hoặc thông tin bí mật.
-          </p>
-          <Button type="submit" className="min-h-11" disabled={save.isPending}>
-            {save.isPending ? "Đang lưu…" : "Gửi bổ sung"}
-          </Button>
+          <div className="flex justify-end">
+            <Button type="submit" className="h-11 sm:h-9" disabled={save.isPending}>
+              {save.isPending ? "Đang lưu…" : "Gửi bổ sung"}
+            </Button>
+          </div>
         </fieldset>
       </form>
       {message && (
         <p role="status" className="text-crm-sm text-crm-text-2">
           {message}
         </p>
-      )}
-      {!managedIntake && (
-        <div className="space-y-3 border-t border-crm-line pt-4">
-          <Button
-            variant="outline"
-            disabled={check.isPending || evaluating}
-            onClick={() => check.mutate()}
-          >
-            {check.isPending ? "Đang kiểm tra…" : "Đánh giá từ thông tin hiện tại"}
-          </Button>
-          {check.error && (
-            <p role="alert" className="text-crm-sm text-crm-text-2">
-              Chưa thể đánh giá lại. Ticket vẫn được xử lý; bạn có thể thử lại hoặc nhờ điều phối
-              viên xem xét.
-            </p>
-          )}
-          {assessment?.ai07 && (
-            <div className="space-y-2 text-crm-sm">
-              <p className="font-medium">Gợi ý từ thông tin hiện tại — cần người kiểm tra</p>
-              <dl className="grid grid-cols-2 gap-2">
-                <dt>Loại sự cố</dt>
-                <dd>
-                  {(
-                    {
-                      ACCOUNT: "Tài khoản",
-                      HARDWARE: "Phần cứng",
-                      NETWORK: "Mạng",
-                      SOFTWARE: "Phần mềm",
-                      OTHER: "Khác",
-                    } as Record<string, string>
-                  )[assessment.ai07.category ?? ""] ?? "Chưa xác định"}
-                </dd>
-                <dt>Mức ưu tiên gợi ý</dt>
-                <dd>
-                  {(
-                    {
-                      LOW: "Thấp",
-                      MEDIUM: "Trung bình",
-                      HIGH: "Cao",
-                      CRITICAL: "Khẩn cấp",
-                    } as Record<string, string>
-                  )[assessment.ai07.priority ?? ""] ?? "Chưa đủ dữ kiện"}
-                </dd>
-              </dl>
-              <p className="text-crm-text-2">
-                Dữ kiện do người gửi cung cấp, chưa phải thông tin đã được xác minh.
-              </p>
-            </div>
-          )}
-        </div>
       )}
     </section>
   );

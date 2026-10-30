@@ -1,10 +1,10 @@
 import {
+  IconAbc,
   IconCalendar,
   IconCategory,
   IconClockHour4,
   IconFlag,
   IconProgress,
-  IconTypography,
   IconUser,
 } from "@tabler/icons-react";
 import { personName } from "../../../platform/human/workspace";
@@ -21,7 +21,7 @@ const NONE = <span className="text-crm-text-3">—</span>;
 export const titleColumn: DataTableColumn<TicketView> = {
   key: "title",
   header: "Tiêu đề",
-  icon: IconTypography,
+  icon: IconAbc,
   width: "320px",
   cell: (ticket) => <span className="block truncate">{ticket.title}</span>,
 };

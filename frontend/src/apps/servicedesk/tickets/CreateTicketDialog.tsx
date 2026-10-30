@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useForm, useWatch } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { useNavigate } from "react-router";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { IconPlus } from "@tabler/icons-react";
@@ -10,7 +10,6 @@ import { Button } from "../../../platform/shared/ui/button";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -18,8 +17,10 @@ import {
 } from "../../../platform/shared/ui/dialog";
 import { FormField } from "../../../platform/shared/ui/FormField";
 import { Input } from "../../../platform/shared/ui/input";
+import { SelectField } from "../../../platform/shared/ui/SelectField";
 import { Textarea } from "../../../platform/shared/ui/textarea";
 import { toast, toastError } from "../../../platform/shared/ui/toast";
+import { appendClarification, type ClarificationInput } from "../services/enrichmentService";
 import { MAX_DESCRIPTION, MAX_TITLE } from "./ticketRules";
 import { useCreateTicket } from "./useTickets";
 
@@ -36,9 +37,45 @@ const schema = z.object({
     .trim()
     .min(1, "Mô tả sự cố")
     .max(MAX_DESCRIPTION, `Tối đa ${MAX_DESCRIPTION} ký tự`),
+  // Các câu dưới không bắt buộc; giá trị khớp đúng mã backend đọc được (context-slots)
+  room: z
+    .string()
+    .trim()
+    .refine(
+      (value) => !value || /^[a-z]?\d{2,6}(?:[.-][0-9a-z]{1,6})?$/i.test(value),
+      "Nhập số phòng, ví dụ 1304 hoặc A201",
+    ),
+  scope: z.enum(["", "INDIVIDUAL", "MULTIPLE", "WHOLE_ROOM"]),
+  work: z.enum(["", "BLOCKED", "WORKAROUND"]),
 });
 
 type FormValues = z.infer<typeof schema>;
+
+// Phạm vi → mức ảnh hưởng (I1/I2/I3) theo contextual-input-policy
+const SCOPE_OPTIONS = [
+  { value: "INDIVIDUAL", label: "Một người hoặc một máy" },
+  { value: "MULTIPLE", label: "Nhiều người hoặc nhiều máy" },
+  { value: "WHOLE_ROOM", label: "Cả phòng" },
+];
+// Dừng việc → độ gấp cao (U3); có cách khác → độ gấp thấp (U1)
+const WORK_OPTIONS = [
+  { value: "BLOCKED", label: "Bị dừng, không làm tiếp được" },
+  { value: "WORKAROUND", label: "Vẫn làm được bằng cách khác" },
+];
+const FORM_SELECT = "h-9 w-full max-w-none sm:h-8";
+
+/** Câu trả lời sẵn → thông tin bổ sung có cấu trúc; bộ luật dùng để tính ảnh hưởng, độ gấp, ưu tiên. */
+const toAnswers = ({ room, scope, work }: FormValues): ClarificationInput["answers"] => [
+  ...(room ? [{ slot: "location.room", value: room.toUpperCase(), correction: false }] : []),
+  ...(scope ? [{ slot: "affectedScope", value: scope, correction: false }] : []),
+  ...(work === "BLOCKED" ? [{ slot: "workBlocked", value: "true", correction: false }] : []),
+  ...(work === "WORKAROUND"
+    ? [
+        { slot: "workBlocked", value: "false", correction: false },
+        { slot: "workaroundAvailable", value: "true", correction: false },
+      ]
+    : []),
+];
 
 const CreateTicketForm = ({ onDone }: { onDone: () => void }) => {
   const navigate = useNavigate();
@@ -47,16 +84,31 @@ const CreateTicketForm = ({ onDone }: { onDone: () => void }) => {
   const [clientRequestId] = useState(() => crypto.randomUUID());
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
-    defaultValues: { title: "", description: "" },
+    defaultValues: { title: "", description: "", room: "", scope: "", work: "" },
   });
   const [title, description] = useWatch({ control: form.control, name: ["title", "description"] });
   const { errors } = form.formState;
 
-  const handleSubmit = form.handleSubmit(({ title, description }) => {
+  const handleSubmit = form.handleSubmit((values) => {
+    const { title, description } = values;
     create.mutate(
       { clientRequestId, title, description },
       {
-        onSuccess: (ticket) => {
+        onSuccess: async (ticket) => {
+          const answers = toAnswers(values);
+          if (answers.length) {
+            // Ticket đã tạo: lỗi lưu câu trả lời không chặn, người gửi bổ sung lại ở trang chi tiết
+            await appendClarification(ticket.workspace, ticket.id, {
+              contractVersion: "ticket-clarification@0.1.0",
+              clientAnswerId: crypto.randomUUID(),
+              expectedContextRevision: 0,
+              answers,
+            }).catch(() =>
+              toast.warning("Chưa lưu được thông tin thêm", {
+                description: "Bạn có thể bổ sung lại ở trang chi tiết ticket.",
+              }),
+            );
+          }
           toast.success("Đã gửi yêu cầu", {
             description: "AI đang phân loại, điều phối viên sẽ duyệt và giao việc.",
           });
@@ -80,9 +132,6 @@ const CreateTicketForm = ({ onDone }: { onDone: () => void }) => {
     <>
       <DialogHeader>
         <DialogTitle>Gửi yêu cầu hỗ trợ</DialogTitle>
-        <DialogDescription>
-          Ghi rõ phòng, thiết bị và mức ảnh hưởng để được xử lý nhanh hơn.
-        </DialogDescription>
       </DialogHeader>
 
       <form
@@ -114,6 +163,51 @@ const CreateTicketForm = ({ onDone }: { onDone: () => void }) => {
             {description.length}/{MAX_DESCRIPTION}
           </span>
         </FormField>
+        {/* Không bắt buộc; điện thoại xếp dọc */}
+        <div className="grid gap-3 sm:grid-cols-2">
+          <FormField id="ticket-room" label="Phòng" error={errors.room?.message}>
+            <Input
+              id="ticket-room"
+              maxLength={16}
+              placeholder="Ví dụ: 1304"
+              {...form.register("room")}
+            />
+          </FormField>
+          <FormField id="ticket-scope" label="Phạm vi ảnh hưởng">
+            <Controller
+              control={form.control}
+              name="scope"
+              render={({ field }) => (
+                <SelectField
+                  aria-label="Phạm vi ảnh hưởng"
+                  placeholder="Chưa rõ"
+                  options={SCOPE_OPTIONS}
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  className={FORM_SELECT}
+                />
+              )}
+            />
+          </FormField>
+          <div className="sm:col-span-2">
+            <FormField id="ticket-work" label="Công việc của bạn">
+              <Controller
+                control={form.control}
+                name="work"
+                render={({ field }) => (
+                  <SelectField
+                    aria-label="Công việc của bạn"
+                    placeholder="Chưa rõ"
+                    options={WORK_OPTIONS}
+                    value={field.value}
+                    onValueChange={field.onChange}
+                    className={FORM_SELECT}
+                  />
+                )}
+              />
+            </FormField>
+          </div>
+        </div>
       </form>
 
       <DialogFooter>
@@ -142,7 +236,7 @@ export const CreateTicketDialog = () => {
           <span className="hidden sm:inline">Tạo ticket</span>
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-120">
+      <DialogContent className="sm:max-w-120" aria-describedby={undefined}>
         {/* Mỗi lần mở là một form mới, có mã gửi mới */}
         {open && <CreateTicketForm onDone={() => setOpen(false)} />}
       </DialogContent>

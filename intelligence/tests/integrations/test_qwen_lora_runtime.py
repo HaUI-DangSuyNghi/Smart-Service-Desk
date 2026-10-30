@@ -12,7 +12,11 @@ from hdpi.generation.errors import GenerationTimeout, GenerationUnavailable
 if not sys.flags.isolated:
     sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "integrations"))
 
-from local_classification.qwen_lora_runtime import ProcessGenerator, QwenLoraRuntime  # noqa: E402
+from local_classification.qwen_lora_runtime import (  # noqa: E402
+    INFERENCE_TIMEOUT_SECONDS,
+    ProcessGenerator,
+    QwenLoraRuntime,
+)
 
 
 class FakeGenerator:
@@ -84,7 +88,7 @@ def test_exact_letter_mapping_and_no_confidence(letter, category):
         result.evidence_status == "UNVERIFIED_BY_MODEL"
         and not result.operational_authority
     )
-    assert provider.generator.calls[0][1] == 3.2
+    assert provider.generator.calls[0][1] == INFERENCE_TIMEOUT_SECONDS
 
 
 @pytest.mark.parametrize(
@@ -220,4 +224,4 @@ def test_stuck_worker_cleanup_fits_remaining_http_deadline():
     worker.connection, worker.process, worker.ready = Connection(), Process(), True
     worker.close()
     assert not worker.ready and not worker.process.is_alive()
-    assert 3.2 + sum(worker.process.waits) < 4
+    assert INFERENCE_TIMEOUT_SECONDS + sum(worker.process.waits) < 10

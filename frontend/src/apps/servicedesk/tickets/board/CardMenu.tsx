@@ -10,6 +10,7 @@ import type { TicketView } from "../../services/ticketService";
 import type { BoardAction } from "./boardAccess";
 
 const ACTION_LABELS: Readonly<Record<BoardAction, string>> = {
+  intake: "Tiếp nhận",
   review: "Duyệt và giao việc",
   reassign: "Giao lại",
   correct: "Sửa phân loại / ưu tiên",

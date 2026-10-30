@@ -36,6 +36,8 @@ public class BackgroundTicketAssessment {
     private final org.springframework.beans.factory.ObjectProvider<vn.haui.dx.apps.servicedesk.intake.IntakeCoordinator> intake;
     private final org.springframework.beans.factory.ObjectProvider<vn.haui.dx.apps.servicedesk.TicketAlerts> alerts;
     private final org.springframework.beans.factory.ObjectProvider<BackgroundModelAssessment> model;
+    /** Gán nhãn AI vào ticket; null khi test tự dựng worker ngoài Spring (khi đó không gán). */
+    private vn.haui.dx.apps.servicedesk.TicketLabels labels;
 
     public BackgroundTicketAssessment(JdbcTemplate jdbc, ObjectMapper json, IntelligenceCapability intelligence,
             BackgroundProcessing processing, ActivityJournal audit, PlatformTransactionManager manager,
@@ -62,6 +64,9 @@ public class BackgroundTicketAssessment {
         this.alerts=alerts;
         this.model=model;
     }
+
+    @org.springframework.beans.factory.annotation.Autowired(required=false)
+    void setLabels(vn.haui.dx.apps.servicedesk.TicketLabels labels) { this.labels=labels; }
 
     @Transactional(propagation=Propagation.MANDATORY)
     public void enqueue(Ticket ticket) {
@@ -203,6 +208,14 @@ public class BackgroundTicketAssessment {
             + " where ticket_id=? and status='PENDING' and lease_token=? and lease_until>clock_timestamp()",
             state,encoded,error,job.attempt()==1?5:30,job.ticket().id(),job.lease());
         if (count==1) history(job.ticket().id(),job.attempt(),state,error);
+        // Gán nhãn ngay: có kết quả thì theo AI, hỏng hẳn thì chỉ ưu tiên mặc định; ticket qua tiếp nhận gán ở bước cuối
+        // Bộ luật thiếu dữ kiện trả OTHER/MEDIUM mặc định: không coi là nhãn
+        boolean insufficient=result!=null && "INSUFFICIENT_INFORMATION".equals(result.reasonCode());
+        if (labels!=null && count==1 && result!=null)
+            labels.save(job.ticket().workspace(), job.ticket().id(), insufficient ? null : result.category(),
+                insufficient ? null : result.priority(), result.impact(), result.urgency());
+        else if (labels!=null && count==1 && "DEGRADED".equals(state) && !"USE_FINAL_CONTEXT_ASSESSMENT".equals(error))
+            labels.save(job.ticket().workspace(), job.ticket().id(), null, null, null, null);
         if (count==1 && result!=null) alerts.getObject().advisory(job.ticket(), "legacy-v1", result.priority());
         return count==1;
     }

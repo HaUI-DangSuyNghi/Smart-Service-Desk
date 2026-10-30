@@ -28,13 +28,14 @@ public class TicketReviewService implements WorkProjection {
     private final TicketEstimates estimates;
     private final TicketAssignmentEligibility eligibility;
     private final vn.haui.dx.hpdi.settings.api.WorkPolicy work;
+    private final TicketLabels labels;
 
     public TicketReviewService(JdbcTemplate jdbc, TicketRepository tickets, HumanContext humans, PermissionGuard permissions,
                               WorkInbox inbox, WorkExecution execution, ProcessCapability processes, ActivityJournal audit, Validator validator,
                               vn.haui.dx.apps.servicedesk.intelligence.BackgroundTicketAssessment assessments,
                               vn.haui.dx.apps.servicedesk.intake.IntakeAdmission intake, TicketSlaService sla, TicketAlerts alerts,
                               TicketConfirmation confirmation, TicketEstimates estimates, TicketAssignmentEligibility eligibility,
-                              vn.haui.dx.hpdi.settings.api.WorkPolicy work) {
+                              vn.haui.dx.hpdi.settings.api.WorkPolicy work, TicketLabels labels) {
         this.jdbc=jdbc; this.tickets=tickets; this.humans=humans; this.permissions=permissions;
         this.inbox=inbox; this.execution=execution; this.processes=processes; this.audit=audit; this.validator=validator;
         this.assessments=assessments;
@@ -45,6 +46,7 @@ public class TicketReviewService implements WorkProjection {
         this.estimates=estimates;
         this.eligibility=eligibility;
         this.work=work;
+        this.labels=labels;
     }
     @Override public String processKey() { return ServiceDeskProcess.REVIEWED_KEY; }
 
@@ -126,18 +128,34 @@ public class TicketReviewService implements WorkProjection {
         var classifications=jdbc.query("select * from servicedesk_review where ticket_id=?",(row,index) ->
             new TicketReview.Classification(row.getString("category"),row.getString("priority"),row.getString("priority"),false,
                 Objects.requireNonNullElse(eligibility.groupOf(TicketReview.Category.valueOf(row.getString("category"))),"manual"),"COORDINATOR",row.getString("impact"),row.getString("urgency"),row.getString("reviewed_by"),
-                row.getTimestamp("reviewed_at").toInstant()),ticket.id());
+                row.getTimestamp("reviewed_at").toInstant(),false),ticket.id());
         long closedWork=jdbc.queryForObject("select worked_millis from servicedesk_ticket where id=?",Long.class,ticket.id());
         var slaState = sla.read(workspace, ticket.id());
         var classification = classifications.isEmpty() ? null : classifications.get(0);
         if (classification != null && slaState != null)
             classification = new TicketReview.Classification(classification.category(), slaState.priority().name(), slaState.base().name(),
                 slaState.priority() != slaState.base(), classification.group(), classification.source(), classification.impact(), classification.urgency(),
-                classification.reviewedBy(), classification.reviewedAt());
+                classification.reviewedBy(), classification.reviewedAt(), false);
+        var estimate = estimates.isEmpty() ? null : estimates.get(0);
+        // Chưa duyệt: ticket mang nhãn AI gán khi chạy nền (loại, ưu tiên, ET)
+        if (classification == null) {
+            var label = labels.read(ticket.id());
+            classification = aiClassification(label);
+            if (label != null && label.estimate() != null)
+                estimate = estimate(label.estimate().minutes(), label.estimate().basis(), label.estimate().sampleSize());
+        }
         return new TicketReview.View(ticket,state,task==null?null:task.id(),task==null?null:task.assignee(),
-            estimates.isEmpty()?null:estimates.get(0),item==null?null:item.workState(),item==null?closedWork/60_000:item.workedMinutes(),
+            estimate,item==null?null:item.workState(),item==null?closedWork/60_000:item.workedMinutes(),
             item==null?null:item.remainingMinutes(),reopened,classification,assessments.read(workspace,ticket.id()),
             slaState == null ? null : slaState.project(sla.now()), correctionHistory(workspace, ticket), confirmation.read(workspace, ticket.id()));
+    }
+
+    private TicketReview.Classification aiClassification(TicketLabels.Label label) {
+        if (label == null) return null;
+        String group = label.category() == null ? "manual"
+            : Objects.requireNonNullElse(eligibility.groupOf(TicketReview.Category.valueOf(label.category())), "manual");
+        return new TicketReview.Classification(label.category(), label.priority(), label.priority(), false, group, "AI",
+            label.impact(), label.urgency(), null, label.labeledAt(), label.priorityDefaulted());
     }
 
     private List<TicketCorrection.History> correctionHistory(String workspace, Ticket ticket) {

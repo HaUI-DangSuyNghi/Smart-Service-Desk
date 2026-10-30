@@ -35,6 +35,14 @@ describe("boardActions", () => {
     expect(boardActions(ticket("AWAITING_REVIEW"), agent)).toEqual([]);
   });
 
+  it("đang tiếp nhận: chỉ Tiếp nhận, cho điều phối viên và siêu quản trị", () => {
+    const intake = { ...ticket("INTAKE"), taskId: null } as TicketView;
+    expect(boardActions(intake, coordinator)).toEqual(["intake"]);
+    expect(boardActions(intake, admin)).toEqual(["intake"]);
+    expect(boardActions(intake, agent)).toEqual([]);
+    expect(boardActions({ ...intake, creator: "u" } as TicketView, coordinator)).toEqual([]);
+  });
+
   it("chờ duyệt: chỉ Duyệt và giao việc; không có Nhận việc ở mọi vai", () => {
     expect(boardActions(ticket("AWAITING_REVIEW"), coordinator)).toEqual(["review"]);
     expect(boardActions(ticket("AWAITING_REVIEW"), admin)).toEqual(["review"]);

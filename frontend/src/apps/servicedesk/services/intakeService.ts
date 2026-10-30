@@ -33,6 +33,8 @@ const schema = z
           .object({
             category: z.string().nullable().optional(),
             priority: z.string().nullable().optional(),
+            impact: z.string().nullable().optional(),
+            urgency: z.string().nullable().optional(),
           })
           .passthrough()
           .optional(),
@@ -75,39 +77,6 @@ export const releaseIntake = async (
       })
     ).data,
   );
-
-export const reviewIntake = async (
-  workspace: string,
-  id: string,
-  state: Intake,
-  category: string,
-  priority: string,
-  reason: string,
-) =>
-  apiClient.post(`${path(workspace, id)}/review`, {
-    category,
-    priority,
-    reason,
-    assignee: null,
-    expectedContextRevision: state.contextRevision,
-    expectedIntakeVersion: state.version,
-  });
-
-export const getPendingIntake = async (
-  workspace: string,
-  page: number,
-  signal?: AbortSignal,
-): Promise<string[]> =>
-  z
-    .array(z.string().uuid())
-    .parse(
-      (
-        await apiClient.get(
-          `/apps/servicedesk/v1/workspaces/${encodeURIComponent(workspace)}/intake-pending`,
-          { params: { page, size: 50 }, signal },
-        )
-      ).data,
-    );
 
 export const preflightIntake = async (workspace: string, id: string) =>
   z

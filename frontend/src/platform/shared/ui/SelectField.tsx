@@ -44,7 +44,7 @@ export const SelectField = ({
         )}
       >
         {/* Mọi nhãn xếp chồng cùng một ô lưới (ẩn) để nút luôn rộng bằng nhãn dài nhất, chọn nhãn ngắn không bị co */}
-        <span className="grid min-w-0">
+        <span className="grid min-w-0 flex-1 text-left">
           {choices.map((option) => (
             <span
               key={option.value}

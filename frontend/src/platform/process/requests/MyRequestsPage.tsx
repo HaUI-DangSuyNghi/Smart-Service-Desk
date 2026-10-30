@@ -30,7 +30,6 @@ import type { ProcessLabels } from "../catalog/processLabels";
 import { useProcessLabels } from "../catalog/useProcessCatalog";
 import { BusinessKeyLink } from "../common/BusinessKeyLink";
 import { processLink } from "../common/processLinks";
-import { StartProcessDialog } from "../start/StartProcessDialog";
 import { REQUESTS_PAGE_SIZE, useRequests } from "./useMyRequests";
 
 const SCOPE_LABELS: Record<RequestScope, string> = { mine: "Của tôi", all: "Tất cả yêu cầu" };
@@ -133,7 +132,8 @@ const MyRequestsPage = () => {
 
   return (
     <Page>
-      <PageHeader title="Yêu cầu" icon={IconSend} actions={<StartProcessDialog />} />
+      {/* Chỉ xem: tạo yêu cầu ở từng app (Service Desk, Đặt phòng); Tầng 2 không có nghiệp vụ riêng */}
+      <PageHeader title="Yêu cầu" icon={IconSend} />
       <PageToolbar
         start={
           <ViewTabs
@@ -170,10 +170,9 @@ const MyRequestsPage = () => {
             title={scope === "mine" ? "Bạn chưa tạo yêu cầu nào" : "Chưa có yêu cầu nào"}
             description={
               scope === "mine"
-                ? "Yêu cầu bạn tạo theo mọi quy trình sẽ hiện ở đây."
+                ? "Yêu cầu bạn tạo ở các ứng dụng (ticket, đặt phòng...) sẽ hiện ở đây."
                 : "Yêu cầu của mọi người trong workspace sẽ hiện ở đây."
             }
-            action={scope === "mine" ? <StartProcessDialog /> : undefined}
           />
         )}
         {items.length > 0 && (

@@ -8,6 +8,7 @@ import {
 import { formatDateTime, formatRelativeTime } from "../../../../platform/shared/lib/format";
 import { Collapsible } from "../../../../platform/shared/ui/Collapsible";
 import { FieldRow } from "../../../../platform/shared/ui/FieldRow";
+import { Tag } from "../../../../platform/shared/ui/Tag";
 import type { TicketView } from "../../services/ticketService";
 import { CATEGORY_LABELS, groupLabel } from "../ticketLabels";
 import { awaitsReview, isStarted } from "../ticketRules";
@@ -40,16 +41,27 @@ export const DetailsCard = ({ ticket, isRequesterView }: Props) => {
         <FieldRow stacked label="Người gửi">
           {personName(names, ticket.creator)}
         </FieldRow>
-        {classification && (
+        {/* Nhãn AI (chưa duyệt) chỉ người xử lý thấy, kèm tag AI */}
+        {classification && (classification.source !== "AI" || !isRequesterView) && (
           <>
-            <FieldRow stacked label="Ưu tiên">
-              <PriorityTag
-                priority={classification.priority}
-                escalated={classification.escalated}
-              />
-            </FieldRow>
             <FieldRow stacked label="Loại sự cố">
-              {CATEGORY_LABELS[classification.category]}
+              <span className="flex flex-wrap items-center gap-1.5">
+                {classification.category ? (
+                  CATEGORY_LABELS[classification.category]
+                ) : (
+                  <span className="text-crm-text-3">—</span>
+                )}
+                {classification.source === "AI" && <Tag tone="purple">AI</Tag>}
+              </span>
+            </FieldRow>
+            <FieldRow stacked label="Ưu tiên">
+              <span className="flex flex-wrap items-center gap-1.5">
+                <PriorityTag
+                  priority={classification.priority}
+                  escalated={classification.escalated}
+                />
+                {classification.priorityDefaulted && <Tag tone="gray">Mặc định</Tag>}
+              </span>
             </FieldRow>
             {!isRequesterView && (
               <FieldRow stacked label="Tổ">
@@ -61,6 +73,12 @@ export const DetailsCard = ({ ticket, isRequesterView }: Props) => {
         {!isRequesterView && estimate && (
           <FieldRow stacked label="Ước tính">
             <EstimateText estimate={estimate} />
+            {/* Chưa duyệt: ET gán cùng nhãn AI */}
+            {classification?.source === "AI" && (
+              <span className="ml-1.5">
+                <Tag tone="purple">AI</Tag>
+              </span>
+            )}
           </FieldRow>
         )}
         {!isRequesterView && (ticket.workedMinutes ?? 0) > 0 && (

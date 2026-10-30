@@ -120,11 +120,14 @@ class TicketRepository {
             parameters.add(after);
         }
         parameters.add(limit);
-        return jdbc.query("select t.id,t.creator,t.process_instance_id,t.created_at,c.state as canonical_state,r.category,r.priority,"
+        // Chưa duyệt thì lọc / sắp theo nhãn AI
+        return jdbc.query("select t.id,t.creator,t.process_instance_id,t.created_at,c.state as canonical_state,"
+            + " coalesce(r.category,l.category) as category,coalesce(r.priority,l.priority) as priority,"
             + " exists(select 1 from servicedesk_confirmation f where f.workspace=t.workspace"
             + " and f.process_instance_id=t.process_instance_id and f.decision='REWORK') as reworked"
             + " from servicedesk_ticket t left join servicedesk_canonical_link c on c.follower_id=t.id and c.workspace=t.workspace"
-            + " left join servicedesk_review r on r.ticket_id=t.id" + where
+            + " left join servicedesk_review r on r.ticket_id=t.id"
+            + " left join servicedesk_ticket_label l on l.ticket_id=t.id" + where
             + " order by t.id limit ?", (row, number) -> new FilterRow(new ProcessLink(row.getObject("id", UUID.class),
                 row.getString("creator"), row.getString("process_instance_id"), row.getBoolean("reworked"),
                 row.getString("canonical_state")), row.getTimestamp("created_at").toInstant(),

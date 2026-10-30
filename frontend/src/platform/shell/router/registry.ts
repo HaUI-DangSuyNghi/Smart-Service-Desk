@@ -26,6 +26,13 @@ export interface MenuItem {
   readonly requiredRoles?: readonly string[];
   /** Chỉ hiện mục menu khi có ít nhất một quyền này. */
   readonly requiredPermissions?: readonly string[];
+  /**
+   * Có thì mục này là nhóm xổ ra kiểu Twenty: bấm để mở/đóng (mở thì vào trang con đầu tiên),
+   * path chỉ làm khóa và gom trang con. Mục con không lồng tiếp.
+   */
+  readonly children?: readonly MenuItem[];
+  /** Nhóm mở sẵn khi vào app (người dùng vẫn đóng được). */
+  readonly defaultOpen?: boolean;
   /** Component số đếm cạnh mục menu (tự lấy dữ liệu), ví dụ số việc đang chờ ở trang Công việc. */
   readonly badge?: ComponentType;
 }

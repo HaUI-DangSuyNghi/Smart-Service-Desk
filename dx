@@ -1,0 +1,10 @@
+#!/usr/bin/env sh
+# Loi vao cho Git Bash: ./dx start | ./dx up | ./dx down ... (PowerShell/cmd dung dx.cmd; xem scripts/dx.ps1)
+root=$(cd "$(dirname "$0")" && pwd)
+script="$root/scripts/dx.ps1"
+command -v cygpath >/dev/null 2>&1 && script=$(cygpath -w "$script")
+# Terminal mintty cua Git Bash khong co console that: menu phim mui ten can winpty
+if [ -t 0 ] && [ -t 1 ] && command -v winpty >/dev/null 2>&1 && [ -z "$WT_SESSION" ] && [ "$TERM_PROGRAM" != "vscode" ]; then
+    exec winpty powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$script" "$@"
+fi
+exec powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$script" "$@"

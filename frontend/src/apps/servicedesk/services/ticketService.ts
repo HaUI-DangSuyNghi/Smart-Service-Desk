@@ -90,8 +90,12 @@ export type TicketState =
   | "UNCLASSIFIED";
 
 /** Phân loại đang hiệu lực (sau khi điều phối viên duyệt/sửa), không phải gợi ý AI. */
+/**
+ * Phân loại của ticket: COORDINATOR (đã duyệt) hoặc AI (nhãn AI gán khi chạy nền, chưa duyệt).
+ * Nhãn AI có thể chưa có loại; ưu tiên luôn có (AI không tính được thì mặc định, priorityDefaulted).
+ */
 export interface Classification {
-  category: Category;
+  category: Category | null;
   impact: Impact | null;
   urgency: Urgency | null;
   /** Ưu tiên hiệu lực; khác basePriority khi được nâng bậc do chờ lâu (R5). */
@@ -100,9 +104,12 @@ export interface Classification {
   escalated: boolean;
   /** Tổ theo Cấu hình hệ thống (loại lỗi → tổ); "manual" với loại Khác. */
   group: string;
-  source: string;
-  reviewedBy: string;
+  source: "AI" | "COORDINATOR";
+  /** null với nhãn AI. */
+  reviewedBy: string | null;
+  /** Lúc duyệt, hoặc lúc AI gán nhãn. */
   reviewedAt: string;
+  priorityDefaulted?: boolean;
 }
 
 export type AssessmentStatus = "PENDING" | "READY" | "DEGRADED";
@@ -178,14 +185,14 @@ export interface TicketView extends Ticket {
   taskId?: string | null;
   /** Người giữ việc đang mở; null khi chưa ai nhận (kể cả "để chờ ca sau"). */
   assignee?: string | null;
-  /** null khi chưa duyệt. */
+  /** Chưa duyệt thì là ET gán cùng nhãn AI; null khi nhãn chưa có loại. */
   estimate?: Estimate | null;
   /** Chỉ có khi đang ở bước xử lý. */
   workState?: WorkState | null;
   workedMinutes?: number | null;
   remainingMinutes?: number | null;
   reopenCount?: number;
-  /** null khi chưa duyệt. */
+  /** Chưa duyệt thì là nhãn AI (source AI); null khi AI chưa chạy xong. */
   classification?: Classification | null;
   /** null khi ticket không có kết quả AI chạy nền. */
   assessment?: Assessment | null;
@@ -210,7 +217,7 @@ export interface TicketQuery {
   /** "me" là chính mình. */
   assignee?: string;
   overdue?: boolean;
-  /** createdAt: mới nhất trước; priority: theo thứ tự hàng đợi (R4). */
+  /** createdAt: mới nhất trước; priority: thứ tự hàng đợi (R4), việc Đang làm lên đầu. */
   sort?: "createdAt" | "priority";
 }
 

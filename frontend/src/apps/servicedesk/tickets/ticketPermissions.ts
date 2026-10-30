@@ -14,6 +14,8 @@ export interface TicketPermissions {
   isCreator: boolean;
   /** Người giữ việc Bắt đầu / Tạm dừng / Báo xong / Trả việc / Xin sửa ước tính (R6). */
   canAct: boolean;
+  /** Điều phối viên tiếp nhận: chuyển ticket đang tiếp nhận sang Chờ duyệt. */
+  canRelease: boolean;
   /** Điều phối viên duyệt và giao việc (R4). */
   canReview: boolean;
   /** Người giữ việc hoặc điều phối viên sửa phân loại (R9). */
@@ -35,8 +37,11 @@ export const ticketPermissions = (ticket: TicketView, viewer: Viewer): TicketPer
   const hasTask = Boolean(ticket.taskId);
 
   const canAct = isHolder && handling && hasTask;
-  // Backend cấm người tạo ticket tự duyệt hoặc tự sửa phân loại (cần người độc lập)
-  const canReview = awaitsReview(ticket) && viewer.canAssign && hasTask && !isCreator;
+  // Giống bảng ticket: điều phối viên và siêu quản trị tiếp nhận, duyệt
+  const coordinates = viewer.canAssign || viewer.isPlatformAdmin;
+  // Backend cấm người tạo ticket tự tiếp nhận, tự duyệt hoặc tự sửa phân loại (cần người độc lập)
+  const canRelease = ticket.state === "INTAKE" && coordinates && !isCreator;
+  const canReview = awaitsReview(ticket) && coordinates && hasTask && !isCreator;
   const canCorrect = handling && hasTask && (isHolder || viewer.canAssign) && !isCreator;
   const canConfirm = isCreator && ticket.state === "AWAITING_CONFIRMATION";
 
@@ -44,9 +49,10 @@ export const ticketPermissions = (ticket: TicketView, viewer: Viewer): TicketPer
     isHolder,
     isCreator,
     canAct,
+    canRelease,
     canReview,
     canCorrect,
     canConfirm,
-    readOnly: !(canAct || canReview || canCorrect || canConfirm),
+    readOnly: !(canAct || canRelease || canReview || canCorrect || canConfirm),
   };
 };

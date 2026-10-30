@@ -49,6 +49,12 @@ public class IntakeCoordinator {
     private final List<String> workspaces;
     private final boolean scheduled;
     private final vn.haui.dx.hpdi.human.api.HumanContext human;
+    private final vn.haui.dx.apps.servicedesk.intelligence.LocalModelRuntime local;
+    /** Gán nhãn AI vào ticket ở bước đánh giá cuối. */
+    private vn.haui.dx.apps.servicedesk.TicketLabels labels;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    void setLabels(vn.haui.dx.apps.servicedesk.TicketLabels labels) { this.labels = labels; }
     private record Plan(ContextReadinessView readiness, DuplicatePreflightService.View duplicates,
             String identity, String grants, String status, String reason, String taskId) {}
 
@@ -59,8 +65,10 @@ public class IntakeCoordinator {
             ClassifierProcessingGate modelRights, AssessmentPolicy assessmentPolicy, ProcessCapability processes,
             ActivityJournal audit, BackgroundProcessing processing, vn.haui.dx.hpdi.human.api.HumanContext human,
             @Value("${service-desk.background.workspaces:}") List<String> workspaces,
-            @Value("${service-desk.background.scheduled:true}") boolean scheduled, vn.haui.dx.apps.servicedesk.TicketAlerts alerts) {
+            @Value("${service-desk.background.scheduled:true}") boolean scheduled, vn.haui.dx.apps.servicedesk.TicketAlerts alerts,
+            vn.haui.dx.apps.servicedesk.intelligence.LocalModelRuntime local) {
         this.jdbc = jdbc;
+        this.local = local;
         this.alerts = alerts;
         this.json = json;
         this.transaction = new TransactionTemplate(manager);
@@ -90,7 +98,12 @@ public class IntakeCoordinator {
     @Scheduled(fixedDelayString = "${serviceDesk.intake.poll-ms:60000}")
     public void poll() {
         if (!scheduled) return;
-        for (String workspace : workspaces) {
+        // Máy dev chế độ auto: quét mọi workspace có ticket chờ, giống worker AI nền
+        var targets = local.automaticWorkspaces()
+                ? jdbc.queryForList("select distinct workspace from servicedesk_intake_admission where status='NEW'", String.class)
+                : workspaces;
+        for (String workspace : targets) {
+            if (local.automaticWorkspaces() && !local.supports(workspace)) continue;
             var ids = jdbc.query("select ticket_id from servicedesk_intake_admission where workspace=? and status='NEW' "
                     + "order by deadline_at,ticket_id limit 50", (row, index) -> row.getObject(1, UUID.class), workspace);
             for (UUID id : ids) {
@@ -232,6 +245,10 @@ public class IntakeCoordinator {
                         UUID.randomUUID(), lease, identity, human.currentActor(ticket.workspace()).subject(), why, ticket.id());
                 audit.record(ticket.workspace(), new BusinessActivity("servicedesk.intake.assessed", "servicedesk.ticket", ticket.id().toString(),
                         Map.of("attemptKey", identity, "contextVersion", Long.toString(before.contextRevision()))));
+                // Gán nhãn theo đề xuất cuối; không có đề xuất thì chỉ ưu tiên mặc định
+                var ai07 = completed == null ? null : completed.ai07();
+                if (labels != null) labels.save(ticket.workspace(), ticket.id(), ai07 == null ? null : ai07.category(),
+                        ai07 == null ? null : ai07.priority(), ai07 == null ? null : ai07.impact(), ai07 == null ? null : ai07.urgency());
                 if (modelReady) alerts.advisory(ticket, identity, completed.ai07().priority());
             }
             acknowledge.run();

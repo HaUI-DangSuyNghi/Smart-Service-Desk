@@ -1402,9 +1402,10 @@ class TicketIntegrationTest {
         var waiting = create(owner, marker + " waiting", "requester");
         var assigned = create(owner, marker + " assigned", "requester");
         var critical = create(owner, marker + " critical", "requester");
-        review(assigned, "review-coordinator", worker, null, "NETWORK", "LOW").andExpect(status().isOk());
-        String task = body(review(critical, "review-coordinator", worker, null, "HARDWARE", "CRITICAL")
+        // Việc ưu tiên thấp đang làm vẫn đứng trước việc khẩn cấp chưa bắt đầu (thứ tự hàng đợi R4)
+        String task = body(review(assigned, "review-coordinator", worker, null, "NETWORK", "LOW")
             .andExpect(status().isOk())).path("taskId").asText();
+        review(critical, "review-coordinator", worker, null, "HARDWARE", "CRITICAL").andExpect(status().isOk());
         mvc.perform(post("/api/hpdi/v1/workspaces/lab-a/tasks/" + task + "/start").with(as(worker, "lab-a", "agent")))
             .andExpect(status().isOk());
         var coordinator = as("review-coordinator", "lab-a", "coordinator");
@@ -1415,14 +1416,15 @@ class TicketIntegrationTest {
         mvc.perform(get(BASE).param("q", marker).param("priority", "CRITICAL").with(coordinator))
             .andExpect(status().isOk()).andExpect(jsonPath("$.total").value(1))
             .andExpect(jsonPath("$.items[0].id").value(critical.path("id").asText()))
-            .andExpect(jsonPath("$.items[0].state").value("IN_PROGRESS"));
+            .andExpect(jsonPath("$.items[0].state").value("ASSIGNED"));
         mvc.perform(get(BASE).param("q", marker).param("category", "NETWORK").with(coordinator))
             .andExpect(status().isOk()).andExpect(jsonPath("$.total").value(1))
             .andExpect(jsonPath("$.items[0].id").value(assigned.path("id").asText()));
         mvc.perform(get(BASE).param("q", marker).param("sort", "priority").with(coordinator))
             .andExpect(status().isOk()).andExpect(jsonPath("$.total").value(3))
-            .andExpect(jsonPath("$.items[0].id").value(critical.path("id").asText()))
-            .andExpect(jsonPath("$.items[1].id").value(assigned.path("id").asText()))
+            .andExpect(jsonPath("$.items[0].id").value(assigned.path("id").asText()))
+            .andExpect(jsonPath("$.items[0].state").value("IN_PROGRESS"))
+            .andExpect(jsonPath("$.items[1].id").value(critical.path("id").asText()))
             .andExpect(jsonPath("$.items[2].id").value(waiting.path("id").asText()));
         // Danh sách không lọc cũng trả trạng thái; người yêu cầu chỉ thấy ticket của mình
         mvc.perform(get(BASE).param("q", marker).with(as(owner, "lab-a", "requester")))
