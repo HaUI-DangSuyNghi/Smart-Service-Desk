@@ -149,6 +149,10 @@ def _worker(connection, root, verification, warmup_messages, generation):
         connection.close()
 
 
+# GPU laptop rảnh thì hạ xung (P8), lần đầu sau đó có thể quá 3 giây; backend chờ 10 giây
+INFERENCE_TIMEOUT_SECONDS = 8.0
+
+
 class ProcessGenerator:
     """Hard timeout terminates the only GPU worker; restart requires fresh warmup."""
 
@@ -235,7 +239,7 @@ class QwenLoraRuntime:
         if not self.ready or not self.slot.acquire(blocking=False):
             raise GenerationUnavailable("Qwen busy or not ready")
         try:
-            raw = self.generator.generate(messages, timeout_seconds=3.2)
+            raw = self.generator.generate(messages, timeout_seconds=INFERENCE_TIMEOUT_SECONDS)
             return decode_letter(
                 raw,
                 request,
