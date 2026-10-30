@@ -41,20 +41,9 @@ Dự án đồng thời là một hiện thực kiến trúc **DX-OS 3 tầng**:
 
 ## 🔄 Luồng xử lý ticket
 
-```mermaid
-flowchart LR
-    A["Người dùng gửi ticket"] --> B["Intake: kiểm tra ngữ cảnh"]
-    B --> C["Phát hiện thông tin thiếu / tín hiệu trùng"]
-    C --> D["Đánh giá cuối & review"]
-    D --> E["Điều phối tổ / kỹ thuật viên"]
-    E --> F["Xử lý: START / PAUSE / RESUME"]
-    F --> G["Kỹ thuật viên hoàn thành"]
-    G --> H{"Người gửi xác nhận?"}
-    H -->|Đồng ý| I["Đóng luồng xử lý"]
-    H -->|Cần làm lại| E
-    C -. "Thiếu điều kiện / cần người quyết định" .-> J["Manual review"]
-    J --> D
-```
+[![Sơ đồ hành trình xử lý ticket: intake, AI hỗ trợ, điều phối, xử lý, xác nhận và các nhánh kiểm duyệt](docs/assets/ticket-lifecycle.svg)](docs/assets/ticket-lifecycle.svg)
+
+*Click vào sơ đồ để xem ảnh vector kích thước đầy đủ; xem [đặc tả luồng E2E](docs/LUONG_E2E_CHINH.md) để hiểu các điều kiện thực thi.*
 
 Đây là **sơ đồ nghiệp vụ mục tiêu** để đọc luồng, không khẳng định mọi tùy chọn đang bật trong cấu hình mặc định. Ví dụ, intake trước review và xử lý canonical liên kết trùng có feature flag và điều kiện cho phép riêng. **Không tự gộp/đóng ticket chỉ vì model dự đoán trùng**; đánh giá cuối phải gắn với context/revision hợp lệ, còn quyết định review và phân công phải thỏa quyền, phiên bản và trạng thái quy trình.
 
@@ -62,20 +51,9 @@ flowchart LR
 
 ## 🏗️ Kiến trúc DX-OS
 
-```mermaid
-flowchart TB
-    U["Người dùng / Web React + TypeScript"] --> G["Apache APISIX · API Gateway"]
-    K["Keycloak · OIDC / workspace roles"] -. "Identity" .-> G
-    G --> APP["Tầng 3 · Service Desk / Room Request"]
-    G --> T2["Tầng 2 · Human / Process / Data / Intelligence"]
-    G --> T1API["Tầng 1 · Core public APIs"]
-    APP -->|"Chỉ public capability contracts"| T2
-    T2 -->|"Chỉ Core public contracts"| T1API
-    T1API --> CORE["Core headless · Identity / Workflow / Metadata / Files / Audit"]
-    CORE --> DB[("PostgreSQL + hạ tầng nội bộ")]
-    T2 --- PY["Python hdpi runtime · Generic Intelligence"]
-    PROFILE["Ứng dụng sở hữu AI profile / policy"] -. "Cấu hình qua adapter" .-> PY
-```
+[![Sơ đồ kiến trúc DX-OS: Applications T3, H-P-D-I T2 và Core headless T1 với các hợp đồng công khai](docs/assets/dxos-architecture.svg)](docs/assets/dxos-architecture.svg)
+
+*Click vào sơ đồ để xem đầy đủ kiến trúc; quy tắc phụ thuộc chuẩn nằm trong [ADR-005](docs/architecture/ADR-005-dxos-three-tier-boundary.md).*
 
 | Tầng | Trách nhiệm | Ví dụ trong mã nguồn |
 | --- | --- | --- |
