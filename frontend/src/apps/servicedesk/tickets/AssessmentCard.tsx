@@ -3,6 +3,7 @@ import { PriorityTag } from "../../../platform/process";
 import { FieldRow } from "../../../platform/shared/ui/FieldRow";
 import { TextSkeleton } from "../../../platform/shared/ui/Skeleton";
 import { Tag } from "../../../platform/shared/ui/Tag";
+import type { Intake } from "../services/intakeService";
 import type { Assessment } from "../services/ticketService";
 import { Button } from "../../../platform/shared/ui/button";
 import type { ReactNode } from "react";
@@ -12,6 +13,7 @@ import {
   IMPACT_LABELS,
   URGENCY_LABELS,
 } from "./ticketLabels";
+import { intakeSuggestion } from "./reviewForm";
 
 const Header = ({ needsReview, model = false }: { needsReview: boolean; model?: boolean }) => (
   <h2 className="mb-2 flex items-center gap-1.5 font-medium">
@@ -208,6 +210,47 @@ export const AssessmentCard = ({
       {modelEnabled &&
         (result.engine === "rules" || result.cooperation?.modelStatus === "UNAVAILABLE") &&
         retry}
+    </section>
+  );
+};
+
+// Tiếp nhận còn chạy: AI chưa có kết quả cuối
+const INTAKE_WAITING: Partial<Record<Intake["status"], string>> = {
+  NEW: "AI đang kiểm tra thông tin...",
+  NEEDS_ENRICHMENT: "Đang chờ người gửi bổ sung thông tin.",
+  DUPLICATE_HOLD: "Đang kiểm tra ticket trùng.",
+  FINAL_ASSESSMENT_QUEUED: "AI đang phân tích yêu cầu...",
+  ASSESSING: "AI đang phân tích yêu cầu...",
+};
+
+/** Ticket qua tiếp nhận: kết quả AI là đề xuất cuối (tính cả thông tin người gửi bổ sung). */
+export const IntakeAssessmentCard = ({ intake }: { intake: Intake }) => {
+  const suggestion = intakeSuggestion(intake.finalAssessment?.ai07);
+  const waiting = INTAKE_WAITING[intake.status];
+  return (
+    <section className="border-b border-crm-line px-4 py-4">
+      <Header needsReview={!waiting} />
+      {waiting ? (
+        <p role="status" className="text-crm-sm text-crm-text-3">
+          {waiting}
+        </p>
+      ) : suggestion ? (
+        <dl>
+          {suggestion.category && (
+            <FieldRow label="Loại sự cố">{CATEGORY_LABELS[suggestion.category]}</FieldRow>
+          )}
+          {suggestion.priority && (
+            <FieldRow label="Ưu tiên">
+              <PriorityTag priority={suggestion.priority} />
+            </FieldRow>
+          )}
+        </dl>
+      ) : (
+        <p className="flex items-center gap-1.5 text-crm-text-2">
+          <IconAlertTriangle size={14} stroke={2} className="shrink-0 text-crm-tone-orange" />
+          AI chưa đưa ra được đề xuất, điều phối viên phân loại thủ công.
+        </p>
+      )}
     </section>
   );
 };

@@ -1,5 +1,5 @@
 import { Link, useParams } from "react-router";
-import { IconArrowLeft, IconTicket } from "@tabler/icons-react";
+import { IconTicket } from "@tabler/icons-react";
 import { useAuth } from "../../../platform/human/auth";
 import {
   PERMISSIONS,
@@ -8,12 +8,11 @@ import {
   usePermissions,
 } from "../../../platform/human/workspace";
 import { SuggestionCard } from "../../../platform/intelligence";
-import { Button } from "../../../platform/shared/ui/button";
 import { ErrorState } from "../../../platform/shared/ui/ErrorState";
 import { Page, PageBody, PageHeader } from "../../../platform/shared/ui/page";
 import { FieldsSkeleton } from "../../../platform/shared/ui/Skeleton";
 import { triageTicket } from "../services/ticketService";
-import { AssessmentCard } from "../tickets/AssessmentCard";
+import { AssessmentCard, IntakeAssessmentCard } from "../tickets/AssessmentCard";
 import { DetailsCard } from "../tickets/detail/DetailsCard";
 import { DetailTabs } from "../tickets/detail/DetailTabs";
 import { ProgressCard } from "../tickets/detail/ProgressCard";
@@ -54,19 +53,7 @@ const TicketDetailPage = () => {
 
   return (
     <Page>
-      <PageHeader
-        title="Chi tiết ticket"
-        icon={IconTicket}
-        actions={
-          <Button variant="outline" size="sm" asChild>
-            <Link to="/servicedesk/tickets" aria-label="Về danh sách ticket">
-              <IconArrowLeft size={14} stroke={2} />
-              {/* Điện thoại chỉ giữ mũi tên để tiêu đề còn chỗ */}
-              <span className="hidden sm:inline">Ticket</span>
-            </Link>
-          </Button>
-        }
-      />
+      <PageHeader title="Chi tiết ticket" icon={IconTicket} backTo="/servicedesk/tickets" />
       <PageBody>
         {current === workspace ? (
           // Đổi ticket hoặc người dùng thì tạo lại toàn bộ để không còn kết quả AI cũ
@@ -130,7 +117,10 @@ const TicketDetail = ({ workspace, ticketId }: { workspace: string; ticketId: st
             </div>
             <TicketSummary ticket={ticket.data} />
             {/* Có kết quả AI đã lưu (chạy nền lúc tạo) thì hiện cho người xử lý; backend cũ chưa có thì gọi tay */}
-            {assessment ? (
+            {/* Ticket qua tiếp nhận: kết quả AI nằm ở đề xuất cuối, hiện thẳng ở đây */}
+            {intake.data ? (
+              !isRequesterView && <IntakeAssessmentCard intake={intake.data} />
+            ) : assessment ? (
               !isRequesterView && (
                 <AssessmentCard
                   assessment={assessment}
@@ -174,7 +164,7 @@ const TicketDetail = ({ workspace, ticketId }: { workspace: string; ticketId: st
           </div>
           <aside className="order-1 min-w-0 border-b border-crm-line lg:order-2 lg:overflow-x-hidden lg:overflow-y-auto lg:border-b-0 lg:border-l">
             <StatusBlock ticket={ticket.data} />
-            {/* Tiếp nhận và bổ sung thông tin: người gửi cũng cần thấy để trả lời câu hỏi của AI */}
+            {/* Tiếp nhận: điều phối viên có nút Tiếp nhận; người gửi thấy trạng thái và câu hỏi của AI */}
             {intake.error && (
               <ErrorState error={intake.error} fallback="Chưa tải được trạng thái tiếp nhận." />
             )}
@@ -186,7 +176,8 @@ const TicketDetail = ({ workspace, ticketId }: { workspace: string; ticketId: st
                 independent={ticket.data.creator !== user?.profile.sub}
               />
             )}
-            {intake.isSuccess && (
+            {/* Chỉ người gửi bổ sung thông tin cho ticket của mình */}
+            {intake.isSuccess && ticket.data.creator === user?.profile.sub && (
               <EnrichmentDialog
                 workspace={workspace}
                 ticketId={ticketId}

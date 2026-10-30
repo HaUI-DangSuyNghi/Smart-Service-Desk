@@ -14,6 +14,7 @@ import os
 from pathlib import Path
 import re
 import socket
+import time
 from threading import BoundedSemaphore
 import urllib.error
 import urllib.parse
@@ -37,6 +38,12 @@ def strict_json(raw):
         raise ClassificationError("Non-finite JSON rejected")
 
     return json.loads(raw, object_pairs_hook=unique, parse_constant=finite)
+
+
+# Gemini hay trả 503 "high demand" chốc lát: thử lại ngắn thay vì bỏ nhãn của ticket
+RETRY_STATUSES = (429, 500, 502, 503, 504)
+RETRY_ATTEMPTS = 3
+RETRY_BACKOFF_SECONDS = 1.0
 
 
 class NoRedirect(urllib.request.HTTPRedirectHandler):
@@ -84,6 +91,7 @@ class ApiProvider:
         self.credential_file = Path(credential_file)
         self.response_format, self.max_tokens = response_format, max_tokens
         self.slot = BoundedSemaphore(1)
+        self.sleep, self.clock = time.sleep, time.monotonic
         self.opener = urllib.request.build_opener(
             urllib.request.ProxyHandler({}), NoRedirect()
         )
@@ -173,18 +181,38 @@ class ApiProvider:
             url, data=json.dumps(body, ensure_ascii=False).encode(), headers=headers
         )
 
+    def send(self, request):
+        """Gọi provider; quá tải tạm thời (429/5xx) thì thử lại trong cùng hạn timeout."""
+        deadline = self.clock() + self.timeout
+        for attempt in range(RETRY_ATTEMPTS):
+            try:
+                with self.opener.open(
+                    self.build_request(request),
+                    timeout=max(1, deadline - self.clock()),
+                ) as response:
+                    require(
+                        response.status == 200
+                        and response.headers.get_content_type() == "application/json"
+                    )
+                    return response.read(65537)
+            except urllib.error.HTTPError as error:
+                wait = RETRY_BACKOFF_SECONDS * (attempt + 1)
+                last = attempt == RETRY_ATTEMPTS - 1
+                if error.code not in RETRY_STATUSES or last or deadline - self.clock() < wait + 1:
+                    raise
+                logging.warning(
+                    "Classification provider busy, retrying (vendor=%s, HTTP=%d)",
+                    self.vendor,
+                    error.code,
+                )
+                self.sleep(wait)
+        raise GenerationUnavailable("Provider retries exhausted")
+
     def observe(self, request):
         if not self.slot.acquire(blocking=False):
             raise GenerationUnavailable("Provider is busy")
         try:
-            with self.opener.open(
-                self.build_request(request), timeout=self.timeout
-            ) as response:
-                require(
-                    response.status == 200
-                    and response.headers.get_content_type() == "application/json"
-                )
-                raw = response.read(65537)
+            raw = self.send(request)
             require(len(raw) <= 65536)
             outer = strict_json(raw)
             if self.vendor == "gemini":

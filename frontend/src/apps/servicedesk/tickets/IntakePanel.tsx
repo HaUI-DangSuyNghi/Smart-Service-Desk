@@ -1,26 +1,11 @@
-import { useRef, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useState } from "react";
+import { IconInbox } from "@tabler/icons-react";
 import { useActor } from "../../../platform/human/workspace";
 import { Button } from "../../../platform/shared/ui/button";
-import { Input } from "../../../platform/shared/ui/input";
-import { SelectField } from "../../../platform/shared/ui/SelectField";
-import { PRIORITY_LABELS } from "../../../platform/process";
-import { ErrorState } from "../../../platform/shared/ui/ErrorState";
-import {
-  evaluateIntake,
-  releaseIntake,
-  reviewIntake,
-  type Intake,
-} from "../services/intakeService";
+import { Tag } from "../../../platform/shared/ui/Tag";
+import type { Intake } from "../services/intakeService";
 import { CanonicalPanel } from "./CanonicalPanel";
-import { intakeSuggestion } from "./reviewForm";
-import { CATEGORY_LABELS } from "./ticketLabels";
-import { CATEGORIES, PRIORITIES } from "./ticketRules";
-
-const CATEGORY_OPTIONS = CATEGORIES.map((value) => ({ value, label: CATEGORY_LABELS[value] }));
-const PRIORITY_OPTIONS = PRIORITIES.map((value) => ({ value, label: PRIORITY_LABELS[value] }));
-// Dropdown trong form: rộng hết ô
-const FORM_SELECT = "h-11 w-full max-w-none sm:h-9";
+import { ReleaseIntakeDialog } from "./ReleaseIntakeDialog";
 
 const STATUS: Record<Intake["status"], string> = {
   NEW: "Đang chờ kiểm tra thông tin",
@@ -34,6 +19,16 @@ const STATUS: Record<Intake["status"], string> = {
   CANONICAL_FOLLOWER: "Đang theo dõi sự cố đã được liên kết",
 };
 
+// Đã sang bước duyệt (nút "Duyệt và giao việc") hoặc đã xong: không tiếp nhận nữa
+const PAST_INTAKE: ReadonlySet<Intake["status"]> = new Set([
+  "REVIEW_RELEASED",
+  "REVIEWED",
+  "CANONICAL_FOLLOWER",
+]);
+/**
+ * Trạng thái tiếp nhận. Điều phối viên (không phải người gửi) có nút Tiếp nhận để chuyển sang
+ * Chờ duyệt; sau đó duyệt bằng nút "Duyệt và giao việc" (form điền sẵn theo AI).
+ */
 export const IntakePanel = ({
   workspace,
   ticketId,
@@ -46,130 +41,35 @@ export const IntakePanel = ({
   independent: boolean;
 }) => {
   const { roles } = useActor();
-  const cache = useQueryClient();
-  const [reason, setReason] = useState("");
-  // null: chưa tự chọn → theo đề xuất AI (đề xuất có thể tới sau khi mở trang)
-  const [pickedCategory, setCategory] = useState<string | null>(null);
-  const [pickedPriority, setPriority] = useState<string | null>(null);
-  const suggestion = intakeSuggestion(state.finalAssessment?.ai07);
-  const category = pickedCategory ?? suggestion?.category ?? "OTHER";
-  const priority = pickedPriority ?? suggestion?.priority ?? "MEDIUM";
-  const release = useRef<{ fingerprint: string; operation: string } | null>(null);
-  const refresh = async () => {
-    await cache.invalidateQueries({ queryKey: ["servicedesk"] });
-    await cache.invalidateQueries({ queryKey: ["process"] });
-  };
-  const action = useMutation({
-    mutationFn: async (kind: "check" | "release" | "review") => {
-      if (kind === "check") return evaluateIntake(workspace, ticketId);
-      if (kind === "review")
-        return reviewIntake(workspace, ticketId, state, category, priority, reason.trim());
-      const fingerprint = JSON.stringify([state.contextRevision, state.version, reason.trim()]);
-      if (release.current?.fingerprint !== fingerprint)
-        release.current = { fingerprint, operation: crypto.randomUUID() };
-      return releaseIntake(workspace, ticketId, state, reason.trim(), release.current.operation);
-    },
-    onSuccess: refresh,
-    onError: refresh,
-  });
   const coordinator = independent && roles.includes("coordinator");
-  const finished = ["REVIEWED", "CANONICAL_FOLLOWER"].includes(state.status);
-  const released =
-    ["REVIEW_RELEASED", "MANUAL_REQUIRED"].includes(state.status) && state.reviewTaskMayExist;
-  const proposal = state.finalAssessment?.ai07;
+  const [releasing, setReleasing] = useState(false);
   return (
     <>
       <section
-        aria-label="Tiếp nhận và đánh giá ticket"
-        className="space-y-4 border-b border-crm-line p-4"
+        aria-label="Tiếp nhận ticket"
+        className="flex flex-col gap-2 border-b border-crm-line px-4 py-3"
       >
-        <h2 className="font-semibold">Tiếp nhận ticket</h2>
-        <p role="status" aria-live="polite">
-          {STATUS[state.status]}
-        </p>
-        <p className="text-crm-sm text-crm-text-2">
-          Thông tin lần {state.contextRevision + 1} · Hạn xem xét:{" "}
-          {new Date(state.deadlineAt).toLocaleString("vi-VN")}
-        </p>
-        {state.lateNotice && (
-          <p role="alert">Có thông tin bổ sung sau quyết định. Điều phối viên cần kiểm tra lại.</p>
-        )}
-        {state.readiness?.questions?.map((question) => (
-          <p key={question.slot}>{question.text}</p>
-        ))}
-        {proposal && (
-          <div className="space-y-2 rounded-lg border border-crm-line p-3">
-            <p className="font-medium">Đề xuất đã lưu, cần người kiểm tra</p>
-            <p>
-              Loại: {suggestion?.category ? CATEGORY_LABELS[suggestion.category] : "Chưa xác định"}{" "}
-              · Ưu tiên:{" "}
-              {suggestion?.priority ? PRIORITY_LABELS[suggestion.priority] : "Cần xem xét"}
-            </p>
+        <h2 className="font-medium">Tiếp nhận</h2>
+        {/* Chỉ trạng thái; không hiện số lần, hạn hay câu hỏi của AI (rule 05) */}
+        <div role="status" aria-live="polite" className="flex flex-wrap items-center gap-1.5">
+          <Tag tone={state.status === "MANUAL_REQUIRED" ? "orange" : "gray"}>
+            {STATUS[state.status]}
+          </Tag>
+          {state.lateNotice && <Tag tone="orange">Có thông tin mới</Tag>}
+        </div>
+        {coordinator && !PAST_INTAKE.has(state.status) && (
+          <div>
+            <Button size="sm" className="h-9 md:h-7" onClick={() => setReleasing(true)}>
+              <IconInbox size={14} stroke={2} />
+              Tiếp nhận
+            </Button>
           </div>
         )}
-        {!finished && (
-          <Button
-            variant="outline"
-            className="min-h-11"
-            disabled={action.isPending}
-            onClick={() => action.mutate("check")}
-          >
-            Kiểm tra thông tin bổ sung
-          </Button>
-        )}
-        {coordinator && !finished && (
-          <fieldset disabled={action.isPending} className="space-y-3">
-            <legend className="mb-3 font-medium">Quyết định của điều phối viên</legend>
-            {released && (
-              <>
-                <div className="space-y-1">
-                  <p>Loại sự cố</p>
-                  <SelectField
-                    aria-label="Loại sự cố"
-                    options={CATEGORY_OPTIONS}
-                    value={category}
-                    onValueChange={setCategory}
-                    className={FORM_SELECT}
-                  />
-                </div>
-                <div className="space-y-1">
-                  <p>Mức ưu tiên</p>
-                  <SelectField
-                    aria-label="Mức ưu tiên"
-                    options={PRIORITY_OPTIONS}
-                    value={priority}
-                    onValueChange={setPriority}
-                    className={FORM_SELECT}
-                  />
-                </div>
-              </>
-            )}
-            <label className="block space-y-1">
-              <span>Lý do quyết định</span>
-              <Input
-                className="min-h-11"
-                value={reason}
-                maxLength={1000}
-                onChange={(event) => setReason(event.target.value)}
-              />
-            </label>
-            <Button
-              className="min-h-11"
-              disabled={!reason.trim()}
-              onClick={() => action.mutate(released ? "review" : "release")}
-            >
-              {released ? "Duyệt và chuyển xử lý" : "Chuyển sang duyệt thủ công"}
-            </Button>
-          </fieldset>
-        )}
-        {action.isPending && <p role="status">Đang lưu quyết định…</p>}
-        {action.error && (
-          <ErrorState
-            error={action.error}
-            fallback="Chưa lưu được. Kiểm tra trạng thái mới nhất trước khi thử lại."
-          />
-        )}
       </section>
+      <ReleaseIntakeDialog
+        target={releasing ? { workspace, id: ticketId } : null}
+        onClose={() => setReleasing(false)}
+      />
       {coordinator && <CanonicalPanel workspace={workspace} ticketId={ticketId} state={state} />}
     </>
   );

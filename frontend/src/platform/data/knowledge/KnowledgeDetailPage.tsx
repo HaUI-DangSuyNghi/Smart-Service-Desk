@@ -1,5 +1,5 @@
-import { Link, useParams } from "react-router";
-import { IconArrowLeft, IconDownload, IconFileText } from "@tabler/icons-react";
+import { useParams } from "react-router";
+import { IconDownload, IconFileText } from "@tabler/icons-react";
 import { ApiError } from "@/platform/shared/api";
 import { formatDateTime } from "@/platform/shared/lib/format";
 import { Button } from "@/platform/shared/ui/button";
@@ -26,15 +26,9 @@ const KnowledgeDetailPage = () => {
       <PageHeader
         title={record.data?.title ?? "Tài liệu"}
         icon={IconFileText}
+        backTo="/knowledge"
         actions={
           <>
-            <Button variant="outline" size="sm" asChild>
-              <Link to="/knowledge" aria-label="Về danh sách tài liệu">
-                <IconArrowLeft size={14} stroke={2} />
-                {/* Điện thoại chỉ giữ mũi tên để tiêu đề còn chỗ */}
-                <span className="hidden sm:inline">Tài liệu</span>
-              </Link>
-            </Button>
             {fileId && (
               <Button
                 size="sm"

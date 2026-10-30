@@ -16,7 +16,7 @@ const ProcessTimelinePage = () => {
 
   return (
     <Page>
-      <PageHeader title={title} icon={IconTimeline} />
+      <PageHeader title={title} icon={IconTimeline} backTo="/requests" />
       <PageBody>
         {timeline.isPending && <FieldsSkeleton rows={7} label="Đang tải tiến độ" />}
         {timeline.error && <ErrorState error={timeline.error} />}

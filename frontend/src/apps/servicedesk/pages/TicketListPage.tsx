@@ -39,11 +39,11 @@ import {
   type TicketFilter,
 } from "../tickets/useTickets";
 
-type View = "all" | "intake" | "review" | "overdue" | "mine";
+// Đang tiếp nhận là trang riêng (/servicedesk/intake)
+type View = "all" | "review" | "overdue" | "mine";
 
 const VIEW_LABELS: Record<View, string> = {
   all: "Tất cả",
-  intake: "Đang tiếp nhận",
   review: "Chờ duyệt",
   mine: "Giao cho tôi",
   overdue: "Quá hạn",
@@ -51,8 +51,6 @@ const VIEW_LABELS: Record<View, string> = {
 
 const VIEW_FILTERS: Record<View, TicketFilter> = {
   all: {},
-  // AI đang hỏi bổ sung / đánh giá; xong mới sang Chờ duyệt
-  intake: { state: ["INTAKE"], sort: "priority" },
   mine: { assignee: "me", sort: "priority" },
   review: { state: ["AWAITING_REVIEW"], sort: "priority" },
   overdue: { overdue: true, sort: "priority" },
@@ -74,12 +72,12 @@ const PRIORITY_OPTIONS = PRIORITIES.map((priority) => ({
 
 // Người yêu cầu chỉ thấy ticket của mình nên không cần chọn nhóm
 const viewsFor = (canAssign: boolean, canHandle: boolean): View[] => {
-  if (canAssign) return ["all", "intake", "review", "overdue", "mine"];
+  if (canAssign) return ["all", "review", "overdue", "mine"];
   if (canHandle) return ["all", "mine"];
   return [];
 };
 
-/** Danh sách ticket; chọn nhóm xem theo vai trò (đang tiếp nhận, chờ duyệt, quá hạn, giao cho tôi), lọc theo trạng thái và ưu tiên. */
+/** Danh sách ticket; chọn nhóm xem theo vai trò (chờ duyệt, quá hạn, giao cho tôi), lọc theo trạng thái và ưu tiên. */
 const TicketListPage = () => {
   const navigate = useNavigate();
   const refresh = useRefreshTickets();

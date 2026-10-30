@@ -228,8 +228,7 @@ const ReviewForm = ({ ticket, onDone }: FormProps) => {
 
       {intakeBlocked && (
         <p role="alert" className="text-crm-sm text-crm-tone-orange">
-          Ticket còn ở bước tiếp nhận, chưa duyệt được. Thả ticket sang bước duyệt ở khối Tiếp nhận
-          trước.
+          Ticket còn ở bước tiếp nhận, chưa duyệt được. Bấm Tiếp nhận trước.
         </p>
       )}
 

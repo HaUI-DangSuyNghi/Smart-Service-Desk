@@ -55,9 +55,6 @@ export const getIntake = async (workspace: string, id: string, signal?: AbortSig
   }
 };
 
-export const evaluateIntake = async (workspace: string, id: string) =>
-  schema.parse((await apiClient.post(`${path(workspace, id)}/intake/evaluate`)).data);
-
 export const releaseIntake = async (
   workspace: string,
   id: string,
@@ -75,23 +72,6 @@ export const releaseIntake = async (
       })
     ).data,
   );
-
-export const reviewIntake = async (
-  workspace: string,
-  id: string,
-  state: Intake,
-  category: string,
-  priority: string,
-  reason: string,
-) =>
-  apiClient.post(`${path(workspace, id)}/review`, {
-    category,
-    priority,
-    reason,
-    assignee: null,
-    expectedContextRevision: state.contextRevision,
-    expectedIntakeVersion: state.version,
-  });
 
 export const preflightIntake = async (workspace: string, id: string) =>
   z

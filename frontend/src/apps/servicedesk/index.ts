@@ -1,5 +1,6 @@
-import { IconTicket } from "@tabler/icons-react";
+import { IconClipboardList, IconTicket } from "@tabler/icons-react";
 import { lazy } from "react";
+import { PERMISSIONS } from "../../platform/human/workspace";
 import type { AppRegistry } from "../../platform/shell/router/registry";
 import { TicketStatsWidget } from "./dashboard/TicketStatsWidget";
 import { ServiceDeskSettingsSection } from "./settings/ServiceDeskSettingsSection";
@@ -7,6 +8,7 @@ import { ServiceDeskSettingsSection } from "./settings/ServiceDeskSettingsSectio
 // Trang lazy hiện skeleton của AppLayout trong lúc tải, không cần giữ thời gian tối thiểu
 const TicketListPage = lazy(() => import("./pages/TicketListPage"));
 const TicketDetailPage = lazy(() => import("./pages/TicketDetailPage"));
+const IntakeQueuePage = lazy(() => import("./pages/IntakeQueuePage"));
 
 export const registerServiceDesk = (registry: AppRegistry) => {
   registry.register({
@@ -16,8 +18,14 @@ export const registerServiceDesk = (registry: AppRegistry) => {
       // Không có workspace trong đường dẫn: dùng workspace đang chọn (link từ inbox, danh sách)
       { path: "servicedesk/tickets/:ticketId", component: TicketDetailPage },
       { path: "servicedesk/workspaces/:workspace/tickets/:ticketId", component: TicketDetailPage },
+      // Ticket đang tiếp nhận; chờ duyệt là view trong trang Ticket
+      {
+        path: "servicedesk/intake",
+        component: IntakeQueuePage,
+        requiredPermissions: [PERMISSIONS.taskAssign],
+      },
     ],
-    // Nhóm xổ ra trên sidebar; tiếp nhận / chờ duyệt là các view trong trang Ticket
+    // Nhóm xổ ra trên sidebar
     menu: [
       {
         label: "Service Desk",
@@ -26,7 +34,15 @@ export const registerServiceDesk = (registry: AppRegistry) => {
         tone: "orange",
         // App chính: mở sẵn để thấy ngay các trang ticket
         defaultOpen: true,
-        children: [{ label: "Ticket", path: "/servicedesk/tickets", icon: IconTicket }],
+        children: [
+          { label: "Ticket", path: "/servicedesk/tickets", icon: IconTicket },
+          {
+            label: "Tiếp nhận",
+            path: "/servicedesk/intake",
+            icon: IconClipboardList,
+            requiredPermissions: [PERMISSIONS.taskAssign],
+          },
+        ],
       },
     ],
     // businessKey của quy trình service-desk là id ticket
