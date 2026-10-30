@@ -30,3 +30,6 @@ backend/src/test/resources/apps/servicedesk/intelligence/*.json text eol=lf
 licenses/** -text -whitespace
 scripts/acceptance/core/*.ps1 text eol=lf
 scripts/acceptance/core/*.sql text eol=lf
+# Shell script cho Git Bash/Linux phai giu LF; file .cmd giu CRLF cho cmd.exe
+/dx text eol=lf
+/dx.cmd text eol=crlf
