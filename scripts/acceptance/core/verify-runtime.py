@@ -12,23 +12,32 @@ import uuid
 parser = argparse.ArgumentParser(description="Independent HTTP client: synthetic room-loan application")
 parser.add_argument("mode", choices=["seed", "verify", "resume", "upload-disabled"])
 parser.add_argument("state", type=Path)
+parser.add_argument("--core-url", default="http://localhost:9080")
+parser.add_argument("--identity-url", default="http://localhost:8081")
+parser.add_argument("--env-file", type=Path, default=Path(".env"))
 args = parser.parse_args()
-settings = dict(line.split("=", 1) for line in Path(".env").read_text().splitlines() if "=" in line and not line.startswith("#"))
+for url in (args.core_url, args.identity_url):
+    parsed = urllib.parse.urlsplit(url)
+    if parsed.scheme != "http" or parsed.hostname not in ("localhost", "127.0.0.1") or parsed.username or parsed.password:
+        parser.error("Only loopback acceptance services are allowed")
+settings = dict(line.split("=", 1) for line in args.env_file.read_text(encoding="utf-8-sig").splitlines() if "=" in line and not line.startswith("#"))
 password = settings["DEMO_PASSWORD"]
 if args.mode == "seed":
     data = urllib.parse.urlencode(dict(grant_type="password", client_id="admin-cli", username="admin", password=settings["KC_ADMIN_PASSWORD"])).encode()
-    with urllib.request.urlopen("http://localhost:8081/realms/master/protocol/openid-connect/token", data, timeout=30) as response:
+    with urllib.request.urlopen(args.identity_url + "/realms/master/protocol/openid-connect/token", data, timeout=30) as response:
         admin_token = json.load(response)["access_token"]
-    client = json.loads(Path("infra/keycloak/realm-template.json").read_text())["clients"][0]
+    client, = (client for client in json.loads(Path("infra/keycloak/realm-template.json").read_text(encoding="utf-8"))["clients"]
+               if client["clientId"] == "core-probe")
+    assert client["publicClient"] and client["directAccessGrantsEnabled"]
     client.update(clientId="room-loan-probe", description="Acceptance-only second application; not a browser login design")
-    request = urllib.request.Request("http://localhost:8081/admin/realms/dx-lab/clients", json.dumps(client).encode(),
+    request = urllib.request.Request(args.identity_url + "/admin/realms/dx-lab/clients", json.dumps(client).encode(),
                                      {"Authorization": "Bearer " + admin_token, "Content-Type": "application/json"}, method="POST")
     with urllib.request.urlopen(request, timeout=30) as response:
         assert response.status == 201
 tokens, subjects, responses = {}, {}, []
 for username in ["user1", "user2", "user3", "user4", "user5", "user6", "user7"]:
     data = urllib.parse.urlencode(dict(grant_type="password", client_id="room-loan-probe", username=username, password=password)).encode()
-    with urllib.request.urlopen("http://localhost:8081/realms/dx-lab/protocol/openid-connect/token", data, timeout=30) as response:
+    with urllib.request.urlopen(args.identity_url + "/realms/dx-lab/protocol/openid-connect/token", data, timeout=30) as response:
         tokens[username] = json.load(response)["access_token"]
         payload = tokens[username].split(".")[1]
         assert json.loads(base64.urlsafe_b64decode(payload + "=" * (-len(payload) % 4)))["azp"] == "room-loan-probe"
@@ -41,7 +50,7 @@ def call(method, path, user, expected, body=None, raw=None, headers=None):
     if body is not None:
         raw = json.dumps(body).encode()
         request_headers["Content-Type"] = "application/json"
-    request = urllib.request.Request("http://localhost:9080/api/core/v1" + path, raw, request_headers, method=method)
+    request = urllib.request.Request(args.core_url + "/api/core/v1" + path, raw, request_headers, method=method)
     try:
         response = urllib.request.urlopen(request, timeout=30)
     except urllib.error.HTTPError as error:
