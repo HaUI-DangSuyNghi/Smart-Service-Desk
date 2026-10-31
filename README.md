@@ -231,7 +231,7 @@ Browser test: cài Chromium bằng `npx playwright install chromium`, sau đó c
 | Yêu cầu và thiết kế | [Requirements Mapping](docs/requirements-mapping.md) |
 | Hợp đồng API | [Core](contracts/openapi/core.yaml) · [Service Desk](contracts/openapi/servicedesk.yaml) · [H-P-D-I](contracts/hpdi/openapi.yaml) |
 | Hỏi đáp và model từ xa | [Knowledge Chat](docs/KNOWLEDGE_CHAT.md) · [Remote Model](docs/remote-model.md) |
-| Nguồn mở và kiểm chứng | [PoF Evidence](docs/publication/POF_EVIDENCE.md) · [Final Verification](docs/publication/pof/FINAL_VERIFICATION.md) · [Dependency Licenses](docs/dependency-licenses.md) |
+| Nguồn mở và kiểm chứng | [PoF Evidence](docs/publication/POF_EVIDENCE.md) · [Final Verification](docs/publication/pof/FINAL_VERIFICATION.md) · [Dependency Licenses](docs/legal/dependency-inventory.md) |
 | Phát hành | [Releases](https://github.com/HaUI-DangSuyNghi/Smart-Service-Desk/releases) · [Changelog](CHANGELOG.md) |
 
 ## Nhóm phát triển
@@ -258,4 +258,4 @@ Người tham gia tuân thủ [quy tắc ứng xử](CODE_OF_CONDUCT.md). Nếu 
 
 Mã nguồn và tài liệu gốc do nhóm sở hữu, có quyền cấp phép, được phát hành theo **Apache License 2.0**. Xem [LICENSE](LICENSE) và [phạm vi cấp phép](LICENSING.md).
 
-Thư viện bên thứ ba, hình ảnh và tài liệu của chủ sở hữu khác giữ nguyên giấy phép, thông báo và điều kiện áp dụng. Thông tin nguồn gốc, quyền phân phối và bằng chứng được lưu tại [danh mục thành phần](docs/dependency-licenses.md) và [manifest phát hành](docs/publication/release-distribution-status.csv).
+Thư viện bên thứ ba, hình ảnh và tài liệu của chủ sở hữu khác giữ nguyên giấy phép, thông báo và điều kiện áp dụng. Thông tin nguồn gốc, quyền phân phối và bằng chứng được lưu tại [danh mục thành phần](docs/legal/dependency-inventory.md) và [manifest phát hành](docs/publication/release-distribution-status.csv).

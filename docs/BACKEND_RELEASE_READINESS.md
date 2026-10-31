@@ -393,7 +393,7 @@ Only these paths change/add in this task:
 - `scripts/acceptance/test-integration-config.py`.
 - `.github/workflows/intelligence-triage-e2e.yml`: no-daemon guard in G10.
 - `docs/security/release-readiness-20261026.csv` and `docs/security/release-readiness-20261026-dependencies.txt`.
-- `docs/BACKEND_RELEASE_READINESS.md`, `docs/dependency-licenses.md`, `CHANGELOG.md`.
+- `docs/BACKEND_RELEASE_READINESS.md`, `docs/legal/dependency-inventory.md`, `CHANGELOG.md`.
 
 Starting worktree: 23 modified and 15 untracked files. Before edits, 988 original
 source hashes plus porcelain/HEAD inventories were saved. Original hardening,
