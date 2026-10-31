@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="frontend/public/logo-svd-light-removebg-preview.png" alt="Logo Smart Service Desk" width="140" />
+  <img src="frontend/public/readme-logo-black.png" alt="Logo Smart Service Desk trên nền đen" width="280" />
 
 # Smart Service Desk
 
