@@ -252,6 +252,8 @@ Phát triển tính năng từ nhánh `develop`, tạo Pull Request để review
 
 Góp ý, báo lỗi hoặc đề xuất tính năng tại [GitHub Issues](https://github.com/HaUI-DangSuyNghi/Smart-Service-Desk/issues). Khi báo lỗi, cung cấp phiên bản, bước tái hiện và log đã loại bỏ thông tin nhạy cảm.
 
+Người tham gia tuân thủ [quy tắc ứng xử](CODE_OF_CONDUCT.md). Nếu phát hiện lỗ hổng bảo mật, báo riêng theo [chính sách bảo mật](SECURITY.md), không đăng chi tiết khai thác hoặc thông tin xác thực lên Issues công khai.
+
 ## Giấy phép
 
 Mã nguồn và tài liệu gốc do nhóm sở hữu, có quyền cấp phép, được phát hành theo **Apache License 2.0**. Xem [LICENSE](LICENSE) và [phạm vi cấp phép](LICENSING.md).
