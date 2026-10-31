@@ -1,64 +1,48 @@
-# DX-Lab HaUI: DX-OS platform
+# Smart Service Desk
 
-## Proposed public submission (2026-10-28)
+## v0.1.0 release preparation
 
-**HOLD: source license approval and publication authorization are pending.**
-Apache-2.0 is intended, not currently granted. Do not make the existing private
-repository public: historical reference/data rights need review. See
-[evaluation readiness](docs/publication/EVALUATION_READINESS.md),
-[history options](docs/publication/HISTORY_OPTIONS.md),
-[dependency/license summary](docs/publication/DEPENDENCIES.md) and
-[release plan](docs/publication/RELEASE_PLAN.md).
+The existing repository is public. Preserve its real Git history; do not create a
+replacement repository or follow older history-filtering/publication proposals.
+**Not released. Authorized team-owned work is licensed under Apache-2.0; see
+root LICENSE. Supplied documents, photo, fixtures and third-party content are
+not automatically covered. Asset rights still block release.** See `LICENSING.md`
+and `RELEASE_NOTES_v0.1.0.md`.
 
-Source layout: headless `backend/.../core` supplies identity, workflow, data and
-audit; `hpdi` capabilities serve Service Desk/Room Request applications; reusable
-Python `intelligence/src/hdpi` and the React platform complete the three tiers.
-Contracts/OpenAPI are under `contracts/`; architecture/startup details follow.
+Release baseline: the merged develop source, including Core / H-P-D-I,
+Service Desk, Room Request and existing Knowledge/Intelligence integrations.
+No unreviewed local changes or OCR experiments are included. Supported startup
+baseline is no-AI/manual workflow; Qwen/GPU and external-provider operation are
+optional integrations, not requirements or certified runtime modes for v0.1.0.
+Existing merged code is retained. Do not claim all AI modes have passed.
 
-Public source candidate excludes pending-rights fixtures and references. Its
-fixture-dependent tests, corpus evaluation and demo data are NOT release-certified.
-Photo is replaced by a native CSS gradient in the candidate only. Historical
-acceptance reports are not proof of current demo health. See BUILD_VALIDATION.md
-under docs/publication for this preparation's actual build results.
+### Minimal clean-source startup
 
-For an authorized clean-machine review use Java 17/Maven 3.9.9, Node >=22.12,
-Python 3.12 and Docker/Compose as documented below. Build source with
-`mvn -f backend/pom.xml verify`, `npm ci --prefix frontend` then
-`npm run build --prefix frontend`, and
-`python -m pip wheel --no-deps ./intelligence -w <outside-source-wheel-directory>`.
-Run `scripts/setup.ps1` to generate local-only secrets, then `scripts/start.ps1`
-on a new isolated installation; `-Intelligence` enables the triage overlay.
-Do not use reset flags or these startup commands against an existing shared demo.
-For outside-source invocation, first `Set-Location <clone-path>` inside a fresh
-PowerShell process; built jar/wheel/static artifacts should then be tested from a
-separate directory with explicit configuration. This run path is a verification
-requirement, not a claim that it has passed.
+Use Docker Desktop/Linux containers with Compose v2. In a fresh clone only:
 
-API schemas: `contracts/openapi/`; browser http://localhost:5173, gateway
-http://localhost:9080, Keycloak http://localhost:8081 on the local development
-stack. Demo users `user1`-`user7` use locally generated `DEMO_PASSWORD` in ignored
-`.env`; never commit/share a live password or replace the source gate with hosted
-demo access. Issue tracker availability requires owner verification.
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start.ps1 -NoAi
+```
 
-Post-merge integration: see [BE-POSTMERGE-01](docs/BE_POSTMERGE01.md) for the
-isolated Java/Python demo, FE proxy, acceptance evidence and release blockers.
-The default startup assembles Core, HPDI and applications; enable the private Python runtime with the documented overlays.
-Strict boundary recovery BND-00 through BND-07 is implemented; see
-[ownership and gates](docs/architecture/BOUNDARY_DEBT.md) and
-[runtime configuration](docs/architecture/STRICT_BOUNDARY_OPERATIONS.md).
-Production security G9 remains FAIL; release remains BLOCKED.
+Setup generates private `.env`/realm configuration. Never share them or run setup,
+realm resets or destructive volume commands against an existing demo installation.
+Default browser 5173, Keycloak 8081 and gateway 9080. Demo usernames use the locally
+generated DEMO_PASSWORD; no live password or API key is distributed.
 
-AI06 continuation adds synthetic DEV evaluation and disabled Service Desk
-assistance through HPDI, Core freshness checks and a browser-tested panel.
-See [AI06 implementation status](intelligence/docs/task/AI06/AI06_COMPLETION_STATUS.md)
-for reproduction commands, measured evidence and remaining model/review gates.
+The Dockerfiles build from source. Native toolchain: Java 17/Maven 3.9.9,
+Node >=22.12 and Python >=3.12,<3.13. Core CI runs isolated PostgreSQL, real E2E,
+restart/restore and contract checks. CI evidence must match the final source SHA;
+optional full image-security scanning is not covered by a green functional job.
+An unusable local image cache is an environment failure, not permission to reset
+existing databases. Resolve image/runtime problems before the first installation.
 
 <p align="center">
   <img src="https://img.shields.io/badge/Java-17-blue.svg" alt="Java 17" />
   <img src="https://img.shields.io/badge/Spring%20Boot-3.3-green.svg" alt="Spring Boot" />
-  <img src="https://img.shields.io/badge/Keycloak-26.0.7-red.svg" alt="Keycloak" />
+  <img src="https://img.shields.io/badge/Keycloak-26.0.8-red.svg" alt="Keycloak" />
   <img src="https://img.shields.io/badge/APISIX-3.11-orange.svg" alt="APISIX" />
-  <img src="https://img.shields.io/badge/PostgreSQL-16.6-blue.svg" alt="PostgreSQL" />
+  <img src="https://img.shields.io/badge/PostgreSQL-16.15-blue.svg" alt="PostgreSQL" />
   <img src="https://img.shields.io/badge/Docker-Compose%20v2-blue.svg" alt="Docker" />
   <img src="https://img.shields.io/badge/License-Pending%20Approval-lightgrey.svg" alt="License approval pending" />
 </p>
@@ -155,7 +139,6 @@ Lần đầu chạy `.\dx` (lệnh nào cũng được), dự án tự được 
 | `.\dx up api` | Phân loại và Hỏi AI đều qua API (không cần GPU) |
 | `.\dx restart` | Dừng rồi khởi động lại |
 | `.\dx ps`, `.\dx logs [service]` | Trạng thái container, xem log |
-| `.\dx realm` | Import lại realm Keycloak (`start.ps1 -Reset`) |
 | `.\dx qwen` | Khởi động lại Qwen khi thẻ AI báo "AI tạm không khả dụng" |
 | `.\dx smoke`, `.\dx check` | Kiểm thử nhanh, kiểm cấu hình Compose và CSDL |
 | `.\dx help` | Xem mọi lệnh |
@@ -173,7 +156,7 @@ Các mục dưới giải thích chi tiết từng bước; lệnh dài `powersh
 
 #### Bước 1 — Chuẩn bị cấu hình riêng của máy
 
-Checkout nhánh có tính năng này (`feature/local-model-self-service` khi chưa merge).
+Use the approved release tag/SHA in a fresh clone; never switch over uncommitted work.
 Mở PowerShell tại **thư mục gốc repo đã clone**, nơi có `compose.yaml`, rồi chạy:
 
 ```powershell
@@ -269,34 +252,11 @@ xem [cấu hình phạm vi](docs/local-model.md).
 Container healthy xác nhận dịch vụ đã khởi động, chưa xác nhận key/model/quota
 ở provider hoạt động: startup không gửi lần hỏi thử tính phí.
 
-#### Làm mới realm Keycloak (`-Reset`)
+#### Existing Keycloak realms
 
-Keycloak chỉ import `dx-lab` **lần đầu**, khi realm chưa tồn tại. Máy đã chạy từ bản cũ sẽ giữ realm cũ và **không nhận** thay đổi mới trong `infra/keycloak/realm-template.json` (client `dx-web`, tài khoản, nhóm mới). Dấu hiệu: trang Keycloak báo *"Client not found"*, hoặc đăng nhập `user1` báo sai mật khẩu.
-
-Khởi động kèm xóa và import lại realm bằng một lệnh:
-
-```powershell
-.\dx realm
-```
-
-Stack đang chạy sẵn thì chỉ cần chạy riêng bước reset:
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/reset-keycloak-realm.ps1
-```
-
-Cần chạy `-Reset` khi template có client, nhóm hoặc thuộc tính mới (ví dụ client `dx-directory` cho danh bạ và tên hiển thị workspace). `scripts/setup.ps1` tự bổ sung biến còn thiếu (như `DIRECTORY_CLIENT_SECRET`) vào `.env` mà không đổi mật khẩu đã có.
-
-#### Quyền (`dx-permissions`)
-
-Quyền nhỏ khai báo là role của client `dx-permissions` trong `infra/keycloak/realm-template.json`: **tên tiếng Anh** dạng `đối-tượng:hành-động` (`request:create`), **mô tả tiếng Việt** ("Tạo yêu cầu") hiện trong Keycloak. Mỗi nhóm `/workspaces/{ws}/{vai trò}` được gán sẵn bộ quyền mặc định.
-
-Máy mới chỉ cần `scripts/start.ps1`: Keycloak import realm từ template nên có sẵn đủ quyền, nhóm và tài khoản quản trị. Máy đang có realm cũ (tạo trước khi có quyền) chạy **một lần** `scripts/start.ps1 -Reset` để import lại; sau đó quyền được lưu trong database của Keycloak, các lần sau chạy `scripts/start.ps1` như thường. Đổi quyền của một nhóm: Keycloak → realm `dx-lab` → **Groups** → nhóm → **Role mapping** → **Assign role** → lọc theo client → tích chọn quyền.
-
-Script sẽ: sinh lại `.local/dx-lab-realm.json` từ template → xóa realm `dx-lab` → khởi động lại Keycloak để import → kiểm tra log có dòng `Realm 'dx-lab' imported` → khởi động lại backend để nạp khóa ký mới.
-
-> [!WARNING]
-> Chỉ xóa realm `dx-lab`; realm `master` và dữ liệu PostgreSQL của core giữ nguyên. Tuy vậy user được tạo lại với **ID (`sub`) mới**, nên ticket/quy trình tạo bằng tài khoản cũ trên máy đó sẽ không còn ai xem được. Chỉ dùng cho môi trường local/demo.
+Keycloak imports only into a missing realm. Migrate required clients/groups/roles
+through the Admin API or console, preserving user IDs. Do not reset a shared realm
+or remove shared volumes: changed user subjects can orphan existing tickets.
 
 ### 2. Kiểm tra trạng thái dịch vụ
 
@@ -333,7 +293,7 @@ Mật khẩu của tất cả tài khoản mẫu được sinh ngẫu nhiên t�
 | `superadmin` | Cả 3 vai trò ở `lab-a`, `lab-b` + `platform-admin` | Tài khoản thử nghiệm đầy đủ quyền; vẫn tuân thủ quy tắc tách quyền (không tự xử lý ticket mình tạo) |
 
 > [!TIP]
-> **Mở rộng workspace:** Để thêm workspace hoặc role mới, chỉ cần tạo nhóm `/workspaces/<workspace>/<role>` trên giao diện Keycloak, không cần sửa đổi mã nguồn Core. Keycloak chỉ import cấu hình lần đầu khi realm chưa tồn tại; muốn nhận thay đổi mới trong template thì chạy `scripts/start.ps1 -Reset`, không xóa volume dùng chung.
+> Existing realm: migrate through the Admin API/console; preserve user IDs and shared data.
 
 ---
 
@@ -384,7 +344,7 @@ docker compose build platform   # chỉ build lại backend
 - **`No such image: dx-apisix:3.11.0-sec01`:** Chạy `docker compose build gateway`, rồi khởi động lại bằng `scripts/start.ps1`; đây là image được build từ source trong repo.
 - **Lỗi 401 Unauthorized:** Kiểm tra JWT issuer (`http://localhost:8081/realms/dx-lab`), audience (`dx-core`), thời hạn token và kết nối mạng nội bộ tới JWKS.
 - **Lỗi 403 Forbidden:** Kiểm tra phân nhóm người dùng và vai trò tương ứng với workspace đang truy cập.
-- **Keycloak báo "Client not found" / tài khoản demo không đăng nhập được:** realm cũ, chạy `scripts/start.ps1 -Reset` (xem mục *Làm mới realm Keycloak*).
+> Existing realm: migrate through the Admin API/console; preserve user IDs and shared data.
 - **Lỗi khởi động container:** Kiểm tra log bằng `docker compose logs`; tuyệt đối không tắt xác thực bảo mật để khắc phục lỗi.
 
 ---
