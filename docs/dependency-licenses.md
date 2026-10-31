@@ -1,5 +1,16 @@
 # Dependency, provenance and license inventory
 
+## Current v0.1.0 evidence (2026-10-31)
+
+v0.1.0 is published. Use the [released-manifest inventories and production SBOM](publication/pof/README.md)
+for current npm/Java/Python/image-reference versions and provenance. The scoped
+Apache-2.0 grant and four unresolved external permission terms are in
+[LICENSING](../LICENSING.md). One MODERATE fast-uri finding remains documented.
+The dated tables and FAIL/pending-source-license statements below are historical
+checkpoints, not current version/security/license verdicts or a replacement audit.
+
+## Historical checkpoints (preserved)
+
 Release-readiness update (2026-10-26): current resolved Java coordinates are in
 `security/release-readiness-20261026-dependencies.txt`; Jackson is BOM-aligned at
 2.18.11 while Boot 3.3.13/Java 17/Flowable 7.1.0 remain unchanged. See

@@ -1,57 +1,94 @@
-# DX-Lab HaUI: DX-OS platform
+# Smart Service Desk
 
-## Proposed public submission (2026-10-28)
+## v0.1.0 - released 2026-10-31
 
-**HOLD: source license approval and publication authorization are pending.**
-Apache-2.0 is intended, not currently granted. Do not make the existing private
-repository public: historical reference/data rights need review. See
-[evaluation readiness](docs/publication/EVALUATION_READINESS.md),
-[history options](docs/publication/HISTORY_OPTIONS.md),
-[dependency/license summary](docs/publication/DEPENDENCIES.md) and
-[release plan](docs/publication/RELEASE_PLAN.md).
+The existing repository is public. Preserve its real Git history; do not create a
+replacement repository or follow older history-filtering/publication proposals.
+**Authorized team-owned work is licensed under Apache-2.0; see root LICENSE.**
+[Smart Service Desk v0.1.0](https://github.com/HaUI-DangSuyNghi/Smart-Service-Desk/releases/tag/v0.1.0)
+was published on 2026-10-31 at 12:31 UTC+07; source commit
+`ba82b2fc5eb36ea309563d2d7442db95b96a7608`. The tag/source archives are unchanged.
+See the [six-criterion PoF evidence index](docs/publication/POF_EVIDENCE.md),
+[release notes](RELEASE_NOTES_v0.1.0.md), [license scope](LICENSING.md) and
+[asset manifest](docs/publication/release-distribution-status.csv). The team
+leader provided four asset-specific confirmations in merged PR #74: two direct
+author permissions and two reported HaUI permissions. School written/email/link
+evidence and any required attribution/conditions still need archiving.
+Publication does not transfer third-party ownership or clear missing evidence.
 
-Source layout: headless `backend/.../core` supplies identity, workflow, data and
-audit; `hpdi` capabilities serve Service Desk/Room Request applications; reusable
-Python `intelligence/src/hdpi` and the React platform complete the three tiers.
-Contracts/OpenAPI are under `contracts/`; architecture/startup details follow.
+Release baseline: the frozen v0.1.0 source, including Core / H-P-D-I,
+Service Desk, Room Request and existing Knowledge/Intelligence integrations.
+No unreviewed local changes or OCR experiments are included. Supported startup
+baseline is no-AI/manual workflow; Qwen/GPU and external-provider operation are
+optional integrations, not requirements or certified runtime modes for v0.1.0.
+Existing merged code is retained. Do not claim all AI modes have passed.
 
-Public source candidate excludes pending-rights fixtures and references. Its
-fixture-dependent tests, corpus evaluation and demo data are NOT release-certified.
-Photo is replaced by a native CSS gradient in the candidate only. Historical
-acceptance reports are not proof of current demo health. See BUILD_VALIDATION.md
-under docs/publication for this preparation's actual build results.
+### Verified installation boundary (2026-10-31)
 
-For an authorized clean-machine review use Java 17/Maven 3.9.9, Node >=22.12,
-Python 3.12 and Docker/Compose as documented below. Build source with
-`mvn -f backend/pom.xml verify`, `npm ci --prefix frontend` then
-`npm run build --prefix frontend`, and
-`python -m pip wheel --no-deps ./intelligence -w <outside-source-wheel-directory>`.
-Run `scripts/setup.ps1` to generate local-only secrets, then `scripts/start.ps1`
-on a new isolated installation; `-Intelligence` enables the triage overlay.
-Do not use reset flags or these startup commands against an existing shared demo.
-For outside-source invocation, first `Set-Location <clone-path>` inside a fresh
-PowerShell process; built jar/wheel/static artifacts should then be tested from a
-separate directory with explicit configuration. This run path is a verification
-requirement, not a claim that it has passed.
+The [final verification](docs/publication/pof/FINAL_VERIFICATION.md) records clean
+FE/BE source-build PASS and isolated direct-backend smoke/restart-persistence PASS
+with an explicit PostgreSQL 16.6 override. The released pinned PostgreSQL image
+failed startup in that harness; unmodified full Compose and browser login were
+NOT TESTED in this run. Historical CI is separate evidence, not a waiver.
 
-API schemas: `contracts/openapi/`; browser http://localhost:5173, gateway
-http://localhost:9080, Keycloak http://localhost:8081 on the local development
-stack. Demo users (named by role: `requester1`, `agent1`, `coordinator1`, `admin1`...) use locally generated `DEMO_PASSWORD` in ignored
-`.env`; never commit/share a live password or replace the source gate with hosted
-demo access. Issue tracker availability requires owner verification.
+### Minimal clean-source startup
 
-Post-merge integration: see [BE-POSTMERGE-01](docs/BE_POSTMERGE01.md) for the
-isolated Java/Python demo, FE proxy, acceptance evidence and release blockers.
-The default startup assembles Core, HPDI and applications; enable the private Python runtime with the documented overlays.
-Strict boundary recovery BND-00 through BND-07 is implemented; see
-[ownership and gates](docs/architecture/BOUNDARY_DEBT.md) and
-[runtime configuration](docs/architecture/STRICT_BOUNDARY_OPERATIONS.md).
-Production security G9 remains FAIL; release remains BLOCKED.
+Use Docker Desktop/Linux containers with Compose v2. In a NEW directory only:
 
-AI06 continuation adds synthetic DEV evaluation and disabled Service Desk
-assistance through HPDI, Core freshness checks and a browser-tested panel.
-See [AI06 implementation status](intelligence/docs/task/AI06/AI06_COMPLETION_STATUS.md)
-for reproduction commands, measured evidence and remaining model/review gates.
+```powershell
+git clone https://github.com/HaUI-DangSuyNghi/Smart-Service-Desk.git Smart-Service-Desk-v0.1.0
+cd Smart-Service-Desk-v0.1.0
+git switch --detach v0.1.0
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup.ps1
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start.ps1 -NoAi
+```
+
+Setup generates private `.env`/realm configuration. Never share them or run setup,
+realm resets or destructive volume commands against an existing demo installation.
+Default browser 5173, Keycloak 8081 and gateway 9080. Demo usernames use the locally
+generated DEMO_PASSWORD; no live password or API key is distributed.
+
+The Dockerfiles build from source. Native toolchain: Java 17/Maven 3.9.9,
+Node >=22.12 and Python >=3.12,<3.13. Core CI runs isolated PostgreSQL, real E2E,
+restart/restore and contract checks. CI evidence must match the final source SHA;
+optional full image-security scanning is not covered by a green functional job.
+An unusable local image cache is an environment failure, not permission to reset
+existing databases. Resolve image/runtime problems before the first installation.
+
+### Quick demo, source build and project navigation
+
+After startup, open `http://localhost:5173` and sign in with the generated demo
+credentials. In the same workspace: create a ticket as requester, review/assign
+it with an authorized coordinator, handle it as agent, then confirm or request
+rework as requester. This manual workflow does not require an AI provider.
+Do not use real personal data or shared production credentials for the demo.
+
+Dockerfiles compile the frontend/backend and package the Python runtime from
+source. For a standalone frontend build in a fresh checkout:
+
+```powershell
+cd frontend
+npm ci
+npm run typecheck
+npm run lint
+npm test
+npx playwright install chromium
+npm run test:e2e
+npm run build
+```
+
+The browser suite uses stub API contracts, not real gateway acceptance. Real
+PostgreSQL/Keycloak and three-tier smoke evidence/configuration is linked in
+[PoF build evidence](docs/publication/POF_EVIDENCE.md). It uses isolated CI stacks;
+do not point test/reset scripts at an existing demo database or Azure VM.
+
+Architecture: technical Core -> reusable H-P-D-I -> applications (Service Desk /
+Room Request). React platform/app boundaries and the generic private Python
+runtime follow the same separation; see the [ownership map](docs/architecture/tier-boundary-map.md).
+[Core API](contracts/openapi/core.yaml) | [Service Desk API](contracts/openapi/servicedesk.yaml) |
+[CI runs](https://github.com/HaUI-DangSuyNghi/Smart-Service-Desk/actions) |
+[dependencies/SBOM](docs/publication/pof/README.md) | [Issues](https://github.com/HaUI-DangSuyNghi/Smart-Service-Desk/issues) |
+[CONTRIBUTING](CONTRIBUTING.md). Post-release evidence updates on main do not alter v0.1.0.
 
 <p align="center">
   <img src="https://img.shields.io/badge/Java-17-blue.svg" alt="Java 17" />
@@ -60,16 +97,18 @@ for reproduction commands, measured evidence and remaining model/review gates.
   <img src="https://img.shields.io/badge/APISIX-3.11-orange.svg" alt="APISIX" />
   <img src="https://img.shields.io/badge/PostgreSQL-16.15-blue.svg" alt="PostgreSQL" />
   <img src="https://img.shields.io/badge/Docker-Compose%20v2-blue.svg" alt="Docker" />
-  <img src="https://img.shields.io/badge/License-Pending%20Approval-lightgrey.svg" alt="License approval pending" />
+  <img src="https://img.shields.io/badge/License-Apache--2.0-blue.svg" alt="Apache-2.0 for authorized team-owned work" />
 </p>
 
 Nền tảng headless Tier-1 dành cho DX-OS Open-Core (Smart Service Desk). Hệ thống cung cấp dịch vụ định danh tập trung, kiểm soát truy cập đa không gian làm việc (multi-workspace RBAC), động cơ quy trình nghiệp vụ BPMN (Flowable), quản lý siêu dữ liệu/tệp tin bảo mật và ghi vết kiểm toán giao dịch (transactional audit).
 
 > [!NOTE]
 > Headless Core and Service Desk Backend are implemented, including ticket APIs and a real Flowable process. Java-Python AI Triage is integrated and tested through Keycloak/APISIX. See [Ticket Foundation](docs/servicedesk-ticket-foundation.md), [application OpenAPI](contracts/openapi/servicedesk.yaml) and [integration evidence](docs/BE_POSTMERGE01.md#validation).
-> Frontend has a strict TypeScript platform/app scaffold with independent builds and import guards; rendered browser UI remains a frontend task. AI-03 Retrieval has no public Knowledge Search endpoint.
-> Dashboard counts and shared time filters are documented in [Service Desk statistics](docs/servicedesk-statistics.md); dashboard UI remains a frontend task.
-> Production Security G9 is FAIL; release is BLOCKED. Functional acceptance does not imply release readiness.
+> The React workspace, Service Desk lifecycle/dashboard, Room Request and Knowledge library/preview/download/chat/history UI are implemented in this main snapshot. Frontend typecheck, lint, unit and browser contracts have passing evidence on the equivalent tested source tree.
+> Supported submission startup is manual/no-AI. OCR experiments, GPU/Qwen and unaccepted cloud runtime modes are outside the v0.1.0 acceptance scope.
+> The recorded production npm audit has zero HIGH/CRITICAL findings and one MODERATE fast-uri finding. Functional acceptance is not full production-security certification; optional full image scanning is not covered by a green functional job.
+
+> **Version scope:** The v0.1.0 release and PoF records above describe the frozen tag. The expanded features and operating instructions below document active development and are not evidence of a published v0.2.0.
 
 ---
 
