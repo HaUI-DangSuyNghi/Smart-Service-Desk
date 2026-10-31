@@ -1,11 +1,10 @@
 <div align="center">
-  <img src="frontend/public/readme-logo-black.png" alt="Logo Smart Service Desk trên nền đen" width="280" />
+
+### Sản phẩm dự thi **Olympic Tin học Sinh viên Việt Nam 2026 — nội dung Phần mềm Nguồn mở (OLP PMNM 2026)**, chủ đề DX-OS Open-Core.
 
 # Smart Service Desk
 
 **Từ yêu cầu hỗ trợ đến kết quả xử lý, trên một nền tảng chung.**
-
-Sản phẩm dự thi **Olympic Tin học Sinh viên Việt Nam 2026 — nội dung Phần mềm Nguồn mở (OLP PMNM 2026)**, chủ đề DX-OS Open-Core.
 
 Nền tảng nguồn mở cho vận hành CNTT trong khoa, phòng máy và đơn vị đào tạo.
 Tiếp nhận sự cố, điều phối kỹ thuật viên, quản lý đặt phòng và tra cứu tài liệu theo từng không gian làm việc.
