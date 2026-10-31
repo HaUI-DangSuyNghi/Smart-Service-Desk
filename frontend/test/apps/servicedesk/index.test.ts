@@ -11,6 +11,7 @@ describe("registerServiceDesk", () => {
     const group = registry.menu().find((item) => item.label === "Service Desk");
     expect(group?.children?.map((child) => child.path)).toEqual([
       "/servicedesk/tickets",
+      "/servicedesk/intake",
     ]);
   });
 });

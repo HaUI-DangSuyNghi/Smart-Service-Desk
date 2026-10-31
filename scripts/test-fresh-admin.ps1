@@ -74,15 +74,16 @@ try {
         } catch { Start-Sleep -Seconds 2 }
     }
     if (!$ready) { throw 'Keycloak readiness timeout' }
-    $arguments = @('-B','-o','-f',(Join-Path $root 'backend/pom.xml'),'clean','verify')
+    $arguments = @('-B','-f',(Join-Path $root 'backend/pom.xml'),'clean','verify')
     if ($Profile -eq 'focused') {
         $arguments += '-Pcore-only'
         if (!$Tests) { $Tests = 'KeycloakFreshAdminAuthorizationTest,KeycloakFreshAdminIntegrationTest' }
     } elseif ($Profile -ne 'full') { $arguments += "-P$Profile" }
     if ($Tests) { $arguments += "-Dtest=$Tests" }
     $arguments += @('-Dservice-desk.background.scheduled=false','-Dservice-desk.sla.scheduled=false',
-        '-Dspring.datasource.hikari.maximum-pool-size=3')
+        '-Dspring.datasource.hikari.maximum-pool-size=3','-Dspring.test.context.cache.maxSize=2')
     if ($BuildImage) {
+        $arguments += '-o'
         docker run -d --name "$name-pg" --network "$name-network" --network-alias database `
             --tmpfs /var/lib/postgresql/data -e POSTGRES_DB=file_storage -e POSTGRES_USER=workflow `
             -e "POSTGRES_PASSWORD=$password" `
@@ -104,7 +105,7 @@ try {
         $env:FILE_TEST_DB_PASSWORD = $password
         $env:WORKFLOW_TEST_DB_PASSWORD = $password
         $env:FRESH_ADMIN_TEST_URL = 'http://keycloak:8080'
-        $arguments[3] = '/work/backend/pom.xml'
+        $arguments[2] = '/work/backend/pom.xml'
         $command = 'tar -C /source --exclude=backend/target --exclude=backend/.local -cf - backend contracts docs/architecture | tar -C /work -xf -; mvn "$@"; result=$?; cp /work/backend/target/surefire-reports/TEST-*.xml /evidence/; '
         if ($PackagedProof) {
             if ($Profile -ne 'full' -or $Tests) { throw 'Packaged proof requires unfiltered Full' }
@@ -116,7 +117,6 @@ try {
     if ($BuildImage) {
         docker run --rm --network "$name-network" -w /work/backend `
             --mount "type=bind,source=$root,target=/source,readonly" `
-            --mount "type=bind,source=$HOME/.m2/repository,target=/root/.m2/repository,readonly" `
             --mount "type=bind,source=$evidence,target=/evidence" `
             -e FRESH_ADMIN_TEST_URL -e FRESH_ADMIN_TEST_PASSWORD -e FRESH_ADMIN_TEST_DIRECTORY_SECRET `
             -e FILE_TEST_JDBC_URL -e WORKFLOW_TEST_JDBC_URL -e BACKGROUND_TEST_JDBC_URL `

@@ -23,6 +23,20 @@ def test_integration_report_rejects_empty_failed_or_skipped_suites(tmp_path, tes
 def test_missing_integration_report_is_not_a_pass(tmp_path):
     assert CHECKS['junit_pass'](tmp_path / 'missing.xml') is False
 
+def test_deterministic_suite_scope_reports_governed_models_separately():
+    import yaml
+
+    root = Path(__file__).resolve().parents[3]
+    workflow = yaml.safe_load((root / '.github/workflows/intelligence-triage-e2e.yml').read_text())
+    steps = workflow['jobs']['combined-head']['steps']
+    regression, = (step['run'] for step in steps if step.get('name', '').startswith('G2 '))
+    assert regression.count('-m "not dense_model and not generation_model"') == 2
+    readiness, = (step['run'] for step in steps if step.get('name', '').startswith('Record governed real-model'))
+    assert "'--mode', 'approved-local-model'" in readiness
+    assert 'result.returncode == 2' in readiness
+    assert "report['result'] == 'BLOCKED'" in readiness
+    assert "report['realModelValidation'] == 'REAL_MODEL_VALIDATION_BLOCKED'" in readiness
+
 
 @pytest.mark.parametrize(('status', 'code', 'valid'), [
     (503, 'INTELLIGENCE_UNAVAILABLE', True), (504, 'INTELLIGENCE_TIMEOUT', True),

@@ -128,7 +128,7 @@ class TicketAssistancePythonE2E {
         String body = mvc.perform(post(path()).with(as("owner", "assist-a", "requester"))
             .contentType("application/json").content("{\"question\":\"device connection\"}"))
             .andExpect(status().isOk())
-            .andExpect(header().string("Cache-Control", "no-store"))
+            .andExpect(header().string("Cache-Control", org.hamcrest.Matchers.containsString("no-store")))
             .andExpect(jsonPath("$.status").value("SUCCESS"))
             .andExpect(jsonPath("$.answer").value("Verify the device connection. [C1]"))
             .andExpect(jsonPath("$.citations[0].displayTitle").value("Synthetic connection guide"))

@@ -16,7 +16,7 @@ import vn.haui.dx.hpdi.common.api.CapabilityException;
 @Service
 public class CoreKnowledgeCatalog implements KnowledgeCatalog {
     /** Chỉ file văn bản mới là tri thức xem/trích dẫn được. */
-    static final Set<String> TEXT_MEDIA_TYPES = Set.of("text/plain", "text/markdown");
+    static final Set<String> TEXT_MEDIA_TYPES = KnowledgeTextExtractor.MEDIA_TYPES;
     private final HumanContext human;
     private final MetadataService metadata;
     private final FileService files;
@@ -52,7 +52,8 @@ public class CoreKnowledgeCatalog implements KnowledgeCatalog {
             byte[] bytes = input.readNBytes((int)FileService.MAX_SIZE_BYTES+1);
             if (bytes.length!=file.size() || !HexFormat.of().formatHex(MessageDigest.getInstance("SHA-256").digest(bytes)).equals(record.checksum()))
                 throw CapabilityException.conflict("Knowledge content changed");
-            return AuthorizedKnowledge.of(id, workspace, record.title(), record.version(), record.checksum(), record.usageRights(), file.mediaType(), bytes);
+            return new AuthorizedKnowledge(id, workspace, record.title(), record.version(), record.checksum(), record.usageRights(), file.mediaType(), bytes,
+                KnowledgeTextExtractor.extract(file.mediaType(), bytes));
         } catch (java.io.IOException | java.security.NoSuchAlgorithmException error) {
             throw CapabilityException.conflict("Knowledge content unavailable");
         }

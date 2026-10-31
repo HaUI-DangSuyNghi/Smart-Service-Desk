@@ -49,7 +49,7 @@ not GitHub's synthetic merge revision. Other existing regression workflows remai
 | Gate | Evidence / scope |
 | --- | --- |
 | G1 | Full Maven verify on disposable PostgreSQL; fail on any failure/error/skip |
-| G2 | Entire AI-02/AI-03/HTTP source and installed-wheel suites, package build/import |
+| G2 | AI-02/AI-03/HTTP and deterministic source/installed-wheel suites, package build/import; excludes provisioned dense and owner-governed real-generation runs |
 | G3 | No-cache Python image, metadata version, wheel resources, AI-02 + AI-03 runtime |
 | G4 | Current Java client -> authenticated Python -> real RulesEngine -> Java validator |
 | G5 | Real wrong-token/refused endpoint; timeout/malformed injected after Python SUCCESS |
@@ -72,7 +72,13 @@ refused-connection 503 and injected-delay 504. Database and service credentials 
 per run, not fixed historical passwords; all published test ports bind loopback only.
 
 No continue-on-error or test skip is allowed. Missing or skipped technical evidence fails
-the workflow. Image scanning uses the explicitly labeled assessment (`-ReportOnly`) mode:
+the workflow. G2 selects `not dense_model and not generation_model` in both runs; these
+markers require separately provisioned artifacts or owner approval, not deterministic
+contract validation. The unmarked fail-closed generation contract still runs. A separate
+step invokes the real-generation readiness command, requires its BLOCKED result and exit
+code 2, and retains `real-generation-readiness.json`; this is not a real-model PASS.
+Unexpected skips in the selected suites still fail G2. Image scanning uses the explicitly
+labeled assessment (`-ReportOnly`) mode:
 scanner failure fails CI, but successful scanning with vulnerabilities is a recorded G9 FAIL,
 not a technical functional-test failure. CI green never means the production security gate
 passed. `integration-summary.json` retains findings, productionGate results and release blockers.

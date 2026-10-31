@@ -43,6 +43,7 @@ jobs:
       FILE_TEST_DB_PASSWORD: isolated-ci-only
       WORKFLOW_TEST_JDBC_URL: jdbc:postgresql://localhost:5432/workflow_approval
       WORKFLOW_TEST_DB_PASSWORD: isolated-ci-only
+      BACKGROUND_TEST_JDBC_URL: jdbc:postgresql://localhost:5432/background_assessment
     steps:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
@@ -54,9 +55,13 @@ jobs:
       - name: Create isolated workflow regression database
         env:
           PGPASSWORD: isolated-ci-only
-        run: psql -h localhost -U workflow -d file_storage -c 'CREATE DATABASE workflow_approval'
+        run: |
+          psql -h localhost -U workflow -d file_storage -c 'CREATE DATABASE workflow_approval'
+          psql -h localhost -U workflow -d file_storage -c 'CREATE DATABASE duty_upgrade'
+          psql -h localhost -U workflow -d file_storage -c 'CREATE DATABASE background_assessment'
       - name: Java bridge, PostgreSQL authorization and Core/Ticket/Statistics regression
-        run: mvn -B -f backend/pom.xml verify
+        shell: pwsh
+        run: ./scripts/test-fresh-admin.ps1 -Profile full
       - name: Reject skipped regression tests
         run: |
           python3 - <<'PY'

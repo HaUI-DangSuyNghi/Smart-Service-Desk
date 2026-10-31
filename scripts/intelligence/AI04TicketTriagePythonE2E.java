@@ -38,6 +38,7 @@ class AI04TicketTriagePythonE2E {
     @Autowired MockMvc mvc;
     @Autowired ObjectMapper json;
     @Autowired JdbcTemplate jdbc;
+    @Autowired vn.haui.dx.core.identity.api.WorkspaceDirectory directory;
     @Autowired vn.haui.dx.core.workflow.internal.WorkflowStateFixture engineState;
 
     private RequestPostProcessor as(String subject, String workspace, String role) {
@@ -91,13 +92,27 @@ class AI04TicketTriagePythonE2E {
         }
         assertArrayEquals(before, counts());
         mvc.perform(get(route).with(owner)).andExpect(status().isOk()).andExpect(content().json(ticket.toString()));
+        var agent = as("synthetic-ai04-agent", workspace, "agent");
+        org.mockito.Mockito.when(directory.members(workspace)).thenReturn(List.of(
+            new vn.haui.dx.core.identity.api.DirectoryMember("synthetic-ai04-agent", "Synthetic agent", null,
+                java.util.Set.of(vn.haui.dx.core.identity.api.WorkspaceRole.AGENT)),
+            new vn.haui.dx.core.identity.api.DirectoryMember("synthetic-ai04-coordinator", "Synthetic coordinator", null,
+                java.util.Set.of(vn.haui.dx.core.identity.api.WorkspaceRole.COORDINATOR))));
+        mvc.perform(put("/api/hpdi/v1/workspaces/" + workspace + "/duty/me").with(agent)
+            .contentType("application/json").content("{\"onDuty\":true}"))
+            .andExpect(status().isOk());
+        mvc.perform(post(route + "/review").with(as("synthetic-ai04-coordinator", workspace, "coordinator"))
+            .contentType("application/json")
+            .content("{\"category\":\"OTHER\",\"priority\":\"MEDIUM\",\"assignee\":null,\"reason\":\"Synthetic acceptance review\"}"))
+            .andExpect(status().isOk());
         JsonNode progress = json.readTree(mvc.perform(get(route + "/progress").with(owner))
             .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
         String task = progress.path("currentTasks").get(0).path("id").asText();
         String taskRoute = "/api/core/v1/workspaces/" + workspace + "/instances/"
             + ticket.path("process").path("processInstanceId").asText() + "/tasks/" + task;
-        var agent = as("synthetic-ai04-agent", workspace, "agent");
         mvc.perform(post(taskRoute + "/claim").with(agent)).andExpect(status().isOk());
+        mvc.perform(post("/api/hpdi/v1/workspaces/" + workspace + "/tasks/" + task + "/start")
+            .with(agent)).andExpect(status().isOk());
         mvc.perform(post(taskRoute + "/complete").with(agent).contentType("application/json")
             .content("{\"expectedTaskKey\":\"handle\",\"outcome\":\"resolved\"}")).andExpect(status().isNoContent());
     }

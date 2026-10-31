@@ -17,7 +17,7 @@ import urllib.request
 import uuid
 from html.parser import HTMLParser
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[4]
 AUTH = "http://localhost:8081"
 WEB = "http://localhost:5173"
 API = "http://localhost:9080/api/apps/servicedesk/v1"

@@ -120,7 +120,7 @@ Exporter kiểm tra đủ bảy service, cùng Linux/amd64, tự thêm code imag
 người nhận kiểm ancestry độc lập. Export vào thư mục mới dưới `.local`:
 
 ```powershell
-python scripts/ai-d2/team_release.py export `
+python scripts/apps/servicedesk/ai07/team_release.py export `
   --plan .local/ai-d2-release-images.json `
   --image-receipt .local/ai07/d2/full-image-hf.json `
   --approval D:/Approved/distribution.json `
@@ -265,7 +265,7 @@ CPU sidecar gốc. Download và kiểm đúng upstream revision/size/SHA-256 ngo
 rồi build layer E5 có runtime ONNX được pin. Script tạo receipt private.
 
 ```powershell
-python scripts/ai-d2/build-e5-sidecar.py \
+python scripts/apps/servicedesk/ai07/build-e5-sidecar.py \
   --model-directory .local/models/e5 \
   --download \
   --cpu-base-image <CPU-TRIAGE-IMAGE-ID> \

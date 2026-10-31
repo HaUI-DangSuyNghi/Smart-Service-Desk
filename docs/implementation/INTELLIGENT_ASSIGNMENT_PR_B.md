@@ -132,7 +132,7 @@ python scripts/test-tier-boundaries.py
 ```
 
 Use Python with the existing acceptance OpenAPI dependencies for `scripts/test-servicedesk-execution-contract.py`, passing the runner's real HTTP evidence and `--assignment-evidence`.
-After packaging the full backend JAR, `python scripts/acceptance/assignment-suggestion.py` runs the disposable real Keycloak/PostgreSQL/JWT smoke.
+After packaging the full backend JAR, `python scripts/apps/servicedesk/acceptance/assignment-suggestion.py` runs the disposable real Keycloak/PostgreSQL/JWT smoke.
 It imports only an isolated realm, generates temporary credentials, binds random loopback ports and removes its containers/network on exit.
 No new runtime dependency is added. V11-V14 are not modified and their applied checksums remain intact.
 

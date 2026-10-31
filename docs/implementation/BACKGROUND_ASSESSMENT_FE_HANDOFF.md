@@ -108,7 +108,7 @@ READY/DEGRADED never get claimed. GET never triggers recovery or inference.
 
 ## Real acceptance runner
 
-`scripts/acceptance/background-assessment.py` creates a random Compose project,
+`scripts/apps/servicedesk/acceptance/background-assessment.py` creates a random Compose project,
 random credentials and project-scoped PostgreSQL/file volumes under `.local/`.
 It starts real Keycloak, Java with embedded Flowable, Python and Gateway; source
 Python is mounted read-only, and the Java jar is rebuilt unless `--jar` is supplied.

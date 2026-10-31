@@ -162,6 +162,70 @@ public class HttpAssistanceTransport implements AssistanceTransport {
         }
     }
 
+    @Override
+    public void streamKnowledge(JsonNode input, java.util.function.Consumer<JsonNode> events) {
+        byte[] body;
+        try { body = json.writeValueAsBytes(input); }
+        catch (IOException error) { throw IntelligenceFailure.configuration(); }
+        if (body.length > 2_000_000) throw IntelligenceFailure.configuration();
+        var target = endpoint().resolve("/internal/intelligence/v1/knowledge");
+        if (!slots.tryAcquire()) throw IntelligenceFailure.unavailable();
+        CompletableFuture<HttpResponse<Void>> pending = null;
+        try {
+            var request = HttpRequest.newBuilder(target).timeout(Duration.ofSeconds(40))
+                .header("Authorization", "Bearer " + settings.bearer())
+                .header("Content-Type", "application/json").header("Accept", "application/x-ndjson")
+                .POST(HttpRequest.BodyPublishers.ofByteArray(body)).build();
+            pending = http.sendAsync(request, info -> {
+                if (info.statusCode() != 200 || !info.headers().firstValue("Content-Type").orElse("").startsWith("application/x-ndjson"))
+                    throw IntelligenceFailure.unavailable();
+                return new EventBody(events);
+            });
+            pending.get(40, TimeUnit.SECONDS);
+        } catch (InterruptedException error) {
+            Thread.currentThread().interrupt();
+            throw IntelligenceFailure.unavailable();
+        } catch (TimeoutException error) { throw IntelligenceFailure.timeout(); }
+        catch (ExecutionException error) { throw IntelligenceFailure.unavailable(); }
+        finally {
+            if (pending != null && !pending.isDone()) pending.cancel(true);
+            slots.release();
+        }
+    }
+
+    private final class EventBody implements HttpResponse.BodySubscriber<Void> {
+        private final CompletableFuture<Void> result = new CompletableFuture<>();
+        private final ByteArrayOutputStream line = new ByteArrayOutputStream();
+        private final java.util.function.Consumer<JsonNode> events;
+        private Flow.Subscription subscription;
+        private int total;
+        EventBody(java.util.function.Consumer<JsonNode> events) { this.events = events; }
+        @Override public CompletionStage<Void> getBody() { return result; }
+        @Override public void onSubscribe(Flow.Subscription incoming) {
+            subscription = incoming;
+            result.whenComplete((value, error) -> { if (error != null) incoming.cancel(); });
+            incoming.request(1);
+        }
+        @Override public void onNext(List<ByteBuffer> buffers) {
+            try {
+                for (var buffer : buffers) while (buffer.hasRemaining()) {
+                    byte next = buffer.get();
+                    if (++total > 512000 || line.size() > 65536) throw IntelligenceFailure.invalid();
+                    if (next == '\n') {
+                        if (line.size() > 0) events.accept(json.readTree(line.toByteArray()));
+                        line.reset();
+                    } else line.write(next);
+                }
+                subscription.request(1);
+            } catch (Exception error) { subscription.cancel(); result.completeExceptionally(error); }
+        }
+        @Override public void onError(Throwable error) { result.completeExceptionally(error); }
+        @Override public void onComplete() {
+            if (line.size() != 0) result.completeExceptionally(IntelligenceFailure.invalid());
+            else result.complete(null);
+        }
+    }
+
     private static final class LimitedBody implements HttpResponse.BodySubscriber<byte[]> {
         private final CompletableFuture<byte[]> result = new CompletableFuture<>();
         private final ByteArrayOutputStream bytes = new ByteArrayOutputStream();

@@ -1,6 +1,7 @@
 import { createElement } from "react";
 import type { RouteObject } from "react-router";
 import { AuditPage } from "@/platform/data/audit";
+import KnowledgeChatPage from "@/platform/intelligence/KnowledgeChatPage";
 import { DashboardPage } from "@/platform/data/dashboard";
 import { KnowledgeDetailPage, KnowledgeListPage } from "@/platform/data/knowledge";
 import { CALLBACK_PATH, CallbackPage, RequireAuth } from "@/platform/human/auth";
@@ -64,6 +65,11 @@ const PLATFORM_ROUTES: readonly AppRoute[] = [
   {
     path: "knowledge/:id",
     component: KnowledgeDetailPage,
+    requiredPermissions: [PERMISSIONS.documentView],
+  },
+  {
+    path: "knowledge-chat",
+    component: KnowledgeChatPage,
     requiredPermissions: [PERMISSIONS.documentView],
   },
   // Cảnh báo, ca trực, sửa ước tính (plan nghiệp vụ R2–R8); việc theo hàng đợi xem ở từng app

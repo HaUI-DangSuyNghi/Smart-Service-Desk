@@ -1,6 +1,5 @@
 """Real T3 -> T2 -> T1 and private Python triage proof using isolated synthetic data."""
 import argparse
-import base64
 from hashlib import sha256
 import json
 from pathlib import Path
@@ -65,8 +64,14 @@ def main():
                      'usageRights': 'CC0', 'fileId': file['id']})
     # Xem tài liệu cần quyền document:view (kỹ thuật viên, điều phối viên); người yêu cầu bị chặn
     knowledge = call('GET', '/api/hpdi/v1/workspaces/lab-a/knowledge/' + metadata['id'], 'user2', 200, contract='hpdi')
-    assert base64.b64decode(knowledge['content']) == content
-    assert knowledge['checksum'] == sha256(content).hexdigest()
+    assert knowledge['text'] == content.decode('utf-8')
+    assert knowledge['metadataId'] == metadata['id']
+    assert knowledge['version'] == 'proof-v1'
+    assert 'content' not in knowledge and 'checksum' not in knowledge
+    original = call('GET', '/api/core/v1/workspaces/lab-a/files/' + file['id'], 'user2', 200)
+    assert original['checksum'] == sha256(content).hexdigest()
+    requester_preview = call('GET', '/api/hpdi/v1/workspaces/lab-a/knowledge/' + metadata['id'], 'user1', 200, contract='hpdi')
+    assert requester_preview == knowledge
     passed.append('authorized-knowledge-exact-provenance')
 
     actor = call('GET', '/api/hpdi/v1/workspaces/lab-a/actor', 'user1', 200, contract='hpdi')

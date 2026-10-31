@@ -15,7 +15,7 @@ from urllib.request import Request, urlopen
 from uuid import uuid4
 
 
-ROOT = Path(__file__).resolve().parents[2]
+ROOT = Path(__file__).resolve().parents[4]
 
 
 def http(method, url, *, token=None, body=None, form=None, expected=200):

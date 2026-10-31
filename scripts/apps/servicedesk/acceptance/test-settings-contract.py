@@ -13,7 +13,7 @@ from openapi_spec_validator import OpenAPIV30SpecValidator
 from referencing import Registry, Resource
 from referencing.jsonschema import DRAFT4
 
-ROOT = Path(__file__).resolve().parents[1]
+ROOT = Path(__file__).resolve().parents[4]
 
 
 def main():
