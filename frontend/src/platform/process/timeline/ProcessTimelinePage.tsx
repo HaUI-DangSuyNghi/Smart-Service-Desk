@@ -6,6 +6,7 @@ import { FieldsSkeleton } from "@/platform/shared/ui/Skeleton";
 import { useProcessLabels } from "../catalog/useProcessCatalog";
 import { ProcessTimeline } from "./ProcessTimeline";
 import { useTimeline } from "./useTimeline";
+import { RequestActions } from "../requests/RequestActions";
 
 /** Trang tiến độ /processes/:id, dùng cho mọi quy trình. */
 const ProcessTimelinePage = () => {
@@ -21,6 +22,11 @@ const ProcessTimelinePage = () => {
         {timeline.isPending && <FieldsSkeleton rows={7} label="Đang tải tiến độ" />}
         {timeline.error && <ErrorState error={timeline.error} />}
         {timeline.data && <ProcessTimeline timeline={timeline.data} />}
+        {timeline.data && (
+          <div className="px-4 py-3">
+            <RequestActions processId={id} />
+          </div>
+        )}
       </PageBody>
     </Page>
   );

@@ -132,7 +132,7 @@ Tại thư mục gốc repo, gõ `.\dx` (PowerShell, cmd) hoặc `./dx` (Git Bas
 Menu hiện ra, chọn bằng phím ↑/↓ rồi Enter. Mục **Start project** chạy trọn quy trình khởi động:
 
 1. **Kiểm máy:** tạo `.env` nếu chưa có, kiểm Docker, ổ đĩa, cổng, GPU, API key. Có lỗi thì hỏi dừng hay chạy tiếp.
-2. **Chọn chế độ AI (bắt buộc có AI):** theo chế độ đã lưu, Qwen local, Qwen local + Ask AI, hoặc chỉ API. Máy không có GPU + image Qwen lẫn API key thì dừng và báo cần bổ sung.
+2. **Chọn chế độ AI:** giữ chế độ đã lưu, Qwen local, Qwen local + Ask AI, Qwen GPU server, API only hoặc **No AI**. Chọn No AI để chạy nghiệp vụ thủ công, không cần GPU hoặc API key.
 3. **Khởi động:** build, chạy và đợi mọi dịch vụ healthy.
 4. **Sẵn sàng:** in địa chỉ web, API, Keycloak, tài khoản demo, rồi hỏi có mở web luôn không.
 
@@ -141,7 +141,7 @@ Các lệnh trực tiếp, không qua menu:
 ```powershell
 .\dx launch         # quy trình khởi động đầy đủ như trên
 .\dx doctor         # kiểm máy; lỗi nào cũng kèm cách sửa
-.\dx up             # khởi động nhanh theo chế độ AI đã lưu (lần đầu tự chọn theo máy)
+.\dx up             # khởi động theo chế độ đã lưu, kể cả khi đã tắt AI
 .\dx down           # dừng, giữ dữ liệu
 .\dx help           # xem mọi lệnh
 ```
@@ -154,6 +154,7 @@ Lần đầu chạy `.\dx` (lệnh nào cũng được), dự án tự được 
 | `.\dx up model ask` | Như trên, thêm Hỏi AI qua API |
 | `.\dx up remote` | Qwen trên máy GPU riêng qua Cloudflare Access (không cần GPU ở máy này), xem [docs/remote-model.md](docs/remote-model.md) |
 | `.\dx up api` | Phân loại và Hỏi AI đều qua API (không cần GPU) |
+| `.\dx up no-ai` | Tắt AI, tiếp nhận/duyệt/phân công thủ công; không cần GPU hoặc API key |
 | `.\dx restart` | Dừng rồi khởi động lại |
 | `.\dx ps`, `.\dx logs [service]` | Trạng thái container, xem log |
 | `.\dx realm` | Import lại realm Keycloak (`start.ps1 -Reset`) |
@@ -236,7 +237,7 @@ Clone source không tự tải model. Nếu image có tên khác mặc định, 
 | `.\dx up model ask` | `-Model -AskApi` | Qwen + bộ luật | API |
 | `.\dx up model` | `-Model` | Qwen + bộ luật | Theo `AI_ASSISTANCE_MODE` đã lưu |
 
-**Trên máy mới, `.\dx up` không kèm gì sẽ tự chọn chế độ AI theo máy; gọi thẳng `scripts/start.ps1` không có cờ thì AI mặc định tắt.** `-Model` một mình không
+**`.\dx up` giữ chế độ đã lưu, kể cả `AI_MODE=disabled`.** Trong menu `dx start`, chọn **No AI** nếu chỉ cần nghiệp vụ thủ công, hoặc chọn Qwen/API để dùng AI. Có thể tắt nhanh bằng `.\dx up no-ai`; lựa chọn này lưu cả `AI_MODE=disabled` và `AI_ASSISTANCE_MODE=disabled`. `-Model` một mình không
 tự bật hỏi đáp API nếu chưa cấu hình trước đó. Trong cả chế độ Qwen và API,
 model vẫn phối hợp với rule engine; không thay bộ luật bằng model.
 

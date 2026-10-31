@@ -9,16 +9,23 @@ interface Props {
   today: string;
   counts?: ReadonlyMap<string, number>;
   onSelect: (date: string) => void;
+  title?: string;
 }
 
-export const CalendarDays = ({ selected, today, counts, onSelect }: Props) => (
+export const CalendarDays = ({
+  selected,
+  today,
+  counts,
+  onSelect,
+  title = "Lịch của tôi",
+}: Props) => (
   <section
     aria-label="Chọn ngày làm việc"
     className="min-w-0 rounded-crm-md border border-crm-line"
   >
     <div className="flex flex-wrap items-center justify-between gap-3 border-b border-crm-line px-3 py-3 sm:px-4">
       <div className="min-w-0">
-        <h2 className="text-crm-lg font-medium text-crm-text">Lịch của tôi</h2>
+        <h2 className="text-crm-lg font-medium text-crm-text">{title}</h2>
         <p className="mt-1 text-crm-sm text-crm-text-3">
           {parseCalendarDate(selected).toLocaleDateString("vi-VN", {
             weekday: "long",

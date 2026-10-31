@@ -17,9 +17,14 @@ public class RoomRequests {
     private final KnowledgeCatalog knowledge;
     private final IntelligenceCapability intelligence;
     private final ActivityJournal journal;
+    private final org.springframework.beans.factory.ObjectProvider<Notifications> notices;
+    private final org.springframework.beans.factory.ObjectProvider<LiveUpdates> live;
     public RoomRequests(JdbcTemplate jdbc,HumanContext human,ProcessCapability processes,KnowledgeCatalog knowledge,
-                        IntelligenceCapability intelligence,ActivityJournal journal) {
+                        IntelligenceCapability intelligence,ActivityJournal journal,
+                        org.springframework.beans.factory.ObjectProvider<Notifications> notices,
+                        org.springframework.beans.factory.ObjectProvider<LiveUpdates> live) {
         this.jdbc=jdbc;this.human=human;this.processes=processes;this.knowledge=knowledge;this.intelligence=intelligence;this.journal=journal;
+        this.notices=notices; this.live=live;
     }
     @Transactional
     public RoomRequest create(String workspace,String room,UUID knowledgeId) {
@@ -33,6 +38,9 @@ public class RoomRequests {
             id,workspace,actor.subject(),room,knowledgeId,process.processInstanceId());
         journal.record(workspace,new BusinessActivity("roomrequest.request.create","roomrequest.request",id.toString(),
             Map.of("processInstanceId",process.processInstanceId())));
+        notices.getObject().notify(new Notifications.Notice(workspace,"ROOM_REQUEST_CREATED",Notifications.Severity.INFO,
+            "Yêu cầu đặt phòng mới",room,"/roomrequest/requests/"+id,RoomProcess.KEY,id.toString(),actor.subject(),Set.of(),true,true));
+        live.getObject().toChannel(workspace,LiveUpdates.WORK,"REQUEST_CREATED","request",process.processInstanceId());
         return new RoomRequest(id,workspace,actor.subject(),room,knowledgeId,new RoomProcessView(process.processInstanceId(),process.processKey(),process.businessKey(),process.workspace()));
     }
     @Transactional(readOnly=true)

@@ -8,11 +8,14 @@ import { processKeys } from "./queryKeys";
  */
 export const useProcessRealtime = () => {
   const { current } = useCurrentWorkspace();
-  useRealtimeInvalidation(current ? workspaceTopic(current, "work") : null, () => [
-    processKeys.all(current),
-    processKeys.alerts(current),
-  ]);
+  useRealtimeInvalidation(current ? workspaceTopic(current, "work") : null, (event) =>
+    event.resource === "request" ? [[]] : [processKeys.all(current), processKeys.alerts(current)],
+  );
   useRealtimeInvalidation(USER_EVENTS, (event) =>
-    event.type === "NOTIFICATION" ? [] : [processKeys.all(event.workspace)],
+    event.resource === "request"
+      ? [[]]
+      : event.type === "NOTIFICATION"
+        ? []
+        : [processKeys.all(event.workspace)],
   );
 };

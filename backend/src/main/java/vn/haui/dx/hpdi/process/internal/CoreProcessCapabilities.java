@@ -60,7 +60,7 @@ public class CoreProcessCapabilities implements ProcessCapability, WorkInbox, Wo
         return new ProcessTimeline(h.id(), h.processKey(), h.businessKey(), h.workspace(), h.initiator(),
             h.startedAt(), h.endedAt(), h.currentTasks().stream().map(CoreProcessCapabilities::item).toList(),
             h.steps().stream().map(s -> new ProcessTimeline.Step(s.id(), s.key(), s.name(), s.assignee(),
-                s.outcome(), s.comment(), s.startedAt(), s.claimedAt(), s.endedAt())).toList(), h.variables());
+                s.outcome(), s.comment(), s.startedAt(), s.claimedAt(), s.endedAt())).toList(), h.variables(), h.cancelled());
     }
     public Page<ProcessSummary> startedByMe(String workspace, PageRequest page) {
         return summaries(workflow.startedByMe(workspace, corePage(page)));
@@ -81,7 +81,7 @@ public class CoreProcessCapabilities implements ProcessCapability, WorkInbox, Wo
     public void setPriority(String workspace, String taskId, int priority) { workflow.setPriority(workspace, taskId, priority); }
     private static Page<ProcessSummary> summaries(vn.haui.dx.core.common.Page<vn.haui.dx.core.workflow.api.ProcessSummary> result) {
         return new Page<>(result.items().stream().map(p -> new ProcessSummary(p.id(), p.processKey(), p.businessKey(),
-            p.initiator(), p.startedAt(), p.endedAt(), p.activeTaskKeys())).toList(), result.page(), result.size(), result.total());
+            p.initiator(), p.startedAt(), p.endedAt(), p.activeTaskKeys(), p.cancelled())).toList(), result.page(), result.size(), result.total());
     }
     private static vn.haui.dx.core.common.PageRequest corePage(PageRequest page) {
         return new vn.haui.dx.core.common.PageRequest(page.page(), page.size());

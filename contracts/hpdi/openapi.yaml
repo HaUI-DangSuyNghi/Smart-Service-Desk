@@ -7,6 +7,12 @@ info:
 security:
 - bearerAuth: []
 paths:
+  /api/hpdi/v1/workspaces/{workspace}/instances/{id}/request:
+    $ref: 'request-lifecycle-openapi.yaml#/paths/~1api~1hpdi~1v1~1workspaces~1{workspace}~1instances~1{id}~1request'
+  /api/hpdi/v1/workspaces/{workspace}/instances/{id}/request/cancel:
+    $ref: 'request-lifecycle-openapi.yaml#/paths/~1api~1hpdi~1v1~1workspaces~1{workspace}~1instances~1{id}~1request~1cancel'
+  /api/hpdi/v1/workspaces/{workspace}/instances/{id}/request/close:
+    $ref: 'request-lifecycle-openapi.yaml#/paths/~1api~1hpdi~1v1~1workspaces~1{workspace}~1instances~1{id}~1request~1close'
   /api/hpdi/v1/workspaces/{workspace}/schedules:
     parameters:
       - {$ref: '#/components/parameters/Workspace'}
@@ -1830,6 +1836,7 @@ components:
       - steps
       - variables
       properties:
+        cancelled: {type: boolean, description: Ended by explicit cancellation; history preserved}
         ended:
           type: boolean
           description: Legacy completion flag
@@ -2036,6 +2043,7 @@ components:
       - startedAt
       - activeTaskKeys
       properties:
+        cancelled: {type: boolean}
         id:
           type: string
         processKey:

@@ -13,6 +13,15 @@ import vn.haui.dx.core.common.PageRequest;
  * CONFLICT trùng business key, claim thua, sai bước, gửi lặp; VALIDATION_FAILED biến/outcome không hợp lệ.
  */
 public interface WorkflowService {
+    default void closeRequest(String workspace, String processId, String reason,
+            java.util.function.Supplier<Map<String, Object>> operation) {
+        throw vn.haui.dx.core.common.CoreException.conflict("Request closure is not supported");
+    }
+    /** Atomic application-owned request change under the same lock as task transitions. */
+    default void changeRequest(String workspace, String processId, String cancellationReason,
+            java.util.function.Supplier<Map<String, Object>> operation) {
+        throw vn.haui.dx.core.common.CoreException.conflict("Request changes are not supported");
+    }
     default void returnForCorrection(String workspace, String taskId, String note) {
         throw vn.haui.dx.core.common.CoreException.conflict("Correction return is not supported");
     }

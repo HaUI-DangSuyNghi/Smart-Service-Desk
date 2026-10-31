@@ -37,9 +37,7 @@ export const InboxListView = () => {
   const { current } = useCurrentWorkspace();
   const { can } = usePermissions();
   const canAssign = can(PERMISSIONS.taskAssign);
-  const scopes: InboxScope[] = canAssign
-    ? ["ALL", "ASSIGNED", "CANDIDATE"]
-    : ["ASSIGNED", "CANDIDATE"];
+  const scopes: InboxScope[] = canAssign ? ["ALL", "ASSIGNED"] : ["ASSIGNED", "CANDIDATE"];
 
   const [selectedScope, setScope] = useState<InboxScope>(() => {
     const initial = params.get("scope");
@@ -50,7 +48,7 @@ export const InboxListView = () => {
         : "ASSIGNED";
   });
   // Đổi sang workspace không có quyền giao việc thì tab "Tất cả việc" không còn: quay về việc của tôi
-  const scope = scopes.includes(selectedScope) ? selectedScope : "ASSIGNED";
+  const scope = scopes.includes(selectedScope) ? selectedScope : canAssign ? "ALL" : "ASSIGNED";
   const [page, setPage] = useState(0);
   const [completing, setCompleting] = useState<WorkItem | null>(null);
   const [assigning, setAssigning] = useState<WorkItem | null>(null);

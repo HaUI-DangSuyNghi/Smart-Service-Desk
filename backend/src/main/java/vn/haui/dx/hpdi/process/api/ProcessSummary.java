@@ -10,6 +10,10 @@ import java.util.List;
  * @param activeTaskKeys bước đang mở; rỗng khi đã kết thúc
  */
 public record ProcessSummary(String id, String processKey, String businessKey, String initiator, Instant startedAt,
-                             Instant endedAt, List<String> activeTaskKeys) {
+                             Instant endedAt, List<String> activeTaskKeys, boolean cancelled) {
+    public ProcessSummary(String id, String processKey, String businessKey, String initiator, Instant startedAt,
+            Instant endedAt, List<String> activeTaskKeys) {
+        this(id, processKey, businessKey, initiator, startedAt, endedAt, activeTaskKeys, false);
+    }
     public ProcessSummary { activeTaskKeys = List.copyOf(activeTaskKeys); }
 }

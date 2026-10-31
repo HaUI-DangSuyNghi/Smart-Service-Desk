@@ -515,6 +515,7 @@ components:
       type: object
       required: [id, processKey, businessKey, workspace, initiator, startedAt, currentTasks, steps, variables]
       properties:
+        cancelled: {type: boolean, description: Explicitly cancelled rather than normally completed}
         ended: {type: boolean, description: Legacy completion flag}
         tasks: {type: array, description: Legacy alias of steps, items: {$ref: '#/components/schemas/HistoryStep'}}
         id: {type: string}

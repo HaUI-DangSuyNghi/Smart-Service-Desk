@@ -13,13 +13,16 @@ import { Page, PageBody, PageHeader } from "@/platform/shared/ui/page";
 import { PageSkeleton } from "@/platform/shared/ui/Skeleton";
 import { InboxListView } from "./InboxListView";
 import { WorkCalendar } from "./calendar/WorkCalendar";
+import { CoordinationCalendar } from "./calendar/CoordinationCalendar";
 
 const InboxPage = () => {
   const { current } = useCurrentWorkspace();
   const { can, isPending } = usePermissions();
   const permissions = useMyPermissions();
   const [params, setParams] = useSearchParams();
-  const view = params.get("view") === "list" ? "list" : "calendar";
+  const canCoordinate = can(PERMISSIONS.taskAssign);
+  const requestedView = params.get("view");
+  const view = requestedView === "list" ? "list" : "calendar";
   if (isPending) return <PageSkeleton label="Đang kiểm tra quyền công việc" />;
   return (
     <Page>
@@ -43,7 +46,7 @@ const InboxPage = () => {
                       className="min-h-9 md:min-h-7"
                       aria-pressed={view === value}
                       aria-label={label}
-                      onClick={() => setParams(value === "list" ? { view: "list" } : {})}
+                      onClick={() => setParams({ view: value })}
                     >
                       <Icon size={16} />
                       <span className="hidden sm:inline">{label}</span>
@@ -74,7 +77,11 @@ const InboxPage = () => {
           <EmptyState icon={IconInbox} title="Bạn không có quyền xem công việc." />
         </PageBody>
       ) : view === "calendar" ? (
-        <WorkCalendar key={current} />
+        canCoordinate ? (
+          <CoordinationCalendar key={current} />
+        ) : (
+          <WorkCalendar key={current} />
+        )
       ) : (
         <InboxListView key={current} />
       )}

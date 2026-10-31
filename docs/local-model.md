@@ -102,6 +102,7 @@ Khi thành công, script lưu `AI_MODE=model` vào `.env`. Những lần sau ch�
 ```
 
 `-Intelligence` lưu lựa chọn `AI_MODE=rules`; `-NoAi` lưu `AI_MODE=disabled`.
+Trong menu `dx start`, chọn **No AI**; hoặc chạy `.\dx up no-ai` để tắt cả phân loại và hỏi đáp AI, không cần GPU/API key. Lựa chọn tắt được giữ cho các lần `.\dx up` tiếp theo. Bật lại bằng `.\dx up remote`, `.\dx up model` hoặc `.\dx up api`.
 `-Api` lưu lựa chọn `AI_MODE=api` và bật hỏi đáp API. Khi đổi chế độ, script chỉ
 dừng những service AI không còn được chọn trong đúng Compose project. Mixed mode
 giữ cả Qwen và API; mỗi service có DNS riêng để không thay classifier ngoài ý muốn.

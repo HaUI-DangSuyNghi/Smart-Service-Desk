@@ -16,7 +16,9 @@ import java.util.UUID;
 /** Persistence riêng của Service Desk; chỉ đọc/ghi bảng do ứng dụng sở hữu. */
 @Repository
 public class TicketContextStore {
-    public record TicketState(UUID id, String title, String description, long revision) {}
+    public record TicketState(UUID id, String title, String description, long revision, long contentRevision) {
+        public TicketState(UUID id,String title,String description,long revision) { this(id,title,description,revision,0); }
+    }
 
     private final JdbcTemplate jdbc;
     private final ObjectMapper json;
@@ -28,11 +30,11 @@ public class TicketContextStore {
 
     public Optional<TicketState> state(String workspace, UUID ticketId, boolean lock) {
         return jdbc.query(
-                        "select id,title,description,context_revision from servicedesk_ticket "
+                        "select id,title,description,context_revision,content_revision from servicedesk_ticket "
                                 + "where workspace=? and id=?" + (lock ? " for update" : ""),
                         (row, number) -> new TicketState(
                                 row.getObject("id", UUID.class), row.getString("title"),
-                                row.getString("description"), row.getLong("context_revision")),
+                                row.getString("description"), row.getLong("context_revision"),row.getLong("content_revision")),
                         workspace, ticketId)
                 .stream().findFirst();
     }
@@ -40,7 +42,8 @@ public class TicketContextStore {
     public List<ClarificationEvent> events(String workspace, UUID ticketId) {
         return jdbc.query(
                 "select * from servicedesk_ticket_clarification where workspace=? and ticket_id=? "
-                        + "order by new_revision", this::event, workspace, ticketId);
+                        + "and new_revision>(select content_revision from servicedesk_ticket where workspace=? and id=?) "
+                        + "order by new_revision", this::event, workspace, ticketId,workspace,ticketId);
     }
 
     public Map<UUID, List<ClarificationEvent>> eventsBatch(String workspace, List<UUID> ids) {
@@ -55,8 +58,9 @@ public class TicketContextStore {
         parameters.addAll(ids);
         String placeholders = String.join(",", java.util.Collections.nCopies(ids.size(), "?"));
         var events = jdbc.query(
-                "select * from servicedesk_ticket_clarification where workspace=? and ticket_id in ("
-                        + placeholders + ") order by ticket_id,new_revision", this::event, parameters.toArray());
+                "select c.* from servicedesk_ticket_clarification c join servicedesk_ticket t on t.id=c.ticket_id and t.workspace=c.workspace "
+                        + "where c.workspace=? and c.ticket_id in ("+placeholders+") and c.new_revision>t.content_revision "
+                        + "order by c.ticket_id,c.new_revision", this::event, parameters.toArray());
         return events.stream().collect(java.util.stream.Collectors.groupingBy(ClarificationEvent::ticketId));
     }
 
@@ -75,7 +79,7 @@ public class TicketContextStore {
         long expected = request.expectedContextRevision();
         int changed = jdbc.update(
                 "update servicedesk_ticket set context_revision=context_revision+1 "
-                        + "where workspace=? and id=? and context_revision=?",
+                        + "where workspace=? and id=? and context_revision=? and cancelled_at is null and closed_at is null",
                 workspace, ticketId, expected);
         if (changed != 1) {
             throw vn.haui.dx.hpdi.common.api.CapabilityException.conflict("Context revision changed");

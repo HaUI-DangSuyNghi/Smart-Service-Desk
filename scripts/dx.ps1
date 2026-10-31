@@ -9,9 +9,9 @@ $project = 'dx-platform'
 $qwenContainer = "$project-ai07-qwen-1"
 $webUrl = 'http://localhost:5173'
 $tick = [string][char]0x221A
-# AI bat buoc: chi co Qwen local hoac API (khong chay chi bo luat / tat AI qua dx)
-$aiModes = [ordered]@{ model = 'Model'; remote = 'Remote'; api = 'Api'; ask = 'AskApi' }
-$aiSavedModes = @('model', 'remote', 'api')
+# Moi lua chon duoc chuyen cho start.ps1; disabled la lua chon duoc luu hop le.
+$aiModes = [ordered]@{ model = 'Model'; remote = 'Remote'; api = 'Api'; ask = 'AskApi'; 'no-ai' = 'NoAi' }
+$aiSavedModes = @('model', 'remote', 'api', 'disabled')
 
 function Show-Help {
     Write-Host @'
@@ -21,7 +21,8 @@ Smart Service Desk
   dx launch             Guided start: checks -> AI mode -> start -> open web
   dx doctor             Check Docker, disk, GPU, .env, ports, containers
   dx env                Create / update .env from .env.example
-  dx up [mode]          Start; mode: model | remote | model ask | remote ask | api
+  dx up [mode]          Start; mode: model | remote | model ask | remote ask | api | no-ai
+  dx up no-ai           Start without AI, GPU or API key (manual workflow)
   dx down               Stop all containers, keep data
   dx restart [mode]     down + up
   dx ps                 Container status
@@ -98,16 +99,18 @@ function Invoke-Up([string[]]$Options) {
     }
     if ($Options -contains 'ask' -and -not ($Options -contains 'model' -or $Options -contains 'remote')) { Write-Host "'ask' goes with model or remote: dx up model ask"; $script:ok = $false; return }
     $settings = Read-Settings
-    # Chua co che do AI hop le (may moi, hoac da luu bo luat / tat): tu chon theo may
+    # Khong tu bat AI tro lai neu nguoi dung da luu disabled.
+    if ($switches.Count -eq 0 -and $settings['AI_MODE'] -eq 'disabled') { $switches['NoAi'] = $true }
+    # Chua co che do hop le: tu chon theo may, hoac huong dan tat AI.
     if ($switches.Count -eq 0 -and $settings['AI_MODE'] -notin $aiSavedModes) {
         $auto = Select-AiMode $settings
         if ($auto.Count -eq 0) {
-            Write-Host 'AI is required: need an NVIDIA GPU with the Qwen image, or an API key in .env (AI_API_PROVIDER, AI_API_MODEL, AI_API_KEY).' -ForegroundColor Red
+            Write-Host 'No AI provider is available. Run: dx up no-ai (manual workflow), or configure a Qwen GPU / API key in .env.' -ForegroundColor Yellow
             Write-Host 'Run: dx doctor'
             $script:ok = $false
             return
         }
-        Write-Host "Picked AI mode '$($auto -join ' ')' for this machine. Change later: dx up model | model ask | api"
+        Write-Host "Picked AI mode '$($auto -join ' ')' for this machine. Change later: dx up model | remote | api | no-ai"
         foreach ($item in $auto) { $switches[$aiModes[$item]] = $true }
     }
     # start.ps1 nem loi khi that bai; toi day la da khoi dong xong
@@ -223,23 +226,21 @@ function Invoke-Doctor([switch]$PreFlight) {
     $mode = if ($settings['AI_MODE']) { $settings['AI_MODE'] } else { 'disabled' }
     $ask = if ($settings['AI_ASSISTANCE_MODE']) { $settings['AI_ASSISTANCE_MODE'] } else { 'disabled' }
     Report INFO "Saved AI mode: triage '$mode', Ask AI '$ask'"
-    $hasKey = Test-ApiKey $settings
-    # AI bat buoc: may phai chay duoc it nhat mot che do co model
-    if ($engine -and (Select-AiMode $settings).Count -eq 0) {
-        Report FAIL 'No AI available: need an NVIDIA GPU with the Qwen image, or an API key' 'Fill AI_API_PROVIDER, AI_API_MODEL, AI_API_KEY in .env (or load the Qwen image)'
-    }
-    elseif ($mode -notin $aiSavedModes) { Report WARN "Saved AI mode '$mode' has no model" 'dx start will pick Qwen or API for this machine' }
-    if ($mode -eq 'api' -or $ask -eq 'api') {
+    if ($mode -eq 'disabled') { Report OK 'AI is disabled: no GPU or API key needed; use the manual workflow' }
+    elseif (-not $PreFlight -and $mode -notin $aiSavedModes) { Report WARN "Saved AI mode '$mode' is not supported by dx" 'Choose an AI mode in dx start, or run: dx up no-ai' }
+    # Truoc buoc chon che do, chi kiem tra ha tang; cau hinh AI cu khong chan lua chon No AI.
+    if (-not $PreFlight -and $mode -ne 'disabled' -and ($mode -eq 'api' -or $ask -eq 'api')) {
+        $hasKey = Test-ApiKey $settings
         if ($hasKey) { Report OK "API key set for '$($settings['AI_API_PROVIDER'])' (not shown)" }
         else { Report FAIL 'API mode but AI_API_PROVIDER / AI_API_MODEL / key is missing' 'Fill them in .env, then: dx up' }
     }
-    if ($mode -eq 'remote') {
+    if (-not $PreFlight -and $mode -eq 'remote') {
         $missing = @(@('classification-token', 'worker.env', 'cf-access-client-id', 'cf-access-client-secret') | Where-Object { -not (Test-Path -LiteralPath ".local/gpu-worker/$_") })
         if ($missing.Count -gt 0) { Report FAIL "GPU server mode but .local/gpu-worker is missing: $($missing -join ', ')" 'Copy them from the GPU machine; see docs/remote-model.md' }
         else { Report OK 'GPU server credentials present in .local/gpu-worker (not shown)' }
     }
-    $gpuFree = Get-GpuFreeMiB
-    if ($mode -eq 'model') {
+    if (-not $PreFlight -and $mode -eq 'model') {
+        $gpuFree = Get-GpuFreeMiB
         if ($null -eq $gpuFree) { Report FAIL 'Qwen mode but no NVIDIA GPU found' 'Install the NVIDIA driver, or switch: dx up api' }
         else {
             $qwenRunning = (& docker inspect $qwenContainer --format '{{.State.Running}}' 2>$null) -eq 'true'
@@ -416,13 +417,21 @@ function Select-OptionByNumber([string]$Title, [object[]]$Options) {
 function Get-AiModeOptions {
     $settings = Read-Settings
     $options = @()
-    # Chi hien "Saved" khi che do da luu co AI
+    # Saved giu nguyen ca lua chon khong dung AI.
     if ($settings['AI_MODE'] -in $aiSavedModes) { $options += , @(@("Saved ($($settings['AI_MODE']))", 'Use the current setting'), @()) }
     $options += , @(@('Qwen local', 'GPU + rules'), @('model'))
     $options += , @(@('Qwen local + Ask AI', 'GPU + API key in .env'), @('model', 'ask'))
     $options += , @(@('Qwen GPU server', 'Separate GPU machine, files in .local/gpu-worker'), @('remote'))
     $options += , @(@('API only', 'Gemini / OpenAI / Groq, no GPU'), @('api'))
+    $options += , @(@('No AI', 'Manual workflow, no GPU or API key'), @('no-ai'))
     return $options
+}
+
+function Test-AiModeNeedsKey([string[]]$Options, $Settings) {
+    if ($Options -contains 'no-ai') { return $false }
+    if ($Options -contains 'api' -or $Options -contains 'ask') { return $true }
+    return $Options.Count -eq 0 -and $Settings['AI_MODE'] -in @('model', 'remote', 'api') -and (
+        $Settings['AI_MODE'] -eq 'api' -or $Settings['AI_ASSISTANCE_MODE'] -eq 'api')
 }
 
 function Write-Step([string]$Number, [string]$Text) {
@@ -457,7 +466,7 @@ function Start-Project {
     if ($mode -lt 0) { Write-Host '  Cancelled.'; return }
     $options = $modes[$mode][1]
     $settings = Read-Settings
-    $needsKey = $options -contains 'api' -or $options -contains 'ask' -or ($options.Count -eq 0 -and ($settings['AI_MODE'] -eq 'api' -or $settings['AI_ASSISTANCE_MODE'] -eq 'api'))
+    $needsKey = Test-AiModeNeedsKey $options $settings
     if ($needsKey -and -not (Test-ApiKey $settings)) {
         Write-Host '  ! This mode needs AI_API_PROVIDER, AI_API_MODEL and a key in .env' -ForegroundColor Yellow
         if (Confirm-Choice 'Continue without a key?' 'No, I will fill .env first' 'Yes, continue') { Write-Host '  Stopped. Edit .env, then run: dx start'; return }

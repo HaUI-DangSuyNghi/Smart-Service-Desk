@@ -79,7 +79,7 @@ public class TicketNotices {
         ticket(workspace, null, processId).ifPresent(t -> {
             var handler = lastAssignee(workspace, processId);
             var subjects = handler == null ? Set.<String>of() : Set.of(handler);
-            if (accepted) send(t, "TICKET_CONFIRMED", Severity.INFO, "Người gửi đã xác nhận " + t.code() + " đã ổn", subjects, false, false);
+            if (accepted) send(t, "TICKET_CONFIRMED", Severity.INFO, "Người gửi đã xác nhận " + t.code() + " đã ổn", subjects, false, true);
             else send(t, "TICKET_REOPENED", Severity.WARNING, "Người gửi báo " + t.code() + " chưa xong", subjects, true, true);
         });
     }

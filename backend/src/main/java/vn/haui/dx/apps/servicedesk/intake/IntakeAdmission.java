@@ -255,7 +255,7 @@ public class IntakeAdmission {
     public List<UUID> pending(String workspace, int page, int size) {
         if (page < 0 || page > 100000 || size < 1 || size > 100) throw CapabilityException.validation("Invalid page");
         return jdbc.query("select ticket_id from servicedesk_intake_admission where workspace=? "
-                + "and (status not in ('REVIEWED','REVIEW_RELEASED','CANONICAL_FOLLOWER') "
+                + "and (status not in ('REVIEWED','REVIEW_RELEASED','CANONICAL_FOLLOWER','CANCELLED','CLOSED') "
                 + "or (status='REVIEW_RELEASED' and process_stage='intake')) "
                 + "order by deadline_at,ticket_id limit ? offset ?", (row, index) -> row.getObject(1, UUID.class), workspace, size, (long) page * size);
     }

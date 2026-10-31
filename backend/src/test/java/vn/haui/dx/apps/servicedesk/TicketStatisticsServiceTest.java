@@ -34,6 +34,11 @@ class TicketStatisticsServiceTest {
         assertEquals("CLOSED", TicketStatisticsService.classify("lab-a", new TicketRepository.ProcessLink(id, "owner", "process", false, "CLOSED"), ended).name());
         assertEquals("UNCLASSIFIED", TicketStatisticsService.classify("lab-a", link, null).name());
         assertEquals("UNCLASSIFIED", TicketStatisticsService.classify("foreign", link, ended).name());
+        for (String action:List.of("CLOSED","CANCELLED")) {
+            var stopped=new ProcessSnapshot("process","lab-a","owner",ServiceDeskProcess.INTAKE_KEY,id.toString(),true,
+                Instant.EPOCH,"REQUEST_"+action+": Owner reason",null,List.of());
+            assertEquals(action,TicketStatisticsService.classify("lab-a",link,stopped).name());
+        }
         assertEquals("UNCLASSIFIED", TicketStatisticsService.classify("lab-a", link, snapshot(id, "unexpected", "NOT_STARTED", Map.of())).name());
         assertEquals("UNCLASSIFIED", TicketStatisticsService.classify("lab-a", link, snapshot(id, "handle", "CORRUPT", Map.of())).name());
     }

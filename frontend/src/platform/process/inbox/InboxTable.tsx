@@ -7,7 +7,12 @@ import {
   IconUser,
   IconUsersGroup,
 } from "@tabler/icons-react";
-import { usePeopleNames, personName } from "@/platform/human/workspace";
+import {
+  usePeopleNames,
+  personName,
+  usePermissions,
+  PERMISSIONS,
+} from "@/platform/human/workspace";
 import type { InboxScope, WorkItem } from "@/platform/services";
 import { formatDateTime, formatRelativeTime } from "@/platform/shared/lib/format";
 import { Button } from "@/platform/shared/ui/button";
@@ -15,6 +20,7 @@ import { DataTable, type DataTableColumn } from "@/platform/shared/ui/DataTable"
 import { useProcessLabels } from "../catalog/useProcessCatalog";
 import { BusinessKeyLink } from "../common/BusinessKeyLink";
 import { CandidateGroups } from "../common/CandidateGroups";
+import { inboxAction } from "../common/inboxActions";
 
 interface Props {
   scope: InboxScope;
@@ -48,9 +54,10 @@ export const InboxTable = ({
   onOpen,
 }: Props) => {
   const labels = useProcessLabels();
+  const { can } = usePermissions();
   const names = usePeopleNames(items.map((task) => task.assignee));
 
-  const actionCell = (task: WorkItem) => {
+  const genericActionCell = (task: WorkItem) => {
     if (scope === "CANDIDATE") {
       return (
         <Button
@@ -64,7 +71,7 @@ export const InboxTable = ({
       );
     }
     if (scope === "ALL") {
-      return (
+      const fallback = (
         <Button
           size="xs"
           variant="outline"
@@ -74,12 +81,18 @@ export const InboxTable = ({
           {task.assignee ? "Giao lại" : "Giao việc"}
         </Button>
       );
+      return fallback;
     }
     return (
       <Button size="xs" className={ACTION_BUTTON} onClick={stop(() => onComplete(task))}>
         Xử lý
       </Button>
     );
+  };
+  const actionCell = (task: WorkItem) => {
+    const fallback = genericActionCell(task);
+    const Action = can(PERMISSIONS.taskAssign) ? inboxAction(task.processKey) : null;
+    return Action ? <Action task={task} fallback={fallback} /> : fallback;
   };
 
   const columns: DataTableColumn<WorkItem>[] = [
@@ -141,7 +154,7 @@ export const InboxTable = ({
       ),
     },
     // Vừa đủ cho chữ dài nhất ("Đang nhận...") ở cỡ nút xs
-    { key: "action", header: "Thao tác", width: "104px", cell: actionCell },
+    { key: "action", header: "Thao tác", fit: true, cell: actionCell },
   );
 
   return (

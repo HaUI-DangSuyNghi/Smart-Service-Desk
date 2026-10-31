@@ -15,5 +15,11 @@ export const TicketProgress = ({
   if (timeline.isPending) return <FieldsSkeleton rows={5} label="Đang tải tiến độ" />;
   if (timeline.error)
     return <ErrorState error={timeline.error} fallback="Không tải được tiến độ ticket." />;
-  return <ProcessTimeline timeline={timeline.data} compact={compact} />;
+  return (
+    <ProcessTimeline
+      timeline={timeline.data}
+      compact={compact}
+      allocationHiddenSteps={["intake"]}
+    />
+  );
 };

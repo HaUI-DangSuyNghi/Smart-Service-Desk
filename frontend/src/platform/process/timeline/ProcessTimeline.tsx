@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { IconFlag, IconFlagCheck } from "@tabler/icons-react";
+import { IconFlag, IconFlagCheck, IconEdit, IconX } from "@tabler/icons-react";
 import {
   PERMISSIONS,
   useActor,
@@ -22,23 +22,32 @@ import { useClaimTask } from "../tasks/useTaskActions";
 import { requestContent } from "./requestContent";
 import { TimelineItem } from "./TimelineItem";
 import { TimelineStep } from "./TimelineStep";
+import { useRequestManagement } from "../requests/useRequestManagement";
 
 interface Props {
   timeline: Timeline;
   /** Chỉ dòng thời gian các bước, không tóm tắt và nội dung: cho cột hẹp bên cạnh trang của app. */
   compact?: boolean;
+  /** Các bước chỉ theo dõi tiến độ, không nhận/giao việc tại đây. */
+  allocationHiddenSteps?: readonly string[];
 }
 
 /**
  * Tiến độ của một quy trình bất kỳ: tóm tắt và dòng thời gian các bước.
  * App nhúng lại component này ở trang chi tiết bản ghi của mình.
  */
-export const ProcessTimeline = ({ timeline, compact = false }: Props) => {
+export const ProcessTimeline = ({
+  timeline,
+  compact = false,
+  allocationHiddenSteps = [],
+}: Props) => {
   const labels = useProcessLabels();
+  const management = useRequestManagement(timeline.id);
   // Chỉ hỏi tên của những người có mặt trên trang, không cần quyền xem cả danh bạ
   const names = usePeopleNames([
     timeline.initiator,
     ...timeline.steps.map((step) => step.assignee),
+    ...(management.data?.history.map((change) => change.actor) ?? []),
   ]);
   const { actor } = useActor();
   const { can } = usePermissions();
@@ -74,7 +83,13 @@ export const ProcessTimeline = ({ timeline, compact = false }: Props) => {
       {!compact && (
         <dl className="border-b border-crm-line px-4 py-3">
           <FieldRow label="Trạng thái">
-            {endedAt ? <Tag tone="green">Đã kết thúc</Tag> : <Tag tone="blue">Đang chạy</Tag>}
+            {timeline.cancelled ? (
+              <Tag tone="gray">Đã hủy</Tag>
+            ) : endedAt ? (
+              <Tag tone="green">Đã kết thúc</Tag>
+            ) : (
+              <Tag tone="blue">Đang chạy</Tag>
+            )}
           </FieldRow>
           <FieldRow label="Mã yêu cầu">
             <BusinessKeyLink processKey={processKey} businessKey={timeline.businessKey} />
@@ -109,29 +124,111 @@ export const ProcessTimeline = ({ timeline, compact = false }: Props) => {
               {initiator} · {formatRelativeTime(startedAt)}
             </p>
           </TimelineItem>
-          {timeline.steps.map((step) => {
-            const openTask = openTasks.get(step.id);
-            return (
-              <TimelineStep
-                key={step.id}
-                step={step}
-                processKey={processKey}
-                labels={labels}
-                names={names}
-                openTask={openTask}
-                onClaim={canClaim(openTask) ? handleClaim : undefined}
-                claiming={claim.isPending && claim.variables?.id === step.id}
-                onComplete={isMine(openTask) ? setCompleting : undefined}
-                onAssign={can(PERMISSIONS.taskAssign) ? setAssigning : undefined}
-              />
-            );
-          })}
+          {[
+            ...timeline.steps.map((step) => ({ kind: "step" as const, at: step.startedAt, step })),
+            ...(management.data?.history ?? []).map((change) => ({
+              kind: "change" as const,
+              at: change.createdAt,
+              change,
+            })),
+          ]
+            .sort((a, b) => Date.parse(a.at) - Date.parse(b.at))
+            .map((entry) => {
+              if (entry.kind === "change") {
+                const change = entry.change;
+                return (
+                  <TimelineItem
+                    key={change.id}
+                    marker="done"
+                    icon={
+                      change.action === "UPDATED"
+                        ? IconEdit
+                        : change.action === "CANCELLED"
+                          ? IconX
+                          : IconFlagCheck
+                    }
+                    title={
+                      change.action === "UPDATED"
+                        ? "Sửa yêu cầu"
+                        : change.action === "CANCELLED"
+                          ? "Hủy yêu cầu"
+                          : "Đóng yêu cầu"
+                    }
+                  >
+                    <p className="text-crm-sm text-crm-text-3">
+                      {personName(names, change.actor)} · {formatDateTime(change.createdAt)}
+                    </p>
+                    <p className="text-crm-sm whitespace-pre-wrap wrap-break-word">
+                      {change.reason}
+                    </p>
+                    {change.action === "UPDATED" && (
+                      <details className="text-crm-sm">
+                        <summary className="cursor-pointer text-crm-text-2">
+                          Nội dung đã sửa
+                        </summary>
+                        {management.data?.fields
+                          .filter(
+                            (field) =>
+                              change.beforeValues[field.key] !== change.afterValues[field.key],
+                          )
+                          .map((field) => (
+                            <div key={field.key} className="mt-2 min-w-0">
+                              <p className="font-medium">{field.label}</p>
+                              <p className="text-crm-text-3 whitespace-pre-wrap wrap-break-word">
+                                Trước: {change.beforeValues[field.key]}
+                              </p>
+                              <p className="whitespace-pre-wrap wrap-break-word">
+                                Sau: {change.afterValues[field.key]}
+                              </p>
+                            </div>
+                          ))}
+                      </details>
+                    )}
+                  </TimelineItem>
+                );
+              }
+              const step = entry.step;
+              const openTask = openTasks.get(step.id);
+              const showAllocation = !allocationHiddenSteps.includes(step.key);
+              return (
+                <TimelineStep
+                  key={step.id}
+                  step={step}
+                  processKey={processKey}
+                  labels={labels}
+                  names={names}
+                  openTask={openTask}
+                  onClaim={showAllocation && canClaim(openTask) ? handleClaim : undefined}
+                  claiming={claim.isPending && claim.variables?.id === step.id}
+                  onComplete={isMine(openTask) ? setCompleting : undefined}
+                  onAssign={
+                    showAllocation && can(PERMISSIONS.taskAssign) ? setAssigning : undefined
+                  }
+                />
+              );
+            })}
           {endedAt && (
-            <TimelineItem icon={IconFlagCheck} marker="end" title="Kết thúc">
+            <TimelineItem
+              icon={IconFlagCheck}
+              marker="end"
+              title={timeline.cancelled ? "Đã hủy yêu cầu" : "Kết thúc"}
+            >
               <p className="text-crm-sm text-crm-text-3">{formatRelativeTime(endedAt)}</p>
             </TimelineItem>
           )}
         </ol>
+        {management.error && (
+          <p role="alert" className="mt-3 text-crm-sm text-crm-text-3">
+            Chưa tải được lịch sử sửa, hủy và đóng yêu cầu.
+            <button
+              type="button"
+              className="ml-1 underline"
+              onClick={() => void management.refetch()}
+            >
+              Thử lại
+            </button>
+          </p>
+        )}
       </section>
 
       <CompleteTaskDialog task={completing} onClose={() => setCompleting(null)} />
