@@ -1,37 +1,50 @@
-# Licensing direction — Apache-2.0 (team alignment; release approval pending)
+# Licensing - Apache-2.0 for authorized team-owned work
 
-> **Status: TEAM DIRECTION CONFIRMED / FORMAL LICENSE GRANT PENDING**  
-> The project team has aligned on **Apache License, Version 2.0 (SPDX: Apache-2.0)** as the intended license for original project code. This document records that direction only. It is **not** a present license grant, final rights clearance, or a statement that the entire repository can be redistributed.
+## Approval and scope
 
-## Intended licensing policy
+On 2026-10-31, the Smart Service Desk team leader confirmed that all three
+BE, FE and AI members approved public repository hosting and Apache License,
+Version 2.0 for components the team has the right to license. Root `LICENSE`
+contains the unmodified official Apache License 2.0 text.
 
-| Asset | Intended handling | Current status |
-| --- | --- | --- |
-| Team-authored Core/backend, future apps/frontend, Intelligence code, infrastructure and scripts | Apache-2.0 | DIRECTION ALIGNED; release approval pending |
-| Team-authored OpenAPI, schemas and integration contracts | Apache-2.0 | DIRECTION ALIGNED; release approval pending |
-| Team-authored technical documentation | Prefer Apache-2.0 for consistency; any exception must be explicit | RIGHTS/RELEASE REVIEW PENDING |
-| Synthetic AI fixtures and team-authored knowledge | Prefer Apache-2.0 after author and content-rights confirmation; no implicit permission | PENDING_OWNER_APPROVAL in manifests |
-| Provided competition/planning PDFs, XLSX and other materials under `docs/references/` | Original rights and permissions only; exclude from public redistribution unless authorized | UNVERIFIED |
-| Third-party dependencies, container images, models, weights, datasets and provider content | Their own license/terms, notices and restrictions | INVENTORY/AUDIT PENDING |
+This grant applies only to team-owned original source code, contracts, schemas,
+scripts, infrastructure and technical documentation for which the team controls
+the relevant rights. It does not assert ownership of copied or supplied content,
+override university/contest obligations, or grant rights the team does not hold.
+Existing component-specific licenses and required attributions/notices remain
+in force. Public hosting and a root license do not clear every tracked asset.
 
-Choosing the same license family as many of our dependencies does **not** relicense third-party components or prove license compliance. A project's source license also does not override the licenses of datasets or AI model weights.
+## Exceptions and distribution status
 
-## Current effect and safeguards
+| Content | Status / handling |
+| --- | --- |
+| Authorized original team-owned code, contracts and documentation | Apache-2.0 under root LICENSE |
+| `docs/references/De_thi_PMNM_HaUI_2026_BAN_CHINH_THUC.pdf` | Public redistribution permission unverified; not covered by team grant |
+| `docs/references/Ke_hoach_DX_Lab_14_ngay_3_nguoi.pdf` | Public redistribution permission unverified; not covered by team grant |
+| `docs/references/Phan_cong_DX_Lab_14_ngay_3_nguoi.xlsx` | Public redistribution permission unverified; not covered by team grant |
+| `frontend/public/landing/banner-phong-may.jpg` | Origin, license and required permissions/attribution unverified |
+| Payloads and derived corpora under `fixtures/intelligence/service-desk/` | Existing pending-owner/usage-rights decisions remain pending; synthetic or team-authored labels alone do not clear dataset/content rights |
+| Fixture schemas | Covered only if original team-owned work; not a grant for accompanying payloads |
+| Dependencies, copied/generated third-party UI, fonts, icons, containers, datasets, models and provider content | Their own licenses/terms; no relicensing or blanket redistribution approval |
+| `licenses/**` | Preserve component-specific license/provenance material verbatim |
 
-There is **no root `LICENSE` file yet** on this branch. Until the relevant copyright holders approve the final grant and its scope, do not label this repository as already “Apache-2.0 licensed” on GitHub, in README badges, PRs or release submissions. Publishing code on GitHub alone does not provide a general reuse/redistribution license.
+No supplied references, photo, fixture payloads or model weights have been
+newly authorized by this source-license decision. Do not describe these assets
+as Apache-2.0 licensed without separate evidence. Required third-party NOTICE,
+license and attribution obligations must be retained where applicable; no
+blanket project NOTICE substitutes for component-specific requirements.
 
-This is a **documentation-only preparation branch**, not an authorization to publish reference documents, ingest pending-rights AI fixtures into a public corpus, or release models/dependencies without their required notices.
+## Remaining release gate
 
-## Finalization before release
+The v0.1.0 preparation does not remove tracked assets or rewrite history.
+The repository is already public. A tip deletion, archive exclusion or filtered
+release attachment cannot clear previous commits, archives, forks or clones.
+Before declaring RELEASE GO, obtain asset-specific distribution permission and
+resolve historical exposure with the relevant owners, or approve a separate
+exclusion/remediation decision that addresses supported builds, tests, source
+archives and history. Pending fixture manifests are not silently overridden.
 
-1. Confirm authors/contributors and other relevant rights holders; verify any university or contest conditions.
-2. Approve the Apache-2.0 license grant for specified team-owned assets and agree on copyright attribution.
-3. Add the **unmodified official Apache License 2.0 text** to root `LICENSE`; add appropriate notices/headers where required.
-4. Document the licensing scope, third-party exceptions and separately licensed assets here.
-5. Resolve `PENDING_OWNER_APPROVAL` for the knowledge/ticket fixtures, and review supplied references for public redistribution.
-6. Review dependency/container/model notices and SBOM; verify the repository and release artifacts before public distribution.
-7. Update README, repository license metadata and releases only after approval; follow Git Flow and merge gates.
-
-See [license release checklist](docs/license-release-checklist.md) and [dependency/license inventory](docs/dependency-licenses.md).
-
-This is a project-governance draft, not legal advice.
+See `RELEASE_NOTES_v0.1.0.md`, the existing [license checklist](docs/license-release-checklist.md)
+and [component inventory](docs/dependency-licenses.md). Older pending-grant
+statements in historical governance documents predate this scoped approval;
+they are not evidence that the remaining asset rights have been cleared.
