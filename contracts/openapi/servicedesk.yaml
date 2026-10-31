@@ -788,7 +788,7 @@ components:
     Classification:
       type: object
       additionalProperties: false
-      description: Giá trị đang hiệu lực (sau khi người duyệt/sửa), không phải gợi ý AI.
+      description: Effective classification after review/correction, or a background AI label before review. Only unresolved AI labels may have a null category.
       required:
       - category
       - priority
@@ -796,9 +796,18 @@ components:
       - escalated
       - group
       - source
+      oneOf:
+      - properties:
+          source: {enum: [AI]}
+      - properties:
+          source: {enum: [COORDINATOR, AGENT]}
+          category:
+            $ref: '#/components/schemas/Category'
       properties:
         category:
-          $ref: '#/components/schemas/Category'
+          anyOf:
+          - $ref: '#/components/schemas/Category'
+          - {type: string, nullable: true, enum: [null]}
         impact:
           type: string
           nullable: true
