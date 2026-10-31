@@ -1,0 +1,32 @@
+{
+  "release_tag": "v0.1.0",
+  "release_sha": "ba82b2fc5eb36ea309563d2d7442db95b96a7608",
+  "source_sha256": {
+    "backend/Dockerfile": "465679171b7f82a1f51878c8029fcfaf6ad0ab94d1493d6822c44d73f66e314d",
+    "backend/pom.xml": "ea770f79bb457c24b5338959b517659f0e10893eb34e5f22cd8f1ca4f66ea0d0",
+    "compose.yaml": "23ae5a2f2d68fb2df01203c7cb14a5faefd5b981ca0695b4825329f3059576fd",
+    "frontend/Dockerfile": "a2c68eff6a0fec98baef0c247a82682f2bf5b0c0bd9b3ee112cb877652fe384b",
+    "frontend/package-lock.json": "4fe9788167a47c2ae39d390997123650a90e17cf1c35cc89f19414c2d95348c9",
+    "frontend/package.json": "b03eded575e527964088a25526f03efc78cde75cbebfc84173c9b94aa088c69d",
+    "infra/apisix/Dockerfile": "8e3952d298fd98c10baf31f867e868aba04876ff1414990b1e1f43ef1d420062",
+    "infra/docker/ai07-qwen-full/Dockerfile": "5477ce05940fbbfc40f5bef4c2fba4baabd1dc0343472d34a0781c27399db204",
+    "intelligence/Dockerfile": "f8e7658b7cda222adb6d4cd64992bbfddc5e78625de8877579bc8a59c77df963",
+    "intelligence/Dockerfile.cloud": "932477b93ff2ca1e6d163936d90dcdd7fcf0793eb74713e466b52d65d243d0b3",
+    "intelligence/Dockerfile.e5": "26aeb9e61166dff9cbce0dab9a62868e5ff00c9d355837887f7f6aaaa9b67b89",
+    "intelligence/integrations/local_classification/Dockerfile": "59ebb2b23fca51a79e3db255c4e7abe7a1da4d955f5a1a4a3852db2f4bdd7eec",
+    "intelligence/integrations/local_classification/Dockerfile.qwen": "f9ddc1aa87fc5b6f6751a63c48c564c04b2d109571d8fc517360623a80963f86",
+    "intelligence/pyproject.toml": "47130fd74e8ce6204914d296d78a990b8166f30144b9884a6b742238d3ab4a57",
+    "intelligence/requirements.lock": "38474c7eb3764fa08a3aa516cf1d70af576d8b6811de9ef5fe991ea6b4a8a813"
+  },
+  "npm_sbom_tool": "npm 11.9.0 sbom --package-lock-only --omit=dev --sbom-format=cyclonedx",
+  "npm_sbom_components": 119,
+  "scope": "Declared package/source inventory; not an image-OS or bundled native-library license/security certification",
+  "java_resolution_tool": "Apache Maven 3.9.9; maven-dependency-plugin 3.6.1:list; offline cached release dependencies",
+  "inventory_counts": {
+    "npm_lock_entries": 602,
+    "npm_production_sbom_components": 119,
+    "java_resolved_artifacts": 160,
+    "python_baseline_pins": 20,
+    "container_source_references": 19
+  }
+}

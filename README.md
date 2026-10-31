@@ -1,17 +1,21 @@
 # Smart Service Desk
 
-## v0.1.0 submission candidate - 2026-10-31
+## v0.1.0 - released 2026-10-31
 
 The existing repository is public. Preserve its real Git history; do not create a
 replacement repository or follow older history-filtering/publication proposals.
 **Authorized team-owned work is licensed under Apache-2.0; see root LICENSE.**
-The team leader confirmed distribution rights for the reviewed assets. External
-ownership is retained: supplied document/photo permission terms still need to be
-recorded before public release. See `LICENSING.md`,
-`docs/publication/release-distribution-status.csv` and `RELEASE_NOTES_v0.1.0.md`.
-This is the submission candidate, not an already-published GitHub Release.
+[Smart Service Desk v0.1.0](https://github.com/HaUI-DangSuyNghi/Smart-Service-Desk/releases/tag/v0.1.0)
+was published on 2026-10-31 at 12:31 UTC+07; source commit
+`ba82b2fc5eb36ea309563d2d7442db95b96a7608`. The tag/source archives are unchanged.
+See the [six-criterion PoF evidence index](docs/publication/POF_EVIDENCE.md),
+[release notes](RELEASE_NOTES_v0.1.0.md), [license scope](LICENSING.md) and
+[asset manifest](docs/publication/release-distribution-status.csv). The team
+leader confirmed reviewed distribution rights; four external document/photo
+permission terms still need supporting provenance/attribution recorded.
+Publication does not transfer third-party ownership or clear missing evidence.
 
-Release baseline: the merged develop source, including Core / H-P-D-I,
+Release baseline: the frozen v0.1.0 source, including Core / H-P-D-I,
 Service Desk, Room Request and existing Knowledge/Intelligence integrations.
 No unreviewed local changes or OCR experiments are included. Supported startup
 baseline is no-AI/manual workflow; Qwen/GPU and external-provider operation are
@@ -20,9 +24,12 @@ Existing merged code is retained. Do not claim all AI modes have passed.
 
 ### Minimal clean-source startup
 
-Use Docker Desktop/Linux containers with Compose v2. In a fresh clone only:
+Use Docker Desktop/Linux containers with Compose v2. In a NEW directory only:
 
 ```powershell
+git clone https://github.com/HaUI-DangSuyNghi/Smart-Service-Desk.git Smart-Service-Desk-v0.1.0
+cd Smart-Service-Desk-v0.1.0
+git switch --detach v0.1.0
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start.ps1 -NoAi
 ```
@@ -38,6 +45,41 @@ restart/restore and contract checks. CI evidence must match the final source SHA
 optional full image-security scanning is not covered by a green functional job.
 An unusable local image cache is an environment failure, not permission to reset
 existing databases. Resolve image/runtime problems before the first installation.
+
+### Quick demo, source build and project navigation
+
+After startup, open `http://localhost:5173` and sign in with the generated demo
+credentials. In the same workspace: create a ticket as requester, review/assign
+it with an authorized coordinator, handle it as agent, then confirm or request
+rework as requester. This manual workflow does not require an AI provider.
+Do not use real personal data or shared production credentials for the demo.
+
+Dockerfiles compile the frontend/backend and package the Python runtime from
+source. For a standalone frontend build in a fresh checkout:
+
+```powershell
+cd frontend
+npm ci
+npm run typecheck
+npm run lint
+npm test
+npx playwright install chromium
+npm run test:e2e
+npm run build
+```
+
+The browser suite uses stub API contracts, not real gateway acceptance. Real
+PostgreSQL/Keycloak and three-tier smoke evidence/configuration is linked in
+[PoF build evidence](docs/publication/POF_EVIDENCE.md). It uses isolated CI stacks;
+do not point test/reset scripts at an existing demo database or Azure VM.
+
+Architecture: technical Core -> reusable H-P-D-I -> applications (Service Desk /
+Room Request). React platform/app boundaries and the generic private Python
+runtime follow the same separation; see the [ownership map](docs/architecture/tier-boundary-map.md).
+[Core API](contracts/openapi/core.yaml) | [Service Desk API](contracts/openapi/servicedesk.yaml) |
+[CI runs](https://github.com/HaUI-DangSuyNghi/Smart-Service-Desk/actions) |
+[dependencies/SBOM](docs/publication/pof/README.md) | [Issues](https://github.com/HaUI-DangSuyNghi/Smart-Service-Desk/issues) |
+[CONTRIBUTING](CONTRIBUTING.md). Post-release evidence updates on main do not alter v0.1.0.
 
 <p align="center">
   <img src="https://img.shields.io/badge/Java-17-blue.svg" alt="Java 17" />

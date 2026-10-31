@@ -1,13 +1,16 @@
 # Changelog
 
-Notable changes use Keep a Changelog categories. The first submission is dated
-2026-10-31; GitHub publication remains subject to final approval. If publication
-occurs on another date, update the date before tagging; do not backdate it.
+Notable changes use Keep a Changelog categories. v0.1.0 was published on
+2026-10-31 at 12:31:12 UTC+07, commit ba82b2fc5eb36ea309563d2d7442db95b96a7608.
+The released tag/source archives are preserved; subsequent documentation is Unreleased.
 
 ## [Unreleased]
 
 ### Changed
-- Prepare minimal public-repository release and safe clean-install documentation.
+- Add the post-release PoF evidence index, dependency inventories/production SBOM
+  and contribution/issue guidance; synchronize published release status.
+- Keep external document/photo permission evidence and the MODERATE fast-uri
+  finding explicit; no dependency/code change or new release.
 
 ## [0.1.0] - 2026-10-31
 

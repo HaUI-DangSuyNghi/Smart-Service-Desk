@@ -1,9 +1,9 @@
 # Smart Service Desk v0.1.0
 
-Submission candidate prepared 2026-10-31; not yet tagged or published.
-If publication moves to another date, update the changelog date before tagging.
-Final release target: the approved main commit after the final documentation PR
-is merged. Do not tag an unmerged PR head or guess a future merge SHA.
+Published 2026-10-31T05:31:12Z (12:31:12 UTC+07).
+Tag v0.1.0 resolves to ba82b2fc5eb36ea309563d2d7442db95b96a7608.
+The existing tag and GitHub Release are not modified by post-release documentation.
+See docs/publication/POF_EVIDENCE.md on main for the later evidence index.
 
 ## Completed scope
 - Keycloak identity/workspace authorization, PostgreSQL files/metadata,
@@ -57,9 +57,9 @@ Reviewed fixture distribution approval does not change evaluation/runtime rights
 gates or relicense external content. Existing third-party licenses/notices remain.
 
 Four external document/photo entries still require permission terms/attribution
-to be recorded; do not publish while those entries remain unresolved. No files
+to be recorded; publication itself is not evidence of their license or ownership. No files
 or history were removed. GitHub-generated source ZIP/tar archives include these
 tracked assets and are NOT sanitized by omitting optional release attachments.
 No model weights, private credentials, local logs, databases or Docker volumes
-are prepared as release attachments. Automatic source archives are generated at
-the approved v0.1.0 tag; no custom binary artifact is required for this release.
+are prepared as release attachments. Automatic ZIP/tar.gz source archives at the
+existing v0.1.0 tag were verified; no custom binary asset was uploaded.

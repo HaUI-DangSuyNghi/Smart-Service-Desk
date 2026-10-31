@@ -4,7 +4,7 @@
 
 | Branch | Purpose | Branch from | Merge into |
 | --- | --- | --- | --- |
-| `main` | Approved releases only; initial README until the first release | Existing branch | No feature commits directly |
+| `main` | Published releases, reviewed documentation and scoped hotfixes | Existing branch | No feature commits directly |
 | `develop` | Shared integration baseline for all three members | `main` | `release/*` when ready |
 | `feature/<task-id>-<description>` | One scoped task | `develop` | `develop` |
 | `refactor/<scope>-<description>` | Scoped structural change preserving behavior | Accepted task baseline | `develop` via reviewed PR |
@@ -57,13 +57,16 @@ No force pushes or history rewrites on shared branches. Do not commit to `develo
 
 Only the release owner creates `release/<version>` from an accepted `develop`. Freeze feature work on that branch, run full acceptance, then merge with `--no-ff` into `main`, tag the tested release commit `v<version>`, and merge the release branch back into `develop`. Push branches/tags only after approval. If tests fail, do not label the build a release.
 
-Create a hotfix from the affected `main` release, verify it, merge with `--no-ff` into `main`, tag the new patch release, and merge back into `develop` and an active release branch if needed. No hotfix/release is necessary for this initial foundation.
+Create a hotfix from the affected `main` release, verify it, merge with `--no-ff` into `main`, tag the new patch release, and merge back into `develop` and an active release branch if needed. The first release v0.1.0 is published. Never move its tag to include later fixes;
+use a separately reviewed patch release only after owner approval.
 
 ## GitHub settings (repository admin)
 
 Protect `main` and `develop`: require pull requests and at least one approval, block force pushes/deletion and require CI checks once an actual CI workflow is configured. Enable merge commits. Choose `develop` as the default branch if the team wants the active baseline visible by default; otherwise explicitly select `develop` when browsing/cloning for development.
 
-These are required team settings, not a claim that protection or CI has already been configured. The initial CLI bootstrap does not change GitHub repository settings or visibility. Source-license approval and security release gates remain in `docs/dependency-licenses.md`.
+These are required team settings, not a claim that protection or CI has already been configured. The initial CLI bootstrap does not change GitHub repository settings or visibility. The scoped source license and external-asset decisions are in `LICENSING.md`;
+current version/provenance evidence is in `docs/publication/pof/README.md`.
+Older bootstrap notes are historical, not the current release status.
 
 ## Three-tier ownership
 
@@ -78,3 +81,23 @@ Run `python scripts/check-tier-boundaries.py`, `python scripts/test-tier-boundar
 and the frontend lint/typecheck/test/build commands before integration. See
 [ownership map](docs/architecture/tier-boundary-map.md) and
 [validation](docs/architecture/REFACTOR_VALIDATION.md).
+
+## Issues, review and maintenance after v0.1.0
+
+Search [existing Issues](https://github.com/HaUI-DangSuyNghi/Smart-Service-Desk/issues)
+before reporting a duplicate. Use the bug template: release SHA, component,
+reproduction steps, expected/actual behavior, environment and redacted evidence.
+Never attach .env, tokens, real student data or private logs. For suspected secret
+exposure/security flaws, contact a maintainer privately first, not a public issue.
+
+Link the issue in a scoped PR and record exact-SHA tests versus mock/manual/CI
+proof. A maintainer triages; another member reviews; close an issue only when its
+acceptance criteria are verified by the linked change. Main currently requires an
+approving review; never bypass/disable protection to meet a submission deadline.
+No contributor time/score is inferred from commit or issue counts.
+
+Documentation-only evidence updates may target main from a fresh docs/* branch.
+Feature work still targets develop. Use selective staging, git diff --check and
+local-link/input-hash checks; do not rebuild unchanged services or touch shared
+Docker volumes. No automatic release/tag and no integration of optional PRs for
+an evidence-only change. See [PoF evidence](docs/publication/POF_EVIDENCE.md).
