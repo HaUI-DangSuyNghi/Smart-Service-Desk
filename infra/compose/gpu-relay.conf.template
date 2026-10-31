@@ -4,7 +4,7 @@ server {
     listen 8003;
     server_tokens off;
     access_log off;
-    error_log /dev/stderr crit;
+    error_log /dev/stderr error;
     client_max_body_size 16k;
     client_body_timeout 5s;
 
@@ -19,11 +19,15 @@ server {
     proxy_set_header Authorization $http_authorization;
     proxy_set_header Content-Type $http_content_type;
     proxy_set_header Accept application/json;
+    # Cloudflare chặn request không có User-Agent (error 1010, Browser Integrity Check)
+    proxy_set_header User-Agent "smart-service-desk-relay/1.0";
     include /run/secrets/cloudflare-headers.conf;
 
     proxy_ssl_server_name on;
     proxy_ssl_name ${REMOTE_MODEL_HOST};
     proxy_ssl_verify on;
+    # Chứng chỉ máy GPU có thể nối qua nhiều CA trung gian (Let's Encrypt).
+    proxy_ssl_verify_depth 4;
     proxy_ssl_trusted_certificate /etc/ssl/certs/ca-certificates.crt;
     proxy_connect_timeout 3s;
     proxy_send_timeout 5s;

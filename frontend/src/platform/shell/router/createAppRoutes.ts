@@ -1,4 +1,4 @@
-import { createElement } from "react";
+import { createElement, lazy, Suspense } from "react";
 import type { RouteObject } from "react-router";
 import { AuditPage } from "@/platform/data/audit";
 import KnowledgeChatPage from "@/platform/intelligence/KnowledgeChatPage";
@@ -26,6 +26,9 @@ import NotFoundPage from "../layout/NotFoundPage";
 import SettingsPage from "../settings/SettingsPage";
 import type { AppRegistry, AppRoute } from "./registry";
 
+const DocumentationLayout = lazy(() => import("../docs/DocumentationLayout"));
+const DocumentationPage = lazy(() => import("../docs/DocumentationPage"));
+
 /** Trang có yêu cầu quyền hoặc vai trò thì bọc cổng kiểm tra; thiếu thì hiện trang 403. */
 const routeElement = (route: AppRoute) => {
   let element = createElement(route.component);
@@ -48,7 +51,6 @@ const routeElement = (route: AppRoute) => {
 
 /** Trang của Tầng 2 (platform), đăng ký giống trang của app. */
 const PLATFORM_ROUTES: readonly AppRoute[] = [
-  { path: "home", component: HomePage },
   { path: "dashboard", component: DashboardPage, requiredPermissions: [PERMISSIONS.dashboardView] },
   { path: "audit", component: AuditPage, requiredPermissions: [PERMISSIONS.auditView] },
   { path: "profile", component: ProfilePage },
@@ -97,6 +99,10 @@ export const createAppRoutes = (registry: AppRegistry): RouteObject[] => {
     path: route.path,
     element: routeElement(route),
   }));
+  pages.unshift({
+    path: "home",
+    element: createElement(HomePage, { appMenu: registry.menu() }),
+  });
   // Trang tự kiểm quyền quản trị nền tảng (không phải quyền theo workspace)
   pages.push({
     path: "settings",
@@ -106,6 +112,23 @@ export const createAppRoutes = (registry: AppRegistry): RouteObject[] => {
   return [
     // Công khai
     { path: "/", element: createElement(LandingLayout) },
+    {
+      path: "/docs",
+      element: createElement(Suspense, {
+        fallback: createElement("div", {
+          role: "status",
+          "aria-label": "Đang tải tài liệu",
+          className:
+            "mx-auto mt-24 h-64 max-w-4xl rounded-xl bg-crm-subtle motion-safe:animate-pulse",
+        }),
+        children: createElement(DocumentationLayout),
+      }),
+      children: [
+        { index: true, element: createElement(DocumentationPage) },
+        { path: ":slug", element: createElement(DocumentationPage) },
+        { path: "*", element: createElement(DocumentationPage) },
+      ],
+    },
     { path: CALLBACK_PATH, element: createElement(CallbackPage) },
 
     // Cần đăng nhập

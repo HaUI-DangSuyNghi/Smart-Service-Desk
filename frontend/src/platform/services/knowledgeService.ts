@@ -56,8 +56,10 @@ export interface KnowledgeQuery {
 export interface NewKnowledge {
   file: File;
   title: string;
+  /** Tự soạn, tên đơn vị/tác giả hoặc đường dẫn tài liệu gốc. */
   source: string;
   version: string;
+  /** Form mới dùng PUBLIC hoặc INTERNAL; backend vẫn nhận nhãn giấy phép cũ. */
   usageRights: string;
 }
 

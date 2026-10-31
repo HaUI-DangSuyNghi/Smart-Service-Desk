@@ -3,7 +3,6 @@ import { cn } from "cn";
 import type { MenuItem } from "../../router/registry";
 import { TONE_CLASS } from "./menuTree";
 
-
 interface Props {
   item: MenuItem;
   collapsed: boolean;
@@ -32,7 +31,7 @@ export const NavItem = ({ item, collapsed }: Props) => {
       {!collapsed && <span className="min-w-0 flex-1 truncate">{label}</span>}
       {/* Thu gọn thì số đếm nằm đè góc icon */}
       {Badge && (
-        <span className={cn("flex", collapsed && "absolute -top-1 -right-1")}>
+        <span className={cn("flex", collapsed && "absolute top-0 right-0")}>
           <Badge />
         </span>
       )}

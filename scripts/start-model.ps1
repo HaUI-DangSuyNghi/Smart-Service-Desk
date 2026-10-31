@@ -103,13 +103,13 @@ if ($Api) {
         [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
         $probeHeaders = @{ 'CF-Access-Client-Id' = $accessId; 'CF-Access-Client-Secret' = $accessSecret; 'Authorization' = "Bearer $remoteToken" }
         try {
-            $ready = Invoke-RestMethod -Uri "https://$remoteHost/health/ready" -Method Get -Headers $probeHeaders -MaximumRedirection 0 -TimeoutSec 20
+            $ready = Invoke-RestMethod -Uri "https://$remoteHost/health/ready" -Method Get -Headers $probeHeaders -UserAgent 'smart-service-desk-relay/1.0' -MaximumRedirection 0 -TimeoutSec 20
         } catch {
             $code = if ($_.Exception.Response) { [int]$_.Exception.Response.StatusCode } else { 0 }
             $hint = switch ($code) {
                 0 { 'DNS/TLS/tunnel unreachable: is the GPU machine on, with Docker, worker and cloudflared running?' }
                 { $_ -in 301, 302 } { 'Cloudflare Access redirected to login: check the Service Auth policy and cf-access-* files.' }
-                { $_ -in 401, 403 } { 'Rejected by Cloudflare Access or the Qwen token: check cf-access-* and classification-token.' }
+                { $_ -in 401, 403 } { 'Rejected by Cloudflare Access (Service Token not accepted by the Service Auth policy) or by the Qwen token: check cf-access-* and classification-token.' }
                 { $_ -in 502, 530 } { 'Tunnel cannot reach gpu-classifier:8003 on the GPU machine.' }
                 default { 'Worker not ready (busy or starting); check it on the GPU machine.' }
             }

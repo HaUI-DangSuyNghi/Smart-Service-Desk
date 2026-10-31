@@ -1445,8 +1445,8 @@ class TicketIntegrationTest {
         mvc.perform(post(path).with(as(owner, "lab-a", "requester")).contentType("application/json")
             .content("{\"body\":\"  Máy vẫn lỗi\nsau khi khởi động lại  \"}"))
             .andExpect(status().isCreated()).andExpect(jsonPath("$.author").value(owner))
-            .andExpect(jsonPath("$.body").value("Máy vẫn lỗi
-sau khi khởi động lại"));
+            .andExpect(jsonPath("$.body").value("Máy vẫn lỗi\nsau khi khởi động lại"));
+
         mvc.perform(post(path).with(as("review-coordinator", "lab-a", "coordinator")).contentType("application/json")
             .content("{\"body\":\"Đã nhận\"}")).andExpect(status().isCreated());
         mvc.perform(get(path).with(as(owner, "lab-a", "requester"))).andExpect(status().isOk())

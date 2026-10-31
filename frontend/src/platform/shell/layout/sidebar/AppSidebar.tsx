@@ -14,7 +14,6 @@ import {
 } from "@tabler/icons-react";
 import { cn } from "cn";
 import { hasAnyRole, PERMISSIONS, useActor, usePermissions } from "@/platform/human/workspace";
-import { NotificationBell } from "@/platform/human/notifications";
 import { InboxBadge } from "@/platform/process";
 import { useIsMobile } from "@/platform/shared/lib/useMediaQuery";
 import type { MenuItem } from "../../router/registry";
@@ -54,7 +53,7 @@ const PLATFORM_MENU: readonly MenuItem[] = [
     badge: InboxBadge,
     requiredPermissions: [PERMISSIONS.taskHandle],
   },
-  // Cảnh báo nằm trong chuông thông báo ở đầu sidebar (trang /alerts vẫn mở được)
+  // Cảnh báo nằm trong chuông thông báo ở header (trang /alerts vẫn mở được)
   // Ca trực (R3), sửa ước tính (R2); nhóm hiện khi người dùng thấy ít nhất một mục con
   {
     label: "Điều phối",
@@ -145,7 +144,6 @@ export const AppSidebar = ({ appMenu }: Props) => {
       {/* Hàng đầu: workspace bên trái, nút thu gọn bên phải */}
       <div className={cn("flex items-center gap-1", collapsed ? "flex-col" : "justify-between")}>
         <WorkspaceSwitcher collapsed={collapsed} />
-        <NotificationBell collapsed={collapsed} />
         {!isMobile && (
           <button
             type="button"

@@ -45,6 +45,7 @@ Backend chạy chế độ `LOCAL_DEV` (profile `local-dev`) như Qwen local nê
 ## 3. Kiểm tra
 
 - `dx doctor`: báo thiếu file trong `.local/gpu-worker`.
+- `/health/ready` thành công chỉ xác nhận worker sẵn sàng; chưa xác nhận model phân loại được. Healthcheck `gpu-relay` chỉ kiểm Nginx nội bộ, không kiểm TLS hay inference tới máy GPU.
 - Tạo ticket thử: thẻ AI trên trang chi tiết có gợi ý loại/ưu tiên.
 - Máy GPU tắt: ticket vẫn tạo được, AI báo tạm không khả dụng và luồng duyệt tay vẫn chạy.
 
@@ -52,6 +53,9 @@ Backend chạy chế độ `LOCAL_DEV` (profile `local-dev`) như Qwen local nê
 | --- | --- |
 | `HTTP 0` | DNS/tunnel: máy GPU có bật, Docker + worker + cloudflared đang chạy? |
 | `HTTP 301/302` | Policy Service Auth của Cloudflare Access chưa nhận Service Token |
-| `HTTP 401/403` | Sai `cf-access-*` hoặc `classification-token` |
-| `HTTP 502/530` | Tunnel không tới được `gpu-classifier:8003` trên máy GPU |
+| `HTTP 401/403` | Sai `cf-access-*` hoặc `classification-token`; Access trả JSON `Forbidden. You don't have permission...` khi Service Token chưa được policy Service Auth chấp nhận |
+| Cloudflare `error code: 1010` | Cloudflare chặn client không có User-Agent; relay đã gửi `smart-service-desk-relay/1.0`. Gọi tay bằng script thì đặt User-Agent |
+| Relay trả `HTTP 502`, gọi trực tiếp máy GPU thành công | Xem `docker logs dx-platform-gpu-relay-1`. Nếu có `upstream SSL certificate verify error`, kiểm tra CA bundle và độ sâu chuỗi chứng chỉ; template dùng `proxy_ssl_verify_depth 4` và vẫn bật kiểm chứng TLS. Chạy lại `dx up remote` để sinh cấu hình mới, rồi `docker restart dx-platform-gpu-relay-1` để Nginx nạp lại |
+| `HTTP 502/530` từ Cloudflare | Tunnel không tới được `gpu-classifier:8003` trên máy GPU |
+| Inference trả `HTTP 504`, sau đó readiness trả `503 CLASSIFICATION_NOT_READY` | Worker dừng tiến trình model sau khi quá deadline. Trên máy GPU chạy `docker restart ssd-gpu-worker-qwen-1`, chờ model nạp xong rồi kiểm thử inference; restart relay/backend không khôi phục model trên máy GPU |
 | `digest differs` | `worker.env` cũ: lấy bản mới từ máy GPU |

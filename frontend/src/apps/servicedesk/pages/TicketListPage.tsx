@@ -225,11 +225,7 @@ const TicketListPage = () => {
 
   return (
     <Page>
-      <PageHeader
-        title="Ticket"
-        icon={IconTicket}
-        actions={can(PERMISSIONS.requestCreate) && <CreateTicketDialog />}
-      />
+      <PageHeader title="Ticket" icon={IconTicket} />
       <PageToolbar
         start={
           <>
@@ -293,6 +289,7 @@ const TicketListPage = () => {
               value={priority}
               onValueChange={resetPage(setPriority)}
             />
+            {can(PERMISSIONS.requestCreate) && <CreateTicketDialog />}
           </>
         }
       />

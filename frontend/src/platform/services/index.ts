@@ -1,5 +1,6 @@
 // Mọi API của Tầng 2 (core, hpdi). API riêng của app nằm ở apps/<app>/services.
 export { getActor, type Actor } from "./actorService";
+export { getCalendarWork } from "./workCalendarService";
 export {
   getMyActivity,
   getWorkspaceAudit,

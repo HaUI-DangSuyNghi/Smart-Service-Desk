@@ -4,7 +4,7 @@ import {
   IconBook,
   IconCalendar,
   IconFileText,
-  IconLicense,
+  IconLock,
   IconList,
   IconSearch,
   IconTag,
@@ -21,11 +21,18 @@ import { Page, PageBody, PageHeader, PageToolbar } from "@/platform/shared/ui/pa
 import { Pagination } from "@/platform/shared/ui/Pagination";
 import { TableSkeleton } from "@/platform/shared/ui/Skeleton";
 import { UploadKnowledgeDialog } from "./UploadKnowledgeDialog";
+import { KnowledgeAccessTag } from "./KnowledgeAccessTag";
 import { KNOWLEDGE_PAGE_SIZE, useKnowledgeList } from "./useKnowledge";
 
 const COLUMNS: readonly DataTableColumn<KnowledgeSummary>[] = [
   { key: "title", header: "Tiêu đề", icon: IconFileText, width: "320px", cell: (row) => row.title },
-  { key: "source", header: "Nguồn", icon: IconWorld, width: "240px", cell: (row) => row.source },
+  {
+    key: "source",
+    header: "Nguồn tài liệu",
+    icon: IconWorld,
+    width: "240px",
+    cell: (row) => row.source,
+  },
   {
     key: "version",
     header: "Phiên bản",
@@ -35,10 +42,10 @@ const COLUMNS: readonly DataTableColumn<KnowledgeSummary>[] = [
   },
   {
     key: "usageRights",
-    header: "Quyền sử dụng",
-    icon: IconLicense,
+    header: "Ai được xem?",
+    icon: IconLock,
     width: "200px",
-    cell: (row) => row.usageRights,
+    cell: (row) => <KnowledgeAccessTag value={row.usageRights} />,
   },
   {
     key: "owner",

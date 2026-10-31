@@ -82,6 +82,12 @@ class MetadataSpringIntegrationTest {
         Flyway.configure().dataSource(source).load().migrate();
     }
 
+    private static MetadataReadPolicy reads() {
+        return new MetadataReadPolicy(
+            mock(vn.haui.dx.core.identity.api.WorkspaceDirectory.class),
+            mock(vn.haui.dx.core.identity.api.FreshAdminAuthorization.class));
+    }
+
     @Configuration
     @EnableTransactionManagement
     static class SpringTxConfig {
@@ -90,10 +96,10 @@ class MetadataSpringIntegrationTest {
         @Bean public JdbcTemplate jdbcTemplate(javax.sql.DataSource ds) { return new JdbcTemplate(ds); }
         @Bean public MetadataRepository metadataRepository(JdbcTemplate jdbc) { return new MetadataRepository(jdbc); }
         @Bean public Validator validator() { return Validation.buildDefaultValidatorFactory().getValidator(); }
-        @Bean public MetadataFileAccessPolicy metadataPolicy(MetadataRepository repo) { return new MetadataFileAccessPolicy(repo); }
+        @Bean public MetadataFileAccessPolicy metadataPolicy(MetadataRepository repo) { return new MetadataFileAccessPolicy(repo, reads()); }
         @Bean public JdbcMetadataService metadataService(MetadataRepository repo, WorkspaceAccess access,
                 AuditService audit, Validator validator, org.springframework.beans.factory.ObjectProvider<FileService> files) {
-            return new JdbcMetadataService(repo, access, audit, validator, files);
+            return new JdbcMetadataService(repo, access, audit, validator, files, reads());
         }
     }
 
@@ -180,7 +186,7 @@ class MetadataSpringIntegrationTest {
     @Test void mockMvcHttpResponseMatchesOpenApiMetadataSchemaExactly() throws Exception {
         var repo = new MetadataRepository(jdbc);
         var svc = new JdbcMetadataService(repo, access(agent), audit(agent),
-            Validation.buildDefaultValidatorFactory().getValidator(), null);
+            Validation.buildDefaultValidatorFactory().getValidator(), null, reads());
         var controller = new MetadataApi(svc);
 
         MockMvc mvc = MockMvcBuilders.standaloneSetup(controller)

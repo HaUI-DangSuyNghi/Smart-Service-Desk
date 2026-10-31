@@ -2,7 +2,7 @@ import { Link } from "react-router";
 import { IconDoor } from "@tabler/icons-react";
 import { Button } from "../../../platform/shared/ui/button";
 import { EmptyState } from "../../../platform/shared/ui/EmptyState";
-import { Page, PageBody, PageHeader } from "../../../platform/shared/ui/page";
+import { Page, PageBody, PageHeader, PageToolbar } from "../../../platform/shared/ui/page";
 import { CreateRoomRequestDialog } from "../requests/CreateRoomRequestDialog";
 
 /**
@@ -12,7 +12,8 @@ import { CreateRoomRequestDialog } from "../requests/CreateRoomRequestDialog";
 const RoomRequestHomePage = () => {
   return (
     <Page>
-      <PageHeader title="Đặt phòng" icon={IconDoor} actions={<CreateRoomRequestDialog />} />
+      <PageHeader title="Đặt phòng" icon={IconDoor} />
+      <PageToolbar end={<CreateRoomRequestDialog />} />
       <PageBody>
         <EmptyState
           icon={IconDoor}

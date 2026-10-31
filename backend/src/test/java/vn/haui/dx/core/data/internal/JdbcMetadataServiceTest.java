@@ -97,14 +97,20 @@ class JdbcMetadataServiceTest {
         return provider;
     }
 
+    private static MetadataReadPolicy reads() {
+        return new MetadataReadPolicy(
+            mock(vn.haui.dx.core.identity.api.WorkspaceDirectory.class),
+            mock(vn.haui.dx.core.identity.api.FreshAdminAuthorization.class));
+    }
+
     private JdbcMetadataService service(User actor) { return service(actor, null, audit(actor)); }
     private JdbcMetadataService service(User actor, FileService fileService, AuditService auditService) {
-        return new JdbcMetadataService(new MetadataRepository(jdbc), access(actor), auditService, validator, fileProvider(fileService));
+        return new JdbcMetadataService(new MetadataRepository(jdbc), access(actor), auditService, validator, fileProvider(fileService), reads());
     }
 
     private LocalFileService fileService(User actor, MetadataRepository repository, Path storageRoot) {
         return new LocalFileService(storageRoot, jdbc, access(actor),
-            audit(actor), List.of(new MetadataFileAccessPolicy(repository)), manager);
+            audit(actor), List.of(new MetadataFileAccessPolicy(repository, reads())), manager);
     }
 
     private static void denied(ErrorCode expected, Executable executable) {
@@ -183,7 +189,7 @@ class JdbcMetadataServiceTest {
         byte[] bytes = "Hello provenance file".getBytes(StandardCharsets.UTF_8);
         var stored = files.store("lab-a", "doc.txt", "text/plain", new ByteArrayInputStream(bytes));
 
-        var metadataSvc = new JdbcMetadataService(repo, access(agent), audit(agent), validator, fileProvider(files));
+        var metadataSvc = new JdbcMetadataService(repo, access(agent), audit(agent), validator, fileProvider(files), reads());
         var record = metadataSvc.create("lab-a", new NewMetadata("File Doc", "src:file", "v1", "CC0", null, stored.id()));
         assertEquals(stored.checksum(), record.checksum());
         assertEquals(stored.id(), record.fileId());
@@ -202,7 +208,7 @@ class JdbcMetadataServiceTest {
         var files = fileService(agent, repo, storageRoot);
         var stored = files.store("lab-a", "agent.txt", "text/plain", new ByteArrayInputStream("agent".getBytes(StandardCharsets.UTF_8)));
 
-        var coordSvc = new JdbcMetadataService(repo, access(coordinator), audit(coordinator), validator, fileProvider(files));
+        var coordSvc = new JdbcMetadataService(repo, access(coordinator), audit(coordinator), validator, fileProvider(files), reads());
         denied(ErrorCode.NOT_FOUND, () -> coordSvc.create("lab-a",
             new NewMetadata("Stolen", "src:stolen", "v1", "CC0", null, stored.id())));
     }
@@ -216,7 +222,7 @@ class JdbcMetadataServiceTest {
         var repo = new MetadataRepository(jdbc);
         var files = mock(FileService.class);
         when(files.describe("lab-a", foreignFileId)).thenThrow(CoreException.notFound("File not found"));
-        var svc = new JdbcMetadataService(repo, access(agent), audit(agent), validator, fileProvider(files));
+        var svc = new JdbcMetadataService(repo, access(agent), audit(agent), validator, fileProvider(files), reads());
         denied(ErrorCode.NOT_FOUND, () -> svc.create("lab-a",
             new NewMetadata("Cross", "src:cross", "v1", "CC0", null, foreignFileId)));
     }
@@ -230,7 +236,7 @@ class JdbcMetadataServiceTest {
         var brokenAudit = mock(AuditService.class);
         doThrow(new RuntimeException("Audit disk full")).when(brokenAudit).record(anyString(), anyString(), anyString(), anyString(), anyMap());
         var tx = new TransactionTemplate(manager);
-        var svc = new JdbcMetadataService(repo, access(agent), brokenAudit, validator, fileProvider(files));
+        var svc = new JdbcMetadataService(repo, access(agent), brokenAudit, validator, fileProvider(files), reads());
 
         assertThrows(RuntimeException.class, () -> tx.execute(status ->
             svc.create("lab-a", new NewMetadata("Rollback", "src:rollback", "v1", "CC0", null, stored.id()))));
