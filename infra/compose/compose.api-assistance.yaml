@@ -1,7 +1,7 @@
 # API Q&A can run beside Qwen; it never aliases the classification endpoint here.
 services:
   intelligence-api:
-    profiles: [local-model]
+    profiles: [local-model, remote-model]
     image: dx-platform-classification-api:dev
     build:
       context: .

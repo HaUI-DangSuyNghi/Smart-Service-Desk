@@ -16,8 +16,8 @@ import { useOpenNotification } from "./useOpenNotification";
 
 type Filter = "all" | "unread";
 
-/** Chuông ở đầu sidebar: số chưa đọc, xổ ra 10 thông báo mới nhất (cả cảnh báo), "Xem tất cả" mở trang đầy đủ. */
-export const NotificationBell = ({ collapsed }: { collapsed: boolean }) => {
+/** Chuông bên phải header: số chưa đọc, xổ ra 10 thông báo mới nhất và liên kết đến trang đầy đủ. */
+export const NotificationBell = () => {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [filter, setFilter] = useState<Filter>("all");
@@ -35,7 +35,7 @@ export const NotificationBell = ({ collapsed }: { collapsed: boolean }) => {
         aria-label={unread > 0 ? `Thông báo, ${unread} chưa đọc` : "Thông báo"}
         title="Thông báo"
         className={cn(
-          "relative grid size-7 shrink-0 place-items-center rounded-crm-sm text-crm-text-3 outline-none",
+          "relative grid size-8 shrink-0 place-items-center rounded-crm-sm text-crm-text-3 outline-none sm:size-7",
           "transition-colors duration-100 hover:bg-crm-hover hover:text-crm-text data-[state=open]:bg-crm-hover",
         )}
       >
@@ -48,8 +48,8 @@ export const NotificationBell = ({ collapsed }: { collapsed: boolean }) => {
       </DropdownMenuTrigger>
 
       <DropdownMenuContent
-        side={collapsed ? "right" : "bottom"}
-        align="start"
+        side="bottom"
+        align="end"
         // Portal nằm ngoài .crm-app nên phải đặt lại cỡ chữ của app (13px), không thì về 16px mặc định
         className="flex w-88 max-w-[calc(100vw-2rem)] flex-col p-0 text-crm-md text-crm-text"
       >

@@ -11,6 +11,10 @@ export {
 } from "./common/requestActions";
 export { type ProcessLabels } from "./catalog/processLabels";
 export { useProcessLabels } from "./catalog/useProcessCatalog";
+/** Danh sách công việc và yêu cầu cá nhân dùng trên trang chủ. */
+export { useInbox } from "./inbox/useInbox";
+export { useRequests } from "./requests/useMyRequests";
+export { StartProcessDialog } from "./start/StartProcessDialog";
 export { outcomeTone } from "./common/display";
 export { InboxBadge } from "./inbox/InboxBadge";
 export { default as InboxPage } from "./inbox/InboxPage";

@@ -12,11 +12,14 @@ import static vn.haui.dx.core.identity.api.WorkspaceRole.COORDINATOR;
 @Component
 public class MetadataFileAccessPolicy implements FileAccessPolicy {
     private final MetadataRepository repository;
+    private final MetadataReadPolicy reads;
 
-    public MetadataFileAccessPolicy(MetadataRepository repository) { this.repository = repository; }
+    public MetadataFileAccessPolicy(MetadataRepository repository, MetadataReadPolicy reads) {
+        this.repository = repository; this.reads = reads;
+    }
     @Override public String resourceType() { return "metadata"; }
     @Override public boolean canRead(CurrentUser user, String workspace, String resourceId) {
-        return resource(user, workspace, resourceId).isPresent();
+        return resource(user, workspace, resourceId).filter(record -> reads.canRead(user, record)).isPresent();
     }
     @Override public boolean canLink(CurrentUser user, String workspace, String resourceId) {
         return user.hasRole(workspace, AGENT, COORDINATOR)

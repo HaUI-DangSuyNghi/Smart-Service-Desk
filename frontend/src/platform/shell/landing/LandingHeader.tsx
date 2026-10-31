@@ -3,7 +3,7 @@ import { Link } from "react-router";
 import { ChevronDown, Menu, X } from "lucide-react";
 import { cn } from "cn";
 import { useAuth } from "@/platform/human/auth";
-import { APP_HOME, repoFile } from "./links";
+import { APP_HOME, DOCUMENTATION_URL, repoFile } from "./links";
 import { Wordmark } from "./Wordmark";
 
 const PRODUCT_ITEMS = [
@@ -126,6 +126,10 @@ export const LandingHeader = () => {
                 Kiến trúc
               </a>
 
+              <Link to={DOCUMENTATION_URL} className={cn(NAV_LINK, navColor)}>
+                Tài liệu
+              </Link>
+
               <DesktopDropdown label="Tài nguyên" scrolled={scrolled}>
                 <div className="p-3">
                   {RESOURCE_ITEMS.map((item) => (
@@ -176,6 +180,8 @@ export const LandingHeader = () => {
       </nav>
 
       <div
+        inert={!mobileOpen}
+        aria-hidden={!mobileOpen}
         className={cn(
           "fixed inset-0 z-[100] flex flex-col gap-2 bg-white/98 px-6 pt-20 pb-8 backdrop-blur-md transition-transform duration-300 lg:hidden",
           mobileOpen ? "translate-x-0" : "translate-x-full",
@@ -204,6 +210,13 @@ export const LandingHeader = () => {
             {label}
           </a>
         ))}
+        <Link
+          to={DOCUMENTATION_URL}
+          onClick={() => setMobileOpen(false)}
+          className="rounded-[10px] px-4 py-3.5 text-lg font-bold text-(--landing-text) hover:bg-(--landing-bg-soft)"
+        >
+          Tài liệu
+        </Link>
         <div className="mt-auto flex flex-col gap-2.5">
           <Link
             to={APP_HOME}

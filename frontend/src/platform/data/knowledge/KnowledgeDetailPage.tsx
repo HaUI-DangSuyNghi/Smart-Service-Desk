@@ -10,6 +10,8 @@ import { Page, PageBody, PageHeader } from "@/platform/shared/ui/page";
 import { FieldsSkeleton, TextSkeleton } from "@/platform/shared/ui/Skeleton";
 import { toastError } from "@/platform/shared/ui/toast";
 import { useDownloadKnowledgeFile, useKnowledgeContent, useKnowledgeRecord } from "./useKnowledge";
+import { KnowledgeAccessTag } from "./KnowledgeAccessTag";
+import { isKnowledgeAccessValue } from "./knowledgeAccess";
 
 /** Chi tiết một tài liệu: provenance (nguồn, phiên bản, quyền, checksum) và nội dung văn bản. */
 const KnowledgeDetailPage = () => {
@@ -55,9 +57,14 @@ const KnowledgeDetailPage = () => {
         {record.data && (
           <>
             <dl className="border-b border-crm-line px-4 py-3">
-              <FieldRow label="Nguồn">{record.data.source}</FieldRow>
+              <FieldRow label="Nguồn tài liệu">{record.data.source}</FieldRow>
               <FieldRow label="Phiên bản">{record.data.version}</FieldRow>
-              <FieldRow label="Quyền sử dụng">{record.data.usageRights}</FieldRow>
+              <FieldRow label="Ai được xem?">
+                <KnowledgeAccessTag value={record.data.usageRights} />
+              </FieldRow>
+              {!isKnowledgeAccessValue(record.data.usageRights) && (
+                <FieldRow label="Giấy phép">{record.data.usageRights}</FieldRow>
+              )}
               <FieldRow label="Người tạo">{record.data.ownerName ?? "—"}</FieldRow>
               <FieldRow label="Ngày tạo">{formatDateTime(record.data.createdAt)}</FieldRow>
               <FieldRow label="Checksum SHA-256">
