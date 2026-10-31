@@ -10,7 +10,27 @@ import static vn.haui.dx.hpdi.settings.api.SettingsValidation.*;
 public final class WorkSettingsValidation {
     private WorkSettingsValidation() {}
     public static void validate(JsonNode root) {
-        object(root, "version", "assignment", "shifts", "sla", "critical", "alerts", "closing", "estimate");
+        // Nhóm schedule (V39) không bắt buộc: bản lưu cũ chưa có vẫn hợp lệ
+        if (root != null && root.has("schedule")) {
+            object(root, "version", "assignment", "shifts", "sla", "critical", "alerts", "closing", "estimate", "schedule");
+            var schedule = root.get("schedule");
+            object(schedule, "weekendRegistration", "approvalRequired", "holidays");
+            require(schedule.get("weekendRegistration").isBoolean() && schedule.get("approvalRequired").isBoolean(),
+                "Boolean required");
+            var holidays = schedule.get("holidays");
+            require(holidays.isArray() && holidays.size() <= 400, "At most 400 holidays");
+            var dates = new HashSet<String>();
+            for (var holiday : holidays) {
+                object(holiday, "date", "name");
+                String date = text(holiday.get("date"), 10);
+                try { java.time.LocalDate.parse(date); }
+                catch (java.time.format.DateTimeParseException invalid) { require(false, "Invalid holiday date"); }
+                require(dates.add(date), "Duplicate holiday date");
+                text(holiday.get("name"), 100);
+            }
+        } else {
+            object(root, "version", "assignment", "shifts", "sla", "critical", "alerts", "closing", "estimate");
+        }
         integer(root.get("version"), 0, Long.MAX_VALUE);
         var assignment = root.get("assignment");
         object(assignment, "pendingLoadFactor", "tieThresholdMinutes", "maxInProgress", "minRemainingMinutes");

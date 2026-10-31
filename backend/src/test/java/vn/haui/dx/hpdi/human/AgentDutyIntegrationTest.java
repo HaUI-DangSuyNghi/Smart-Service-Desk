@@ -153,7 +153,7 @@ class AgentDutyIntegrationTest {
 
     @Test void persistedSelfOnlyDutyAndCoordinatorVisibilityAreWorkspaceIsolated() throws Exception {
         String subject = agent();
-        mvc.perform(get(BASE).with(as(subject,"agent"))).andExpect(status().isOk()).andExpect(jsonPath("$[0].onDuty").value(false));
+        mvc.perform(get(BASE).with(as(subject,"agent"))).andExpect(status().isOk()).andExpect(jsonPath("$[0].onDuty").value(true));
         mvc.perform(put(BASE+"/me").with(as(subject,"agent")).contentType("application/json").content("{\"onDuty\":true,\"note\":\"Available\"}"))
             .andExpect(status().isOk()).andExpect(jsonPath("$.onDuty").value(true));
         assertTrue(jdbc.queryForObject("select on_duty from hpdi_agent_duty where workspace='lab-a' and subject=?",Boolean.class,subject));

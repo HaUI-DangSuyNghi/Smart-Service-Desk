@@ -28,6 +28,7 @@ Smart Service Desk
   dx logs [service]     Follow logs (default: platform keycloak gateway)
   dx qwen               Restart Qwen when AI is unavailable
   dx realm              Re-import the Keycloak realm from template
+  dx schedule           Seed demo duty shifts (this week + next week)
   dx smoke              Smoke test the running stack
   dx check              Validate Compose config and database
   dx open               Open http://localhost:5173
@@ -313,6 +314,7 @@ function Invoke-Dx([string]$Name, [string[]]$Options = @()) {
                 & docker compose -p $project logs -f --tail 100 @services
             }
             'realm' { & "$PSScriptRoot/start.ps1" -Reset }
+            'schedule' { & "$PSScriptRoot/seed-schedule-demo.ps1" }
             'qwen' { Invoke-Qwen }
             'smoke' { & "$PSScriptRoot/smoke.ps1" }
             'check' { Invoke-Check }

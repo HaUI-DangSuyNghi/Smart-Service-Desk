@@ -107,7 +107,8 @@ function DialogTitle({ className, ...props }: React.ComponentProps<typeof Dialog
   return (
     <DialogPrimitive.Title
       data-slot="dialog-title"
-      className={cn("font-heading text-base leading-none font-medium", className)}
+      // leading-snug: tiêu đề dài xuống dòng không dính nhau; pr-8 chừa chỗ nút đóng góc phải
+      className={cn("font-heading pr-8 text-base leading-snug font-medium", className)}
       {...props}
     />
   );
@@ -121,7 +122,7 @@ function DialogDescription({
     <DialogPrimitive.Description
       data-slot="dialog-description"
       className={cn(
-        "text-sm text-muted-foreground *:[a]:underline *:[a]:underline-offset-3 *:[a]:hover:text-foreground",
+        "text-sm leading-relaxed text-muted-foreground *:[a]:underline *:[a]:underline-offset-3 *:[a]:hover:text-foreground",
         className,
       )}
       {...props}

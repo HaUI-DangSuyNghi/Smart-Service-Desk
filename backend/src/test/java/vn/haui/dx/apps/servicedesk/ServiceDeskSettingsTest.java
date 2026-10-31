@@ -23,6 +23,13 @@ class ServiceDeskSettingsTest {
             for (var priority : TicketReview.Priority.values())
                 assertEquals(TicketReview.defaultMinutes(category, priority), seed.get("estimateDefaults").get(category.name()).get(priority.name()).asInt());
     }
+    @Test void sampleDataIsOptionalBoolean() throws Exception {
+        ObjectNode seed = seed();
+        seed.put("sampleData", true);
+        ServiceDeskSettings.validate(seed);
+        seed.put("sampleData", false);
+        ServiceDeskSettings.validate(seed);
+    }
     @ParameterizedTest @ValueSource(strings={
         "/version|1.2", "/version|9223372036854775808", "/version|-1", "/categoryGroups|null",
         "/categoryGroups/OTHER|\"hardware\"", "/categoryGroups/HARDWARE|null",
@@ -30,7 +37,7 @@ class ServiceDeskSettingsTest {
         "/categoryGroups/ACCOUNT|\"platform-admin\"", "/categoryGroups/EXTRA|\"network\"",
         "/estimateDefaults/OTHER/LOW|0", "/estimateDefaults/NETWORK/MEDIUM|10081",
         "/estimateDefaults/HARDWARE/HIGH|1.5", "/estimateDefaults/SOFTWARE/CRITICAL|\"20\"",
-        "/estimateDefaults/ACCOUNT/EXTRA|1", "/updatedBy|\"forged\""
+        "/estimateDefaults/ACCOUNT/EXTRA|1", "/updatedBy|\"forged\"", "/sampleData|\"true\"", "/sampleData|null"
     })
     void rejectsInvalidReplacement(String mutation) throws Exception {
         ObjectNode seed = seed(); String[] parts = mutation.split("\\|", 2);

@@ -21,6 +21,8 @@ import { SelectField } from "../../../platform/shared/ui/SelectField";
 import { Textarea } from "../../../platform/shared/ui/textarea";
 import { toast, toastError } from "../../../platform/shared/ui/toast";
 import { appendClarification, type ClarificationInput } from "../services/enrichmentService";
+import { useServiceDeskFeatures } from "../settings/useServiceDeskSettings";
+import { SAMPLE_OPTIONS, sampleValues } from "./createTicketSamples";
 import { MAX_DESCRIPTION, MAX_TITLE } from "./ticketRules";
 import { useCreateTicket } from "./useTickets";
 
@@ -88,6 +90,14 @@ const CreateTicketForm = ({ onDone }: { onDone: () => void }) => {
   });
   const [title, description] = useWatch({ control: form.control, name: ["title", "description"] });
   const { errors } = form.formState;
+  // Bộ dữ liệu điền nhanh để thử: chỉ hiện khi bật "Dữ liệu mẫu" trong Cấu hình hệ thống
+  const showSamples = useServiceDeskFeatures().data?.sampleData === true;
+  const [sample, setSample] = useState("");
+  const fillSample = (value: string) => {
+    setSample(value);
+    const values = sampleValues(value);
+    if (values) form.reset(values);
+  };
 
   const handleSubmit = form.handleSubmit((values) => {
     const { title, description } = values;
@@ -140,6 +150,18 @@ const CreateTicketForm = ({ onDone }: { onDone: () => void }) => {
         onKeyDown={submitOnEnter}
         className="flex flex-col gap-3"
       >
+        {showSamples && (
+          <FormField id="ticket-sample" label="Dữ liệu mẫu">
+            <SelectField
+              aria-label="Dữ liệu mẫu"
+              placeholder="Chọn bộ dữ liệu"
+              options={SAMPLE_OPTIONS}
+              value={sample}
+              onValueChange={fillSample}
+              className={FORM_SELECT}
+            />
+          </FormField>
+        )}
         <FormField id="ticket-title" label="Tiêu đề" error={errors.title?.message}>
           <Input
             id="ticket-title"

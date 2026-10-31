@@ -26,4 +26,10 @@ public interface WorkspaceDirectory {
      * Used for display and permission enforcement, intersected with the caller's signed workspace roles.
      */
     Map<String, List<DirectoryPermission>> rolePermissions(String workspace);
+
+    /**
+     * Email (Keycloak) theo subject, chỉ để gửi thông báo từ phía máy chủ (worker, không có người gọi);
+     * subject không có email hoặc danh bạ không phản hồi thì bỏ qua. Mặc định không có email nào.
+     */
+    default Map<String, String> emails(java.util.Collection<String> subjects) { return Map.of(); }
 }

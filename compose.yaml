@@ -39,11 +39,23 @@ services:
     build:
       context: .
       dockerfile: backend/Dockerfile
+      args:
+        # Mặc định build kèm toàn bộ test; máy dev đặt MVN_GOAL trong .env để bỏ qua test
+        MVN_GOAL: ${MVN_GOAL:-verify}
     environment:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Run scripts/setup.ps1}
       DATABASE_URL: jdbc:postgresql://postgres:5432/core
       DX_STORAGE_ROOT: /var/lib/dx/files
       DX_ALLOW_UNSCANNED_UPLOAD: 'true'
+      # Email thông báo (Gmail SMTP + App Password); MAIL_HOST trống = chỉ thông báo trong app
+      MAIL_HOST: ${MAIL_HOST:-}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      MAIL_FROM_NAME: ${MAIL_FROM_NAME:-Smart Desk App}
+      APP_BASE_URL: ${APP_BASE_URL:-http://localhost:5173}
+      REALTIME_ENABLED: ${REALTIME_ENABLED:-true}
+      REALTIME_ALLOWED_ORIGINS: ${REALTIME_ALLOWED_ORIGINS:-}
       INTELLIGENCE_TRIAGE_BASE_URL: ${INTELLIGENCE_TRIAGE_BASE_URL:-}
       INTELLIGENCE_TRIAGE_TOKEN: ${INTELLIGENCE_TRIAGE_TOKEN:-}
       SERVICE_DESK_ASSESSMENT_ENABLED: ${SERVICE_DESK_ASSESSMENT_ENABLED:-false}

@@ -15,6 +15,8 @@ export default defineConfig({
     // Gọi API qua cùng origin để tránh CORS; APISIX chạy ở 9080
     proxy: {
       "/api": { target: "http://localhost:9080", changeOrigin: true },
+      // WebSocket realtime (STOMP) đi cùng gateway
+      "/ws": { target: "ws://localhost:9080", ws: true, changeOrigin: true },
     },
   },
 });

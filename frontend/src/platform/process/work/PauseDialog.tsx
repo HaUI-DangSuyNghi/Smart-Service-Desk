@@ -68,9 +68,9 @@ const PauseForm = ({ item, onDone }: FormProps) => {
   return (
     <>
       <DialogHeader>
-        <DialogTitle>Tạm dừng: {item.label}</DialogTitle>
-        <DialogDescription>
-          Việc chuyển sang Đang chờ. Chờ người yêu cầu trả lời thì không tính vào hạn xử lý.
+        <DialogTitle>Tạm dừng</DialogTitle>
+        <DialogDescription className="truncate font-medium text-crm-text">
+          {item.label}
         </DialogDescription>
       </DialogHeader>
 
@@ -78,8 +78,11 @@ const PauseForm = ({ item, onDone }: FormProps) => {
         id="pause-work"
         onSubmit={handleSubmit}
         onKeyDown={submitOnEnter}
-        className="flex flex-col gap-3"
+        className="flex flex-col gap-4"
       >
+        <p className="leading-relaxed text-crm-text-2">
+          Việc chuyển sang Đang chờ. Chờ người yêu cầu trả lời thì không tính vào hạn xử lý.
+        </p>
         <fieldset className="flex flex-col gap-1.5">
           <legend className="mb-1 text-crm-sm text-crm-text-2">Lý do</legend>
           {REASONS.map((reason) => (

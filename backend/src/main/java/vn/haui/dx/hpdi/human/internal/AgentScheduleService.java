@@ -23,13 +23,20 @@ public class AgentScheduleService implements AgentSchedules {
     private final ActivityJournal audit;
     private final Clock clock;
     private final String defaultZone;
+    /** Bật: chỉ trực khi đang trong ca đã đăng ký; tắt: chưa dùng lịch thì theo công tắc tay (hành vi cũ). */
+    private final boolean shiftRequired;
+    private final vn.haui.dx.hpdi.settings.api.WorkPolicy work;
 
     public AgentScheduleService(JdbcTemplate jdbc, HumanContext humans, PermissionGuard permissions,
             AgentDirectory directory, ActivityJournal audit, org.springframework.beans.factory.ObjectProvider<Clock> clock,
-            @org.springframework.beans.factory.annotation.Value("${dx.scheduling.business-zone:Asia/Ho_Chi_Minh}") String defaultZone) {
+            @org.springframework.beans.factory.annotation.Value("${dx.scheduling.business-zone:Asia/Ho_Chi_Minh}") String defaultZone,
+            @org.springframework.beans.factory.annotation.Value("${dx.scheduling.shift-required:true}") boolean shiftRequired,
+            vn.haui.dx.hpdi.settings.api.WorkPolicy work) {
         this.jdbc=jdbc; this.humans=humans; this.permissions=permissions;
         this.directory=directory; this.audit=audit; this.clock=clock.getIfAvailable(Clock::systemUTC);
         this.defaultZone=ZoneId.of(defaultZone).getId();
+        this.shiftRequired=shiftRequired;
+        this.work=work;
     }
 
     private String authorize(String workspace, String subject, boolean write) {
@@ -130,17 +137,50 @@ public class AgentScheduleService implements AgentSchedules {
 
     Effective evaluate(String workspace, String subject) {
         var schedule=read(workspace,subject);
-        boolean manual=Boolean.TRUE.equals(jdbc.queryForObject("select exists(select 1 from hpdi_agent_duty where workspace=? and subject=? and on_duty)",
+        // Mặc định đang trực: chỉ nghỉ khi chính kỹ thuật viên đã tắt
+        boolean manual=Boolean.TRUE.equals(jdbc.queryForObject("select not exists(select 1 from hpdi_agent_duty where workspace=? and subject=? and not on_duty)",
             Boolean.class,workspace,subject));
-        return project(schedule,manual,clock.instant());
+        Instant now=clock.instant();
+        // Ô ca đã duyệt đang chạy (đăng ký theo tuần)
+        var slot=jdbc.query("select starts_at,ends_at from hpdi_agent_slot where workspace=? and subject=? and status='APPROVED'"
+                + " and starts_at<=? and ends_at>? order by ends_at desc limit 1",
+            (row,index) -> new Shift(row.getTimestamp(1).toInstant(),row.getTimestamp(2).toInstant(),defaultZone),
+            workspace,subject,Timestamp.from(now),Timestamp.from(now)).stream().findFirst().orElse(null);
+        // Người làm hành chính: không cần ô đăng ký, trực trong mọi ca của ngày làm việc
+        if (slot==null && Boolean.TRUE.equals(jdbc.queryForObject(
+                "select exists(select 1 from hpdi_agent_work_mode where workspace=? and subject=? and mode='OFFICE')",
+                Boolean.class,workspace,subject)))
+            slot=officeShift(work.current(),ZoneId.of(defaultZone),now);
+        return project(schedule,manual,now,slot,shiftRequired);
+    }
+
+    /** Ca hành chính đang chạy: T2-T6 không phải ngày lễ và giờ nằm trong một ca của Cấu hình; ngoài giờ là null. */
+    static Shift officeShift(vn.haui.dx.hpdi.settings.api.WorkPolicy.Snapshot settings, ZoneId zone, Instant now) {
+        var date=now.atZone(zone).toLocalDate();
+        if (AgentSlotService.dayOff(date,settings)) return null;
+        for (var shift:settings.shifts()) {
+            Instant start=date.atTime(shift.start()).atZone(zone).toInstant();
+            Instant end=date.atTime(shift.end()).atZone(zone).toInstant();
+            if (!now.isBefore(start) && now.isBefore(end)) return new Shift(start,end,zone.getId());
+        }
+        return null;
     }
 
     static Effective project(Schedule schedule, boolean manual, Instant now) {
-        var current=schedule.shifts().stream().filter(shift -> schedule.enabled() && !now.isBefore(shift.startsAt()) && now.isBefore(shift.endsAt())).findFirst().orElse(null);
+        return project(schedule,manual,now,null,false);
+    }
+
+    /**
+     * Trực thực tế = công tắc tay bật (tắt = nghỉ đột xuất) và đang trong ca: ca của lịch cũ hoặc ô đã duyệt.
+     * shiftRequired: không có ca nào đang chạy thì nghỉ, kể cả khi chưa dùng lịch.
+     */
+    static Effective project(Schedule schedule, boolean manual, Instant now, Shift slot, boolean shiftRequired) {
+        var current=schedule.shifts().stream().filter(shift -> schedule.enabled() && !now.isBefore(shift.startsAt()) && now.isBefore(shift.endsAt())).findFirst().orElse(slot);
         boolean scheduled=current!=null;
-        boolean effective=manual && (!schedule.enabled() || scheduled);
-        return new Effective(manual,schedule.enabled(),scheduled,effective,current==null ? null : current.startsAt(),
+        boolean enabled=schedule.enabled() || shiftRequired;
+        boolean effective=manual && (!enabled || scheduled);
+        return new Effective(manual,enabled,scheduled,effective,current==null ? null : current.startsAt(),
             current==null ? null : current.endsAt(),current==null ? null : Math.toIntExact(Duration.between(now,current.endsAt()).toMinutes()),
-            schedule.version(),!manual ? "MANUAL_OFF_DUTY" : !effective ? "OUTSIDE_SHIFT" : schedule.enabled() ? "SCHEDULE_AND_MANUAL" : "LEGACY_MANUAL");
+            schedule.version(),!manual ? "MANUAL_OFF_DUTY" : !effective ? "OUTSIDE_SHIFT" : enabled ? "SCHEDULE_AND_MANUAL" : "LEGACY_MANUAL");
     }
 }

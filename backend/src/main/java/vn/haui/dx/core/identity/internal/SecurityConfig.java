@@ -41,7 +41,8 @@ class SecurityConfig {
                     }
                 }))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth.requestMatchers("/actuator/health").permitAll().anyRequest().authenticated())
+            // /ws: bước bắt tay WebSocket không mang token; token kiểm ở frame STOMP CONNECT (RealtimeAuthInterceptor)
+            .authorizeHttpRequests(auth -> auth.requestMatchers("/actuator/health", "/ws").permitAll().anyRequest().authenticated())
             .oauth2ResourceServer(resource -> resource.jwt(Customizer.withDefaults())
                 .authenticationEntryPoint(unauthenticated).accessDeniedHandler(forbidden))
             .exceptionHandling(handling -> handling.authenticationEntryPoint(unauthenticated).accessDeniedHandler(forbidden))

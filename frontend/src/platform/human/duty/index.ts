@@ -1,4 +1,4 @@
-// Ca trực (R3): công tắc tay của từng người + lịch ca do điều phối viên xếp
+// Ca trực (R3): đăng ký ca theo tuần + công tắc tắt trực (nghỉ đột xuất) của từng người
 export { DutyMenuItem } from "./DutyMenuItem";
 export { default as DutyPage } from "./DutyPage";
-export { useDutyList, useSchedules, useSetMyDuty } from "./useDuty";
+export { useDutyList, useSetMyDuty } from "./useDuty";

@@ -156,6 +156,7 @@ Lần đầu chạy `.\dx` (lệnh nào cũng được), dự án tự được 
 | `.\dx restart` | Dừng rồi khởi động lại |
 | `.\dx ps`, `.\dx logs [service]` | Trạng thái container, xem log |
 | `.\dx realm` | Import lại realm Keycloak (`start.ps1 -Reset`) |
+| `.\dx schedule` | Tạo lịch trực mẫu tuần này + tuần sau (người trực cả tuần, người trực vài buổi) |
 | `.\dx qwen` | Khởi động lại Qwen khi thẻ AI báo "AI tạm không khả dụng" |
 | `.\dx smoke`, `.\dx check` | Kiểm thử nhanh, kiểm cấu hình Compose và CSDL |
 | `.\dx help` | Xem mọi lệnh |
@@ -317,20 +318,60 @@ docker compose ps
 
 ---
 
+## 🔔 Thông báo & email
+
+Mỗi lần đổi trạng thái (tạo ticket, cần bổ sung thông tin, giao việc, bắt đầu, chờ người gửi, trả việc, báo xong, xác nhận/mở lại, tự đóng, sửa ước tính, ca trực) và mỗi cảnh báo (quá hạn, khẩn cấp...) đều vào **chuông thông báo** ở đầu sidebar của người liên quan; các bước cần người nhận hành động gửi thêm **email**. Người tự làm thao tác không nhận thông báo của chính mình.
+
+Email gửi qua SMTP, cấu hình trong `.env` (không commit):
+
+```dotenv
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USERNAME=dia-chi-gmail-gui@gmail.com
+MAIL_PASSWORD=mat-khau-ung-dung-16-ky-tu
+MAIL_FROM_NAME=Smart Desk App
+APP_BASE_URL=http://localhost:5173
+```
+
+Gmail cần bật xác minh 2 bước rồi tạo **mật khẩu ứng dụng**. `MAIL_HOST` trống thì chỉ có thông báo trong app. Địa chỉ nhận lấy từ email của tài khoản trong Keycloak (tài khoản demo dùng `@example.com` nên không nhận được; `superadmin` dùng email thật để thử).
+
+### Realtime (WebSocket)
+
+Thông báo mới, đổi trạng thái ticket, bình luận, hàng đợi và ca trực hiện **ngay** trên màn hình đang mở, không cần F5.
+
+- Đường đi: trình duyệt → `/ws` (Vite / nginx) → APISIX (route `realtime`, `enable_websocket`) → `platform:8080/ws`. Giao thức STOMP; token gửi trong frame `CONNECT`, không đặt trên URL.
+- Server chỉ báo "có thay đổi" (`{type, workspace, resource, id}`), FE tải lại qua REST nên quyền xem vẫn do API quyết định. Sự kiện chỉ phát sau khi transaction commit.
+- Kênh: `/user/queue/events` (riêng mỗi người), `/topic/workspaces/{ws}/tickets` và `/work` (agent, coordinator), `/topic/workspaces/{ws}/tickets/{id}` (ai xem được ticket). Hợp đồng: [`contracts/realtime/asyncapi.yaml`](contracts/realtime/asyncapi.yaml).
+- Mất kết nối thì FE tự nối lại (1 → 30 giây) và polling 30 giây chạy dự phòng; đang nối thì polling giãn ra 5 phút.
+- Kiểm tra: DevTools → Network → lọc **WS** → `/ws` → tab Messages thấy `CONNECTED`, `SUBSCRIBE`, `MESSAGE`.
+- Tắt: `REALTIME_ENABLED=false` trong `.env`. Origin được phép: `APP_BASE_URL`, `localhost:5173`, cộng thêm `REALTIME_ALLOWED_ORIGINS` (phân tách dấu phẩy).
+
+---
+
 ## 🔑 Tài khoản mẫu & Phân quyền
 
 Mật khẩu của tất cả tài khoản mẫu được sinh ngẫu nhiên tại biến `DEMO_PASSWORD` trong file `.env`. Mật khẩu tài khoản admin Keycloak được lưu tại `KC_ADMIN_PASSWORD`. Không có mật khẩu tĩnh lưu trong mã nguồn.
 
-| Tài khoản | Phân quyền (Keycloak Group) | Không gian làm việc (Workspace) |
-| --- | --- | --- |
-| `user1` | `/workspaces/lab-a/requester` | `lab-a` (Người gửi yêu cầu) |
-| `user2` | `/workspaces/lab-a/agent` | `lab-a` (Chuyên viên giải quyết) |
-| `user3` | `/workspaces/lab-a/coordinator` | `lab-a` (Điều phối viên) |
-| `user4` | `/workspaces/lab-b/requester` | `lab-b` (Người gửi yêu cầu) |
-| `user5` | `/workspaces/lab-b/agent` | `lab-b` (Chuyên viên giải quyết) |
-| `user6` | `/workspaces/lab-b/coordinator` | `lab-b` (Điều phối viên) |
-| `user7` | Realm role `platform-admin` | Quản trị hệ thống (Toàn cục, không thuộc workspace) |
-| `superadmin` | Cả 3 vai trò ở `lab-a`, `lab-b` + `platform-admin` | Tài khoản thử nghiệm đầy đủ quyền; vẫn tuân thủ quy tắc tách quyền (không tự xử lý ticket mình tạo) |
+| Tài khoản | Phân quyền (Keycloak Group) | Không gian làm việc (Workspace) | Chuyên môn (`/support-groups/{ws}/...`) |
+| --- | --- | --- | --- |
+| `user1` | `/workspaces/lab-a/requester` | `lab-a` (Người gửi yêu cầu) | |
+| `user2` | `/workspaces/lab-a/agent` | `lab-a` (Chuyên viên giải quyết) | hardware, network |
+| `user8` | `/workspaces/lab-a/agent` | `lab-a` (Chuyên viên giải quyết) | hardware |
+| `user9` | `/workspaces/lab-a/agent` | `lab-a` (Chuyên viên giải quyết) | software, sysadmin |
+| `user10` | `/workspaces/lab-a/agent` | `lab-a` (Chuyên viên giải quyết) | network, sysadmin |
+| `user11` | `/workspaces/lab-a/agent` | `lab-a` (Chuyên viên giải quyết) | hardware, software |
+| `user3` | `/workspaces/lab-a/coordinator` | `lab-a` (Điều phối viên) | |
+| `user4` | `/workspaces/lab-b/requester` | `lab-b` (Người gửi yêu cầu) | |
+| `user5` | `/workspaces/lab-b/agent` | `lab-b` (Chuyên viên giải quyết) | hardware, software |
+| `user12` | `/workspaces/lab-b/agent` | `lab-b` (Chuyên viên giải quyết) | network, sysadmin |
+| `user13` | `/workspaces/lab-b/agent` | `lab-b` (Chuyên viên giải quyết) | network, software |
+| `user6` | `/workspaces/lab-b/coordinator` | `lab-b` (Điều phối viên) | |
+| `user7` | Realm role `platform-admin` | Quản trị hệ thống (Toàn cục, không thuộc workspace) | |
+| `superadmin` | Cả 3 vai trò ở `lab-a`, `lab-b` + `platform-admin` | Tài khoản thử nghiệm đầy đủ quyền; vẫn tuân thủ quy tắc tách quyền (không tự xử lý ticket mình tạo) | Mọi tổ ở `lab-a`, `lab-b` |
+
+Loại ticket → tổ: Phần cứng → `hardware`, Mạng → `network`, Phần mềm → `software`, Tài khoản → `sysadmin`; loại Khác không có tổ, điều phối viên chọn trong mọi kỹ thuật viên.
+
+**Ca trực:** kỹ thuật viên đăng ký ô (ngày × ca Sáng/Chiều trong Cài đặt) ở trang **Ca trực**, trước giờ bắt đầu ca đầu tiên của ngày đó (mặc định 07:00). Trong ca đã đăng ký thì tự online, ngoài ca tự nghỉ; tắt trực là nghỉ đột xuất. Điều phối viên xem họ tên mọi người theo từng ô, đăng ký hộ (tới hết ca) và duyệt. Người làm **Hành chính** (kỹ thuật viên tự chọn *Hình thức* trên trang Ca trực) không cần đăng ký: tự trực mọi ca T2–T6, nghỉ ngày lễ. Ngày lễ Việt Nam, cho đăng ký T7/CN/ngày lễ và bắt buộc duyệt nằm ở **Cài đặt → Ca trực và ngày lễ**; ngày lễ dùng chung cho hạn SLA và hiện ghi chú trên lịch (ngày ghi "dự kiến" cần kiểm tra theo thông báo chính thức hằng năm). Theo ca mà chưa đăng ký thì không được đề xuất nhận việc: chạy `.\dx schedule` để có lịch mẫu (user2, user9, user5 làm hành chính).
 
 > [!TIP]
 > **Mở rộng workspace:** Để thêm workspace hoặc role mới, chỉ cần tạo nhóm `/workspaces/<workspace>/<role>` trên giao diện Keycloak, không cần sửa đổi mã nguồn Core. Keycloak chỉ import cấu hình lần đầu khi realm chưa tồn tại; muốn nhận thay đổi mới trong template thì chạy `scripts/start.ps1 -Reset`, không xóa volume dùng chung.

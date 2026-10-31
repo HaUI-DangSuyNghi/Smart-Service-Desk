@@ -14,20 +14,22 @@ import {
   type PauseInput,
   type ReleaseInput,
 } from "@/platform/services";
+import { useFallbackInterval } from "@/platform/shared/realtime";
 import { processKeys } from "../common/queryKeys";
 
-// Hàng đợi đổi khi người khác giao việc mới, nên tự tải lại như trang Công việc
+// Hàng đợi đổi khi người khác giao việc: đẩy qua WebSocket, polling dự phòng
 const REFRESH_INTERVAL_MS = 30 * 1000;
 
 /** Hàng đợi đã sắp xếp; bỏ trống assignee là của chính mình. */
 export const useQueue = (assignee?: string, enabled = true) => {
   const { current } = useCurrentWorkspace();
+  const interval = useFallbackInterval(REFRESH_INTERVAL_MS);
   return useQuery({
     queryKey: processKeys.queue(current, assignee),
     // `enabled` bảo đảm current khác null khi queryFn chạy
     queryFn: ({ signal }) => getQueue(current!, { assignee }, signal),
     enabled: current !== null && enabled,
-    refetchInterval: REFRESH_INTERVAL_MS,
+    refetchInterval: interval,
   });
 };
 

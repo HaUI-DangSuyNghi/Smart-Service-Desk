@@ -57,7 +57,8 @@ try:
         for user in realm['users']:
             if user['username'] in ('user1', 'user2', 'user3'):
                 user['credentials'] = [{'type': 'password', 'value': password, 'temporary': False}]
-            if user['username'] == 'user2':
+            # Template đã có sẵn tổ cho user2; chỉ thêm khi thiếu để không trùng nhóm
+            if user['username'] == 'user2' and '/support-groups/lab-a/hardware' not in user['groups']:
                 user['groups'].append('/support-groups/lab-a/hardware')
         seed = Path(temporary) / 'realm.json'
         seed.write_text(json.dumps(realm), encoding='utf-8')

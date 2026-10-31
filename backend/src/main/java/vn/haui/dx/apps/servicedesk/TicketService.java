@@ -32,6 +32,7 @@ public class TicketService {
     private final boolean trueWait;
     private final TicketConfirmation confirmation;
     private final TicketSearchService searches;
+    private final org.springframework.beans.factory.ObjectProvider<TicketNotices> notices;
 
     public TicketService(TicketRepository repository, HumanContext access, ProcessCapability workflow,
                          ActivityJournal audit, Validator validator, TicketStatisticsService statistics, TicketSearchService searches,
@@ -39,9 +40,11 @@ public class TicketService {
                          org.springframework.beans.factory.ObjectProvider<vn.haui.dx.hpdi.intelligence.api.BackgroundProcessing> processing,
                          @org.springframework.beans.factory.annotation.Value("${serviceDesk.intake.true-wait:false}") boolean trueWait,
                          @org.springframework.beans.factory.annotation.Value("${serviceDesk.intake.new-tickets:false}") boolean intakeEnabled,
-                         TicketConfirmation confirmation) {
+                         TicketConfirmation confirmation,
+                         org.springframework.beans.factory.ObjectProvider<TicketNotices> notices) {
         if (trueWait && !intakeEnabled) throw new IllegalArgumentException("True intake wait requires new-ticket admission");
         this.repository = repository;
+        this.notices = notices;
         this.confirmation = confirmation;
         this.access = access;
         this.workflow = workflow;
@@ -68,6 +71,7 @@ public class TicketService {
         audit.record(workspace, new BusinessActivity("servicedesk.ticket.create", "servicedesk.ticket", id.toString(),
             Map.of("processInstanceId", process.processInstanceId())));
         events.publishEvent(new TicketContextChanged(workspace, id, 0));
+        notices.getObject().created(workspace, id);
         return ticket;
     }
 

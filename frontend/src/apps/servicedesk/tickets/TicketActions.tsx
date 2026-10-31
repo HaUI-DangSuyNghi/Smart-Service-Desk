@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { cn } from "cn";
 import { useActor } from "../../../platform/human/workspace";
 import { useQueue, useTimeline, WorkActions } from "../../../platform/process";
 import { Button } from "../../../platform/shared/ui/button";
@@ -63,17 +64,31 @@ export const TicketActions = ({ ticket }: { ticket: TicketView }) => {
   if (!canReview && !canCorrect && !(isHolder && queueItem)) return null;
 
   return (
-    <section className="flex flex-wrap items-center gap-2 border-b border-crm-line px-4 py-3">
-      {canReview && (
-        <Button size="sm" onClick={() => setDialog("review")}>
-          Duyệt và giao việc
-        </Button>
+    // Hàng 1: thao tác việc (nút chính trái, ⋯ phải); hàng 2: duyệt / sửa phân loại
+    <section className="flex flex-col gap-3 border-b border-crm-line px-4 py-3">
+      {isHolder && queueItem && (
+        <WorkActions item={queueItem} spread onChanged={() => void refresh()} />
       )}
-      {isHolder && queueItem && <WorkActions item={queueItem} onChanged={() => void refresh()} />}
-      {canCorrect && (
-        <Button size="sm" variant="outline" onClick={() => setDialog("correct")}>
-          Sửa phân loại
-        </Button>
+      {(canReview || canCorrect) && (
+        // Có hàng 1 thì kẻ một đường ngăn cách phía trên
+        <div
+          className={cn(
+            "flex flex-wrap items-center gap-2",
+            // -mx-4 + px-4: đường kẻ tràn hết bề ngang cột bên, nút vẫn thẳng hàng
+            isHolder && queueItem && "-mx-4 border-t border-crm-line px-4 pt-3",
+          )}
+        >
+          {canReview && (
+            <Button size="sm" onClick={() => setDialog("review")}>
+              Duyệt và giao việc
+            </Button>
+          )}
+          {canCorrect && (
+            <Button size="sm" variant="outline" onClick={() => setDialog("correct")}>
+              Sửa phân loại
+            </Button>
+          )}
+        </div>
       )}
 
       <ReviewDialog ticket={dialog === "review" ? ticket : null} onClose={closeDialog} />

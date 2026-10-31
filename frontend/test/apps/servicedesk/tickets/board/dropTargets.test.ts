@@ -94,10 +94,14 @@ describe("dropTargets", () => {
     expect(dropTargets(assigned, holdingCoordinator)).toEqual({});
   });
 
-  it("siêu quản trị không kéo thẻ của kỹ thuật viên, kể cả ticket đang gán cho mình", () => {
+  it("siêu quản trị kéo được ticket mình đang giữ, không kéo được ticket của kỹ thuật viên khác", () => {
     const admin = viewer({ subject: "admin", canAssign: true, isPlatformAdmin: true });
+    expect(dropTargets(ticket({ state: "ASSIGNED", assignee: "admin" }), admin)).toEqual({
+      inProgress: "start",
+      review: "release",
+    });
     for (const state of ["ASSIGNED", "REOPENED", "IN_PROGRESS", "PENDING"] as const) {
-      expect(dropTargets(ticket({ state, assignee: "admin" }), admin)).toEqual({});
+      expect(dropTargets(ticket({ state, assignee: "agent-b" }), admin)).toEqual({});
     }
   });
 

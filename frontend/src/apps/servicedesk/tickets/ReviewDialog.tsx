@@ -3,7 +3,7 @@ import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
   AssignmentSuggestionPanel,
-  EstimateText,
+  formatMinutes,
   PRIORITY_LABELS,
 } from "../../../platform/process";
 import { ApiError } from "../../../platform/shared/api";
@@ -113,6 +113,14 @@ const ReviewForm = ({ ticket, onDone }: FormProps) => {
     if (defaults.reason && !form.getValues("reason")) form.setValue("reason", defaults.reason);
   }, [suggestion, form]);
 
+  // Chọn sẵn người được đề xuất; đổi loại / ưu tiên thì chọn lại, trừ khi điều phối viên đã tự chọn
+  const recommended = people.data?.recommended;
+  useEffect(() => {
+    if (!people.data || form.getFieldState("assignee").isDirty) return;
+    if (recommended) form.setValue("assignee", recommended, { shouldValidate: true });
+    else form.resetField("assignee");
+  }, [people.data, recommended, form]);
+
   // Đổi loại / ưu tiên mà chưa tự sửa ET thì điền lại theo ET mặc định mới (R2)
   useEffect(() => {
     if (defaultMinutes === undefined || form.getFieldState("estimateMinutes").isDirty) return;
@@ -197,7 +205,7 @@ const ReviewForm = ({ ticket, onDone }: FormProps) => {
           />
           {estimateDefault.data && (
             <span className="text-crm-sm text-crm-text-3">
-              Gợi ý: <EstimateText estimate={estimateDefault.data} />
+              Gợi ý: {formatMinutes(estimateDefault.data.minutes)}
             </span>
           )}
         </FormField>
@@ -211,7 +219,6 @@ const ReviewForm = ({ ticket, onDone }: FormProps) => {
               render={({ field }) => (
                 <AssignmentSuggestionPanel
                   suggestion={people}
-                  name={field.name}
                   value={field.value}
                   onChange={field.onChange}
                   estimateMinutes={minutes}

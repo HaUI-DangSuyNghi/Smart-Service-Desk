@@ -1,5 +1,6 @@
 package vn.haui.dx.hpdi.settings.api;
 
+import java.time.LocalDate;
 import java.time.LocalTime;
 import java.util.List;
 import java.util.Map;
@@ -11,6 +12,8 @@ import java.util.Map;
 public interface WorkPolicy {
     record Shift(String name, LocalTime start, LocalTime end) {}
     record Target(int startWithinMinutes, int resolveWithinMinutes) {}
+    /** Ngày lễ được nghỉ: không tính hạn SLA, người làm hành chính nghỉ; name là ghi chú hiện trên lịch. */
+    record Holiday(LocalDate date, String name) {}
 
     record Snapshot(long version,
                     // R2 chọn người
@@ -25,10 +28,15 @@ public interface WorkPolicy {
                     // R8, R11
                     double warnRemainingRatio, int pendingRemindDays, int reopenUnclaimedMinutes, int autoCloseAfterDays,
                     // R2 ET theo trung vị việc đã đóng
-                    int estimateMinSamples, int estimateWindowMonths, int estimateOutlierMinMinutes, int estimateOutlierMaxMinutes) {
+                    int estimateMinSamples, int estimateWindowMonths, int estimateOutlierMinMinutes, int estimateOutlierMaxMinutes,
+                    // R3 đăng ký ca: cho đăng ký T7/CN, ca kỹ thuật viên tự đăng ký cần quản lý duyệt
+                    boolean weekendRegistration, boolean scheduleApproval,
+                    // Ngày lễ (V40), dùng chung cho lịch tính hạn và ca trực
+                    List<Holiday> holidays) {
         public Snapshot {
             shifts = List.copyOf(shifts);
             targets = Map.copyOf(targets);
+            holidays = List.copyOf(holidays);
         }
     }
 
@@ -38,7 +46,7 @@ public interface WorkPolicy {
             new Shift("Afternoon", LocalTime.of(13, 0), LocalTime.of(17, 0))),
         Map.of("LOW", new Target(510, 2550), "MEDIUM", new Target(240, 1020),
             "HIGH", new Target(60, 480), "CRITICAL", new Target(15, 120)),
-        0.5, "HIGH", true, 5, 0.2, 3, 15, 3, 20, 6, 2, 480);
+        0.5, "HIGH", true, 5, 0.2, 3, 15, 3, 20, 6, 2, 480, false, false, List.of());
 
     Snapshot current();
 }
