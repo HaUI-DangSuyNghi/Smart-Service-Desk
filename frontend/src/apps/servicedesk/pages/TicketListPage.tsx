@@ -11,7 +11,13 @@ import {
   usePeopleNames,
   usePermissions,
 } from "../../../platform/human/workspace";
-import { formatMinutes, PRIORITY_LABELS, useQueue, WorkActions } from "../../../platform/process";
+import {
+  formatMinutes,
+  PRIORITY_LABELS,
+  useQueue,
+  WorkActions,
+  RequestActions,
+} from "../../../platform/process";
 import type { Priority } from "../../../platform/services";
 import { Button } from "../../../platform/shared/ui/button";
 import { DataTable, type DataTableColumn } from "../../../platform/shared/ui/DataTable";
@@ -28,6 +34,7 @@ import { TicketBoard } from "../tickets/board/TicketBoard";
 import { useBoardView, type ListMode } from "../tickets/board/useBoardView";
 import { CreateTicketDialog } from "../tickets/CreateTicketDialog";
 import { ReleaseIntakeDialog } from "../tickets/ReleaseIntakeDialog";
+import { ownerRequestActions } from "../tickets/ownerRequestActions";
 import { ReviewDialog } from "../tickets/ReviewDialog";
 import { createdAtColumn, titleColumn, workflowColumns } from "../tickets/ticketColumns";
 import { TICKET_STATE_LABELS } from "../tickets/ticketLabels";
@@ -39,6 +46,7 @@ import {
   useTicketList,
   type TicketFilter,
 } from "../tickets/useTickets";
+import { useTicketListRealtime } from "../tickets/useTicketRealtime";
 
 type View = "all" | "intake" | "review" | "overdue" | "mine";
 
@@ -73,9 +81,11 @@ const PRIORITY_OPTIONS = PRIORITIES.map((priority) => ({
   label: PRIORITY_LABELS[priority],
 }));
 
-// Người yêu cầu chỉ thấy ticket của mình nên không cần chọn nhóm
-const viewsFor = (canCoordinate: boolean, canHandle: boolean): View[] => {
-  if (canCoordinate) return ["all", "intake", "review", "overdue", "mine"];
+// Người yêu cầu chỉ thấy ticket của mình nên không cần chọn nhóm.
+// Board đã có cột Tiếp nhận, Chờ duyệt nên không cần hai nhóm này
+const viewsFor = (canCoordinate: boolean, canHandle: boolean, isBoard: boolean): View[] => {
+  if (canCoordinate)
+    return isBoard ? ["all", "overdue", "mine"] : ["all", "intake", "review", "overdue", "mine"];
   if (canHandle) return ["all", "mine"];
   return [];
 };
@@ -85,6 +95,7 @@ const TicketListPage = () => {
   const navigate = useNavigate();
   const refresh = useRefreshTickets();
   const { current } = useCurrentWorkspace();
+  useTicketListRealtime(current);
   const { can } = usePermissions();
   const { actor } = useActor();
   const me = useMe();
@@ -99,7 +110,7 @@ const TicketListPage = () => {
   const [mode, setMode] = useBoardView(canBoard);
   const isBoard = mode === "board";
   const canCoordinate = viewer.canAssign || viewer.isPlatformAdmin;
-  const views = viewsFor(canCoordinate, viewer.canHandle);
+  const views = viewsFor(canCoordinate, viewer.canHandle, isBoard);
   const [selectedView, setView] = useState<View>("all");
   const view = views.includes(selectedView) ? selectedView : "all";
   const [state, setState] = useState("");
@@ -173,8 +184,7 @@ const TicketListPage = () => {
         return (
           <Button
             size="xs"
-            variant={intake ? "outline" : "default"}
-            className="w-full"
+            variant={intake ? "info" : "default"}
             onClick={(event) => {
               // Không mở trang chi tiết khi bấm nút trong dòng
               event.stopPropagation();
@@ -188,6 +198,23 @@ const TicketListPage = () => {
       },
     });
   }
+  const actionIndex = columns.findIndex((column) => column.key === "action");
+  const workAction = actionIndex >= 0 ? columns.splice(actionIndex, 1)[0] : undefined;
+  columns.push({
+    key: "action",
+    header: "Thao tác",
+    fit: true,
+    cell: (ticket) => (
+      <div className="inline-flex w-max items-center gap-2">
+        {workAction?.cell(ticket)}
+        <RequestActions
+          processId={ticket.process.processInstanceId}
+          compact
+          actions={ownerRequestActions(ticket, viewer.subject)}
+        />
+      </div>
+    ),
+  });
   const personOptions = (duty.data ?? []).map((status) => {
     const name = personName(names, status.subject);
     return { value: status.subject, label: status.effectiveDuty ? name : `${name} (nghỉ)` };
@@ -203,11 +230,7 @@ const TicketListPage = () => {
 
   return (
     <Page>
-      <PageHeader
-        title="Ticket"
-        icon={IconTicket}
-        actions={can(PERMISSIONS.requestCreate) && <CreateTicketDialog />}
-      />
+      <PageHeader title="Ticket" icon={IconTicket} />
       <PageToolbar
         start={
           <>
@@ -271,6 +294,7 @@ const TicketListPage = () => {
               value={priority}
               onValueChange={resetPage(setPriority)}
             />
+            {can(PERMISSIONS.requestCreate) && <CreateTicketDialog />}
           </>
         }
       />

@@ -24,11 +24,13 @@ public class TicketConfirmation {
     private final ProcessCapability processes;
     private final Clock clock;
     private final vn.haui.dx.hpdi.settings.api.WorkPolicy work;
+    private final org.springframework.beans.factory.ObjectProvider<TicketNotices> notices;
 
     public TicketConfirmation(JdbcTemplate jdbc, ActivityJournal audit, HumanContext human, WorkAlerts alerts,
-            ProcessCapability processes, Clock clock, vn.haui.dx.hpdi.settings.api.WorkPolicy work) {
+            ProcessCapability processes, Clock clock, vn.haui.dx.hpdi.settings.api.WorkPolicy work,
+            org.springframework.beans.factory.ObjectProvider<TicketNotices> notices) {
         this.jdbc = jdbc; this.audit = audit; this.human = human; this.alerts = alerts;
-        this.processes = processes; this.clock = clock; this.work = work;
+        this.processes = processes; this.clock = clock; this.work = work; this.notices = notices;
     }
 
     // Hạn lưu vào servicedesk_confirmation lúc tạo nên đổi cấu hình chỉ áp dụng cho lần xác nhận sau
@@ -140,6 +142,7 @@ public class TicketConfirmation {
                 + " where workspace=? and process_instance_id=? and generation=?", Timestamp.from(now), workspace, processId, generation);
             audit.recordSystem(workspace, new BusinessActivity("servicedesk.confirmation.autoclosed", "servicedesk.ticket", businessKey,
                 Map.of("generationId", generation, "processInstanceId", processId, "policyVersion", closePolicy())));
+            notices.getObject().autoClosed(workspace, processId);
             return "accepted";
         }
         if ("REWORK".equals(row.get("decision")) && row.get("reopen_received_at") == null

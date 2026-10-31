@@ -29,7 +29,7 @@ export type DropState = "idle" | "valid" | "invalid";
 interface Props {
   column: BoardColumnDef;
   dropState: DropState;
-  /** Bộ lọc chung của Board, không gồm trạng thái (cột tự đặt). */
+  /** Bộ lọc chung của Board; trạng thái (nếu có) chỉ thu hẹp trong các trạng thái của cột. */
   filter: TicketFilter;
   actionsOf: (ticket: TicketView) => readonly BoardAction[];
   onOpen: (ticket: TicketView) => void;
@@ -46,13 +46,16 @@ export const BoardColumn = ({ column, dropState, filter, actionsOf, onOpen, onAc
   const { setNodeRef, isOver } = useDroppable({ id: column.key });
   const [collapsed, setCollapsed] = useState(column.collapsedByDefault ?? false);
   const [limit, setLimit] = useState(TICKETS_PAGE_SIZE);
+  // Bộ lọc trạng thái chỉ thu hẹp trong các trạng thái của cột
+  const states = stateOf(column, filter);
+  // Cột nằm ngoài bộ lọc: để trống, không tải (mảng trạng thái rỗng là không lọc gì)
+  const excluded = states.length === 0;
   const tickets = useTicketList(
     0,
-    // Bộ lọc trạng thái chỉ thu hẹp trong các trạng thái của cột
-    { ...filter, state: stateOf(column, filter) },
+    { ...filter, state: states },
     {
       size: limit,
-      enabled: !collapsed,
+      enabled: !collapsed && !excluded,
     },
   );
   // Ticket Mở lại lên đầu cột (sort ổn định, giữ thứ tự cũ trong mỗi nhóm)
@@ -60,7 +63,7 @@ export const BoardColumn = ({ column, dropState, filter, actionsOf, onOpen, onAc
     (a, b) => Number(b.state === "REOPENED") - Number(a.state === "REOPENED"),
   );
   const names = usePeopleNames(items.map((ticket) => ticket.assignee));
-  const total = tickets.data?.total;
+  const total = excluded ? 0 : tickets.data?.total;
 
   const header = (
     <>
@@ -117,14 +120,14 @@ export const BoardColumn = ({ column, dropState, filter, actionsOf, onOpen, onAc
       <h2 className="mb-2 flex items-center gap-1.5 px-1">{header}</h2>
 
       <div className="flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto">
-        {tickets.isPending && (
+        {tickets.isPending && !excluded && (
           <>
             <Skeleton className="h-20 w-full" />
             <Skeleton className="h-20 w-full" />
           </>
         )}
         {tickets.error && <ErrorState error={tickets.error} fallback="Không tải được cột này." />}
-        {tickets.data && items.length === 0 && (
+        {(tickets.data || excluded) && items.length === 0 && (
           <p className="px-1 py-2 text-crm-sm text-crm-text-3">Không có ticket</p>
         )}
         {items.map((ticket) => (

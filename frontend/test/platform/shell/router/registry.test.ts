@@ -43,8 +43,9 @@ describe("createAppRoutes", () => {
     const registry = createAppRegistry();
     registry.register({ id: "demo", routes: [{ path: "demo", component: Page }] });
 
-    const [landing, callback, protectedArea] = createAppRoutes(registry);
+    const [landing, docs, callback, protectedArea] = createAppRoutes(registry);
     expect(landing?.path).toBe("/");
+    expect(docs?.path).toBe("/docs");
     expect(callback?.path).toBe("/auth/callback");
 
     const layout = protectedArea?.children?.[0];
@@ -53,7 +54,6 @@ describe("createAppRoutes", () => {
       "dashboard",
       "audit",
       "profile",
-      "members",
       "inbox",
       "requests",
       "processes/:id",
@@ -61,6 +61,7 @@ describe("createAppRoutes", () => {
       "knowledge/:id",
       "knowledge-chat",
       "alerts",
+      "notifications",
       "duty",
       "estimate-requests",
       "demo",

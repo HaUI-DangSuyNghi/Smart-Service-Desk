@@ -216,6 +216,7 @@ components:
       - ended
       - currentTasks
       properties:
+        cancelled: {type: boolean}
         id:
           type: string
         ended:

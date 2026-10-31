@@ -1,12 +1,13 @@
-import type { ComponentType, ReactNode } from "react";
+import { useContext, type ComponentType, type ReactNode } from "react";
 import { useNavigate } from "react-router";
 import { IconArrowLeft } from "@tabler/icons-react";
 import { cn } from "cn";
+import { PageHeaderActionsContext } from "./PageHeaderActionsContext";
 
 interface Props {
   title: string;
   icon?: ComponentType<{ size?: number; stroke?: number; className?: string }>;
-  /** Nút hành động bên phải, ví dụ nút xanh "Tạo ticket". */
+  /** Thao tác riêng của trang, đứng trước các thao tác chung của shell. */
   actions?: ReactNode;
   /**
    * Chỉ trang cấp 2 (chi tiết) truyền: hiện nút quay lại. Trang mở từ menu không có nút.
@@ -18,6 +19,7 @@ interface Props {
 /** Hàng tiêu đề trang kiểu Twenty: cao 48px, viền dưới, (nút quay lại) + icon + tiêu đề trái, hành động phải. */
 export const PageHeader = ({ title, icon: Icon, actions, backTo }: Props) => {
   const navigate = useNavigate();
+  const shellActions = useContext(PageHeaderActionsContext);
   // React Router ghi vị trí trong lịch sử ở history.state.idx; 0 là trang đầu tiên của tab
   const back = (fallback: string) => {
     const index = (window.history.state as { idx?: number } | null)?.idx ?? 0;
@@ -46,7 +48,12 @@ export const PageHeader = ({ title, icon: Icon, actions, backTo }: Props) => {
         {Icon && <Icon size={16} stroke={2} className="shrink-0 text-crm-text-2" />}
         <h1 className="truncate font-medium">{title}</h1>
       </div>
-      {actions && <div className="flex shrink-0 items-center gap-2">{actions}</div>}
+      {(actions || shellActions) && (
+        <div className="flex shrink-0 items-center gap-2">
+          {actions}
+          {shellActions}
+        </div>
+      )}
     </header>
   );
 };

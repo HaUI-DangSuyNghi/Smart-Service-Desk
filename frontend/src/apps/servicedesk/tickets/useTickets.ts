@@ -1,13 +1,16 @@
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useCurrentWorkspace } from "../../../platform/human/workspace";
 import { completeTask, type Priority } from "../../../platform/services";
+import { useFallbackInterval, useRealtimeStatus } from "../../../platform/shared/realtime";
 import {
+  addTicketComment,
   correctClassification,
   createTicket,
   getEstimateDefault,
   getReviewSuggestion,
   getTicket,
   getIntelligenceStatus,
+  listTicketComments,
   retryTicketAssessment,
   listTickets,
   reviewTicket,
@@ -21,15 +24,21 @@ import type { Category } from "./ticketRules";
 
 export const TICKETS_PAGE_SIZE = 20;
 
-// AI chạy nền sau khi tạo ticket: hỏi lại cho tới khi có kết quả
+// AI chạy nền sau khi tạo ticket: xong thì server báo qua WebSocket; polling nhanh chỉ khi mất kết nối
 const ASSESSMENT_POLL_MS = 2000;
+const ASSESSMENT_CONNECTED_POLL_MS = 15_000;
 
-const ticketKeys = {
+export const ticketKeys = {
   all: (workspace: string | null) => ["servicedesk", "tickets", workspace] as const,
   list: (workspace: string | null, query: TicketQuery) =>
     [...ticketKeys.all(workspace), "list", query] as const,
   detail: (workspace: string, id: string) => [...ticketKeys.all(workspace), "detail", id] as const,
+  comments: (workspace: string, id: string) =>
+    [...ticketKeys.all(workspace), "comments", id] as const,
 };
+
+// Bình luận mới được đẩy qua WebSocket; polling chỉ dự phòng khi mất kết nối
+const COMMENTS_POLL_MS = 30_000;
 
 export type TicketFilter = Omit<TicketQuery, "page" | "size">;
 
@@ -69,12 +78,19 @@ export const useRetryTicketAssessment = (workspace: string, id: string) => {
 };
 
 /** Một ticket; 404 khi không tồn tại hoặc người xem không được thấy. */
-export const useTicket = (workspace: string, id: string) =>
-  useQuery({
+export const useTicket = (workspace: string, id: string) => {
+  const connected = useRealtimeStatus() === "connected";
+  return useQuery({
     queryKey: ticketKeys.detail(workspace, id),
     queryFn: ({ signal }) => getTicket(workspace, id, signal),
-    refetchInterval: (query) => (isAssessing(query.state.data) ? ASSESSMENT_POLL_MS : false),
+    refetchInterval: (query) =>
+      isAssessing(query.state.data)
+        ? connected
+          ? ASSESSMENT_CONNECTED_POLL_MS
+          : ASSESSMENT_POLL_MS
+        : false,
   });
+};
 
 /**
  * Đề xuất người xử lý theo loại / ưu tiên / ET đang chọn ở màn duyệt (R2);
@@ -162,3 +178,21 @@ export const useConfirmResolution = () =>
         comment: input.comment,
       }),
   );
+
+/** Bình luận của ticket, cũ nhất trước. */
+export const useTicketComments = (workspace: string, id: string) => {
+  const interval = useFallbackInterval(COMMENTS_POLL_MS);
+  return useQuery({
+    queryKey: ticketKeys.comments(workspace, id),
+    queryFn: ({ signal }) => listTicketComments(workspace, id, signal),
+    refetchInterval: interval,
+  });
+};
+
+export const useAddTicketComment = (workspace: string, id: string) => {
+  const client = useQueryClient();
+  return useMutation({
+    mutationFn: (body: string) => addTicketComment(workspace, id, body),
+    onSuccess: () => client.invalidateQueries({ queryKey: ticketKeys.comments(workspace, id) }),
+  });
+};

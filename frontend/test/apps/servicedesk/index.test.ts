@@ -8,10 +8,9 @@ describe("registerServiceDesk", () => {
     registerServiceDesk(registry);
 
     expect(registry.apps().map((app) => app.id)).toEqual(["servicedesk"]);
-    const group = registry.menu().find((item) => item.label === "Service Desk");
-    expect(group?.children?.map((child) => child.path)).toEqual([
-      "/servicedesk/tickets",
-      "/servicedesk/intake",
-    ]);
+    // Một mục duy nhất (không còn nhóm xổ ra), mở thẳng danh sách ticket
+    const item = registry.menu().find((entry) => entry.label === "Smart Service Desk");
+    expect(item?.path).toBe("/servicedesk/tickets");
+    expect(item?.children).toBeUndefined();
   });
 });

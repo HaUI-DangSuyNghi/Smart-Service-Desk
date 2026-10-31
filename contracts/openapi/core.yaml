@@ -407,9 +407,9 @@ components:
         - required: [fileId]
       properties:
         title: {type: string, minLength: 1, maxLength: 200}
-        source: {type: string, minLength: 1, maxLength: 1000}
+        source: {type: string, minLength: 1, maxLength: 1000, description: "Xuất xứ: Tự soạn, tên đơn vị/tác giả hoặc đường dẫn tài liệu gốc."}
         version: {type: string, minLength: 1, maxLength: 100}
-        usageRights: {type: string, minLength: 1, maxLength: 200}
+        usageRights: {type: string, minLength: 1, maxLength: 200, description: "PUBLIC: mọi thành viên workspace có quyền xem tài liệu. INTERNAL: chỉ agent/coordinator có vai trò hiện hành hoặc platform-admin đã xác thực và là thành viên workspace. Nhãn giấy phép cũ vẫn được chấp nhận."}
         checksum: {type: string, pattern: '^[a-f0-9]{64}$'}
         fileId: {type: string, format: uuid}
     Metadata:
@@ -421,7 +421,7 @@ components:
         title: {type: string}
         source: {type: string}
         version: {type: string}
-        usageRights: {type: string}
+        usageRights: {type: string, description: "PUBLIC hoặc INTERNAL; bản ghi cũ có thể chứa nhãn giấy phép. Phạm vi đọc được kiểm ở metadata và file gốc."}
         checksum: {type: string}
         fileId: {type: string, format: uuid, nullable: true}
         owner: {type: string}
@@ -515,6 +515,7 @@ components:
       type: object
       required: [id, processKey, businessKey, workspace, initiator, startedAt, currentTasks, steps, variables]
       properties:
+        cancelled: {type: boolean, description: Explicitly cancelled rather than normally completed}
         ended: {type: boolean, description: Legacy completion flag}
         tasks: {type: array, description: Legacy alias of steps, items: {$ref: '#/components/schemas/HistoryStep'}}
         id: {type: string}

@@ -1438,6 +1438,32 @@ class TicketIntegrationTest {
                 .andExpect(status().isBadRequest());
     }
 
+    @Test void commentsFollowTicketVisibilityAndNotifyParticipants() throws Exception {
+        String owner = "comment-owner-" + UUID.randomUUID(), other = "comment-other-" + UUID.randomUUID();
+        var ticket = create(owner, "Comment " + UUID.randomUUID(), "requester");
+        String path = BASE + "/" + ticket.path("id").asText() + "/comments";
+        mvc.perform(post(path).with(as(owner, "lab-a", "requester")).contentType("application/json")
+            .content("{\"body\":\"  Máy vẫn lỗi\nsau khi khởi động lại  \"}"))
+            .andExpect(status().isCreated()).andExpect(jsonPath("$.author").value(owner))
+            .andExpect(jsonPath("$.body").value("Máy vẫn lỗi\nsau khi khởi động lại"));
+
+        mvc.perform(post(path).with(as("review-coordinator", "lab-a", "coordinator")).contentType("application/json")
+            .content("{\"body\":\"Đã nhận\"}")).andExpect(status().isCreated());
+        mvc.perform(get(path).with(as(owner, "lab-a", "requester"))).andExpect(status().isOk())
+            .andExpect(jsonPath("$.length()").value(2)).andExpect(jsonPath("$[1].author").value("review-coordinator"));
+        // Người gửi khác không thấy ticket nên cũng không đọc/viết được bình luận
+        mvc.perform(get(path).with(as(other, "lab-a", "requester"))).andExpect(status().isNotFound());
+        mvc.perform(post(path).with(as(other, "lab-a", "requester")).contentType("application/json")
+            .content("{\"body\":\"x\"}")).andExpect(status().isNotFound());
+        mvc.perform(post(path).with(as(owner, "lab-a", "requester")).contentType("application/json")
+            .content("{\"body\":\"   \"}")).andExpect(status().isBadRequest());
+        mvc.perform(post(path).with(as(owner, "lab-a", "requester")).contentType("application/json")
+            .content("{\"body\":\"" + "a".repeat(2001) + "\"}")).andExpect(status().isBadRequest());
+        assertEquals(1, jdbc.queryForObject("select count(*) from hpdi_notification n join hpdi_notification_recipient r"
+            + " on r.notification_id=n.id where n.type='TICKET_COMMENTED' and n.business_key=? and r.subject=?",
+            Integer.class, ticket.path("id").asText(), owner));
+    }
+
     private ResultActions review(JsonNode ticket, String reviewer, String assignee, Integer minutes) throws Exception {
         return review(ticket,reviewer,assignee,minutes,"HARDWARE","HIGH");
     }
@@ -1457,8 +1483,11 @@ class TicketIntegrationTest {
         doCallRealMethod().when(duty).onDuty(anyString(), anyString());
         String worker = "duty-worker-" + UUID.randomUUID();
         var ticket = create("duty-owner-" + UUID.randomUUID(), "Duty assignment", "requester");
-        review(ticket, "duty-reviewer", worker, null).andExpect(status().isConflict());
         String dutyRoute = "/api/hpdi/v1/workspaces/lab-a/duty/me";
+        // Mặc định đang trực nên tự tắt trước để kiểm tra giao cho người nghỉ bị từ chối
+        mvc.perform(put(dutyRoute).with(as(worker,"lab-a","agent")).contentType("application/json").content("{\"onDuty\":false}"))
+            .andExpect(status().isOk());
+        review(ticket, "duty-reviewer", worker, null).andExpect(status().isConflict());
         mvc.perform(put(dutyRoute).with(as(worker,"lab-a","agent")).contentType("application/json").content("{\"onDuty\":true}"))
             .andExpect(status().isOk());
         String task = body(review(ticket, "duty-reviewer", worker, null).andExpect(status().isOk())).path("taskId").asText();

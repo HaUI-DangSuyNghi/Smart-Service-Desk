@@ -11,7 +11,7 @@ if (-not $project) {
     $project = (($raw -join "`n") | ConvertFrom-Json).name
 }
 if ($project -notmatch '^[a-z0-9][a-z0-9_-]*$') { throw 'Invalid Compose project identity.' }
-foreach ($service in @('ai07-qwen', 'intelligence-api', 'workspace-bootstrap')) {
+foreach ($service in @('ai07-qwen', 'gpu-relay', 'intelligence-api', 'workspace-bootstrap')) {
     if ($service -in $KeepService) { continue }
     $containers = @(Invoke-Docker ps -q --filter "label=com.docker.compose.project=$project" --filter "label=com.docker.compose.service=$service")
     if ($LASTEXITCODE -ne 0) { throw 'Cannot inspect the previous AI service.' }

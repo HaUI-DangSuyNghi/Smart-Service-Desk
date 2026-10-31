@@ -1,0 +1,45 @@
+# Qwen trên máy GPU riêng qua Cloudflare Access + Tunnel; include compose.hybrid.yaml before this overlay.
+# Relay đứng thay ai07-qwen (cùng alias intelligence-classification): giữ Bearer của backend,
+# thêm header CF-Access-*, kiểm chứng chỉ HTTPS. Cấu hình do scripts/start-model.ps1 -Remote sinh vào .local/gpu-worker.
+services:
+  gpu-relay:
+    profiles:
+    - remote-model
+    # Cùng bản Nginx unprivileged với frontend/Dockerfile
+    image: nginxinc/nginx-unprivileged:1.27.4-alpine
+    volumes:
+    - ./.local/gpu-worker/relay.conf:/etc/nginx/conf.d/default.conf:ro
+    - ./.local/gpu-worker/cloudflare-headers.conf:/run/secrets/cloudflare-headers.conf:ro
+    environment:
+      NGINX_ENTRYPOINT_QUIET_LOGS: '1'
+    networks:
+      # Mạng nội bộ với backend (không ra Internet) + mạng mặc định để gọi HTTPS ra máy GPU
+      local-model-private:
+        aliases:
+        - intelligence-classification
+      default: {}
+    read_only: true
+    tmpfs:
+    - /tmp:rw,noexec,nosuid,size=16m
+    cap_drop:
+    - ALL
+    security_opt:
+    - no-new-privileges:true
+    restart: unless-stopped
+    healthcheck:
+      # Chỉ kiểm relay; máy GPU được kiểm lúc khởi động (start-model.ps1) và mỗi lần backend gọi
+      test:
+      - CMD
+      - wget
+      - -q
+      - -O
+      - /dev/null
+      - http://127.0.0.1:8003/relay-health
+      interval: 15s
+      timeout: 3s
+      retries: 3
+      start_period: 5s
+  platform:
+    depends_on:
+      gpu-relay:
+        condition: service_healthy

@@ -30,6 +30,13 @@ public class ServiceDeskSettings {
         admin.requireAdmin();
         return jdbc.queryForObject("select * from servicedesk_settings where id=1", this::read);
     }
+    /** Cờ giao diện cho mọi người đã đăng nhập (form tạo ticket đọc), không lộ phần cấu hình còn lại. */
+    @GetMapping("/features")
+    @Transactional(readOnly = true)
+    public java.util.Map<String, Boolean> features() {
+        String payload = jdbc.queryForObject("select payload::text from servicedesk_settings where id=1", String.class);
+        return java.util.Map.of("sampleData", SettingsValidation.parse(json, payload).path("sampleData").asBoolean(false));
+    }
     @PutMapping(consumes = "application/json")
     @Transactional
     public ObjectNode replace(@RequestBody String body) {
@@ -50,7 +57,11 @@ public class ServiceDeskSettings {
         return after;
     }
     static void validate(JsonNode root) {
-        object(root, "version", "categoryGroups", "estimateDefaults");
+        // sampleData (bộ dữ liệu điền nhanh form tạo ticket) không bắt buộc: cấu hình cũ chưa có là tắt
+        if (root != null && root.has("sampleData")) {
+            object(root, "version", "categoryGroups", "estimateDefaults", "sampleData");
+            require(root.get("sampleData").isBoolean(), "sampleData must be boolean");
+        } else object(root, "version", "categoryGroups", "estimateDefaults");
         integer(root.get("version"), 0, Long.MAX_VALUE);
         object(root.get("categoryGroups"), "HARDWARE", "NETWORK", "SOFTWARE", "ACCOUNT", "OTHER");
         object(root.get("estimateDefaults"), "HARDWARE", "NETWORK", "SOFTWARE", "ACCOUNT", "OTHER");

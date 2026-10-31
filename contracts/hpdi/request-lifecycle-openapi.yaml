@@ -1,0 +1,127 @@
+openapi: 3.0.3
+info:
+  title: Shared request lifecycle
+  version: 0.1.0
+security: [{bearerAuth: []}]
+paths:
+  /api/hpdi/v1/workspaces/{workspace}/instances/{id}/request:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+      - {$ref: '#/components/parameters/ProcessId'}
+    get:
+      operationId: readRequestManagement
+      description: Same visibility as process history. Application contributes fields and stage policy; history is bounded to the latest 50 changes.
+      responses:
+        '200': {$ref: '#/components/responses/View'}
+        '403': {description: Not a workspace member}
+        '404': {description: Not found or not visible}
+    patch:
+      operationId: updateRequest
+      description: Creator with request:create edits application-approved fields before review. Current content and task generation must match expectedVersion. App data, history, audit and email outbox commit atomically; realtime publishes after commit.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/Update'}
+      responses:
+        '200': {$ref: '#/components/responses/View'}
+        '400': {description: Unsupported fields or invalid content/reason}
+        '403': {description: Creator or permission required}
+        '404': {description: Request not visible}
+        '409': {description: Stale version, busy, ended, unsupported or policy prevents editing}
+  /api/hpdi/v1/workspaces/{workspace}/instances/{id}/request/cancel:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+      - {$ref: '#/components/parameters/ProcessId'}
+    post:
+      operationId: cancelRequest
+      description: Subject to app policy. Service Desk permits only the creator before first approval; coordinators cannot cancel another person's ticket. Ends active engine work, preserves history, queues important email and publishes realtime after commit.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/Cancel'}
+      responses:
+        '200': {$ref: '#/components/responses/View'}
+        '400': {description: Current version and reason required}
+        '403': {description: Owner or coordinator permission required}
+        '404': {description: Request not visible}
+        '409': {description: Stale, busy, ended or app policy prevents cancellation}
+  /api/hpdi/v1/workspaces/{workspace}/instances/{id}/request/close:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+      - {$ref: '#/components/parameters/ProcessId'}
+    post:
+      operationId: closeRequest
+      description: Only the creator with request:create can close, subject to application policy. Service Desk allows closing after first approval. Stops remaining work and SLA, preserves history as CLOSED, queues email and publishes realtime atomically. Does not record successful resolution by an agent.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/Cancel'}
+      responses:
+        '200': {$ref: '#/components/responses/View'}
+        '400': {description: Current version and reason required}
+        '403': {description: Request owner required}
+        '404': {description: Request not visible}
+        '409': {description: Stale version, busy, already ended, or closure not allowed at current stage}
+components:
+  securitySchemes:
+    bearerAuth: {type: http, scheme: bearer, bearerFormat: JWT}
+  parameters:
+    Workspace: {name: workspace, in: path, required: true, schema: {type: string}}
+    ProcessId: {name: id, in: path, required: true, schema: {type: string}}
+  responses:
+    View:
+      description: Current request management state
+      content:
+        application/json:
+          schema: {$ref: '#/components/schemas/View'}
+  schemas:
+    Cancel:
+      type: object
+      required: [expectedVersion, reason]
+      properties:
+        expectedVersion: {type: string, pattern: '^[a-f0-9]{64}$'}
+        reason: {type: string, minLength: 1, maxLength: 1000}
+    Update:
+      allOf:
+        - {$ref: '#/components/schemas/Cancel'}
+        - type: object
+          required: [values]
+          properties:
+            values: {type: object, additionalProperties: {type: string}, description: Exactly the keys advertised by fields}
+    Field:
+      type: object
+      required: [key, label, value, maxLength, multiline]
+      properties:
+        key: {type: string}
+        label: {type: string}
+        value: {type: string}
+        maxLength: {type: integer, minimum: 1}
+        multiline: {type: boolean}
+    Change:
+      type: object
+      required: [id, version, action, actor, reason, beforeValues, afterValues, createdAt]
+      properties:
+        id: {type: string, format: uuid}
+        version: {type: integer, format: int64}
+        action: {type: string, enum: [UPDATED, CANCELLED, CLOSED]}
+        actor: {type: string}
+        reason: {type: string}
+        beforeValues: {type: object, additionalProperties: {type: string}}
+        afterValues: {type: object, additionalProperties: {type: string}}
+        createdAt: {type: string, format: date-time}
+    View:
+      type: object
+      required: [processId, version, editable, cancellable, closable, cancelled, explanation, fields, history]
+      properties:
+        processId: {type: string}
+        version: {type: string, pattern: '^[a-f0-9]{64}$'}
+        editable: {type: boolean}
+        cancellable: {type: boolean}
+        closable: {type: boolean}
+        cancelled: {type: boolean}
+        explanation: {type: string}
+        fields: {type: array, items: {$ref: '#/components/schemas/Field'}}
+        history: {type: array, maxItems: 50, items: {$ref: '#/components/schemas/Change'}}

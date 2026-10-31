@@ -18,6 +18,8 @@ const schema = z
       "MANUAL_REQUIRED",
       "REVIEWED",
       "CANONICAL_FOLLOWER",
+      "CANCELLED",
+      "CLOSED",
     ]),
     deadlineAt: z.string(),
     lateNotice: z.boolean(),

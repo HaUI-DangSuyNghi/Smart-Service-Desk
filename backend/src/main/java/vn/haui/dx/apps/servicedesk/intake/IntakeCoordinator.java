@@ -27,6 +27,7 @@ import vn.haui.dx.hpdi.process.api.ProcessCapability;
 /** CPU screening and snapshot sealing; inference runs outside DB transactions. */
 @Service
 public class IntakeCoordinator {
+    private static final org.slf4j.Logger LOG = org.slf4j.LoggerFactory.getLogger(IntakeCoordinator.class);
     private final JdbcTemplate jdbc;
     private final ObjectMapper json;
     private final TransactionTemplate transaction;
@@ -50,11 +51,17 @@ public class IntakeCoordinator {
     private final boolean scheduled;
     private final vn.haui.dx.hpdi.human.api.HumanContext human;
     private final vn.haui.dx.apps.servicedesk.intelligence.LocalModelRuntime local;
+    private final org.springframework.beans.factory.ObjectProvider<vn.haui.dx.apps.servicedesk.TicketNotices> notices;
     /** Gán nhãn AI vào ticket ở bước đánh giá cuối. */
     private vn.haui.dx.apps.servicedesk.TicketLabels labels;
 
     @org.springframework.beans.factory.annotation.Autowired(required = false)
     void setLabels(vn.haui.dx.apps.servicedesk.TicketLabels labels) { this.labels = labels; }
+
+    private vn.haui.dx.apps.servicedesk.TicketRealtime realtime;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    void setRealtime(vn.haui.dx.apps.servicedesk.TicketRealtime realtime) { this.realtime = realtime; }
     private record Plan(ContextReadinessView readiness, DuplicatePreflightService.View duplicates,
             String identity, String grants, String status, String reason, String taskId) {}
 
@@ -66,8 +73,10 @@ public class IntakeCoordinator {
             ActivityJournal audit, BackgroundProcessing processing, vn.haui.dx.hpdi.human.api.HumanContext human,
             @Value("${service-desk.background.workspaces:}") List<String> workspaces,
             @Value("${service-desk.background.scheduled:true}") boolean scheduled, vn.haui.dx.apps.servicedesk.TicketAlerts alerts,
-            vn.haui.dx.apps.servicedesk.intelligence.LocalModelRuntime local) {
+            vn.haui.dx.apps.servicedesk.intelligence.LocalModelRuntime local,
+            org.springframework.beans.factory.ObjectProvider<vn.haui.dx.apps.servicedesk.TicketNotices> notices) {
         this.jdbc = jdbc;
+        this.notices = notices;
         this.local = local;
         this.alerts = alerts;
         this.json = json;
@@ -109,6 +118,8 @@ public class IntakeCoordinator {
             for (UUID id : ids) {
                 try { processing.run(workspace, () -> screen(workspace, id)); }
                 catch (RuntimeException failure) {
+                    // Ghi lỗi gốc: nhãn SERVICE_IDENTITY_UNAVAILABLE gom cả lỗi xảy ra bên trong bước kiểm tra
+                    LOG.warn("Intake screening of ticket {} failed, moved to manual review", id, failure);
                     var state = admission.find(workspace, id);
                     if (state != null) manual(workspace, id, state.version(), "SERVICE_IDENTITY_UNAVAILABLE");
                 }
@@ -125,7 +136,8 @@ public class IntakeCoordinator {
             Plan plan = guard.evaluate(workspace, id, session -> {
                 if (session.shadow()) throw CapabilityException.forbidden("Shadow cannot release intake");
                 var ready = readiness.evaluate(session.snapshot(), extractor.extract(session.snapshot()),
-                        (int) Math.min(session.snapshot().contextRevision(), readiness.maxRounds()));
+                        (int) session.snapshot().sources().stream().filter(source -> source.slot()!=null)
+                            .map(vn.haui.dx.apps.servicedesk.intelligence.context.ContextSnapshot.Source::revision).distinct().count());
                 if (ready.overall() == ContextReadinessView.State.MANUAL_REVIEW_REQUIRED) {
                     return new Plan(ready, null, null, null, "MANUAL_REQUIRED", "SAFETY_OR_MANUAL_POLICY", null);
                 } else if (ready.overall() == ContextReadinessView.State.ENRICHMENT_REQUIRED) {
@@ -150,6 +162,7 @@ public class IntakeCoordinator {
             saveScreen(workspace, state, plan.readiness(), plan.duplicates(), plan.identity(), plan.grants(), plan.status(), plan.reason(), plan.taskId());
         } catch (RuntimeException failure) {
             if (!human.currentActor(workspace).hasRole("assessment-worker")) throw failure;
+            LOG.warn("Intake screening of ticket {} could not finish, moved to manual review", id, failure);
             manual(workspace, id, state.version(), "PROCESSING_OR_CONTEXT_UNAVAILABLE");
         }
         return admission.find(workspace, id);
@@ -169,6 +182,9 @@ public class IntakeCoordinator {
                     next, encode(ready), preflight == null ? null : encode(preflight), identity == null ? null : ready.contextRevision(),
                     ready.contextDigest(), identity, grants, taskId, policyDigest(), reason, previous.ticketId(), previous.version(), ready.contextRevision());
             if (changed != 1) throw CapabilityException.conflict("Intake changed before seal");
+            if (realtime != null) realtime.changed(workspace, previous.ticketId());
+            // AI cần người gửi trả lời thêm trước khi phân loại
+            if ("NEEDS_ENRICHMENT".equals(next)) notices.getObject().needsInformation(workspace, previous.ticketId());
             if ("MANUAL_REQUIRED".equals(next) || preflight != null && preflight.incidentSignal()) {
                 jdbc.update("insert into servicedesk_intake_notice(id,ticket_id,workspace,context_revision,kind) values (?,?,?,?,?) on conflict do nothing",
                         UUID.randomUUID(), previous.ticketId(), workspace,
@@ -261,6 +277,7 @@ public class IntakeCoordinator {
             jdbc.update("update servicedesk_intake_admission set status='MANUAL_REQUIRED',reason=?,version=version+1,"
                     + "lease_token=null,lease_until=null where workspace=? and ticket_id=? and version=? "
                     + "and status in ('NEW','NEEDS_ENRICHMENT','FINAL_ASSESSMENT_QUEUED','ASSESSING')", reason, workspace, id, version);
+            if (realtime != null) realtime.changed(workspace, id);
         });
     }
 

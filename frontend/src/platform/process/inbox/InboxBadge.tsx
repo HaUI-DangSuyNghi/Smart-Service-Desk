@@ -1,13 +1,16 @@
-import { useAssignedTaskCount } from "./useInbox";
+import { PERMISSIONS, usePermissions } from "@/platform/human/workspace";
+import { useInbox } from "./useInbox";
 
-/** Số việc của tôi cạnh mục "Công việc" ở sidebar; không có việc thì không hiện. */
+/** Điều phối đếm việc đang mở trong workspace; Agent đếm việc được giao cho mình. */
 export const InboxBadge = () => {
-  const count = useAssignedTaskCount();
+  const { can } = usePermissions();
+  const coordinating = can(PERMISSIONS.taskAssign);
+  const count = useInbox(coordinating ? "ALL" : "ASSIGNED", 0).data?.total ?? 0;
   if (count === 0) return null;
 
   return (
     <span
-      aria-label={`${count} việc đang chờ bạn`}
+      aria-label={`${count} ${coordinating ? "việc đang mở" : "việc đang chờ bạn"}`}
       className="rounded-crm-sm bg-crm-muted px-1 text-crm-xs leading-4 font-medium text-crm-text-2 tabular-nums"
     >
       {count > 99 ? "99+" : count}

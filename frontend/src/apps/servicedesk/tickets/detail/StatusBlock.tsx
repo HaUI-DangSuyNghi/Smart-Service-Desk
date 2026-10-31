@@ -4,6 +4,9 @@ import { TicketActions } from "../TicketActions";
 import { ticketPermissions } from "../ticketPermissions";
 import { TicketStateTag } from "../TicketStateTag";
 import { useViewer } from "../useViewer";
+import { RequestActions } from "../../../../platform/process";
+import { useRequestManagement } from "../../../../platform/process/requests/useRequestManagement";
+import type { RequestAction } from "../../../../platform/process/requests/RequestActions";
 
 /**
  * Đầu cột phải trang chi tiết: trạng thái và các nút hành động. Ticket của người khác thì chỉ xem:
@@ -13,6 +16,13 @@ export const StatusBlock = ({ ticket }: { ticket: TicketView }) => {
   const viewer = useViewer();
   const names = usePeopleNames([ticket.assignee]);
   const permissions = ticketPermissions(ticket, viewer);
+  const management = useRequestManagement(ticket.process.processInstanceId, permissions.isCreator);
+  const actions: RequestAction[] = [];
+  if (permissions.isCreator && management.data) {
+    if (management.data.editable) actions.push("edit");
+    if (management.data.cancellable) actions.push("cancel");
+    if (management.data.closable) actions.push("close");
+  }
   const showReadOnlyNote =
     permissions.readOnly &&
     ticket.assignee !== null &&
@@ -27,6 +37,23 @@ export const StatusBlock = ({ ticket }: { ticket: TicketView }) => {
         <TicketStateTag state={ticket.state} />
       </div>
       <TicketActions ticket={ticket} />
+      {permissions.isCreator && management.error && (
+        <p role="alert" className="border-b border-crm-line px-4 py-3 text-crm-sm text-crm-text-3">
+          Chưa tải được quyền sửa, hủy hoặc đóng ticket.
+          <button
+            type="button"
+            className="ml-1 underline"
+            onClick={() => void management.refetch()}
+          >
+            Thử lại
+          </button>
+        </p>
+      )}
+      {actions.length > 0 && (
+        <div className="border-b border-crm-line px-4 py-3">
+          <RequestActions processId={ticket.process.processInstanceId} actions={actions} />
+        </div>
+      )}
       {showReadOnlyNote && ticket.assignee && (
         <p className="border-b border-crm-line px-4 py-3 text-crm-sm text-crm-text-3">
           Ticket này do {personName(names, ticket.assignee)} xử lý, bạn chỉ xem.

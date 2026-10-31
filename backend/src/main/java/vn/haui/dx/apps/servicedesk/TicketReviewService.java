@@ -50,6 +50,11 @@ public class TicketReviewService implements WorkProjection {
     }
     @Override public String processKey() { return ServiceDeskProcess.REVIEWED_KEY; }
 
+    private TicketRealtime realtime;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    void setRealtime(TicketRealtime realtime) { this.realtime = realtime; }
+
     @Transactional
     public TicketReview.View review(String workspace, UUID id, TicketReview.Decision decision) {
         var actor = humans.currentActor(workspace);
@@ -57,6 +62,8 @@ public class TicketReviewService implements WorkProjection {
         permissions.require(workspace, Permissions.TASK_ASSIGN);
         permissions.require(workspace, Permissions.TASK_HANDLE);
         if (decision == null || !validator.validate(decision).isEmpty()) throw CapabilityException.validation("Invalid review decision");
+        // Phát sau commit; duyệt lỗi thì rollback, không phát
+        if (realtime != null) realtime.changed(workspace, id);
         var locked = jdbc.queryForList("select id from servicedesk_ticket where workspace=? and id=? for update", workspace, id);
         if (locked.isEmpty()) throw CapabilityException.notFound("Ticket not found");
         var ticket = tickets.find(workspace, id, null).orElseThrow();
@@ -114,7 +121,9 @@ public class TicketReviewService implements WorkProjection {
         int reopened = (int) timeline.steps().stream().filter(step -> "confirm".equals(step.key()) && "rework".equals(step.outcome())).count();
         boolean closedFollower = timeline.ended() && Boolean.TRUE.equals(jdbc.queryForObject("select exists(select 1 from servicedesk_canonical_link "
                 + "where workspace=? and follower_id=? and state='CLOSED')", Boolean.class, workspace, ticket.id()));
-        String state = timeline.ended() ? (closedFollower || timeline.steps().stream().anyMatch(step -> "confirm".equals(step.key())
+        boolean ownerClosed=timeline.ended() && Boolean.TRUE.equals(jdbc.queryForObject(
+            "select closed_at is not null from servicedesk_ticket where id=?",Boolean.class,ticket.id()));
+        String state = timeline.cancelled() ? "CANCELLED" : timeline.ended() ? (ownerClosed || closedFollower || timeline.steps().stream().anyMatch(step -> "confirm".equals(step.key())
             && "accepted".equals(step.outcome())) ? "CLOSED" : "UNCLASSIFIED") : task == null ? "UNCLASSIFIED" : switch (task.key()) {
             case "intake" -> "INTAKE"; case "follower" -> "FOLLOWING";
             case "review" -> reopened > 0 ? "REOPENED" : "AWAITING_REVIEW"; case "confirm" -> "AWAITING_CONFIRMATION"; default -> "ASSIGNED";

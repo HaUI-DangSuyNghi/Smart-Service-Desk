@@ -11,7 +11,11 @@ import java.util.Map;
  */
 public record ProcessTimeline(String id, String processKey, String businessKey, String workspace, String initiator,
                              Instant startedAt, Instant endedAt, List<WorkItem> currentTasks, List<Step> steps,
-                             Map<String, String> variables) {
+                             Map<String, String> variables, boolean cancelled) {
+    public ProcessTimeline(String id, String processKey, String businessKey, String workspace, String initiator,
+            Instant startedAt, Instant endedAt, List<WorkItem> currentTasks, List<Step> steps, Map<String, String> variables) {
+        this(id, processKey, businessKey, workspace, initiator, startedAt, endedAt, currentTasks, steps, variables, false);
+    }
     public ProcessTimeline {
         currentTasks = List.copyOf(currentTasks);
         steps = List.copyOf(steps);

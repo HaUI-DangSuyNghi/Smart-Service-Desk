@@ -53,6 +53,21 @@ export const workSettingsSchema = z.object({
     outlierMinMinutes: minutes,
     outlierMaxMinutes: positiveMinutes,
   }),
+  schedule: z.object({
+    weekendRegistration: z.boolean(),
+    approvalRequired: z.boolean(),
+    holidays: z
+      .array(
+        z.object({
+          date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Chọn ngày"),
+          name: z.string().trim().min(1, "Nhập tên ngày lễ").max(100, "Tối đa 100 ký tự"),
+        }),
+      )
+      .max(400, "Tối đa 400 ngày")
+      .refine((days) => new Set(days.map((day) => day.date)).size === days.length, {
+        message: "Có ngày lễ bị trùng",
+      }),
+  }),
 });
 
 export type WorkSettingsInput = z.input<typeof workSettingsSchema>;

@@ -57,6 +57,7 @@ export const ConfirmResolution = ({ taskId }: Props) => {
           <div className="flex flex-wrap gap-2">
             <Button
               size="sm"
+              variant="warning"
               disabled={confirm.isPending || trimmed.length === 0}
               onClick={() => handleConfirm("rework")}
             >
@@ -69,12 +70,17 @@ export const ConfirmResolution = ({ taskId }: Props) => {
         </div>
       ) : (
         <div className="flex flex-wrap gap-2">
-          <Button size="sm" disabled={confirm.isPending} onClick={() => handleConfirm("accepted")}>
+          <Button
+            size="sm"
+            variant="success"
+            disabled={confirm.isPending}
+            onClick={() => handleConfirm("accepted")}
+          >
             {confirm.isPending ? "Đang gửi..." : "Đã ổn"}
           </Button>
           <Button
             size="sm"
-            variant="outline"
+            variant="warning"
             disabled={confirm.isPending}
             onClick={() => setReworking(true)}
           >

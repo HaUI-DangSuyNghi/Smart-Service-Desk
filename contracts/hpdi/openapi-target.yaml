@@ -503,3 +503,36 @@ components:
               minimum: 1
               description: Mặc định 480 (8 giờ)
               maximum: 2147483647
+        schedule:
+          type: object
+          additionalProperties: false
+          description: Không bắt buộc (bản lưu trước V39 chưa có); thiếu thì coi như tắt cả hai
+          required:
+          - weekendRegistration
+          - approvalRequired
+          - holidays
+          properties:
+            weekendRegistration:
+              type: boolean
+              description: Cho kỹ thuật viên đăng ký ca Thứ 7, Chủ nhật
+            approvalRequired:
+              type: boolean
+              description: Ca kỹ thuật viên tự đăng ký chờ điều phối viên duyệt mới tính trực
+            holidays:
+              type: array
+              maxItems: 400
+              description: Ngày lễ được nghỉ (không tính hạn SLA, người làm hành chính nghỉ, đăng ký ca như ngày nghỉ); ngày không trùng
+              items:
+                type: object
+                additionalProperties: false
+                required:
+                - date
+                - name
+                properties:
+                  date:
+                    type: string
+                    format: date
+                  name:
+                    type: string
+                    maxLength: 100
+                    description: Ghi chú hiện trên lịch trực

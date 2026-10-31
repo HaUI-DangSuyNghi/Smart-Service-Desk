@@ -73,7 +73,7 @@ class SettingsHttpAcceptanceTest {
             for (String path : paths) {
                 call("GET", path, null, null, 401); call("PUT", path, null, "{}", 401);
                 call("GET", path, "invalid.jwt", null, 401);
-                for (String regular : List.of("user1", "user2", "user3")) {
+                for (String regular : List.of("requester1", "agent1", "coordinator1")) {
                     String jwt = token(realm, "core-probe", "grant_type=password&username=" + regular + "&password=" + encode(password));
                     deniedBoth(path, jwt, 403);
                     if (path.contains("hpdi")) {

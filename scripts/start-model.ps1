@@ -1,5 +1,5 @@
 # Invoked by start.ps1 after setup; no host Python/Java is needed.
-param([switch]$Reset, [switch]$Api, [switch]$AskApi, [switch]$ValidateOnly, [string]$SettingsFile = '.env')
+param([switch]$Reset, [switch]$Api, [switch]$AskApi, [switch]$Remote, [switch]$ValidateOnly, [string]$SettingsFile = '.env')
 $ErrorActionPreference = 'Stop'
 Set-Location (Split-Path $PSScriptRoot -Parent)
 . "$PSScriptRoot/docker-native.ps1"
@@ -19,6 +19,7 @@ function Get-TextDigest([string]$Value) {
     try { return [BitConverter]::ToString($hasher.ComputeHash([Text.Encoding]::UTF8.GetBytes($Value))).Replace('-', '').ToLowerInvariant() }
     finally { $hasher.Dispose() }
 }
+if ($Api -and $Remote) { throw 'Choose either -Api or -Remote for classification.' }
 $assistanceMode = if ($settings['AI_ASSISTANCE_MODE']) { $settings['AI_ASSISTANCE_MODE'] } else { 'disabled' }
 if ($assistanceMode -notin @('disabled', 'api')) { throw 'AI_ASSISTANCE_MODE must be disabled or api.' }
 $useApi = $Api -or $AskApi -or $assistanceMode -eq 'api'
@@ -30,6 +31,7 @@ $providerId = 'qwen35-08b-lora-labops-silver-r1'
 $deadline = 10000
 $service = 'ai07-qwen'
 $overlay = 'infra/compose/compose.model-local.yaml'
+$modelProfile = 'local-model'
 if ($useApi) {
     $vendor = $settings['AI_API_PROVIDER']
     if ($vendor -notin @('openai', 'groq', 'gemini')) { throw 'Set AI_API_PROVIDER to openai, groq, or gemini in .env.' }
@@ -76,6 +78,62 @@ if ($Api) {
     $deadline = 15000
     $service = 'intelligence-api'
     $overlay = 'infra/compose/compose.model-api.yaml'
+} elseif ($Remote) {
+    # Qwen tren may GPU rieng qua Cloudflare Access (docs/remote-model.md); file do nguoi giu may GPU cap
+    $remoteDirectory = '.local/gpu-worker'
+    $missing = @(@('classification-token', 'worker.env', 'cf-access-client-id', 'cf-access-client-secret') | Where-Object { -not (Test-Path -LiteralPath (Join-Path $remoteDirectory $_)) })
+    if ($missing.Count -gt 0) { throw "Missing $($missing -join ', ') in $remoteDirectory. Copy them from the GPU machine; see docs/remote-model.md." }
+    $readRemote = { param($Name) [IO.File]::ReadAllText((Join-Path $PWD (Join-Path $remoteDirectory $Name))).Trim() }
+    $pins = @{}
+    (& $readRemote 'worker.env') -split "`r?`n" | ForEach-Object { if ($_ -match '^\s*([A-Z0-9_]+)=(.*)$') { $pins[$Matches[1]] = $Matches[2].Trim().Trim([char]34, [char]39) } }
+    $modelDigest = $pins['QWEN_MODEL_DIGEST']
+    $policyDigest = $pins['QWEN_POLICY_DIGEST']
+    if ($modelDigest -notmatch '^[a-f0-9]{64}$' -or $policyDigest -notmatch '^[a-f0-9]{64}$') { throw 'worker.env must contain QWEN_MODEL_DIGEST and QWEN_POLICY_DIGEST (64 hex characters).' }
+    $accessId = & $readRemote 'cf-access-client-id'
+    $accessSecret = & $readRemote 'cf-access-client-secret'
+    foreach ($value in @($accessId, $accessSecret)) {
+        if ($value -notmatch '^[A-Za-z0-9._-]{8,256}$') { throw 'cf-access-client-id / cf-access-client-secret must contain only the raw value (no header name, quotes or <...>).' }
+    }
+    $remoteToken = & $readRemote 'classification-token'
+    if ($remoteToken -notmatch '^[\x21-\x7E]{16,4096}$' -or $remoteToken -like 'Bearer*') { throw 'classification-token must contain only the raw Qwen token (without "Bearer ").' }
+    $remoteHost = if ($settings['REMOTE_MODEL_HOST']) { $settings['REMOTE_MODEL_HOST'] } else { 'ai.smartdeskapp.me' }
+    if ($remoteHost -notmatch '^[a-z0-9]([a-z0-9-]*[a-z0-9])?(\.[a-z0-9]([a-z0-9-]*[a-z0-9])?)+$') { throw 'REMOTE_MODEL_HOST must be a bare hostname, without https:// or a path.' }
+    # Kiem truoc tu may nay: DNS, Cloudflare Access, token Qwen va digest phai khop worker.env
+    if (-not $ValidateOnly) {
+        [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
+        $probeHeaders = @{ 'CF-Access-Client-Id' = $accessId; 'CF-Access-Client-Secret' = $accessSecret; 'Authorization' = "Bearer $remoteToken" }
+        try {
+            $ready = Invoke-RestMethod -Uri "https://$remoteHost/health/ready" -Method Get -Headers $probeHeaders -UserAgent 'smart-service-desk-relay/1.0' -MaximumRedirection 0 -TimeoutSec 20
+        } catch {
+            $code = if ($_.Exception.Response) { [int]$_.Exception.Response.StatusCode } else { 0 }
+            $hint = switch ($code) {
+                0 { 'DNS/TLS/tunnel unreachable: is the GPU machine on, with Docker, worker and cloudflared running?' }
+                { $_ -in 301, 302 } { 'Cloudflare Access redirected to login: check the Service Auth policy and cf-access-* files.' }
+                { $_ -in 401, 403 } { 'Rejected by Cloudflare Access (Service Token not accepted by the Service Auth policy) or by the Qwen token: check cf-access-* and classification-token.' }
+                { $_ -in 502, 530 } { 'Tunnel cannot reach gpu-classifier:8003 on the GPU machine.' }
+                default { 'Worker not ready (busy or starting); check it on the GPU machine.' }
+            }
+            throw "GPU server https://$remoteHost is not usable (HTTP $code). $hint"
+        } finally { $probeHeaders = $null }
+        if ($ready.ready -ne $true) { throw 'GPU server answered but is not ready yet; retry after the worker warms up.' }
+        if ($ready.modelDigest -ne $modelDigest -or $ready.policyDigest -ne $policyDigest) { throw 'GPU server model/policy digest differs from worker.env; get the current worker.env from the GPU machine.' }
+        Write-Host "GPU server ready: https://$remoteHost"
+    }
+    $remoteToken = $null
+    # Header Access va cau hinh relay sinh lai moi lan chay (doi credential chi can chay lai)
+    $headerLines = @("proxy_set_header CF-Access-Client-Id `"$accessId`";", "proxy_set_header CF-Access-Client-Secret `"$accessSecret`";")
+    [IO.File]::WriteAllLines((Join-Path $PWD "$remoteDirectory/cloudflare-headers.conf"), [string[]]$headerLines, [Text.Encoding]::ASCII)
+    $accessId = $null; $accessSecret = $null; $headerLines = $null
+    $relayConf = Get-Content -LiteralPath 'infra/compose/gpu-relay.conf.template' -Raw -Encoding UTF8
+    [IO.File]::WriteAllText((Join-Path $PWD "$remoteDirectory/relay.conf"), $relayConf.Replace('${REMOTE_MODEL_HOST}', $remoteHost), (New-Object Text.UTF8Encoding $false))
+    $codeImage = ''
+    $image = [PSCustomObject]@{Id=''}
+    $providerLabel = 'Qwen (GPU server)'
+    # Duong mang xa qua tunnel: dung muc toi da backend cho phep
+    $deadline = 20000
+    $service = 'gpu-relay'
+    $overlay = 'infra/compose/compose.model-remote.yaml'
+    $modelProfile = 'remote-model'
 } else {
 $modelImage = if ($env:LOCAL_MODEL_IMAGE) { $env:LOCAL_MODEL_IMAGE } elseif ($settings['LOCAL_MODEL_IMAGE']) { $settings['LOCAL_MODEL_IMAGE'] } else { 'ssd-ai07-qwen-full:a40d655f95f8ed6b' }
 $metadata = $null
@@ -125,6 +183,10 @@ if ($workspaces -eq 'auto') {
     $bootstrapDigest = Get-TextDigest ((Get-FileHash -Algorithm SHA256 -LiteralPath 'scripts/intelligence/workspace-bootstrap.py').Hash.ToLowerInvariant() + ':' + (Get-FileHash -Algorithm SHA256 -LiteralPath 'infra/keycloak/automatic-workspaces-policy.json').Hash.ToLowerInvariant())
     $extraRuntime += @("SSD_WORKSPACE_BOOTSTRAP_TOKEN_FILE=./$bootstrapToken", "SSD_WORKSPACE_KEYCLOAK_ADMIN_FILE=./$bootstrapAdminFile", "SSD_WORKSPACE_BOOTSTRAP_CODE_DIGEST=$bootstrapDigest")
 }
+if ($Remote) {
+    # Token Qwen cua may GPU (khong sinh moi: phai khop worker ben do)
+    $tokenRelativePath = $remoteDirectory + '/classification-token'
+} else {
 $tokenRelativePath = $runtimeDirectory + '/classification-token'
 $tokenPath = Join-Path $PWD $tokenRelativePath
 if (-not (Test-Path -LiteralPath $tokenPath)) {
@@ -134,6 +196,7 @@ if (-not (Test-Path -LiteralPath $tokenPath)) {
     [IO.File]::WriteAllText($tokenPath, [BitConverter]::ToString($bytes).Replace('-', '').ToLowerInvariant(), [Text.Encoding]::ASCII)
 }
 if (([IO.File]::ReadAllText($tokenPath)) -notmatch '^[a-f0-9]{64}$') { throw 'Local model token is invalid; restore it or remove only .local/model/classification-token to generate a new token.' }
+}
 $runtime = @(
     "SSD_LOCAL_MODEL_IMAGE=$($image.Id)", "SSD_LOCAL_MODEL_DIGEST=$modelDigest", "SSD_LOCAL_MODEL_POLICY_DIGEST=$policyDigest",
     "SSD_LOCAL_CODE_IMAGE=$codeImage", "SSD_LOCAL_ASSESSMENT_DIGEST=$assessmentDigest", "SSD_LOCAL_CONTEXT_DIGEST=$contextDigest",
@@ -149,7 +212,7 @@ if (Test-Path compose.override.yaml) { $compose += @('-f', 'compose.override.yam
 $compose += @('-f', 'infra/compose/compose.triage.yaml', '-f', 'infra/compose/compose.hybrid.yaml')
 if ($workspaces -eq 'auto') { $compose += @('-f', 'infra/compose/compose.workspaces-auto.yaml') }
 if ($useApi) { $compose += @('-f', 'infra/compose/compose.api-assistance.yaml') }
-$compose += @('-f', $overlay, '--profile', 'intelligence', '--profile', 'local-model')
+$compose += @('-f', $overlay, '--profile', 'intelligence', '--profile', $modelProfile)
 $resolvedConfiguration = Invoke-Docker @compose config --format json
 if ($LASTEXITCODE -ne 0) { throw 'Local model Compose configuration is invalid.' }
 $resolvedProject = (($resolvedConfiguration -join "`n") | ConvertFrom-Json).name

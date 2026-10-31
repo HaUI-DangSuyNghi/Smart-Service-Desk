@@ -1,5 +1,6 @@
 import { Code2 } from "lucide-react";
-import { REPO_URL, repoFile } from "./links";
+import { Link } from "react-router";
+import { DOCUMENTATION_URL, REPO_URL, repoFile } from "./links";
 import { Wordmark } from "./Wordmark";
 
 const COLUMNS = [
@@ -24,6 +25,8 @@ const COLUMNS = [
   {
     title: "Tài liệu",
     links: [
+      { label: "Hướng dẫn sử dụng", href: DOCUMENTATION_URL },
+      { label: "Bắt đầu nhanh", href: `${DOCUMENTATION_URL}/bat-dau` },
       { label: "Hợp đồng API", href: repoFile("contracts/README.md") },
       { label: "Nghiệm thu Core", href: repoFile("docs/core-acceptance.md") },
       { label: "README", href: repoFile("README.md") },
@@ -70,15 +73,25 @@ export const LandingFooter = () => {
               <h4 className="mb-4 text-[13px] font-bold tracking-[0.08em] text-white/50 uppercase">
                 {col.title}
               </h4>
-              {col.links.map((link) => (
-                <a
-                  key={link.label}
-                  href={link.href}
-                  className="mb-2.5 block text-sm text-white/40 transition-colors hover:text-white/85"
-                >
-                  {link.label}
-                </a>
-              ))}
+              {col.links.map((link) =>
+                link.href.startsWith("/") ? (
+                  <Link
+                    key={link.label}
+                    to={link.href}
+                    className="mb-2.5 block text-sm text-white/40 transition-colors hover:text-white/85"
+                  >
+                    {link.label}
+                  </Link>
+                ) : (
+                  <a
+                    key={link.label}
+                    href={link.href}
+                    className="mb-2.5 block text-sm text-white/40 transition-colors hover:text-white/85"
+                  >
+                    {link.label}
+                  </a>
+                ),
+              )}
             </div>
           ))}
         </div>

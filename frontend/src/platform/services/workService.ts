@@ -117,21 +117,44 @@ export interface DutyStatus {
   updatedAt: string | null;
 }
 
-/** Một ca trực cụ thể (thời điểm tuyệt đối). */
-export interface ScheduledShift {
-  startsAt: string;
-  endsAt: string;
-  /** Mặc định Asia/Ho_Chi_Minh. */
-  timezone?: string;
+/** Ngày lễ được nghỉ, "yyyy-MM-dd" kèm ghi chú. */
+export interface Holiday {
+  date: string;
+  name: string;
 }
 
-/** Lịch ca của một người; bật lịch thì chỉ trực trong ca (và công tắc tay đang bật). */
-export interface AgentSchedule {
+/** SHIFT: đăng ký từng ca; OFFICE: trực giờ hành chính (mọi ca, T2–T6, trừ ngày lễ), không cần đăng ký. */
+export type WorkModeKind = "SHIFT" | "OFFICE";
+
+export interface WorkMode {
   subject: string;
-  /** Gửi lại version đang xem, người khác đã sửa trước thì 409. */
-  version: number;
-  enabled: boolean;
-  shifts: ScheduledShift[];
+  mode: WorkModeKind;
+}
+
+/** Quy tắc đăng ký ca; giờ dạng "HH:mm" hoặc "HH:mm:ss" theo múi giờ nghiệp vụ. */
+export interface SchedulePolicy {
+  zone: string;
+  shifts: { name: string; start: string; end: string }[];
+  /** Kỹ thuật viên chỉ đăng ký / huỷ một ngày trước giờ này của chính ngày đó. */
+  cutoff: string;
+  weekendRegistration: boolean;
+  approvalRequired: boolean;
+  /** Hôm nay theo máy chủ, "yyyy-MM-dd". */
+  today: string;
+  /** Backend trước V40 chưa trả về. */
+  holidays?: Holiday[];
+}
+
+/** Một ô đã đăng ký (ngày × ca); chỉ ô APPROVED mới tính trực. */
+export interface ShiftSlot {
+  id: string;
+  subject: string;
+  date: string;
+  shift: string;
+  startsAt: string;
+  endsAt: string;
+  status: "PENDING" | "APPROVED";
+  registeredBy: string;
 }
 
 export type AlertType =
@@ -215,6 +238,13 @@ export interface WorkSettings {
     windowMonths: number;
     outlierMinMinutes: number;
     outlierMaxMinutes: number;
+  };
+  /** Đăng ký ca (V39); bản lưu cũ chưa có thì coi như tắt cả hai. */
+  schedule?: {
+    weekendRegistration: boolean;
+    approvalRequired: boolean;
+    /** Ngày lễ được nghỉ (V40); name là ghi chú hiện trên lịch trực. */
+    holidays?: Holiday[];
   };
 }
 
@@ -347,27 +377,89 @@ export const setMyDuty = async (
   return data;
 };
 
-/** GET lịch ca; điều phối viên thấy tất cả kỹ thuật viên, kỹ thuật viên chỉ thấy mình. */
-export const listSchedules = async (
+const schedulePath = (workspace: string) => `${hpdiWorkspace(workspace)}/schedules`;
+
+/** GET quy tắc đăng ký ca: các ca, hạn chót trong ngày, T7/CN, cần duyệt, hôm nay (giờ máy chủ). */
+export const getSchedulePolicy = async (
   workspace: string,
   signal?: AbortSignal,
-): Promise<AgentSchedule[]> => {
-  const { data } = await apiClient.get<AgentSchedule[]>(`${hpdiWorkspace(workspace)}/schedules`, {
+): Promise<SchedulePolicy> => {
+  const { data } = await apiClient.get<SchedulePolicy>(`${schedulePath(workspace)}/policy`, {
     signal,
   });
   return data;
 };
 
-/** PUT ghi đè lịch ca của một người (điều phối viên). 409: version cũ. */
-export const updateSchedule = async (
+/** GET ô ca trong khoảng ngày (tối đa 62 ngày); kỹ thuật viên chỉ nhận ô của mình. */
+export const listShiftSlots = async (
   workspace: string,
-  { subject, ...body }: AgentSchedule,
-): Promise<AgentSchedule> => {
-  const { data } = await apiClient.put<AgentSchedule>(
-    `${hpdiWorkspace(workspace)}/schedules/${encodeURIComponent(subject)}`,
-    body,
+  range: { from: string; to: string },
+  signal?: AbortSignal,
+): Promise<ShiftSlot[]> => {
+  const { data } = await apiClient.get<ShiftSlot[]>(`${schedulePath(workspace)}/slots`, {
+    params: range,
+    signal,
+  });
+  return data;
+};
+
+/** POST đăng ký một ô; subject "me" là của mình, điều phối viên truyền subject để đăng ký hộ. */
+export const registerShiftSlot = async (
+  workspace: string,
+  subject: string,
+  input: { date: string; shift: string },
+): Promise<ShiftSlot> => {
+  const { data } = await apiClient.post<ShiftSlot>(
+    `${schedulePath(workspace)}/${encodeURIComponent(subject)}/slots`,
+    input,
   );
   return data;
+};
+
+/** DELETE huỷ một ô (của mình, hoặc hộ nếu là điều phối viên). */
+export const cancelShiftSlot = async (
+  workspace: string,
+  subject: string,
+  slotId: string,
+): Promise<void> => {
+  await apiClient.delete(
+    `${schedulePath(workspace)}/${encodeURIComponent(subject)}/slots/${encodeURIComponent(slotId)}`,
+  );
+};
+
+/** GET hình thức làm việc; kỹ thuật viên chỉ nhận của mình, chưa đặt là SHIFT. */
+export const listWorkModes = async (
+  workspace: string,
+  signal?: AbortSignal,
+): Promise<WorkMode[]> => {
+  const { data } = await apiClient.get<WorkMode[]>(`${schedulePath(workspace)}/work-modes`, {
+    signal,
+  });
+  return data;
+};
+
+/** PUT đổi hình thức làm việc của một kỹ thuật viên (điều phối viên). */
+export const setWorkMode = async (
+  workspace: string,
+  subject: string,
+  mode: WorkModeKind,
+): Promise<WorkMode> => {
+  const { data } = await apiClient.put<WorkMode>(
+    `${schedulePath(workspace)}/${encodeURIComponent(subject)}/work-mode`,
+    { mode },
+  );
+  return data;
+};
+
+/** POST duyệt / từ chối ô đang chờ duyệt (điều phối viên). */
+export const decideShiftSlot = async (
+  workspace: string,
+  slotId: string,
+  decision: "approve" | "reject",
+): Promise<void> => {
+  await apiClient.post(
+    `${schedulePath(workspace)}/slots/${encodeURIComponent(slotId)}/${decision}`,
+  );
 };
 
 /** GET cảnh báo của tôi, mới nhất trước; `since` để chỉ lấy cảnh báo mới. */

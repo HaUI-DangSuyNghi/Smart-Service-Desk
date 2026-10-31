@@ -20,6 +20,7 @@ import { StatusBlock } from "../tickets/detail/StatusBlock";
 import { ticketCode } from "../tickets/ticketLabels";
 import { TicketSummary } from "../tickets/TicketSummary";
 import { useTicket, useIntelligenceStatus, useRetryTicketAssessment } from "../tickets/useTickets";
+import { useTicketDetailRealtime } from "../tickets/useTicketRealtime";
 import { EnrichmentDialog } from "../tickets/EnrichmentDialog";
 import { useContextRevision } from "../tickets/useContextRevision";
 import { useIntake } from "../tickets/useIntake";
@@ -73,6 +74,7 @@ const TicketDetailPage = () => {
 
 const TicketDetail = ({ workspace, ticketId }: { workspace: string; ticketId: string }) => {
   const ticket = useTicket(workspace, ticketId);
+  useTicketDetailRealtime(workspace, ticketId);
   const aiStatus = useIntelligenceStatus(workspace);
   const retryAssessment = useRetryTicketAssessment(workspace, ticketId);
   const { actor } = useActor();
@@ -117,7 +119,7 @@ const TicketDetail = ({ workspace, ticketId }: { workspace: string; ticketId: st
             <TicketSummary ticket={ticket.data} />
             {/* Có kết quả AI đã lưu (chạy nền lúc tạo) thì hiện cho người xử lý; backend cũ chưa có thì gọi tay */}
             {/* Ticket qua tiếp nhận: kết quả AI nằm ở đề xuất cuối, hiện thẳng ở đây */}
-            {intake.data ? (
+            {ticket.data.state === "CANCELLED" ? null : intake.data ? (
               !isRequesterView && <IntakeAssessmentCard intake={intake.data} />
             ) : assessment ? (
               !isRequesterView && (
@@ -156,7 +158,6 @@ const TicketDetail = ({ workspace, ticketId }: { workspace: string; ticketId: st
             )}
             <DetailTabs
               workspace={workspace}
-              assistanceMode={aiStatus.data?.assistanceMode}
               ticket={ticket.data}
               isRequesterView={isRequesterView}
             />
@@ -166,14 +167,16 @@ const TicketDetail = ({ workspace, ticketId }: { workspace: string; ticketId: st
             {intake.error && (
               <ErrorState error={intake.error} fallback="Chưa tải được trạng thái tiếp nhận." />
             )}
-            {/* Chỉ người gửi bổ sung thông tin cho ticket của mình */}
-            {intake.isSuccess && ticket.data.creator === user?.profile.sub && (
-              <EnrichmentDialog
-                workspace={workspace}
-                ticketId={ticketId}
-                managedIntake={!!intake.data}
-              />
-            )}
+            {intake.isSuccess &&
+              ticket.data.state !== "CANCELLED" &&
+              ticket.data.state !== "CLOSED" &&
+              ticket.data.creator === user?.profile.sub && (
+                <EnrichmentDialog
+                  workspace={workspace}
+                  ticketId={ticketId}
+                  managedIntake={!!intake.data}
+                />
+              )}
             <DetailsCard
               ticket={ticket.data}
               isRequesterView={isRequesterView && actor?.subject === ticket.data.creator}

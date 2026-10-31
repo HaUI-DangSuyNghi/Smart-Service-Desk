@@ -41,10 +41,20 @@ public class MetadataRepository {
     }
 
     public Page<MetadataRecord> search(String workspace, MetadataQuery query, PageRequest page) {
+        return search(workspace, query, page, false);
+    }
+
+    public Page<MetadataRecord> search(String workspace, MetadataQuery query, PageRequest page, boolean includeInternal) {
         String order = SORTS.get(query.sort() == null ? "createdAt,desc" : query.sort());
         if (order == null) throw CoreException.validation("Unsupported metadata sort");
         StringBuilder where = new StringBuilder(" where workspace=?");
         List<Object> args = new ArrayList<>(List.of(workspace));
+        if (!includeInternal) {
+            where.append(" and lower(trim(usage_rights)) not in (")
+                .append(String.join(",", java.util.Collections.nCopies(MetadataReadPolicy.INTERNAL_VALUES.size(), "?")))
+                .append(")");
+            args.addAll(MetadataReadPolicy.INTERNAL_VALUES);
+        }
         if (query.q() != null && !query.q().isEmpty()) {
             where.append(" and position(lower(?) in lower(title)) > 0");
             args.add(query.q());

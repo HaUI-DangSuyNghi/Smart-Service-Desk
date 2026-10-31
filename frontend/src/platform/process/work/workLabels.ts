@@ -1,5 +1,4 @@
 import type {
-  AssignmentSuggestion,
   Estimate,
   PendingReason,
   Priority,
@@ -64,21 +63,6 @@ export const estimateBasisText = (estimate: Estimate) => {
     default:
       return "Mặc định theo loại";
   }
-};
-
-/** Giải thích đề xuất người xử lý; backend trả câu kỹ thuật nên dịch theo từng nhánh (R2). */
-export const suggestionReasonText = (
-  suggestion: Pick<AssignmentSuggestion, "group" | "recommended" | "reason">,
-) => {
-  const base =
-    suggestion.group === "manual"
-      ? "Loại Khác: điều phối viên tự chọn người xử lý."
-      : suggestion.recommended === null
-        ? "Tổ không còn ai đang trực: chọn người khác hoặc để chờ ca sau."
-        : "Đề xuất người ít tải nhất (chênh dưới 15 phút thì xét ít việc nhất hôm nay).";
-  return suggestion.reason.includes("ESTIMATE_EXCEEDS_SHIFT")
-    ? `${base} Ước tính dài hơn thời gian còn lại của ca với một số người.`
-    : base;
 };
 
 /** Được nâng bậc ưu tiên do chờ lâu (R5). */

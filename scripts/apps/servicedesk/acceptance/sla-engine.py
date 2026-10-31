@@ -69,12 +69,12 @@ try:
             if client['clientId'] == 'dx-directory' or alerts and client['clientId'] == 'dx-assessment-worker':
                 client['secret'] = password
         for user in realm['users']:
-            if user['username'] in ('user1', 'user2', 'user3'):
+            if user['username'] in ('requester1', 'agent1', 'coordinator1'):
                 user['credentials'] = [{'type': 'password', 'value': password, 'temporary': False}]
-            if user['username'] == 'user2':
+            if user['username'] == 'agent1':
                 user['groups'].append('/support-groups/lab-a/hardware')
         if handover:
-            replacement = json.loads(json.dumps(next(user for user in realm['users'] if user['username'] == 'user2')))
+            replacement = json.loads(json.dumps(next(user for user in realm['users'] if user['username'] == 'agent1')))
             replacement.update(id=str(uuid.uuid4()), username='handover-agent', email='handover-agent@example.test')
             realm['users'].append(replacement)
         seed = Path(temporary) / 'realm.json'
@@ -105,16 +105,16 @@ try:
         wait(backend + '/actuator/health')
         tokens = {user: request(keycloak + '/realms/dx-lab/protocol/openid-connect/token', 'POST',
             {'grant_type': 'password', 'client_id': 'core-probe', 'username': user, 'password': password}, form=True)['access_token']
-            for user in (('user1', 'user2', 'user3', 'handover-agent') if handover else ('user1', 'user2', 'user3'))}
-        subject = json.loads(base64.urlsafe_b64decode(tokens['user2'].split('.')[1] + '=='))['sub']
+            for user in (('requester1', 'agent1', 'coordinator1', 'handover-agent') if handover else ('requester1', 'agent1', 'coordinator1'))}
+        subject = json.loads(base64.urlsafe_b64decode(tokens['agent1'].split('.')[1] + '=='))['sub']
 
-        def call(path, actor='user3', method='GET', data=None):
+        def call(path, actor='coordinator1', method='GET', data=None):
             return request(backend + path, method, data, tokens[actor])
 
         base = '/api/apps/servicedesk/v1/workspaces/lab-a/tickets'
         hpdi = '/api/hpdi/v1/workspaces/lab-a'
-        call(hpdi + '/duty/me', 'user2', 'PUT', {'onDuty': True})
-        ticket = call(base, 'user1', 'POST', {'clientRequestId': str(uuid.uuid4()), 'title': 'Real R5 acceptance', 'description': 'Synthetic SLA request'})
+        call(hpdi + '/duty/me', 'agent1', 'PUT', {'onDuty': True})
+        ticket = call(base, 'requester1', 'POST', {'clientRequestId': str(uuid.uuid4()), 'title': 'Real R5 acceptance', 'description': 'Synthetic SLA request'})
         check('unreviewed ticket has no SLA', ticket['sla'] is None)
         path = base + '/' + ticket['id']
         def approve(priority, assignee):
@@ -131,7 +131,7 @@ try:
         check('approval initializes authoritative SLA', reviewed['sla'] is not None and reviewed['classification']['basePriority'] == 'HIGH')
         task = hpdi + '/tasks/' + reviewed['taskId']
         if handover:
-            estimate = call(task + '/estimate-requests', 'user2', 'POST', {'proposedMinutes': 120, 'reason': 'Replace mainboard'})
+            estimate = call(task + '/estimate-requests', 'agent1', 'POST', {'proposedMinutes': 120, 'reason': 'Replace mainboard'})
             replacement_subject = json.loads(base64.urlsafe_b64decode(tokens['handover-agent'].split('.')[1] + '=='))['sub']
             call(hpdi + '/duty/me', 'handover-agent', 'PUT', {'onDuty': True})
             call(task + '/assign', method='POST', data={'assignee': replacement_subject})
@@ -140,8 +140,8 @@ try:
             check('same-task reassignment supersedes with provenance not decision', retired['supersededReason'] == 'ASSIGNMENT_CHANGED'
                 and retired['supersededAt'] is not None and retired['supersededBy'] is not None and retired['decidedAt'] is None)
             for route, actor, data, expected in (
-                (task + '/estimate-requests', 'user2', {'proposedMinutes': 180, 'reason': 'Old assignee'}, 403),
-                (hpdi + '/estimate-requests/' + estimate['id'] + '/decision', 'user3', {'approved': True}, 409)):
+                (task + '/estimate-requests', 'agent1', {'proposedMinutes': 180, 'reason': 'Old assignee'}, 403),
+                (hpdi + '/estimate-requests/' + estimate['id'] + '/decision', 'coordinator1', {'approved': True}, 409)):
                 try:
                     call(route, actor, 'POST', data)
                     raise AssertionError('Old assignee request must not control ET')
@@ -154,7 +154,7 @@ try:
                 if item['taskId'] == reviewed['taskId']}
             check('assignment cycle never revives prior request', retired_ids == {estimate['id'], replacement_request['id']})
             report['supersededRequest'] = retired
-            estimate = call(task + '/estimate-requests', 'user2', 'POST', {'proposedMinutes': 120, 'reason': 'Replace mainboard'})
+            estimate = call(task + '/estimate-requests', 'agent1', 'POST', {'proposedMinutes': 120, 'reason': 'Replace mainboard'})
             report['estimateRequest'] = estimate
             check('request does not change ET', call(path)['estimate']['minutes'] == reviewed['estimate']['minutes'])
             docker('restart', backend_name)
@@ -164,10 +164,10 @@ try:
             check('estimate request survives real restart', any(item['id'] == estimate['id'] for item in pending))
             report['estimateDecision'] = call(hpdi + '/estimate-requests/' + estimate['id'] + '/decision', method='POST', data={'approved': True})
             check('approved estimate uses canonical ET storage', call(path)['estimate'] == {'minutes': 120, 'basis': 'COORDINATOR'})
-            call(task + '/start', 'user2', 'POST')
-            call(task + '/pause', 'user2', 'POST', {'reason': 'WAITING_EXTERNAL'})
-            stale = call(task + '/estimate-requests', 'user2', 'POST', {'proposedMinutes': 180, 'reason': 'More diagnostics'})
-            call(task + '/release', 'user2', 'POST', {'reason': 'HANDOVER', 'note': 'Hardware checked; continue diagnostics'})
+            call(task + '/start', 'agent1', 'POST')
+            call(task + '/pause', 'agent1', 'POST', {'reason': 'WAITING_EXTERNAL'})
+            stale = call(task + '/estimate-requests', 'agent1', 'POST', {'proposedMinutes': 180, 'reason': 'More diagnostics'})
+            call(task + '/release', 'agent1', 'POST', {'reason': 'HANDOVER', 'note': 'Hardware checked; continue diagnostics'})
             docker('restart', backend_name)
             backend = 'http://' + docker('port', backend_name, '8080/tcp')
             wait(backend + '/actuator/health')
@@ -188,27 +188,27 @@ try:
             check('handover creates one fresh handle', continued['taskId'] != reviewed['taskId'] and continued['state'] == 'ASSIGNED')
             reviewed = continued
             task = hpdi + '/tasks/' + reviewed['taskId']
-        started = call(task + '/start', 'user2', 'POST')
+        started = call(task + '/start', 'agent1', 'POST')
         check('START freezes response result', not started['sla']['startBreached'])
-        paused = call(task + '/pause', 'user2', 'POST', {'reason': 'WAITING_REQUESTER'})
+        paused = call(task + '/pause', 'agent1', 'POST', {'reason': 'WAITING_REQUESTER'})
         check('requester wait pauses SLA', paused['sla']['clockPaused'])
         docker('restart', backend_name)
         backend = 'http://' + docker('port', backend_name, '8080/tcp')
         wait(backend + '/actuator/health')
-        persisted = call(path, 'user1')
+        persisted = call(path, 'requester1')
         check('pause and original start deadline survive backend restart', persisted['sla']['clockPaused'] and persisted['sla']['startBy'] == reviewed['sla']['startBy'])
-        call(task + '/resume', 'user2', 'POST')
-        call(task + '/complete', 'user2', 'POST', {'expectedTaskKey': 'handle', 'outcome': 'resolved'})
-        completed = call(path, 'user1')
+        call(task + '/resume', 'agent1', 'POST')
+        call(task + '/complete', 'agent1', 'POST', {'expectedTaskKey': 'handle', 'outcome': 'resolved'})
+        completed = call(path, 'requester1')
         check('handle resolved stops SLA before requester confirmation', completed['state'] == 'AWAITING_CONFIRMATION' and not completed['sla']['resolveBreached'] and not completed['sla']['clockPaused'])
-        call(hpdi + '/tasks/' + completed['taskId'] + '/complete', 'user1', 'POST', {'expectedTaskKey': 'confirm', 'outcome': 'rework'})
-        check('rework awaiting approval has no fabricated SLA', call(path, 'user1')['sla'] is None)
+        call(hpdi + '/tasks/' + completed['taskId'] + '/complete', 'requester1', 'POST', {'expectedTaskKey': 'confirm', 'outcome': 'rework'})
+        check('rework awaiting approval has no fabricated SLA', call(path, 'requester1')['sla'] is None)
         reviewed = approve('LOW', None)
         check('new round starts a fresh LOW policy with no assignment', reviewed['classification']['basePriority'] == 'LOW' and reviewed['sla'] is not None and reviewed['assignee'] is None)
         docker('exec', database, 'psql', '-U', 'workflow', '-d', 'core', '-v', 'ON_ERROR_STOP=1', '-c',
             "update servicedesk_sla set approved_at=approved_at-interval '10 days', start_by=start_by-interval '10 days', resolve_by=resolve_by-interval '10 days' where ticket_id='" + str(uuid.UUID(ticket['id'])) + "' and resolved_at is null")
         for attempt in range(30):
-            escalated = call(path, 'user1')
+            escalated = call(path, 'requester1')
             if escalated['classification']['escalated']:
                 break
             time.sleep(1)
@@ -218,7 +218,7 @@ try:
         check('system escalation records exactly one transactional audit', count == '1')
         if alerts:
             breached_id = ticket['id']
-            ticket = call(base, 'user1', 'POST', {'clientRequestId': str(uuid.uuid4()), 'title': 'Real R7 critical', 'description': 'Synthetic critical request'})
+            ticket = call(base, 'requester1', 'POST', {'clientRequestId': str(uuid.uuid4()), 'title': 'Real R7 critical', 'description': 'Synthetic critical request'})
             path = base + '/' + ticket['id']
             critical = approve('CRITICAL', subject)
             for attempt in range(60):
@@ -229,19 +229,19 @@ try:
                     break
                 time.sleep(1)
             check('real signed worker delivers approved critical and SLA breach without opening queue', bool(critical_events and breached))
-            agent_inbox = call(hpdi + '/alerts', 'user2')
+            agent_inbox = call(hpdi + '/alerts', 'agent1')
             check('assigned agent receives persistent critical alert', any(item['businessKey'] == ticket['id'] and item['type'] == 'CRITICAL_NEW' for item in agent_inbox['items']))
             check('critical notification does not auto START', call(path)['state'] == 'ASSIGNED')
             alert_id = critical_events[0]['id']
             call(hpdi + '/alerts/' + alert_id + '/read', method='POST')
             call(hpdi + '/alerts/' + alert_id + '/read', method='POST')
-            check('read retry leaves agent unread state independent', any(item['id'] == alert_id and item['readAt'] is None for item in call(hpdi + '/alerts', 'user2')['items']))
+            check('read retry leaves agent unread state independent', any(item['id'] == alert_id and item['readAt'] is None for item in call(hpdi + '/alerts', 'agent1')['items']))
             docker('restart', backend_name)
             backend = 'http://' + docker('port', backend_name, '8080/tcp')
             wait(backend + '/actuator/health')
             check('alert and read timestamp survive real backend restart', any(item['id'] == alert_id and item['readAt'] is not None for item in call(hpdi + '/alerts')['items']))
             try:
-                call(hpdi + '/alerts', 'user1')
+                call(hpdi + '/alerts', 'requester1')
                 raise AssertionError('Requester must not read operational alerts')
             except urllib.error.HTTPError as failure:
                 check('requester cannot read operational alerts', failure.code == 403)

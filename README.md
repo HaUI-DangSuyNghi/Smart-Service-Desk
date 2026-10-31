@@ -108,6 +108,8 @@ Nền tảng headless Tier-1 dành cho DX-OS Open-Core (Smart Service Desk). H�
 > Supported submission startup is manual/no-AI. OCR experiments, GPU/Qwen and unaccepted cloud runtime modes are outside the v0.1.0 acceptance scope.
 > The recorded production npm audit has zero HIGH/CRITICAL findings and one MODERATE fast-uri finding. Functional acceptance is not full production-security certification; optional full image scanning is not covered by a green functional job.
 
+> **Version scope:** The v0.1.0 release and PoF records above describe the frozen tag. The expanded features and operating instructions below document active development and are not evidence of a published v0.2.0.
+
 ---
 
 ## 📑 Mục lục
@@ -169,7 +171,7 @@ Tại thư mục gốc repo, gõ `.\dx` (PowerShell, cmd) hoặc `./dx` (Git Bas
 Menu hiện ra, chọn bằng phím ↑/↓ rồi Enter. Mục **Start project** chạy trọn quy trình khởi động:
 
 1. **Kiểm máy:** tạo `.env` nếu chưa có, kiểm Docker, ổ đĩa, cổng, GPU, API key. Có lỗi thì hỏi dừng hay chạy tiếp.
-2. **Chọn chế độ AI (bắt buộc có AI):** theo chế độ đã lưu, Qwen local, Qwen local + Ask AI, hoặc chỉ API. Máy không có GPU + image Qwen lẫn API key thì dừng và báo cần bổ sung.
+2. **Chọn chế độ AI:** giữ chế độ đã lưu, Qwen local, Qwen local + Ask AI, Qwen GPU server, API only hoặc **No AI**. Chọn No AI để chạy nghiệp vụ thủ công, không cần GPU hoặc API key.
 3. **Khởi động:** build, chạy và đợi mọi dịch vụ healthy.
 4. **Sẵn sàng:** in địa chỉ web, API, Keycloak, tài khoản demo, rồi hỏi có mở web luôn không.
 
@@ -178,7 +180,7 @@ Các lệnh trực tiếp, không qua menu:
 ```powershell
 .\dx launch         # quy trình khởi động đầy đủ như trên
 .\dx doctor         # kiểm máy; lỗi nào cũng kèm cách sửa
-.\dx up             # khởi động nhanh theo chế độ AI đã lưu (lần đầu tự chọn theo máy)
+.\dx up             # khởi động theo chế độ đã lưu, kể cả khi đã tắt AI
 .\dx down           # dừng, giữ dữ liệu
 .\dx help           # xem mọi lệnh
 ```
@@ -189,9 +191,13 @@ Lần đầu chạy `.\dx` (lệnh nào cũng được), dự án tự được 
 | --- | --- |
 | `.\dx up model` | Phân loại bằng Qwen local (GPU) + bộ luật |
 | `.\dx up model ask` | Như trên, thêm Hỏi AI qua API |
+| `.\dx up remote` | Qwen trên máy GPU riêng qua Cloudflare Access (không cần GPU ở máy này), xem [docs/remote-model.md](docs/remote-model.md) |
 | `.\dx up api` | Phân loại và Hỏi AI đều qua API (không cần GPU) |
+| `.\dx up no-ai` | Tắt AI, tiếp nhận/duyệt/phân công thủ công; không cần GPU hoặc API key |
 | `.\dx restart` | Dừng rồi khởi động lại |
 | `.\dx ps`, `.\dx logs [service]` | Trạng thái container, xem log |
+| `.\dx realm` | Import lại realm Keycloak (`start.ps1 -Reset`) |
+| `.\dx schedule` | Tạo lịch trực mẫu tuần này + tuần sau (người trực cả tuần, người trực vài buổi) |
 | `.\dx qwen` | Khởi động lại Qwen khi thẻ AI báo "AI tạm không khả dụng" |
 | `.\dx smoke`, `.\dx check` | Kiểm thử nhanh, kiểm cấu hình Compose và CSDL |
 | `.\dx help` | Xem mọi lệnh |
@@ -270,7 +276,7 @@ Clone source không tự tải model. Nếu image có tên khác mặc định, 
 | `.\dx up model ask` | `-Model -AskApi` | Qwen + bộ luật | API |
 | `.\dx up model` | `-Model` | Qwen + bộ luật | Theo `AI_ASSISTANCE_MODE` đã lưu |
 
-**Trên máy mới, `.\dx up` không kèm gì sẽ tự chọn chế độ AI theo máy; gọi thẳng `scripts/start.ps1` không có cờ thì AI mặc định tắt.** `-Model` một mình không
+**`.\dx up` giữ chế độ đã lưu, kể cả `AI_MODE=disabled`.** Trong menu `dx start`, chọn **No AI** nếu chỉ cần nghiệp vụ thủ công, hoặc chọn Qwen/API để dùng AI. Có thể tắt nhanh bằng `.\dx up no-ai`; lựa chọn này lưu cả `AI_MODE=disabled` và `AI_ASSISTANCE_MODE=disabled`. `-Model` một mình không
 tự bật hỏi đáp API nếu chưa cấu hình trước đó. Trong cả chế độ Qwen và API,
 model vẫn phối hợp với rule engine; không thay bộ luật bằng model.
 
@@ -288,8 +294,8 @@ nội bộ; chế độ phát triển `local-dev` không cần người khác c�
 
 #### Bước 4 — Đăng nhập và thử hỏi đáp
 
-Mở `http://localhost:5173`. Đăng nhập `user1` để tạo ticket trong `lab-a`, hoặc
-`user3` để xem gợi ý phân loại với vai trò điều phối viên. Mật khẩu nằm ở
+Mở `http://localhost:5173`. Đăng nhập `requester1` để tạo ticket trong `lab-a`, hoặc
+`coordinator1` để xem gợi ý phân loại với vai trò điều phối viên. Mật khẩu nằm ở
 **`DEMO_PASSWORD` trong `.env`**; các file JSON trong `.local` là cấu hình tự sinh.
 Xem đầy đủ vai trò tại [Tài khoản mẫu & Phân quyền](#-tài-khoản-mẫu--phân-quyền).
 
@@ -307,9 +313,32 @@ Container healthy xác nhận dịch vụ đã khởi động, chưa xác nhận
 
 #### Existing Keycloak realms
 
-Keycloak imports only into a missing realm. Migrate required clients/groups/roles
-through the Admin API or console, preserving user IDs. Do not reset a shared realm
-or remove shared volumes: changed user subjects can orphan existing tickets.
+Keycloak chỉ import `dx-lab` **lần đầu**, khi realm chưa tồn tại. Máy đã chạy từ bản cũ sẽ giữ realm cũ và **không nhận** thay đổi mới trong `infra/keycloak/realm-template.json` (client `dx-web`, tài khoản, nhóm mới). Dấu hiệu: trang Keycloak báo *"Client not found"*, hoặc đăng nhập `requester1` báo sai mật khẩu.
+
+Khởi động kèm xóa và import lại realm bằng một lệnh:
+
+```powershell
+.\dx realm
+```
+
+Stack đang chạy sẵn thì chỉ cần chạy riêng bước reset:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/reset-keycloak-realm.ps1
+```
+
+Cần chạy `-Reset` khi template có client, nhóm hoặc thuộc tính mới (ví dụ client `dx-directory` cho danh bạ và tên hiển thị workspace). `scripts/setup.ps1` tự bổ sung biến còn thiếu (như `DIRECTORY_CLIENT_SECRET`) vào `.env` mà không đổi mật khẩu đã có.
+
+#### Quyền (`dx-permissions`)
+
+Quyền nhỏ khai báo là role của client `dx-permissions` trong `infra/keycloak/realm-template.json`: **tên tiếng Anh** dạng `đối-tượng:hành-động` (`request:create`), **mô tả tiếng Việt** ("Tạo yêu cầu") hiện trong Keycloak. Mỗi nhóm `/workspaces/{ws}/{vai trò}` được gán sẵn bộ quyền mặc định.
+
+Máy mới chỉ cần `scripts/start.ps1`: Keycloak import realm từ template nên có sẵn đủ quyền, nhóm và tài khoản quản trị. Máy đang có realm cũ (tạo trước khi có quyền) chạy **một lần** `scripts/start.ps1 -Reset` để import lại; sau đó quyền được lưu trong database của Keycloak, các lần sau chạy `scripts/start.ps1` như thường. Đổi quyền của một nhóm: Keycloak → realm `dx-lab` → **Groups** → nhóm → **Role mapping** → **Assign role** → lọc theo client → tích chọn quyền.
+
+Script sẽ: sinh lại `.local/dx-lab-realm.json` từ template → xóa realm `dx-lab` → khởi động lại Keycloak để import → kiểm tra log có dòng `Realm 'dx-lab' imported` → khởi động lại backend để nạp khóa ký mới.
+
+> [!WARNING]
+> Chỉ xóa realm `dx-lab`; realm `master` và dữ liệu PostgreSQL của core giữ nguyên. Tuy vậy user được tạo lại với **ID (`sub`) mới**, nên ticket/quy trình tạo bằng tài khoản cũ trên máy đó sẽ không còn ai xem được. Chỉ dùng cho môi trường local/demo.
 
 ### 2. Kiểm tra trạng thái dịch vụ
 
@@ -330,20 +359,60 @@ docker compose ps
 
 ---
 
+## 🔔 Thông báo & email
+
+Mỗi lần đổi trạng thái (tạo ticket, cần bổ sung thông tin, giao việc, bắt đầu, chờ người gửi, trả việc, báo xong, xác nhận/mở lại, tự đóng, sửa ước tính, ca trực) và mỗi cảnh báo (quá hạn, khẩn cấp...) đều vào **chuông thông báo** ở đầu sidebar của người liên quan; các bước cần người nhận hành động gửi thêm **email**. Người tự làm thao tác không nhận thông báo của chính mình.
+
+Email gửi qua SMTP, cấu hình trong `.env` (không commit):
+
+```dotenv
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USERNAME=dia-chi-gmail-gui@gmail.com
+MAIL_PASSWORD=mat-khau-ung-dung-16-ky-tu
+MAIL_FROM_NAME=Smart Desk App
+APP_BASE_URL=http://localhost:5173
+```
+
+Gmail cần bật xác minh 2 bước rồi tạo **mật khẩu ứng dụng**. `MAIL_HOST` trống thì chỉ có thông báo trong app. Địa chỉ nhận lấy từ email của tài khoản trong Keycloak (tài khoản demo dùng `@example.com` nên không nhận được; muốn thử thì đổi email của một tài khoản trong trang quản trị Keycloak ở máy mình, không sửa vào `realm-template.json`).
+
+### Realtime (WebSocket)
+
+Thông báo mới, đổi trạng thái ticket, bình luận, hàng đợi và ca trực hiện **ngay** trên màn hình đang mở, không cần F5.
+
+- Đường đi: trình duyệt → `/ws` (Vite / nginx) → APISIX (route `realtime`, `enable_websocket`) → `platform:8080/ws`. Giao thức STOMP; token gửi trong frame `CONNECT`, không đặt trên URL.
+- Server chỉ báo "có thay đổi" (`{type, workspace, resource, id}`), FE tải lại qua REST nên quyền xem vẫn do API quyết định. Sự kiện chỉ phát sau khi transaction commit.
+- Kênh: `/user/queue/events` (riêng mỗi người), `/topic/workspaces/{ws}/tickets` và `/work` (agent, coordinator), `/topic/workspaces/{ws}/tickets/{id}` (ai xem được ticket). Hợp đồng: [`contracts/realtime/asyncapi.yaml`](contracts/realtime/asyncapi.yaml).
+- Mất kết nối thì FE tự nối lại (1 → 30 giây) và polling 30 giây chạy dự phòng; đang nối thì polling giãn ra 5 phút.
+- Kiểm tra: DevTools → Network → lọc **WS** → `/ws` → tab Messages thấy `CONNECTED`, `SUBSCRIBE`, `MESSAGE`.
+- Tắt: `REALTIME_ENABLED=false` trong `.env`. Origin được phép: `APP_BASE_URL`, `localhost:5173`, cộng thêm `REALTIME_ALLOWED_ORIGINS` (phân tách dấu phẩy).
+
+---
+
 ## 🔑 Tài khoản mẫu & Phân quyền
 
 Mật khẩu của tất cả tài khoản mẫu được sinh ngẫu nhiên tại biến `DEMO_PASSWORD` trong file `.env`. Mật khẩu tài khoản admin Keycloak được lưu tại `KC_ADMIN_PASSWORD`. Không có mật khẩu tĩnh lưu trong mã nguồn.
 
-| Tài khoản | Phân quyền (Keycloak Group) | Không gian làm việc (Workspace) |
-| --- | --- | --- |
-| `user1` | `/workspaces/lab-a/requester` | `lab-a` (Người gửi yêu cầu) |
-| `user2` | `/workspaces/lab-a/agent` | `lab-a` (Chuyên viên giải quyết) |
-| `user3` | `/workspaces/lab-a/coordinator` | `lab-a` (Điều phối viên) |
-| `user4` | `/workspaces/lab-b/requester` | `lab-b` (Người gửi yêu cầu) |
-| `user5` | `/workspaces/lab-b/agent` | `lab-b` (Chuyên viên giải quyết) |
-| `user6` | `/workspaces/lab-b/coordinator` | `lab-b` (Điều phối viên) |
-| `user7` | Realm role `platform-admin` | Quản trị hệ thống (Toàn cục, không thuộc workspace) |
-| `superadmin` | Cả 3 vai trò ở `lab-a`, `lab-b` + `platform-admin` | Tài khoản thử nghiệm đầy đủ quyền; vẫn tuân thủ quy tắc tách quyền (không tự xử lý ticket mình tạo) |
+| Tài khoản | Phân quyền (Keycloak Group) | Không gian làm việc (Workspace) | Chuyên môn (`/support-groups/{ws}/...`) |
+| --- | --- | --- | --- |
+| `requester1` | `/workspaces/lab-a/requester` | `lab-a` (Người gửi yêu cầu) | |
+| `agent1` | `/workspaces/lab-a/agent` | `lab-a` (Chuyên viên giải quyết) | hardware, network |
+| `agent2` | `/workspaces/lab-a/agent` | `lab-a` (Chuyên viên giải quyết) | hardware |
+| `agent3` | `/workspaces/lab-a/agent` | `lab-a` (Chuyên viên giải quyết) | software, sysadmin |
+| `agent4` | `/workspaces/lab-a/agent` | `lab-a` (Chuyên viên giải quyết) | network, sysadmin |
+| `agent5` | `/workspaces/lab-a/agent` | `lab-a` (Chuyên viên giải quyết) | hardware, software |
+| `coordinator1` | `/workspaces/lab-a/coordinator` | `lab-a` (Điều phối viên) | |
+| `requester2` | `/workspaces/lab-b/requester` | `lab-b` (Người gửi yêu cầu) | |
+| `agent6` | `/workspaces/lab-b/agent` | `lab-b` (Chuyên viên giải quyết) | hardware, software |
+| `agent7` | `/workspaces/lab-b/agent` | `lab-b` (Chuyên viên giải quyết) | network, sysadmin |
+| `agent8` | `/workspaces/lab-b/agent` | `lab-b` (Chuyên viên giải quyết) | network, software |
+| `coordinator2` | `/workspaces/lab-b/coordinator` | `lab-b` (Điều phối viên) | |
+| `admin1` | Realm role `platform-admin` | Quản trị hệ thống (Toàn cục, không thuộc workspace) | |
+| `superadmin` | Cả 3 vai trò ở `lab-a`, `lab-b` + `platform-admin` | Tài khoản thử nghiệm đầy đủ quyền; vẫn tuân thủ quy tắc tách quyền (không tự xử lý ticket mình tạo) | Mọi tổ ở `lab-a`, `lab-b` |
+
+Loại ticket → tổ: Phần cứng → `hardware`, Mạng → `network`, Phần mềm → `software`, Tài khoản → `sysadmin`; loại Khác không có tổ, điều phối viên chọn trong mọi kỹ thuật viên.
+
+**Ca trực:** kỹ thuật viên đăng ký ô (ngày × ca Sáng/Chiều trong Cài đặt) ở trang **Ca trực**, trước giờ bắt đầu ca đầu tiên của ngày đó (mặc định 07:00). Trong ca đã đăng ký thì tự online, ngoài ca tự nghỉ; tắt trực là nghỉ đột xuất. Điều phối viên xem họ tên mọi người theo từng ô, đăng ký hộ (tới hết ca) và duyệt. Người làm **Hành chính** (kỹ thuật viên tự chọn *Hình thức* trên trang Ca trực) không cần đăng ký: tự trực mọi ca T2–T6, nghỉ ngày lễ. Ngày lễ Việt Nam, cho đăng ký T7/CN/ngày lễ và bắt buộc duyệt nằm ở **Cài đặt → Ca trực và ngày lễ**; ngày lễ dùng chung cho hạn SLA và hiện ghi chú trên lịch (ngày ghi "dự kiến" cần kiểm tra theo thông báo chính thức hằng năm). Theo ca mà chưa đăng ký thì không được đề xuất nhận việc: chạy `.\dx schedule` để có lịch mẫu (agent1, agent3, agent6 làm hành chính).
 
 > [!TIP]
 > Existing realm: migrate through the Admin API/console; preserve user IDs and shared data.

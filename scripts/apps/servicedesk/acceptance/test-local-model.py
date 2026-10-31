@@ -134,7 +134,7 @@ def main():
         for line in (ROOT / ".env").read_text(encoding="utf-8-sig").splitlines()
         if line and not line.startswith("#") and "=" in line
     )
-    token = login("user1", config["DEMO_PASSWORD"])
+    token = login("requester1", config["DEMO_PASSWORD"])
     status_path = "/workspaces/lab-a/intelligence/status"
     require(
         request(status_path)[0] == 401, "Anonymous status must require authentication"
@@ -235,7 +235,7 @@ def main():
             request(path + "/assessment/retry", token, {})[0] == 409,
             "Completed model advice cannot be repeatedly requeued",
         )
-        foreign = login("user4", config["DEMO_PASSWORD"])
+        foreign = login("requester2", config["DEMO_PASSWORD"])
         require(
             request(path, foreign)[0] in (403, 404),
             "Cross-workspace ticket access must be denied",

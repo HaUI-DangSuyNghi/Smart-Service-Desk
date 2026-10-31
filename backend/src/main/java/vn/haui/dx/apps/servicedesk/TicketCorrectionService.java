@@ -40,6 +40,11 @@ public class TicketCorrectionService {
         this.eligibility=eligibility; this.defaults=defaults;
     }
 
+    private TicketRealtime realtime;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    void setRealtime(TicketRealtime realtime) { this.realtime = realtime; }
+
     @Transactional
     public TicketReview.View correct(String workspace, UUID id, TicketCorrection.Input input) {
         if (!humans.currentActor(workspace).hasRole("agent", "coordinator"))
@@ -48,6 +53,8 @@ public class TicketCorrectionService {
             throw CapabilityException.validation("Category or priority and a nonblank reason are required");
         var ticket = tickets.get(workspace, id);
         if (!ServiceDeskProcess.reviewed(ticket.process().processKey())) throw CapabilityException.conflict("Reviewed workflow required");
+        // Phát sau commit; sửa lỗi thì rollback, không phát
+        if (realtime != null) realtime.changed(workspace, id);
         var timeline = processes.timeline(workspace, ticket.process().processInstanceId());
         if (timeline.ended() || timeline.currentTasks().size()!=1 || !"handle".equals(timeline.currentTasks().get(0).key()))
             throw CapabilityException.conflict("Active approved handle required");

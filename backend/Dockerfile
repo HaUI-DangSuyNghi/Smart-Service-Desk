@@ -6,7 +6,9 @@ COPY backend/src src
 COPY contracts/intelligence/v1 /build/contracts/intelligence/v1
 COPY contracts/apps/servicedesk/intelligence /build/contracts/apps/servicedesk/intelligence
 COPY docs/architecture/boundary-debt.json /build/docs/architecture/boundary-debt.json
-RUN mvn -B verify
+# Mặc định chạy đủ test; build dev nhanh: --build-arg MVN_GOAL="package -DskipTests"
+ARG MVN_GOAL=verify
+RUN mvn -B ${MVN_GOAL}
 FROM eclipse-temurin:17.0.20.1_1-jre-jammy@sha256:b3054a20e1a851574cdb1692dd0db5310c647e62214a2a7abecbec1b9e3ae8f1
 WORKDIR /app
 COPY --from=build /build/backend/target/dx-platform-0.1.0-SNAPSHOT.jar app.jar

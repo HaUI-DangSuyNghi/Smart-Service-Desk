@@ -9,6 +9,11 @@ const buttonVariants = cva(
     variants: {
       variant: {
         default: "bg-primary text-primary-foreground hover:bg-primary/80",
+        info: "border-crm-tone-blue/25 bg-crm-tone-blue-soft text-crm-tone-blue hover:bg-crm-tone-blue/15 focus-visible:border-crm-tone-blue/50 focus-visible:ring-crm-tone-blue/20",
+        success:
+          "border-crm-tone-green/25 bg-crm-tone-green-soft text-crm-tone-green hover:bg-crm-tone-green/15 focus-visible:border-crm-tone-green/50 focus-visible:ring-crm-tone-green/20",
+        warning:
+          "border-crm-tone-orange/25 bg-crm-tone-orange-soft text-crm-tone-orange hover:bg-crm-tone-orange/15 focus-visible:border-crm-tone-orange/50 focus-visible:ring-crm-tone-orange/20",
         outline:
           "border-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:border-input dark:bg-input/30 dark:hover:bg-input/50",
         secondary:

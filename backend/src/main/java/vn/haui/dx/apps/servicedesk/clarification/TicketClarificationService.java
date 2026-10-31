@@ -48,6 +48,7 @@ public class TicketClarificationService {
     @Transactional
     public Result append(String workspace, UUID id, ClarificationRequest request) {
         tickets.get(workspace, id);
+        tickets.requireNotCancelled(workspace,id);
         var actor = human.currentActor(workspace);
         validate(request);
 

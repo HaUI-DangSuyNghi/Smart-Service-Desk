@@ -62,8 +62,22 @@ describe("boardActions", () => {
 
   it("ticket do chính mình tạo: không tự duyệt, không tự sửa phân loại", () => {
     const own = (state: TicketView["state"]) => ({ ...ticket(state), creator: "u" }) as TicketView;
-    expect(boardActions(own("AWAITING_REVIEW"), coordinator)).toEqual([]);
-    expect(boardActions(own("IN_PROGRESS"), coordinator)).toEqual(["reassign"]);
+    expect(boardActions(own("AWAITING_REVIEW"), coordinator)).toEqual(["edit", "cancel"]);
+    expect(boardActions(own("IN_PROGRESS"), coordinator)).toEqual(["close", "reassign"]);
+  });
+
+  it("chỉ chủ ticket có sửa/hủy trước duyệt và đóng sau duyệt ở mọi vai trò", () => {
+    for (const viewer of [requester, agent, coordinator, admin]) {
+      const own = (state: TicketView["state"]) =>
+        ({ ...ticket(state), creator: "u" }) as TicketView;
+      expect(boardActions(own("INTAKE"), viewer)).toEqual(["edit", "cancel"]);
+      expect(boardActions(own("AWAITING_REVIEW"), viewer)).toEqual(["edit", "cancel"]);
+      expect(boardActions(own("AWAITING_CONFIRMATION"), viewer)).toEqual(["close"]);
+      expect(boardActions(own("CLOSED"), viewer)).toEqual([]);
+      expect(boardActions(own("CANCELLED"), viewer)).toEqual([]);
+      expect(boardActions(ticket("AWAITING_REVIEW"), viewer)).not.toContain("edit");
+      expect(boardActions(ticket("AWAITING_CONFIRMATION"), viewer)).not.toContain("close");
+    }
   });
 
   it("chờ xác nhận, đã đóng, thiếu việc đang mở: không có mục nào", () => {

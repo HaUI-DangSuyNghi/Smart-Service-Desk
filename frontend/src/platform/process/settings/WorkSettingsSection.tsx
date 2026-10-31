@@ -1,6 +1,7 @@
 import {
   IconBell,
   IconCalendarTime,
+  IconCalendarUser,
   IconCircleCheck,
   IconHourglass,
   IconRulerMeasure,
@@ -19,6 +20,7 @@ import { Input } from "@/platform/shared/ui/input";
 import { FieldsSkeleton } from "@/platform/shared/ui/Skeleton";
 import { toast, toastError } from "@/platform/shared/ui/toast";
 import { PRIORITY_LABELS } from "../work/workLabels";
+import { HolidaysField } from "./HolidaysField";
 import { useSaveWorkSettings, useWorkSettings } from "./useWorkSettings";
 import {
   ALERT_FIELDS,
@@ -41,7 +43,15 @@ const WorkSettingsForm = ({ settings }: { settings: WorkSettings }) => {
   const save = useSaveWorkSettings();
   const form = useForm<WorkSettingsInput, unknown, WorkSettingsValues>({
     resolver: zodResolver(workSettingsSchema),
-    defaultValues: settings,
+    // Bản lưu trước khi có đăng ký ca / ngày lễ: mặc định tắt, chưa có ngày lễ
+    defaultValues: {
+      ...settings,
+      schedule: {
+        weekendRegistration: settings.schedule?.weekendRegistration ?? false,
+        approvalRequired: settings.schedule?.approvalRequired ?? false,
+        holidays: settings.schedule?.holidays ?? [],
+      },
+    },
   });
   const { errors } = form.formState;
 
@@ -89,8 +99,8 @@ const WorkSettingsForm = ({ settings }: { settings: WorkSettings }) => {
       </p>
       <FieldGroup title="Giờ làm việc" icon={IconCalendarTime}>
         <p className="text-crm-sm text-crm-text-3">
-          Dùng để tính hạn xử lý (trừ mức Khẩn cấp tính liên tục). Lịch ca của từng người xếp ở
-          trang Ca trực.
+          Dùng để tính hạn xử lý (trừ mức Khẩn cấp tính liên tục) và là các ca để kỹ thuật viên đăng
+          ký ở trang Ca trực.
         </p>
         {settings.shifts.map((shift, index) => (
           <div key={shift.name} className="grid grid-cols-1 gap-2 sm:grid-cols-3">
@@ -176,6 +186,26 @@ const WorkSettingsForm = ({ settings }: { settings: WorkSettings }) => {
           />
           Tính cả thời gian chờ bên ngoài
         </label>
+      </FieldGroup>
+
+      <FieldGroup title="Ca trực và ngày lễ" icon={IconCalendarUser}>
+        <label className="flex items-center gap-2 text-crm-text">
+          <input
+            type="checkbox"
+            className="size-4 accent-crm-accent"
+            {...form.register("schedule.weekendRegistration")}
+          />
+          Cho đăng ký Thứ 7, Chủ nhật và ngày lễ
+        </label>
+        <label className="flex items-center gap-2 text-crm-text">
+          <input
+            type="checkbox"
+            className="size-4 accent-crm-accent"
+            {...form.register("schedule.approvalRequired")}
+          />
+          Ca kỹ thuật viên tự đăng ký cần điều phối viên duyệt
+        </label>
+        <HolidaysField form={form} />
       </FieldGroup>
 
       <FieldGroup title="Cảnh báo" icon={IconBell}>

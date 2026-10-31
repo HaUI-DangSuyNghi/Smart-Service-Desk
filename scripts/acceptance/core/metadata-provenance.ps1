@@ -54,11 +54,11 @@ try {
     $password = (Get-Content -LiteralPath (Join-Path $root '.env') | Where-Object { $_ -match '^DEMO_PASSWORD=' }) -replace '^DEMO_PASSWORD=', ''
     if (!$password) { throw 'Missing local DEMO_PASSWORD; run existing setup/start first.' }
     # Identity demo users (infra/keycloak/realm-template.json):
-    # user2 = lab-a agent (may create), user1 = lab-a requester (read-only),
-    # user5 = lab-b agent (must be denied access to lab-a).
-    $agentA = Token 'user2' $password
-    $requesterA = Token 'user1' $password
-    $agentB = Token 'user5' $password
+    # agent1 = lab-a agent (may create), requester1 = lab-a requester (read-only),
+    # agent6 = lab-b agent (must be denied access to lab-a).
+    $agentA = Token 'agent1' $password
+    $requesterA = Token 'requester1' $password
+    $agentB = Token 'agent6' $password
     $password = $null
     $me = (Call 'identity' GET '/me' $agentA $null 200).body
     $sha = [Security.Cryptography.SHA256]::Create()

@@ -15,7 +15,8 @@ interface Props {
 /** Nhãn + ô nhập + dòng lỗi, dùng trong mọi form. */
 export const FormField = ({ id, label, hint, error, children }: Props) => {
   return (
-    <div className="flex flex-col gap-1">
+    // gap-2: nhãn không dính sát ô nhập
+    <div className="flex flex-col gap-2">
       {hint ? (
         <Tooltip content={hint}>
           <Label htmlFor={id} className="w-fit text-crm-sm font-normal text-crm-text-2">

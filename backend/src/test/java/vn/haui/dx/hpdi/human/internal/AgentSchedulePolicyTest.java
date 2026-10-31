@@ -33,6 +33,42 @@ class AgentSchedulePolicyTest {
         assertTrue(AgentScheduleService.project(new Schedule("agent",2,false,List.of(morning)),true,start.plusSeconds(86400)).onDuty());
     }
 
+    @Test void shiftRequiredMeansOnlineOnlyInsideAnApprovedSlot() {
+        var none=new Schedule("agent",0,false,List.of());
+        // Chưa đăng ký ô nào: nghỉ dù công tắc bật
+        assertFalse(AgentScheduleService.project(none,true,start,null,true).onDuty());
+        assertEquals("OUTSIDE_SHIFT",AgentScheduleService.project(none,true,start,null,true).reason());
+        // Trong ô đã duyệt: trực, còn lại tính tới hết ô
+        var effective=AgentScheduleService.project(none,true,start,morning,true);
+        assertTrue(effective.onDuty());
+        assertEquals(270,effective.shiftRemainingMinutes());
+        // Tắt trực (nghỉ đột xuất) thắng ô đã đăng ký
+        assertFalse(AgentScheduleService.project(none,false,start,morning,true).onDuty());
+        // Tắt shiftRequired: ô vẫn được tính, chưa có ô thì theo công tắc tay như cũ
+        assertTrue(AgentScheduleService.project(none,true,start,null,false).onDuty());
+    }
+
+    @Test void officeHoursFollowConfiguredShiftsOnWorkdaysExceptHolidays() {
+        var zone=java.time.ZoneId.of("Asia/Ho_Chi_Minh");
+        var base=vn.haui.dx.hpdi.settings.api.WorkPolicy.DEFAULTS;
+        // Thứ Năm 05/11/2026, 09:00 giờ Việt Nam: trong ca Sáng, còn 150 phút
+        var thursdayMorning=java.time.ZonedDateTime.of(2026,11,5,9,0,0,0,zone).toInstant();
+        var shift=AgentScheduleService.officeShift(base,zone,thursdayMorning);
+        assertNotNull(shift);
+        assertEquals(150,AgentScheduleService.project(new Schedule("agent",0,false,List.of()),true,thursdayMorning,shift,true)
+            .shiftRemainingMinutes());
+        // Nghỉ trưa, Thứ Bảy, ngày lễ: ngoài giờ hành chính
+        assertNull(AgentScheduleService.officeShift(base,zone,java.time.ZonedDateTime.of(2026,11,5,12,0,0,0,zone).toInstant()));
+        assertNull(AgentScheduleService.officeShift(base,zone,java.time.ZonedDateTime.of(2026,11,7,9,0,0,0,zone).toInstant()));
+        var withHoliday=new vn.haui.dx.hpdi.settings.api.WorkPolicy.Snapshot(base.version(),base.pendingLoadFactor(),
+            base.tieThresholdMinutes(),base.maxInProgress(),base.minRemainingMinutes(),base.shifts(),base.targets(),
+            base.escalateAfterRatio(),base.maxEscalatedPriority(),base.waitingExternalCounts(),base.criticalReviewAlertMinutes(),
+            base.warnRemainingRatio(),base.pendingRemindDays(),base.reopenUnclaimedMinutes(),base.autoCloseAfterDays(),
+            base.estimateMinSamples(),base.estimateWindowMonths(),base.estimateOutlierMinMinutes(),base.estimateOutlierMaxMinutes(),
+            false,false,List.of(new vn.haui.dx.hpdi.settings.api.WorkPolicy.Holiday(java.time.LocalDate.of(2026,11,5),"Lễ thử")));
+        assertNull(AgentScheduleService.officeShift(withHoliday,zone,thursdayMorning));
+    }
+
     @Test void rejectsOverlapButAllowsAdjacentAndSplitShifts() {
         var adjacent=new Shift(morning.endsAt(),morning.endsAt().plusSeconds(3600),morning.timezone());
         assertEquals(List.of(morning,adjacent),AgentScheduleService.validate(List.of(adjacent,morning)));

@@ -2,4 +2,5 @@
 export { Page } from "./Page";
 export { PageBody } from "./PageBody";
 export { PageHeader } from "./PageHeader";
+export { PageHeaderActionsProvider } from "./PageHeaderActionsContext";
 export { PageToolbar } from "./PageToolbar";

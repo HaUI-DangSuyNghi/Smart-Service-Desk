@@ -81,7 +81,7 @@ public class DuplicateCandidateProvider {
         if (enhanced) parameters.addAll(java.util.Arrays.asList(room, objectKey, room));
         parameters.add(scanLimit);
         var rows = jdbc.query(
-                "select t.id,t.creator,t.process_instance_id,t.created_at,t.title,t.description,t.context_revision "
+                "select t.id,t.creator,t.process_instance_id,t.created_at,t.title,t.description,t.context_revision,t.content_revision "
                         + "from servicedesk_ticket t "
                         + (enhanced ? "left join servicedesk_duplicate_context p on p.ticket_id=t.id and p.context_revision=t.context_revision " : "")
                         + "where t.workspace=? and t.id<>? "
@@ -92,7 +92,7 @@ public class DuplicateCandidateProvider {
                         row.getObject("id", UUID.class), row.getString("creator"),
                         row.getString("process_instance_id"), row.getTimestamp("created_at").toInstant(),
                         new TicketContextStore.TicketState(row.getObject("id", UUID.class),
-                                row.getString("title"), row.getString("description"), row.getLong("context_revision"))),
+                                row.getString("title"), row.getString("description"), row.getLong("context_revision"),row.getLong("content_revision"))),
                 parameters.toArray());
         var states = states(workspace, rows);
         var active = rows.stream().filter(row -> open(workspace, row, states.get(row.processId()))).toList();

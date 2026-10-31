@@ -40,6 +40,15 @@ interface Props {
 const BASE =
   "inline-flex size-6 shrink-0 items-center justify-center rounded-full text-crm-xs font-medium outline-none focus-visible:ring-2 focus-visible:ring-crm-focus";
 
+/** Class hình tròn + màu theo tên, cho nút tự dựng (ví dụ nút mở menu) trông như avatar. */
+export const avatarClassName = (name: string) => cn(BASE, colorOf(name));
+
+/**
+ * Màu riêng của một người (nền nhạt + chữ), tính từ họ tên nên giống nhau ở mọi nơi
+ * (avatar, chip tên trên lịch trực...) mà không cần lưu.
+ */
+export const personColorClass = (name: string) => colorOf(name);
+
 /** Hình tròn chữ cái đầu, màu theo tên (cùng tên luôn cùng màu); rê chuột hiện tên đầy đủ. */
 export const Avatar = ({ name, className, onClick, hint }: Props) => {
   const classes = cn(

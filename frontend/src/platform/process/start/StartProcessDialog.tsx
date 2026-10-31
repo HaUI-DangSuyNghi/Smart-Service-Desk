@@ -11,7 +11,6 @@ import { ChoiceCard } from "@/platform/shared/ui/ChoiceCard";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -86,18 +85,15 @@ export const StartProcessDialog = () => {
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button size="sm">
+        <Button size="sm" aria-label="Tạo yêu cầu" className="min-h-9 md:min-h-7">
           <IconPlus size={14} stroke={2} />
-          Tạo yêu cầu
+          <span className="hidden sm:inline">Tạo yêu cầu</span>
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="sm:max-w-100">
+      <DialogContent className="sm:max-w-100" aria-describedby={undefined}>
         <DialogHeader>
           <DialogTitle>Tạo yêu cầu</DialogTitle>
-          <DialogDescription>
-            Yêu cầu chạy theo quy trình đã chọn; theo dõi ở mục Yêu cầu.
-          </DialogDescription>
         </DialogHeader>
 
         <form

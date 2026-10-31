@@ -1,4 +1,4 @@
-import { createElement } from "react";
+import { createElement, lazy, Suspense } from "react";
 import type { RouteObject } from "react-router";
 import { AuditPage } from "@/platform/data/audit";
 import KnowledgeChatPage from "@/platform/intelligence/KnowledgeChatPage";
@@ -6,7 +6,7 @@ import { DashboardPage } from "@/platform/data/dashboard";
 import { KnowledgeDetailPage, KnowledgeListPage } from "@/platform/data/knowledge";
 import { CALLBACK_PATH, CallbackPage, RequireAuth } from "@/platform/human/auth";
 import { DutyPage } from "@/platform/human/duty";
-import MembersPage from "@/platform/human/members/MembersPage";
+import { NotificationsPage } from "@/platform/human/notifications";
 import ProfilePage from "@/platform/human/profile/ProfilePage";
 import { PERMISSIONS, PermissionGate, RoleGate } from "@/platform/human/workspace";
 import {
@@ -25,6 +25,9 @@ import HomePage from "../layout/HomePage";
 import NotFoundPage from "../layout/NotFoundPage";
 import SettingsPage from "../settings/SettingsPage";
 import type { AppRegistry, AppRoute } from "./registry";
+
+const DocumentationLayout = lazy(() => import("../docs/DocumentationLayout"));
+const DocumentationPage = lazy(() => import("../docs/DocumentationPage"));
 
 /** Trang có yêu cầu quyền hoặc vai trò thì bọc cổng kiểm tra; thiếu thì hiện trang 403. */
 const routeElement = (route: AppRoute) => {
@@ -48,11 +51,9 @@ const routeElement = (route: AppRoute) => {
 
 /** Trang của Tầng 2 (platform), đăng ký giống trang của app. */
 const PLATFORM_ROUTES: readonly AppRoute[] = [
-  { path: "home", component: HomePage },
   { path: "dashboard", component: DashboardPage, requiredPermissions: [PERMISSIONS.dashboardView] },
   { path: "audit", component: AuditPage, requiredPermissions: [PERMISSIONS.auditView] },
   { path: "profile", component: ProfilePage },
-  { path: "members", component: MembersPage, requiredPermissions: [PERMISSIONS.memberView] },
   { path: "inbox", component: InboxPage, requiredPermissions: [PERMISSIONS.taskHandle] },
   { path: "requests", component: MyRequestsPage, requiredPermissions: [PERMISSIONS.requestCreate] },
   // Ai xem được tiến độ do backend quyết định theo từng quy trình (người tạo, người đã xử lý...)
@@ -74,7 +75,14 @@ const PLATFORM_ROUTES: readonly AppRoute[] = [
   },
   // Cảnh báo, ca trực, sửa ước tính (plan nghiệp vụ R2–R8); việc theo hàng đợi xem ở từng app
   { path: "alerts", component: AlertsPage, requiredPermissions: [PERMISSIONS.taskHandle] },
-  { path: "duty", component: DutyPage, requiredPermissions: [PERMISSIONS.taskAssign] },
+  // Thông báo của mọi vai trò (chuông ở sidebar mở "Xem tất cả")
+  { path: "notifications", component: NotificationsPage },
+  // Kỹ thuật viên đăng ký ca của mình; điều phối viên xem tất cả, đăng ký hộ, duyệt
+  {
+    path: "duty",
+    component: DutyPage,
+    requiredPermissions: [PERMISSIONS.taskHandle, PERMISSIONS.taskAssign],
+  },
   {
     path: "estimate-requests",
     component: EstimateRequestsPage,
@@ -91,6 +99,10 @@ export const createAppRoutes = (registry: AppRegistry): RouteObject[] => {
     path: route.path,
     element: routeElement(route),
   }));
+  pages.unshift({
+    path: "home",
+    element: createElement(HomePage, { appMenu: registry.menu() }),
+  });
   // Trang tự kiểm quyền quản trị nền tảng (không phải quyền theo workspace)
   pages.push({
     path: "settings",
@@ -100,6 +112,23 @@ export const createAppRoutes = (registry: AppRegistry): RouteObject[] => {
   return [
     // Công khai
     { path: "/", element: createElement(LandingLayout) },
+    {
+      path: "/docs",
+      element: createElement(Suspense, {
+        fallback: createElement("div", {
+          role: "status",
+          "aria-label": "Đang tải tài liệu",
+          className:
+            "mx-auto mt-24 h-64 max-w-4xl rounded-xl bg-crm-subtle motion-safe:animate-pulse",
+        }),
+        children: createElement(DocumentationLayout),
+      }),
+      children: [
+        { index: true, element: createElement(DocumentationPage) },
+        { path: ":slug", element: createElement(DocumentationPage) },
+        { path: "*", element: createElement(DocumentationPage) },
+      ],
+    },
     { path: CALLBACK_PATH, element: createElement(CallbackPage) },
 
     // Cần đăng nhập

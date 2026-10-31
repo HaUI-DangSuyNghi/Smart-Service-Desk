@@ -193,7 +193,8 @@ test("coordinator releases the current revision then reviews with updated CAS", 
   await page.getByRole("button", { name: "Duyệt và giao việc", exact: true }).click();
   const review = page.getByRole("dialog");
   await review.locator('input[name="priority"][value="MEDIUM"]').check();
-  await review.getByRole("radio", { name: "Để chờ ca sau (chưa giao ai)", exact: true }).check();
+  await review.getByRole("button", { name: "Người xử lý", exact: true }).click();
+  await page.getByRole("menuitem", { name: "Để chờ ca sau (chưa giao ai)", exact: true }).click();
   await review.getByLabel("Lý do duyệt").fill("Synthetic review differs from AI");
   await review.getByRole("button", { name: "Duyệt và giao việc", exact: true }).click();
   await expect(review).toHaveCount(0);

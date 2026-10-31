@@ -92,7 +92,7 @@ def main():
         return subprocess.check_output(compose + ['exec', '-T', 'postgres', 'psql', '-U', 'core', '-d', 'core', '-Atc', query], text=True).strip()
 
     try:
-        identities = {f'user{number}': login(f'user{number}', settings['DEMO_PASSWORD']) for number in range(1, 8)}
+        identities = {name: login(name, settings['DEMO_PASSWORD']) for name in ('requester1', 'agent1', 'coordinator1', 'requester2', 'agent6', 'coordinator2', 'admin1')}
         admin = login('admin', settings['KC_ADMIN_PASSWORD'], admin=True)
         username = 'int01-' + uuid4().hex
         password = secrets.token_urlsafe(32)
@@ -105,8 +105,8 @@ def main():
         user_id = users[0]['id']
         other_requester = login(username, password)
         tickets = []
-        for workspace, roles, foreign in [('lab-a', ('user1', 'user2', 'user3'), 'user4'),
-                                           ('lab-b', ('user4', 'user5', 'user6'), 'user1')]:
+        for workspace, roles, foreign in [('lab-a', ('requester1', 'agent1', 'coordinator1'), 'requester2'),
+                                           ('lab-b', ('requester2', 'agent6', 'coordinator2'), 'requester1')]:
             title, description = 'Synthetic network support', 'Synthetic network request for integration acceptance'
             base = args.core_url + '/api/apps/servicedesk/v1/workspaces/' + workspace + '/tickets'
             owner = identities[roles[0]]
@@ -132,7 +132,7 @@ def main():
             foreign_workspace = 'lab-b' if workspace == 'lab-a' else 'lab-a'
             http('POST', route.replace('/' + workspace + '/', '/' + foreign_workspace + '/') + '/triage',
                  token=identities[foreign], expected=404)
-            http('POST', route + '/triage', token=identities['user7'], expected=403)
+            http('POST', route + '/triage', token=identities['admin1'], expected=403)
             http('POST', route + '/triage', token=owner, payload={}, expected=400)
             if workspace == 'lab-a':
                 http('POST', route + '/triage', token=other_requester, expected=404)
@@ -141,7 +141,7 @@ def main():
             assert http('GET', route, token=owner) == ticket, 'Triage or denial changed the settled ticket'
             cases.append(workspace + ':authorization-isolation-and-no-state-mutation')
             tickets.append((route, ticket, owner))
-        http('POST', args.core_url + '/internal/intelligence/v1/triage', token=identities['user1'], payload={}, expected=404)
+        http('POST', args.core_url + '/internal/intelligence/v1/triage', token=identities['requester1'], payload={}, expected=404)
         cases.append('private-python-route-not-exposed-by-gateway')
         subprocess.run(compose + ['stop', 'intelligence'], check=True, stdout=subprocess.DEVNULL)
         stopped = True
@@ -152,20 +152,20 @@ def main():
         assert before == counts(), 'Triage outage changed persisted workflow or audit state'
         assert http('GET', route, token=owner) == ticket, 'Triage outage changed the settled ticket'
         http('PUT', args.core_url + '/api/hpdi/v1/workspaces/lab-a/duty/me',
-             token=identities['user2'], payload={'onDuty': True})
-        http('POST', route + '/review', token=identities['user1'], expected=403,
+             token=identities['agent1'], payload={'onDuty': True})
+        http('POST', route + '/review', token=identities['requester1'], expected=403,
              payload={'category': 'OTHER', 'priority': 'MEDIUM', 'assignee': None, 'reason': 'Synthetic outage review'})
-        http('POST', route + '/review', token=identities['user3'],
+        http('POST', route + '/review', token=identities['coordinator1'],
              payload={'category': 'OTHER', 'priority': 'MEDIUM', 'assignee': None, 'reason': 'Synthetic outage review'})
         progress = http('GET', route + '/progress', token=owner)
         assert progress['currentTasks'][0]['key'] == 'handle'
         task_id = progress['currentTasks'][0]['id']
         task_route = (args.core_url + '/api/core/v1/workspaces/lab-a/instances/'
                       + ticket['process']['processInstanceId'] + '/tasks/' + task_id)
-        http('POST', task_route + '/claim', token=identities['user2'])
+        http('POST', task_route + '/claim', token=identities['agent1'])
         http('POST', args.core_url + '/api/hpdi/v1/workspaces/lab-a/tasks/' + task_id + '/start',
-             token=identities['user2'])
-        http('POST', task_route + '/complete', token=identities['user2'], expected=204,
+             token=identities['agent1'])
+        http('POST', task_route + '/complete', token=identities['agent1'], expected=204,
              payload={'expectedTaskKey': 'handle', 'outcome': 'resolved'})
         cases.append('real-python-outage-and-manual-workflow-completion')
     finally:

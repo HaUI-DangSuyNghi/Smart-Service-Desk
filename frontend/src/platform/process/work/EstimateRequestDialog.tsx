@@ -66,10 +66,9 @@ const EstimateRequestForm = ({ item, onDone }: FormProps) => {
   return (
     <>
       <DialogHeader>
-        <DialogTitle>Xin sửa ước tính: {item.label}</DialogTitle>
-        <DialogDescription>
-          Hiện tại {formatMinutes(item.estimate.minutes)} ({estimateBasisText(item.estimate)}).
-          Điều phối viên đồng ý thì con số mới được dùng để tính tải.
+        <DialogTitle>Xin sửa ước tính</DialogTitle>
+        <DialogDescription className="truncate font-medium text-crm-text">
+          {item.label}
         </DialogDescription>
       </DialogHeader>
 
@@ -77,8 +76,21 @@ const EstimateRequestForm = ({ item, onDone }: FormProps) => {
         id="estimate-request"
         onSubmit={handleSubmit}
         onKeyDown={submitOnEnter}
-        className="flex flex-col gap-3"
+        className="flex flex-col gap-4"
       >
+        {/* Ước tính hiện tại: nhãn trái, số phút phải */}
+        <div className="flex flex-col gap-1.5">
+          <div className="flex items-center justify-between gap-3 rounded-crm-sm bg-crm-sidebar px-3 py-2">
+            <span className="text-crm-text-2">Ước tính hiện tại</span>
+            <span className="text-right">
+              <span className="font-medium">{formatMinutes(item.estimate.minutes)}</span>
+              <span className="text-crm-text-3"> · {estimateBasisText(item.estimate)}</span>
+            </span>
+          </div>
+          <p className="leading-relaxed text-crm-text-2">
+            Điều phối viên đồng ý thì con số mới được dùng để tính tải.
+          </p>
+        </div>
         <FormField
           id="proposed-minutes"
           label="Số phút làm đề xuất"
