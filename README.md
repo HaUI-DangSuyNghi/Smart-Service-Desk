@@ -56,9 +56,9 @@ for reproduction commands, measured evidence and remaining model/review gates.
 <p align="center">
   <img src="https://img.shields.io/badge/Java-17-blue.svg" alt="Java 17" />
   <img src="https://img.shields.io/badge/Spring%20Boot-3.3-green.svg" alt="Spring Boot" />
-  <img src="https://img.shields.io/badge/Keycloak-26.0.7-red.svg" alt="Keycloak" />
+  <img src="https://img.shields.io/badge/Keycloak-26.0.8-red.svg" alt="Keycloak" />
   <img src="https://img.shields.io/badge/APISIX-3.11-orange.svg" alt="APISIX" />
-  <img src="https://img.shields.io/badge/PostgreSQL-16.6-blue.svg" alt="PostgreSQL" />
+  <img src="https://img.shields.io/badge/PostgreSQL-16.15-blue.svg" alt="PostgreSQL" />
   <img src="https://img.shields.io/badge/Docker-Compose%20v2-blue.svg" alt="Docker" />
   <img src="https://img.shields.io/badge/License-Pending%20Approval-lightgrey.svg" alt="License approval pending" />
 </p>
@@ -175,7 +175,7 @@ Các mục dưới giải thích chi tiết từng bước; lệnh dài `powersh
 
 #### Bước 1 — Chuẩn bị cấu hình riêng của máy
 
-Checkout nhánh có tính năng này (`feature/local-model-self-service` khi chưa merge).
+Use the approved release tag/SHA in a fresh clone; never switch over uncommitted work.
 Mở PowerShell tại **thư mục gốc repo đã clone**, nơi có `compose.yaml`, rồi chạy:
 
 ```powershell
@@ -271,7 +271,7 @@ xem [cấu hình phạm vi](docs/local-model.md).
 Container healthy xác nhận dịch vụ đã khởi động, chưa xác nhận key/model/quota
 ở provider hoạt động: startup không gửi lần hỏi thử tính phí.
 
-#### Làm mới realm Keycloak (`-Reset`)
+#### Existing Keycloak realms
 
 Keycloak chỉ import `dx-lab` **lần đầu**, khi realm chưa tồn tại. Máy đã chạy từ bản cũ sẽ giữ realm cũ và **không nhận** thay đổi mới trong `infra/keycloak/realm-template.json` (client `dx-web`, tài khoản, nhóm mới). Dấu hiệu: trang Keycloak báo *"Client not found"*, hoặc đăng nhập `requester1` báo sai mật khẩu.
 
@@ -375,7 +375,7 @@ Loại ticket → tổ: Phần cứng → `hardware`, Mạng → `network`, Ph�
 **Ca trực:** kỹ thuật viên đăng ký ô (ngày × ca Sáng/Chiều trong Cài đặt) ở trang **Ca trực**, trước giờ bắt đầu ca đầu tiên của ngày đó (mặc định 07:00). Trong ca đã đăng ký thì tự online, ngoài ca tự nghỉ; tắt trực là nghỉ đột xuất. Điều phối viên xem họ tên mọi người theo từng ô, đăng ký hộ (tới hết ca) và duyệt. Người làm **Hành chính** (kỹ thuật viên tự chọn *Hình thức* trên trang Ca trực) không cần đăng ký: tự trực mọi ca T2–T6, nghỉ ngày lễ. Ngày lễ Việt Nam, cho đăng ký T7/CN/ngày lễ và bắt buộc duyệt nằm ở **Cài đặt → Ca trực và ngày lễ**; ngày lễ dùng chung cho hạn SLA và hiện ghi chú trên lịch (ngày ghi "dự kiến" cần kiểm tra theo thông báo chính thức hằng năm). Theo ca mà chưa đăng ký thì không được đề xuất nhận việc: chạy `.\dx schedule` để có lịch mẫu (agent1, agent3, agent6 làm hành chính).
 
 > [!TIP]
-> **Mở rộng workspace:** Để thêm workspace hoặc role mới, chỉ cần tạo nhóm `/workspaces/<workspace>/<role>` trên giao diện Keycloak, không cần sửa đổi mã nguồn Core. Keycloak chỉ import cấu hình lần đầu khi realm chưa tồn tại; muốn nhận thay đổi mới trong template thì chạy `scripts/start.ps1 -Reset`, không xóa volume dùng chung.
+> Existing realm: migrate through the Admin API/console; preserve user IDs and shared data.
 
 ---
 
@@ -426,7 +426,7 @@ docker compose build platform   # chỉ build lại backend
 - **`No such image: dx-apisix:3.11.0-sec01`:** Chạy `docker compose build gateway`, rồi khởi động lại bằng `scripts/start.ps1`; đây là image được build từ source trong repo.
 - **Lỗi 401 Unauthorized:** Kiểm tra JWT issuer (`http://localhost:8081/realms/dx-lab`), audience (`dx-core`), thời hạn token và kết nối mạng nội bộ tới JWKS.
 - **Lỗi 403 Forbidden:** Kiểm tra phân nhóm người dùng và vai trò tương ứng với workspace đang truy cập.
-- **Keycloak báo "Client not found" / tài khoản demo không đăng nhập được:** realm cũ, chạy `scripts/start.ps1 -Reset` (xem mục *Làm mới realm Keycloak*).
+> Existing realm: migrate through the Admin API/console; preserve user IDs and shared data.
 - **Lỗi khởi động container:** Kiểm tra log bằng `docker compose logs`; tuyệt đối không tắt xác thực bảo mật để khắc phục lỗi.
 
 ---

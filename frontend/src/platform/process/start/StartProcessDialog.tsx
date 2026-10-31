@@ -29,6 +29,7 @@ const LONG_TEXT = 2000;
 const schema = z.object({
   processKey: z.string().min(1, "Chọn quy trình"),
   variables: z.record(
+    z.string(),
     z.string().trim().min(1, "Không được để trống").max(LONG_TEXT, `Tối đa ${LONG_TEXT} ký tự`),
   ),
 });
