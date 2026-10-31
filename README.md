@@ -1,518 +1,211 @@
 # Smart Service Desk
 
-## v0.1.0 - released 2026-10-31
+**Quản lý yêu cầu hỗ trợ, điều phối công việc và hỗ trợ ra quyết định bằng AI.**
 
-The existing repository is public. Preserve its real Git history; do not create a
-replacement repository or follow older history-filtering/publication proposals.
-**Authorized team-owned work is licensed under Apache-2.0; see root LICENSE.**
-[Smart Service Desk v0.1.0](https://github.com/HaUI-DangSuyNghi/Smart-Service-Desk/releases/tag/v0.1.0)
-was published on 2026-10-31 at 12:31 UTC+07; source commit
-`ba82b2fc5eb36ea309563d2d7442db95b96a7608`. The tag/source archives are unchanged.
-See the [six-criterion PoF evidence index](docs/publication/POF_EVIDENCE.md),
-[release notes](RELEASE_NOTES_v0.1.0.md), [license scope](LICENSING.md) and
-[asset manifest](docs/publication/release-distribution-status.csv). The team
-leader provided four asset-specific confirmations in merged PR #74: two direct
-author permissions and two reported HaUI permissions. School written/email/link
-evidence and any required attribution/conditions still need archiving.
-Publication does not transfer third-party ownership or clear missing evidence.
+Smart Service Desk theo dõi hành trình ticket từ lúc tiếp nhận đến khi người gửi xác nhận kết quả. Sản phẩm được xây dựng trên **kiến trúc DX-OS ba tầng**, tách nền tảng kỹ thuật dùng chung, các capability H-P-D-I và ứng dụng nghiệp vụ để dễ phát triển, bảo trì và tái sử dụng.
 
-Release baseline: the frozen v0.1.0 source, including Core / H-P-D-I,
-Service Desk, Room Request and existing Knowledge/Intelligence integrations.
-No unreviewed local changes or OCR experiments are included. Supported startup
-baseline is no-AI/manual workflow; Qwen/GPU and external-provider operation are
-optional integrations, not requirements or certified runtime modes for v0.1.0.
-Existing merged code is retained. Do not claim all AI modes have passed.
+[![Release](https://img.shields.io/badge/release-v0.1.0-2563eb)](https://github.com/HaUI-DangSuyNghi/Smart-Service-Desk/releases/tag/v0.1.0)
+[![License](https://img.shields.io/badge/license-Apache--2.0-0f766e)](LICENSE)
+[![Java](https://img.shields.io/badge/backend-Java%2017-475569)](backend/pom.xml)
 
-### Verified installation boundary (2026-10-31)
+**Đi tới:** [Tổng quan](#tổng-quan) · [Kiến trúc](#kiến-trúc-dx-os-ba-tầng) · [Quick Start](#bắt-đầu-nhanh) · [AI](#ai-và-phạm-vi-hoạt-động) · [Tài liệu](#tài-liệu-và-bằng-chứng) · [Releases](https://github.com/HaUI-DangSuyNghi/Smart-Service-Desk/releases) · [Contributing](CONTRIBUTING.md)
 
-The [final verification](docs/publication/pof/FINAL_VERIFICATION.md) records clean
-FE/BE source-build PASS and isolated direct-backend smoke/restart-persistence PASS
-with an explicit PostgreSQL 16.6 override. The released pinned PostgreSQL image
-failed startup in that harness; unmodified full Compose and browser login were
-NOT TESTED in this run. Historical CI is separate evidence, not a waiver.
+> **Bản phát hành và nhánh phát triển:** [v0.1.0](https://github.com/HaUI-DangSuyNghi/Smart-Service-Desk/releases/tag/v0.1.0) được công bố ngày **31/10/2026**, từ source commit `ba82b2fc5eb36ea309563d2d7442db95b96a7608`. Tag và source archive đã phát hành không bị sửa. `develop` tiếp tục có thay đổi sau release; không coi tính năng mới là một phần của v0.1.0. **No-AI/manual workflow** là mốc demo được hỗ trợ; các chế độ GPU, Qwen và provider bên ngoài là tích hợp tùy chọn, không được mặc định coi là đã nghiệm thu.
 
-### Minimal clean-source startup
+**Quyền sử dụng:** mã gốc nhóm có quyền cấp phép theo [Apache-2.0](LICENSE). Phần dữ liệu, model, ảnh và tài sản bên thứ ba được xét riêng trong [LICENSING.md](LICENSING.md); hai quyền tài sản HaUI mới có xác nhận do trưởng nhóm thuật lại, bằng chứng trực tiếp từ trường vẫn cần lưu trữ. Công bố release không đồng nghĩa có chứng nhận production/security. Xem [PoF evidence](docs/publication/POF_EVIDENCE.md).
 
-Use Docker Desktop/Linux containers with Compose v2. In a NEW directory only:
+## Tổng quan
+
+Ở phòng máy, khoa hoặc đơn vị vận hành CNTT, một yêu cầu hỗ trợ thường đi qua nhiều người: người gửi mô tả sự cố, điều phối viên đánh giá và phân công, kỹ thuật viên tiếp nhận xử lý, người gửi xác nhận kết quả. Khi thông tin thiếu, nhiều yêu cầu trùng hoặc thiếu dấu vết xử lý, công việc dễ bị chuyển nhầm, xử lý lặp và khó theo dõi tiến độ.
+
+**Smart Service Desk** tổ chức quy trình đó thành ticket có định danh, phân quyền theo workspace, lịch sử trạng thái và các điểm phê duyệt rõ ràng. AI hỗ trợ nhận diện ngữ nghĩa, sàng lọc thông tin thiếu, phát hiện tín hiệu trùng và gợi ý phân loại; **quyết định nghiệp vụ quan trọng vẫn được kiểm soát bởi quy tắc, quyền hệ thống và con người**.
+
+Dự án đồng thời là một hiện thực kiến trúc **DX-OS 3 tầng**: Core không biết nghiệp vụ, tầng H-P-D-I cung cấp năng lực tái sử dụng và ứng dụng chuyên ngành sở hữu chính sách riêng. `Room Request` là ứng dụng thứ hai dùng để kiểm chứng khả năng tái sử dụng, không phải một lời khẳng định rằng mọi luồng của nó đã được nghiệm thu E2E.
+
+## Năng lực nổi bật
+
+| Năng lực | Giá trị và giới hạn |
+| --- | --- |
+| **Quản lý ticket theo vòng đời** | Tiếp nhận, review, phân công, xử lý, hoàn thành, xác nhận hoặc yêu cầu làm lại; các đường đi và guard cụ thể phụ thuộc cấu hình triển khai |
+| **Multi-workspace & RBAC** | Keycloak/SSO; phân biệt requester, agent, coordinator, platform-admin; kiểm tra quyền tại server, không chỉ ẩn nút trên UI |
+| **Điều phối & tác vụ** | Flowable/BPMN, inbox, đề xuất tổ/người đang trực, ghi nhận START/PAUSE/RESUME và trạng thái công việc |
+| **AI có kiểm soát** | Phân loại, tín hiệu thiếu thông tin, gợi ý trùng lặp, hỗ trợ hỏi đáp; rule engine và cơ chế chuyển xử lý thủ công khi kết quả không đủ tin cậy |
+| **Tái sử dụng nền tảng** | Core identity, workflow, metadata, tệp và audit; H-P-D-I công bố hợp đồng để ứng dụng không phụ thuộc trực tiếp chi tiết nội bộ |
+| **Có thể kiểm thử và truy vết** | OpenAPI, source boundary checks, test và tài liệu evidence; phân biệt unit/synthetic, local integration với chứng nhận release |
+
+## Hành trình một ticket
+
+**Requester tiếp nhận/tạo yêu cầu → Coordinator review và điều phối → Support Agent xử lý → Requester xác nhận hoặc yêu cầu làm lại.**
+
+AI (nếu bật) có thể gợi ý phân loại, bổ sung ngữ cảnh hoặc nhận diện tín hiệu trùng lặp; quyết định review, phân công, hoàn thành và xác nhận vẫn chịu ràng buộc quyền, trạng thái và quy trình. Không tự đóng/gộp ticket chỉ vì model dự đoán trùng.
+
+[Sơ đồ luồng ticket — minh họa khái niệm, không phải screenshot runtime](docs/assets/ticket-flow-engineering.svg) · [Đặc tả E2E](docs/LUONG_E2E_CHINH.md) · [AI D2 admission](docs/implementation/AI_D2_DELIVERY.md)
+
+**Product preview:** chưa có bộ ảnh screenshot dashboard/ticket/workflow chụp từ runtime đã xác minh và được phân phối trong repository. README không dùng ảnh UI tạo giả làm ảnh sản phẩm.
+
+## Kiến trúc DX-OS ba tầng
+
+Một sơ đồ logic duy nhất, theo đúng **chiều phụ thuộc Tier 3 → Tier 2 → Tier 1**. Đây không phải sơ đồ Frontend–Backend–Database; runtime hạ tầng không phải tầng thứ tư.
+
+```mermaid
+flowchart TB
+    T3["TIER 3 — DOMAIN APPLICATIONS<br/>Smart Service Desk · Room Request<br/>Business APIs · BPMN · policies · app-owned data"]
+    T2["TIER 2 — H-P-D-I SHARED CAPABILITIES<br/>Human · Process · Data · Intelligence<br/>Reusable Java APIs · generic Python hdpi"]
+    T1["TIER 1 — HEADLESS CORE<br/>Identity & authorization · Workflow Engine<br/>Metadata & Files · Transactional Audit"]
+
+    T3 -->|"H-P-D-I public APIs"| T2
+    T2 -->|"Core public contracts"| T1
+```
+
+- **Tier 3 — Applications:** Smart Service Desk và Room Request sở hữu entity, rule, priority, BPMN, application API, giao diện và persistence của từng nghiệp vụ. Room Request chứng minh khả năng tái sử dụng, không đồng nghĩa mọi luồng đã được xác nhận E2E.
+- **Tier 2 — H-P-D-I:** Human, Process, Data, Intelligence cung cấp capability tái sử dụng. `intelligence/src/hdpi` là Python runtime generic T2; policy và AI profile cụ thể do app T3 sở hữu.
+- **Tier 1 — Headless Core:** định danh/authorization primitives, Flowable workflow engine, metadata, lưu tệp và kiểm toán giao dịch. Core không chứa ticket, phòng máy hay danh mục AI Service Desk.
+
+`backend/.../assembly` chỉ lắp ráp module, không phải kênh đi tắt qua strict boundary. APISIX đảm nhiệm định tuyến; Keycloak đảm nhiệm xác thực/định danh; PostgreSQL và Docker Compose là hạ tầng, không phải tầng kiến trúc mới.
+
+**Quy tắc:** T1 không phụ thuộc T2/T3; public API T2 không phụ thuộc Core; T3 chỉ dùng hợp đồng được phép, không import private adapter hay transport dưới tầng. Xem [ADR-005](docs/architecture/ADR-005-dxos-three-tier-boundary.md), [boundary map](docs/architecture/tier-boundary-map.md), [strict boundary operations](docs/architecture/STRICT_BOUNDARY_OPERATIONS.md).
+
+## Công nghệ chính
+
+| Thành phần | Công nghệ | Trách nhiệm |
+| --- | --- | --- |
+| Frontend | React 19, TypeScript, Vite 8, Tailwind CSS 4 | Giao diện theo ứng dụng và quyền |
+| Backend | Java 17, Spring Boot 3.3.13 | Core, H-P-D-I và application services |
+| Workflow | Flowable 7.1, BPMN | Tiến trình, tác vụ và lịch sử xử lý |
+| Identity & Gateway | Keycloak 26.0.8, OIDC/JWT; Apache APISIX | Xác thực, phân quyền và định tuyến |
+| Persistence | PostgreSQL, Flyway | Dữ liệu và migrations |
+| Intelligence | Python 3.12, rule engine, retrieval, model/API adapters | Gợi ý và hỗ trợ AI theo chế độ |
+| Deployment | Docker Compose v2, overlays | Build, khởi chạy và cấu hình |
+
+Version/digest chính xác phụ thuộc commit và manifest: [backend/pom.xml](backend/pom.xml), [frontend/package.json](frontend/package.json), [intelligence/pyproject.toml](intelligence/pyproject.toml), [compose.yaml](compose.yaml).
+
+## Bắt đầu nhanh
+
+**Ưu tiên workflow thủ công (No-AI) trước.** Lệnh được kiểm tra trong `scripts/setup.ps1`, `scripts/start.ps1` và `scripts/dx.ps1`; hướng dẫn bên dưới dành cho **Windows 10/11, PowerShell 5.1+, Docker Desktop ở chế độ Linux containers, Compose v2 và Git**. `./dx` trong Git Bash cũng gọi PowerShell, không phải công cụ POSIX độc lập.
+
+### A. Tải và chạy release v0.1.0
+
+Chỉ thực hiện trên **thư mục cài mới**, không reset realm hoặc đụng đến Docker volumes/database của demo đang dùng chung:
 
 ```powershell
-git clone https://github.com/HaUI-DangSuyNghi/Smart-Service-Desk.git Smart-Service-Desk-v0.1.0
-cd Smart-Service-Desk-v0.1.0
+git clone https://github.com/HaUI-DangSuyNghi/Smart-Service-Desk.git
+cd Smart-Service-Desk
 git switch --detach v0.1.0
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start.ps1 -NoAi
 ```
 
-Setup generates private `.env`/realm configuration. Never share them or run setup,
-realm resets or destructive volume commands against an existing demo installation.
-Default browser 5173, Keycloak 8081 and gateway 9080. Demo usernames use the locally
-generated DEMO_PASSWORD; no live password or API key is distributed.
+Setup tạo cấu hình `.env` và credential cục bộ, không cần cấp GPU hay API key. **Giới hạn đã công bố:** xác minh ngày 31/10 ghi nhận build FE/BE và smoke/restart-persistence trực tiếp với backend **PASS trong stack cô lập có PostgreSQL 16.6 override**. Image PostgreSQL pinned 16.15 của release thất bại trong harness đó; full Compose mặc định, APISIX và browser login **chưa được kiểm thử trong cùng lần chạy**. Xem [Final verification](docs/publication/pof/FINAL_VERIFICATION.md) trước khi coi bản cài mới là đã nghiệm thu.
 
-The Dockerfiles build from source. Native toolchain: Java 17/Maven 3.9.9,
-Node >=22.12 and Python >=3.12,<3.13. Core CI runs isolated PostgreSQL, real E2E,
-restart/restore and contract checks. CI evidence must match the final source SHA;
-optional full image-security scanning is not covered by a green functional job.
-An unusable local image cache is an environment failure, not permission to reset
-existing databases. Resolve image/runtime problems before the first installation.
+### B. Chạy nhánh phát triển
 
-### Quick demo, source build and project navigation
-
-After startup, open `http://localhost:5173` and sign in with the generated demo
-credentials. In the same workspace: create a ticket as requester, review/assign
-it with an authorized coordinator, handle it as agent, then confirm or request
-rework as requester. This manual workflow does not require an AI provider.
-Do not use real personal data or shared production credentials for the demo.
-
-Dockerfiles compile the frontend/backend and package the Python runtime from
-source. For a standalone frontend build in a fresh checkout:
+Trong checkout thử nghiệm **riêng** của `develop` (không chuyển nhánh trên bản đang vận hành hoặc có thay đổi chưa commit):
 
 ```powershell
-cd frontend
-npm ci
-npm run typecheck
-npm run lint
-npm test
-npx playwright install chromium
-npm run test:e2e
-npm run build
-```
-
-The browser suite uses stub API contracts, not real gateway acceptance. Real
-PostgreSQL/Keycloak and three-tier smoke evidence/configuration is linked in
-[PoF build evidence](docs/publication/POF_EVIDENCE.md). It uses isolated CI stacks;
-do not point test/reset scripts at an existing demo database or Azure VM.
-
-Architecture: technical Core -> reusable H-P-D-I -> applications (Service Desk /
-Room Request). React platform/app boundaries and the generic private Python
-runtime follow the same separation; see the [ownership map](docs/architecture/tier-boundary-map.md).
-[Core API](contracts/openapi/core.yaml) | [Service Desk API](contracts/openapi/servicedesk.yaml) |
-[CI runs](https://github.com/HaUI-DangSuyNghi/Smart-Service-Desk/actions) |
-[dependencies/SBOM](docs/publication/pof/README.md) | [Issues](https://github.com/HaUI-DangSuyNghi/Smart-Service-Desk/issues) |
-[CONTRIBUTING](CONTRIBUTING.md). Post-release evidence updates on main do not alter v0.1.0.
-
-<p align="center">
-  <img src="https://img.shields.io/badge/Java-17-blue.svg" alt="Java 17" />
-  <img src="https://img.shields.io/badge/Spring%20Boot-3.3-green.svg" alt="Spring Boot" />
-  <img src="https://img.shields.io/badge/Keycloak-26.0.8-red.svg" alt="Keycloak" />
-  <img src="https://img.shields.io/badge/APISIX-3.11-orange.svg" alt="APISIX" />
-  <img src="https://img.shields.io/badge/PostgreSQL-16.15-blue.svg" alt="PostgreSQL" />
-  <img src="https://img.shields.io/badge/Docker-Compose%20v2-blue.svg" alt="Docker" />
-  <img src="https://img.shields.io/badge/License-Apache--2.0-blue.svg" alt="Apache-2.0 for authorized team-owned work" />
-</p>
-
-Nền tảng headless Tier-1 dành cho DX-OS Open-Core (Smart Service Desk). Hệ thống cung cấp dịch vụ định danh tập trung, kiểm soát truy cập đa không gian làm việc (multi-workspace RBAC), động cơ quy trình nghiệp vụ BPMN (Flowable), quản lý siêu dữ liệu/tệp tin bảo mật và ghi vết kiểm toán giao dịch (transactional audit).
-
-> [!NOTE]
-> Headless Core and Service Desk Backend are implemented, including ticket APIs and a real Flowable process. Java-Python AI Triage is integrated and tested through Keycloak/APISIX. See [Ticket Foundation](docs/servicedesk-ticket-foundation.md), [application OpenAPI](contracts/openapi/servicedesk.yaml) and [integration evidence](docs/BE_POSTMERGE01.md#validation).
-> The React workspace, Service Desk lifecycle/dashboard, Room Request and Knowledge library/preview/download/chat/history UI are implemented in this main snapshot. Frontend typecheck, lint, unit and browser contracts have passing evidence on the equivalent tested source tree.
-> Supported submission startup is manual/no-AI. OCR experiments, GPU/Qwen and unaccepted cloud runtime modes are outside the v0.1.0 acceptance scope.
-> The recorded production npm audit has zero HIGH/CRITICAL findings and one MODERATE fast-uri finding. Functional acceptance is not full production-security certification; optional full image scanning is not covered by a green functional job.
-
-> **Version scope:** The v0.1.0 release and PoF records above describe the frozen tag. The expanded features and operating instructions below document active development and are not evidence of a published v0.2.0.
-
----
-
-## 📑 Mục lục
-
-- [Điểm nổi bật](#-điểm-nổi-bật)
-- [Kiến trúc hệ thống](#-kiến-trúc-hệ-thống)
-- [Khởi chạy nhanh](#-khởi-chạy-nhanh)
-- [Tài khoản mẫu & Phân quyền](#-tài-khoản-mẫu--phân-quyền)
-- [API & Hợp đồng giao tiếp](#-api--hợp-đồng-giao-tiếp)
-- [Kiểm thử & Vận hành](#-kiểm-thử--vận-hành)
-- [Cấu trúc thư mục](#-cấu-trúc-thư-mục)
-- [Tài liệu liên quan](#-tài-liệu-liên-quan)
-- [Đóng góp & Bản quyền](#-đóng-góp--bản-quyền)
-
----
-
-## ✨ Điểm nổi bật
-
-- **Xác thực & Phân quyền IAM:** Tích hợp Keycloak quản lý vai trò theo từng workspace (`/workspaces/{workspace}/{role}`). Xác thực JWT chặt chẽ (Issuer/Audience) và chuẩn hóa thông báo lỗi theo chuẩn RFC 7807 (Problem Details kèm `code` và `requestId`).
-- **Cổng kết nối API (API Gateway):** Apache APISIX chạy chế độ standalone, đảm nhiệm định tuyến và giới hạn tần suất truy cập (rate limit), bảo vệ API nội bộ và không mở công khai Admin API.
-- **Động cơ quy trình BPMN tích hợp:** Flowable Engine thực thi BPMN do ứng dụng đóng góp qua HPDI Process, hỗ trợ danh sách nhiệm vụ (inbox), tiếp nhận/xử lý độc lập (claim/complete) và tra cứu lịch sử luồng.
-- **Quản lý dữ liệu & Lưu trữ tệp an toàn:** Lưu trữ siêu dữ liệu trên PostgreSQL kèm phân trang, checksum, quyền sử dụng; hỗ trợ upload/download tệp tin private kèm kiểm tra dung lượng, loại tệp, bảo mật header tải về và liên kết kiểm toán.
-- **Kiểm toán giao dịch (Transactional Audit):** Ghi vết tự động mọi biến động dữ liệu/trạng thái qua `AuditService`, hỗ trợ chống tấn công phát lại (replay protection) và theo dõi luồng thông suốt với `X-Request-ID`.
-
----
-
-## 🏗️ Kiến trúc hệ thống
-
-```text
-Tier 3: Service Desk / Room Request
-        Business APIs, persistence, BPMN, application AI profiles
-                         |
-                         v
-Tier 2: Human / Process / Data / Intelligence public capabilities
-        Generic Python hdpi runtime + TypeScript frontend platform
-                         |
-                         v
-Tier 1: Identity / Workflow engine / Metadata / Files / Audit
-                         |
-                PostgreSQL / Keycloak / Storage
-
-assembly/DxOsApplication composes backend tiers.
-frontend/src/main.ts registers application extensions.
-APISIX routes /api/apps/*, /api/hpdi/v1/* and /api/core/v1/*.
-```
-
----
-
-## 🚀 Khởi chạy nhanh
-
-### Lệnh ngắn
-
-Tại thư mục gốc repo, gõ `.\dx` (PowerShell, cmd) hoặc `./dx` (Git Bash). Không cần cài gì thêm.
-
-```powershell
-.\dx start
-```
-
-Menu hiện ra, chọn bằng phím ↑/↓ rồi Enter. Mục **Start project** chạy trọn quy trình khởi động:
-
-1. **Kiểm máy:** tạo `.env` nếu chưa có, kiểm Docker, ổ đĩa, cổng, GPU, API key. Có lỗi thì hỏi dừng hay chạy tiếp.
-2. **Chọn chế độ AI:** giữ chế độ đã lưu, Qwen local, Qwen local + Ask AI, Qwen GPU server, API only hoặc **No AI**. Chọn No AI để chạy nghiệp vụ thủ công, không cần GPU hoặc API key.
-3. **Khởi động:** build, chạy và đợi mọi dịch vụ healthy.
-4. **Sẵn sàng:** in địa chỉ web, API, Keycloak, tài khoản demo, rồi hỏi có mở web luôn không.
-
-Các lệnh trực tiếp, không qua menu:
-
-```powershell
-.\dx launch         # quy trình khởi động đầy đủ như trên
-.\dx doctor         # kiểm máy; lỗi nào cũng kèm cách sửa
-.\dx up             # khởi động theo chế độ đã lưu, kể cả khi đã tắt AI
-.\dx down           # dừng, giữ dữ liệu
-.\dx help           # xem mọi lệnh
-```
-
-Lần đầu chạy `.\dx` (lệnh nào cũng được), dự án tự được thêm vào PATH của tài khoản. Từ terminal mở sau đó gõ thẳng `dx start` ở bất kỳ thư mục nào. Không muốn tự thêm thì đặt biến môi trường `DX_NO_PATH=1`; thêm tay bằng `.\dx install`.
-
-| Lệnh | Việc |
-| --- | --- |
-| `.\dx up model` | Phân loại bằng Qwen local (GPU) + bộ luật |
-| `.\dx up model ask` | Như trên, thêm Hỏi AI qua API |
-| `.\dx up remote` | Qwen trên máy GPU riêng qua Cloudflare Access (không cần GPU ở máy này), xem [docs/remote-model.md](docs/remote-model.md) |
-| `.\dx up api` | Phân loại và Hỏi AI đều qua API (không cần GPU) |
-| `.\dx up no-ai` | Tắt AI, tiếp nhận/duyệt/phân công thủ công; không cần GPU hoặc API key |
-| `.\dx restart` | Dừng rồi khởi động lại |
-| `.\dx ps`, `.\dx logs [service]` | Trạng thái container, xem log |
-| `.\dx realm` | Import lại realm Keycloak (`start.ps1 -Reset`) |
-| `.\dx schedule` | Tạo lịch trực mẫu tuần này + tuần sau (người trực cả tuần, người trực vài buổi) |
-| `.\dx qwen` | Khởi động lại Qwen khi thẻ AI báo "AI tạm không khả dụng" |
-| `.\dx smoke`, `.\dx check` | Kiểm thử nhanh, kiểm cấu hình Compose và CSDL |
-| `.\dx help` | Xem mọi lệnh |
-
-Các mục dưới giải thích chi tiết từng bước; lệnh dài `powershell -File scripts/...` vẫn dùng được như cũ.
-
-### Yêu cầu tiên quyết
-
-- **Hệ điều hành:** Windows 10/11 với PowerShell 5.1+ (hoặc PowerShell Core).
-- **Docker Desktop:** Thiết lập chạy Linux containers, Docker Compose v2 hỗ trợ cờ `--wait`.
-- **Mạng:** Kết nối Internet trong lần chạy đầu tiên để tải container images và thư viện Maven (Java/Maven được chứa trong container build, host không cần cài đặt).
-- **Nếu dùng Qwen local:** GPU NVIDIA truy cập được từ Docker và image chứa model do nhóm bàn giao. Chế độ chỉ dùng API không cần GPU hoặc image Qwen.
-
-### 1. Khởi chạy toàn bộ hệ thống
-
-#### Bước 1 — Chuẩn bị cấu hình riêng của máy
-
-Use the approved release tag/SHA in a fresh clone; never switch over uncommitted work.
-Mở PowerShell tại **thư mục gốc repo đã clone**, nơi có `compose.yaml`, rồi chạy:
-
-```powershell
+git switch develop
 .\dx env
-notepad .env
+.\dx doctor
+.\dx up no-ai
+.\dx ps
 ```
 
-Script tạo `.env` từ **toàn bộ `.env.example`**, giữ cả chú thích và giá trị mặc định,
-rồi sinh mật khẩu nội bộ còn trống. Với máy đã có `.env`, script chỉ thêm biến
-còn thiếu từ template; giữ nguyên mật khẩu, API key, giá trị trống có sẵn và lựa
-chọn AI đã lưu (trừ mật khẩu nội bộ bắt buộc còn trống sẽ được sinh tự động).
-Khi cập nhật source, chạy lại `setup.ps1` hoặc `start.ps1` để nhận các biến mới,
-không cần xóa `.env`. Mỗi thành viên dùng `.env` riêng, không cần sao chép file chứa
-mật khẩu/key của người khác. Không sửa `.env.example` để cấu hình máy đang chạy.
+`.\dx up no-ai` lưu `AI_MODE=disabled` cho đường nghiệp vụ thủ công. `.\dx start` mở menu tương tác, `.\dx help` liệt kê các lệnh. Dừng bằng `.\dx down`; xem log bằng `.\dx logs`. Không dùng `.\dx realm` trên dữ liệu cần bảo toàn: reset Keycloak có thể thay đổi user ID (`sub`).
 
-#### Bước 2 — Điền API để dùng “Hỏi AI”
+### C. Đăng nhập và thử quy trình
 
-Trong `.env`, điền các dòng sau nếu muốn hỏi đáp qua API:
+- Web: [http://localhost:5173](http://localhost:5173) · API Gateway: [http://localhost:9080](http://localhost:9080) · Keycloak: [http://localhost:8081](http://localhost:8081).
+- Tài khoản thực trong `infra/keycloak/realm-template.json`: `requester1`, `coordinator1`, `agent1` ở workspace `lab-a`; `requester2`, `coordinator2`, `agent6` ở `lab-b`. Mật khẩu riêng của mỗi lần setup nằm trong biến `DEMO_PASSWORD` ở `.env`, không được đưa lên Git.
+- Thử: Requester tạo ticket → Coordinator review/assign → Agent START và hoàn thành → Requester confirm/rework. Mỗi bước phải có actor và quyền tương ứng.
 
-```dotenv
-AI_API_PROVIDER=gemini
-AI_API_MODEL=model-id-cua-ban
-AI_API_KEY=key-rieng-cua-ban
-AI_API_KEY_FILE=
-AI_API_BASE_URL=
-```
+Container `healthy` không phải xác nhận toàn bộ luồng E2E, provider, model hay API quota. Khi lỗi image/runtime, kiểm log và [Demo runbook](docs/DEMO_RUNBOOK.md), **không xóa dữ liệu để “thử lại”**.
 
-Thay model/key bằng thông tin trong tài khoản của thành viên. Provider hỗ trợ
-`gemini`, `openai`, `groq`. Để trống `AI_API_BASE_URL` khi dùng API chính thức;
-endpoint tương thích khác cần HTTPS. Có thể dùng `AI_API_KEY_FILE` trỏ đến file
-key thay cho key trực tiếp; file được ưu tiên. Không đưa key vào biến `VITE_`
-hoặc commit `.env`/`.local` vào Git. Bỏ qua bước này nếu chỉ dùng bộ luật hoặc
-Qwen để phân loại.
+### D. AI là tùy chọn, không phải prerequisite
 
-#### Bước 3 — Chọn cách chạy
-
-**Không có GPU, dùng API để phân loại và hỏi đáp:**
-
-```powershell
-.\dx up api
-```
-
-**Giữ Qwen + bộ luật phân loại, dùng API để hỏi đáp:** nạp image chứa model một
-lần từ bộ bàn giao của nhóm (thay đường dẫn bằng file thực tế), rồi khởi động:
-
-```powershell
-docker load -i D:\Model\qwen-full-image.tar
-.\dx up model ask
-```
-
-Clone source không tự tải model. Nếu image có tên khác mặc định, điền
-`LOCAL_MODEL_IMAGE` trong `.env`; xem yêu cầu image/GPU ở
-[hướng dẫn model và API](docs/local-model.md).
-
-| Lệnh | Cờ của `start.ps1` | Phân loại ticket | Hỏi AI |
-| --- | --- | --- | --- |
-| `.\dx up api` | `-Api` | API + bộ luật | API |
-| `.\dx up model ask` | `-Model -AskApi` | Qwen + bộ luật | API |
-| `.\dx up model` | `-Model` | Qwen + bộ luật | Theo `AI_ASSISTANCE_MODE` đã lưu |
-
-**`.\dx up` giữ chế độ đã lưu, kể cả `AI_MODE=disabled`.** Trong menu `dx start`, chọn **No AI** nếu chỉ cần nghiệp vụ thủ công, hoặc chọn Qwen/API để dùng AI. Có thể tắt nhanh bằng `.\dx up no-ai`; lựa chọn này lưu cả `AI_MODE=disabled` và `AI_ASSISTANCE_MODE=disabled`. `-Model` một mình không
-tự bật hỏi đáp API nếu chưa cấu hình trước đó. Trong cả chế độ Qwen và API,
-model vẫn phối hợp với rule engine; không thay bộ luật bằng model.
-
-Sau khi khởi động thành công, script lưu lựa chọn vào `.env`: `AI_MODE` cho
-phân loại và `AI_ASSISTANCE_MODE` cho hỏi đáp. Các lần sau chỉ cần:
-
-```powershell
-.\dx up
-```
-
-Script tự chuẩn bị cấu hình, chọn Compose overlay, build ứng dụng và đợi các
-dịch vụ healthy. Lần đầu build hoặc warmup Qwen có thể mất vài phút.
-`docker compose up` thuần không đọc lựa chọn AI để tự chọn overlay. Mỗi máy tự sinh token
-nội bộ; chế độ phát triển `local-dev` không cần người khác cấp processing grant.
-
-#### Bước 4 — Đăng nhập và thử hỏi đáp
-
-Mở `http://localhost:5173`. Đăng nhập `requester1` để tạo ticket trong `lab-a`, hoặc
-`coordinator1` để xem gợi ý phân loại với vai trò điều phối viên. Mật khẩu nằm ở
-**`DEMO_PASSWORD` trong `.env`**; các file JSON trong `.local` là cấu hình tự sinh.
-Xem đầy đủ vai trò tại [Tài khoản mẫu & Phân quyền](#-tài-khoản-mẫu--phân-quyền).
-
-Mở ticket → **Hỏi AI** → nhập câu hỏi → **Gửi câu hỏi**. Nếu vừa đổi cấu hình,
-tải lại trang. API nhận câu hỏi và title/description của ticket người dùng được
-phép xem; câu trả lời là gợi ý từ model, chưa đối chiếu tài liệu nội bộ. Hỏi đáp
-không sửa ticket hoặc kết quả phân loại. Mặc định `LOCAL_MODEL_WORKSPACES=auto`:
-AI áp dụng trong mọi workspace người dùng có quyền truy cập, kể cả workspace tạo
-sau khi ứng dụng đã chạy. Quyền worker được chuẩn bị tự động ở lần xử lý đầu tiên,
-không cần sửa danh sách hoặc reset realm. Có thể cố ý giới hạn bằng danh sách ID;
-xem [cấu hình phạm vi](docs/local-model.md).
-
-Container healthy xác nhận dịch vụ đã khởi động, chưa xác nhận key/model/quota
-ở provider hoạt động: startup không gửi lần hỏi thử tính phí.
-
-#### Existing Keycloak realms
-
-Keycloak chỉ import `dx-lab` **lần đầu**, khi realm chưa tồn tại. Máy đã chạy từ bản cũ sẽ giữ realm cũ và **không nhận** thay đổi mới trong `infra/keycloak/realm-template.json` (client `dx-web`, tài khoản, nhóm mới). Dấu hiệu: trang Keycloak báo *"Client not found"*, hoặc đăng nhập `requester1` báo sai mật khẩu.
-
-Khởi động kèm xóa và import lại realm bằng một lệnh:
-
-```powershell
-.\dx realm
-```
-
-Stack đang chạy sẵn thì chỉ cần chạy riêng bước reset:
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/reset-keycloak-realm.ps1
-```
-
-Cần chạy `-Reset` khi template có client, nhóm hoặc thuộc tính mới (ví dụ client `dx-directory` cho danh bạ và tên hiển thị workspace). `scripts/setup.ps1` tự bổ sung biến còn thiếu (như `DIRECTORY_CLIENT_SECRET`) vào `.env` mà không đổi mật khẩu đã có.
-
-#### Quyền (`dx-permissions`)
-
-Quyền nhỏ khai báo là role của client `dx-permissions` trong `infra/keycloak/realm-template.json`: **tên tiếng Anh** dạng `đối-tượng:hành-động` (`request:create`), **mô tả tiếng Việt** ("Tạo yêu cầu") hiện trong Keycloak. Mỗi nhóm `/workspaces/{ws}/{vai trò}` được gán sẵn bộ quyền mặc định.
-
-Máy mới chỉ cần `scripts/start.ps1`: Keycloak import realm từ template nên có sẵn đủ quyền, nhóm và tài khoản quản trị. Máy đang có realm cũ (tạo trước khi có quyền) chạy **một lần** `scripts/start.ps1 -Reset` để import lại; sau đó quyền được lưu trong database của Keycloak, các lần sau chạy `scripts/start.ps1` như thường. Đổi quyền của một nhóm: Keycloak → realm `dx-lab` → **Groups** → nhóm → **Role mapping** → **Assign role** → lọc theo client → tích chọn quyền.
-
-Script sẽ: sinh lại `.local/dx-lab-realm.json` từ template → xóa realm `dx-lab` → khởi động lại Keycloak để import → kiểm tra log có dòng `Realm 'dx-lab' imported` → khởi động lại backend để nạp khóa ký mới.
-
-> [!WARNING]
-> Chỉ xóa realm `dx-lab`; realm `master` và dữ liệu PostgreSQL của core giữ nguyên. Tuy vậy user được tạo lại với **ID (`sub`) mới**, nên ticket/quy trình tạo bằng tài khoản cũ trên máy đó sẽ không còn ai xem được. Chỉ dùng cho môi trường local/demo.
-
-### 2. Kiểm tra trạng thái dịch vụ
-
-```powershell
-docker compose ps
-```
-
-| Dịch vụ | Địa chỉ truy cập | Ghi chú |
+| Chế độ | Lệnh Windows | Phụ thuộc |
 | --- | --- | --- |
-| **Giao diện web** | `http://localhost:5173` | Bản build của frontend (nginx), gọi API qua gateway |
-| **API Gateway** | `http://localhost:9080` | Điểm tiếp nhận API chính |
-| **Gateway Health** | `http://localhost:9080/health` | Kiểm tra trạng thái sẵn sàng của APISIX |
-| **Keycloak IdP** | `http://localhost:8081` | Quản trị định danh (Realm: `dx-lab`) |
-| **Backend & Database** | *Không mở port host* | Giao tiếp hoàn toàn qua mạng nội bộ Docker |
+| No-AI | `.\dx up no-ai` | Không cần GPU, model hay API key |
+| Provider API | `.\dx up api` | Model/provider/key riêng hợp lệ |
+| Qwen local | `.\dx up model` | GPU và image/model bundle có quyền sử dụng, nạp sẵn |
+| Qwen + Ask API | `.\dx up model ask` | Cả Qwen local và API |
+| Remote GPU | `.\dx up remote` | Worker, Cloudflare Access và digest hợp lệ |
 
-> [!WARNING]
-> Cần giữ trống port `5173`, `8081` và `9080` trên máy host. Thay đổi địa chỉ Keycloak đòi hỏi phải đồng bộ lại JWT issuer, realm config và healthcheck probes.
+Chọn model/API bằng `.env`; tuyệt đối không commit token hoặc đặt secret trong `VITE_*`. Clone source không tự kéo LoRA weights. Chi tiết: [Local model](docs/local-model.md) · [Remote GPU](docs/remote-model.md) · [D2 portable Docker](docs/implementation/AI_D2_PORTABLE_DOCKER_VI.md) · [Model rights](licenses/models/README.md).
 
----
+## AI và phạm vi hoạt động
 
-## 🔔 Thông báo & email
+AI của Smart Service Desk gồm nhiều năng lực **khác nhau**, không đồng nhất việc classifier trả nhãn với việc hệ thống đã có trợ lý tự động hoàn chỉnh:
 
-Mỗi lần đổi trạng thái (tạo ticket, cần bổ sung thông tin, giao việc, bắt đầu, chờ người gửi, trả việc, báo xong, xác nhận/mở lại, tự đóng, sửa ước tính, ca trực) và mỗi cảnh báo (quá hạn, khẩn cấp...) đều vào **chuông thông báo** ở đầu sidebar của người liên quan; các bước cần người nhận hành động gửi thêm **email**. Người tự làm thao tác không nhận thông báo của chính mình.
+- **Ticket intelligence:** đề xuất nhóm vấn đề, mức độ, tín hiệu rủi ro và tuyến xử lý theo profile của ứng dụng; kết quả chịu rule guard và có thể yêu cầu con người review.
+- **Context enrichment:** phát hiện ticket cần bổ sung ngữ cảnh; các cơ chế intake/review-admission bảo đảm không đẩy quyết định quá sớm khi feature flag được bật.
+- **Deduplication:** phát hiện ứng viên ticket giống nhau/cùng sự cố; tự động hợp nhất không phải hành vi mặc định. Quyết định liên kết canonical có điều kiện và do actor được phép thực hiện.
+- **Retrieval/Assistance:** hạ tầng retrieval, generation và hỏi đáp là các đường tích hợp riêng; **câu trả lời API chỉ dựa trên title/description không được gọi là RAG grounded** nếu chưa truy hồi, kiểm nguồn và cấp quyền tương ứng.
 
-Email gửi qua SMTP, cấu hình trong `.env` (không commit):
+**Độ chính xác AI cần gold set được con người review và tập holdout độc lập.** Kết quả silver/synthetic hoặc PASS trên test double chỉ chứng minh đúng phạm vi thử nghiệm, không thay thế đánh giá thực địa. Chi tiết: [Intelligence README](intelligence/README.md), [AI06 status](intelligence/docs/task/AI06/AI06_COMPLETION_STATUS.md), [ADR-011](docs/architecture/ADR-011-ai07-model-primary-rule-guarded.md) và [AI D2](docs/implementation/AI_D2_DELIVERY.md).
 
-```dotenv
-MAIL_HOST=smtp.gmail.com
-MAIL_PORT=587
-MAIL_USERNAME=dia-chi-gmail-gui@gmail.com
-MAIL_PASSWORD=mat-khau-ung-dung-16-ky-tu
-MAIL_FROM_NAME=Smart Desk App
-APP_BASE_URL=http://localhost:5173
-```
+## API và hợp đồng
 
-Gmail cần bật xác minh 2 bước rồi tạo **mật khẩu ứng dụng**. `MAIL_HOST` trống thì chỉ có thông báo trong app. Địa chỉ nhận lấy từ email của tài khoản trong Keycloak (tài khoản demo dùng `@example.com` nên không nhận được; muốn thử thì đổi email của một tài khoản trong trang quản trị Keycloak ở máy mình, không sửa vào `realm-template.json`).
+| Phạm vi | Base path | Hợp đồng |
+| --- | --- | --- |
+| Core | `/api/core/v1` | [core.yaml](contracts/openapi/core.yaml) |
+| H-P-D-I | `/api/hpdi/v1` | [HPDI OpenAPI](contracts/hpdi/openapi.yaml) |
+| Service Desk | `/api/apps/servicedesk/v1` | [servicedesk.yaml](contracts/openapi/servicedesk.yaml) |
+| Intelligence | Adapter/schema theo contract, không phải API công khai cho client tùy ý | [contracts/intelligence/v1](contracts/intelligence/v1/) |
 
-### Realtime (WebSocket)
+Hợp đồng và quyền kiểm tra theo workspace là nguồn tham chiếu tốt hơn một ví dụ endpoint rời rạc. Không gọi trực tiếp private AI transport từ trình duyệt.
 
-Thông báo mới, đổi trạng thái ticket, bình luận, hàng đợi và ca trực hiện **ngay** trên màn hình đang mở, không cần F5.
+## Kiểm thử, vận hành và bằng chứng
 
-- Đường đi: trình duyệt → `/ws` (Vite / nginx) → APISIX (route `realtime`, `enable_websocket`) → `platform:8080/ws`. Giao thức STOMP; token gửi trong frame `CONNECT`, không đặt trên URL.
-- Server chỉ báo "có thay đổi" (`{type, workspace, resource, id}`), FE tải lại qua REST nên quyền xem vẫn do API quyết định. Sự kiện chỉ phát sau khi transaction commit.
-- Kênh: `/user/queue/events` (riêng mỗi người), `/topic/workspaces/{ws}/tickets` và `/work` (agent, coordinator), `/topic/workspaces/{ws}/tickets/{id}` (ai xem được ticket). Hợp đồng: [`contracts/realtime/asyncapi.yaml`](contracts/realtime/asyncapi.yaml).
-- Mất kết nối thì FE tự nối lại (1 → 30 giây) và polling 30 giây chạy dự phòng; đang nối thì polling giãn ra 5 phút.
-- Kiểm tra: DevTools → Network → lọc **WS** → `/ws` → tab Messages thấy `CONNECTED`, `SUBSCRIBE`, `MESSAGE`.
-- Tắt: `REALTIME_ENABLED=false` trong `.env`. Origin được phép: `APP_BASE_URL`, `localhost:5173`, cộng thêm `REALTIME_ALLOWED_ORIGINS` (phân tách dấu phẩy).
-
----
-
-## 🔑 Tài khoản mẫu & Phân quyền
-
-Mật khẩu của tất cả tài khoản mẫu được sinh ngẫu nhiên tại biến `DEMO_PASSWORD` trong file `.env`. Mật khẩu tài khoản admin Keycloak được lưu tại `KC_ADMIN_PASSWORD`. Không có mật khẩu tĩnh lưu trong mã nguồn.
-
-| Tài khoản | Phân quyền (Keycloak Group) | Không gian làm việc (Workspace) | Chuyên môn (`/support-groups/{ws}/...`) |
-| --- | --- | --- | --- |
-| `requester1` | `/workspaces/lab-a/requester` | `lab-a` (Người gửi yêu cầu) | |
-| `agent1` | `/workspaces/lab-a/agent` | `lab-a` (Chuyên viên giải quyết) | hardware, network |
-| `agent2` | `/workspaces/lab-a/agent` | `lab-a` (Chuyên viên giải quyết) | hardware |
-| `agent3` | `/workspaces/lab-a/agent` | `lab-a` (Chuyên viên giải quyết) | software, sysadmin |
-| `agent4` | `/workspaces/lab-a/agent` | `lab-a` (Chuyên viên giải quyết) | network, sysadmin |
-| `agent5` | `/workspaces/lab-a/agent` | `lab-a` (Chuyên viên giải quyết) | hardware, software |
-| `coordinator1` | `/workspaces/lab-a/coordinator` | `lab-a` (Điều phối viên) | |
-| `requester2` | `/workspaces/lab-b/requester` | `lab-b` (Người gửi yêu cầu) | |
-| `agent6` | `/workspaces/lab-b/agent` | `lab-b` (Chuyên viên giải quyết) | hardware, software |
-| `agent7` | `/workspaces/lab-b/agent` | `lab-b` (Chuyên viên giải quyết) | network, sysadmin |
-| `agent8` | `/workspaces/lab-b/agent` | `lab-b` (Chuyên viên giải quyết) | network, software |
-| `coordinator2` | `/workspaces/lab-b/coordinator` | `lab-b` (Điều phối viên) | |
-| `admin1` | Realm role `platform-admin` | Quản trị hệ thống (Toàn cục, không thuộc workspace) | |
-| `superadmin` | Cả 3 vai trò ở `lab-a`, `lab-b` + `platform-admin` | Tài khoản thử nghiệm đầy đủ quyền; vẫn tuân thủ quy tắc tách quyền (không tự xử lý ticket mình tạo) | Mọi tổ ở `lab-a`, `lab-b` |
-
-Loại ticket → tổ: Phần cứng → `hardware`, Mạng → `network`, Phần mềm → `software`, Tài khoản → `sysadmin`; loại Khác không có tổ, điều phối viên chọn trong mọi kỹ thuật viên.
-
-**Ca trực:** kỹ thuật viên đăng ký ô (ngày × ca Sáng/Chiều trong Cài đặt) ở trang **Ca trực**, trước giờ bắt đầu ca đầu tiên của ngày đó (mặc định 07:00). Trong ca đã đăng ký thì tự online, ngoài ca tự nghỉ; tắt trực là nghỉ đột xuất. Điều phối viên xem họ tên mọi người theo từng ô, đăng ký hộ (tới hết ca) và duyệt. Người làm **Hành chính** (kỹ thuật viên tự chọn *Hình thức* trên trang Ca trực) không cần đăng ký: tự trực mọi ca T2–T6, nghỉ ngày lễ. Ngày lễ Việt Nam, cho đăng ký T7/CN/ngày lễ và bắt buộc duyệt nằm ở **Cài đặt → Ca trực và ngày lễ**; ngày lễ dùng chung cho hạn SLA và hiện ghi chú trên lịch (ngày ghi "dự kiến" cần kiểm tra theo thông báo chính thức hằng năm). Theo ca mà chưa đăng ký thì không được đề xuất nhận việc: chạy `.\dx schedule` để có lịch mẫu (agent1, agent3, agent6 làm hành chính).
-
-> [!TIP]
-> Existing realm: migrate through the Admin API/console; preserve user IDs and shared data.
-
----
-
-## 🔌 API & Hợp đồng giao tiếp
-
-- **Tài liệu OpenAPI Spec:** Tra cứu chi tiết tại [`contracts/openapi/core.yaml`](contracts/openapi/core.yaml).
-- **Đường dẫn gốc:** `/api/core/v1` (Core), `/api/hpdi/v1` (capabilities), `/api/apps/<app>/v1` (applications)
-- **Các nhóm endpoint tiêu biểu:**
-  - `GET /api/core/v1/me`: Trả về danh tính người dùng và danh sách nhóm/workspace trực thuộc.
-  - `GET /api/hpdi/v1/workspaces`: Workspace của tôi kèm tên hiển thị và vai trò.
-  - `GET /api/hpdi/v1/workspaces/{workspace}/members`: Danh bạ thành viên workspace (đọc từ Keycloak qua service account `dx-directory`, chỉ có quyền xem).
-  - `GET /api/hpdi/v1/workspaces/{workspace}/knowledge`: Knowledge Hub, tài liệu văn bản kèm tên người tạo.
-  - `POST /api/core/v1/workspaces/{workspace}/processes`: Khởi tạo quy trình xử lý công việc.
-  - `GET /api/core/v1/workspaces/{workspace}/tasks`: Lấy hộp thư nhiệm vụ (inbox) theo quyền hạn.
-  - `POST /api/core/v1/workspaces/{workspace}/tasks/{taskId}/claim`: Nhận quyền xử lý nhiệm vụ.
-  - `POST /api/core/v1/workspaces/{workspace}/tasks/{taskId}/complete`: Hoàn thành nhiệm vụ kèm dữ liệu đầu ra.
-  - `GET /api/core/v1/workspaces/{workspace}/audit`: Tra cứu nhật ký kiểm toán (dành cho `coordinator` và `platform-admin`).
-  - `POST /api/core/v1/workspaces/{workspace}/files`: Tải lên tệp tin mã hóa/bảo mật.
-
----
-
-## 🧪 Kiểm thử & Vận hành
-
-### Chạy kiểm thử tự động (Smoke Test)
-Thực thi kiểm thử tích hợp toàn diện thông qua Keycloak, APISIX, PostgreSQL và Flowable:
+Lệnh kiểm tra sẵn có trên **checkout và môi trường thử nghiệm riêng**:
 
 ```powershell
+.\dx check
 .\dx smoke
+python scripts/check-tier-boundaries.py
+mvn -f backend/pom.xml verify
+npm ci --prefix frontend
+npm run typecheck --prefix frontend
+npm run lint --prefix frontend
+npm run test --prefix frontend
+npm run build --prefix frontend
 ```
 
-### Các lệnh vận hành thông dụng
+Playwright: tại `frontend/`, chạy `npx playwright install chromium` rồi `npm run test:e2e`. Test browser này dựa trên stub API contract, không thay thế nghiệm thu qua Keycloak/APISIX thật. Backend integration cần Docker/database phù hợp; không hướng các lệnh reset/test vào môi trường dùng chung.
 
-```powershell
-.\dx check              # cấu hình Compose + kiểm CSDL PostgreSQL
-.\dx ps                 # trạng thái container
-.\dx logs               # log platform, keycloak, gateway (hoặc: .\dx logs platform)
-.\dx down               # dừng toàn bộ, kể cả service AI, giữ dữ liệu volumes
-.\dx up                 # khởi động lại với chế độ AI đã lưu trong .env
-docker compose build platform   # chỉ build lại backend
-```
+**Phân biệt bằng chứng và giới hạn:** [v0.1.0 PoF index](docs/publication/POF_EVIDENCE.md) và [Final verification](docs/publication/pof/FINAL_VERIFICATION.md) ghi cụ thể bản nguồn, phạm vi PASS và những hạng mục chưa xác minh. [GitHub Actions](https://github.com/HaUI-DangSuyNghi/Smart-Service-Desk/actions) cung cấp trạng thái hosted theo commit; local PASS **không tự động là hosted approval**. Không khẳng định “production-ready”, E2E sạch hay quyền phân phối đầy đủ từ mã nguồn tồn tại.
 
-### Xử lý sự cố thường gặp (Troubleshooting)
+Troubleshooting: `401` → token/issuer/audience; `403` → role/workspace; AI `503/504` → provider/key/quota/model digest và log không chứa secret. Không reset realm chỉ để xử lý lỗi đăng nhập; hãy xem [runbook](docs/DEMO_RUNBOOK.md).
 
-- **Lỗi kết nối Docker:** Khởi động Docker Desktop trước khi chạy lệnh.
-- **“Hỏi AI” chưa bật:** Điền provider/model/key vào `.env`, chạy `scripts/start.ps1 -Api` hoặc `scripts/start.ps1 -Model -AskApi`, rồi tải lại trang. Chỉ bật bộ luật không bật hỏi đáp.
-- **Hỏi đáp trả 503/504:** Kiểm tra key, quyền sử dụng model, hạn mức và kết nối provider; xem log bằng `docker logs --tail 50 dx-platform-intelligence-api-1` (tên project mặc định). Không gửi key khi chia sẻ lỗi.
-- **Không có image Qwen / GPU không sẵn sàng:** Nạp image chứa model từ bộ bàn giao và kiểm tra GPU Docker, hoặc dùng `scripts/start.ps1 -Api` để chạy bằng API mà không cần Qwen.
-- **`No such image: dx-apisix:3.11.0-sec01`:** Chạy `docker compose build gateway`, rồi khởi động lại bằng `scripts/start.ps1`; đây là image được build từ source trong repo.
-- **Lỗi 401 Unauthorized:** Kiểm tra JWT issuer (`http://localhost:8081/realms/dx-lab`), audience (`dx-core`), thời hạn token và kết nối mạng nội bộ tới JWKS.
-- **Lỗi 403 Forbidden:** Kiểm tra phân nhóm người dùng và vai trò tương ứng với workspace đang truy cập.
-> Existing realm: migrate through the Admin API/console; preserve user IDs and shared data.
-- **Lỗi khởi động container:** Kiểm tra log bằng `docker compose logs`; tuyệt đối không tắt xác thực bảo mật để khắc phục lỗi.
-
----
-
-## 📂 Cấu trúc thư mục
+## Cấu trúc repository
 
 ```text
-backend/src/main/java/vn/haui/dx/
-├── core/                       # Tier 1: technical mechanisms and public APIs
-├── hpdi/                       # Tier 2: Human, Process, Data, Intelligence
-├── apps/                       # Tier 3: Service Desk, Room Request, samples
-└── assembly/DxOsApplication    # Platform bootstrap
-backend/src/main/resources/
-├── apps/<app>/process/         # App-owned BPMN
-└── db/migration/               # Immutable history and forward app migrations
-intelligence/src/
-├── hdpi/                       # Generic Tier-2 Python runtime
-└── apps/<app>/intelligence/    # External Tier-3 profiles; excluded from wheel/image
-frontend/src/
-├── platform/                   # Shared TypeScript clients and extension registry
-├── apps/servicedesk/            # Application routes, clients and projections
-└── main.ts                     # Frontend composition root
-contracts/
-├── openapi/                    # Stable Core and Service Desk wire contracts
-├── hpdi/                       # Tier-2 capability contracts
-├── apps/                       # Tier-3 ownership and Room Request API
-└── intelligence/v1/            # Shared Intelligence schemas
-scripts/                        # Boundary, regression and acceptance checks
-infra/                          # Keycloak, APISIX and PostgreSQL configuration
-docs/architecture/              # ADR, ownership map and validation evidence
-compose.yaml + infra/compose/compose.triage.yaml
+Smart-Service-Desk/
+├── backend/          Java: core/, hpdi/, apps/ và assembly/
+├── frontend/         React platform/ và domain apps/
+├── intelligence/     Generic Python hdpi và app-owned profiles
+├── contracts/        OpenAPI, realtime, capability và AI schemas
+├── infra/            Keycloak, APISIX, PostgreSQL, Compose overlays
+├── scripts/          CLI, setup, acceptance và boundary checks
+├── docs/             Architecture, runbook, PoF và release evidence
+├── fixtures/         Test/evaluation data có provenance riêng
+├── licenses/         Thành phần và quyền bên thứ ba
+└── compose.yaml      Compose cơ sở
 ```
 
----
+## Tài liệu và bằng chứng
 
-## 📚 Tài liệu liên quan
+| Chủ đề | Điểm bắt đầu |
+| --- | --- |
+| Kiến trúc và strict boundary | [ADR-005](docs/architecture/ADR-005-dxos-three-tier-boundary.md) · [Boundary map](docs/architecture/tier-boundary-map.md) |
+| APIs & hợp đồng | [Core OpenAPI](contracts/openapi/core.yaml) · [HPDI OpenAPI](contracts/hpdi/openapi.yaml) · [Service Desk](contracts/openapi/servicedesk.yaml) |
+| Development / Quick Start | [Demo runbook](docs/DEMO_RUNBOOK.md) · [Core integration](docs/core-integration.md) |
+| AI runtime & triage | [Intelligence README](intelligence/README.md) · [AI D2](docs/implementation/AI_D2_DELIVERY.md) |
+| Testing & CI | [GitHub Actions](https://github.com/HaUI-DangSuyNghi/Smart-Service-Desk/actions) · [Core acceptance](docs/core-acceptance.md) |
+| Deploy / operations | [Compose overlays](infra/compose/README.md) · [Demo recovery](docs/DEMO_RECOVERY_20261028.md) |
+| Contribution & releases | [CONTRIBUTING](CONTRIBUTING.md) · [CHANGELOG](CHANGELOG.md) · [Release notes](RELEASE_NOTES_v0.1.0.md) |
+| License & provenance | [LICENSE](LICENSE) · [LICENSING](LICENSING.md) · [Dependency/SBOM evidence](docs/publication/pof/README.md) |
 
-- [Core Integration Handover](docs/core-integration.md): Ranh giới tích hợp, phạm vi xác minh và các cổng an toàn.
-- [Core Architecture](docs/core-architecture.md): Kiến trúc phân tầng, cơ chế ủy quyền và kiểm toán dữ liệu.
-- [Core Acceptance](docs/core-acceptance.md): Tiêu chí nghiệm thu chức năng, quy trình sao lưu và phục hồi.
-- [Requirements Mapping](docs/requirements-mapping.md): Đối chiếu yêu cầu kỹ thuật và quyết định kiến trúc.
-- [Dependency Licenses](docs/dependency-licenses.md): Danh mục giấy phép và nguồn gốc các thư viện sử dụng.
+## Đóng góp và giấy phép
 
----
+Nhánh `develop` là mốc tích hợp; thay đổi đi qua Pull Request và review theo [CONTRIBUTING.md](CONTRIBUTING.md). Các phiên bản đã phê duyệt được quản lý riêng trên [Releases](https://github.com/HaUI-DangSuyNghi/Smart-Service-Desk/releases); cập nhật tài liệu sau release không thay đổi tag `v0.1.0`.
 
-## 🤝 Đóng góp & Bản quyền
-
-- **Quy trình đóng góp (Branching Model):** Nhánh cơ sở phát triển là `develop`. Mọi nhánh tính năng bắt đầu từ `develop` và tạo Pull Request để review. Nhánh `main` được bảo vệ, chỉ dành cho các bản phát hành đã phê duyệt. Chi tiết xem tại [`CONTRIBUTING.md`](CONTRIBUTING.md).
-- **Bản quyền:** Xem chi tiết tại [`LICENSING.md`](LICENSING.md). Mọi hình thức công bố mã nguồn cần có sự đồng thuận từ ban quản trị dự án.
+**Apache-2.0 áp dụng cho mã gốc mà nhóm có quyền cấp phép**, theo [LICENSE](LICENSE) và [LICENSING.md](LICENSING.md). Tài liệu từ đơn vị khác, ảnh, model weights, dataset và dependency không tự được cấp lại giấy phép. [Manifest 82 tài sản](docs/publication/release-distribution-status.csv) phân biệt quyền được nhóm xác nhận, quyền tác giả trực tiếp và các quyền HaUI do trưởng nhóm báo cáo nhưng còn cần lưu chứng cứ trực tiếp. Không đưa secrets, dữ liệu cá nhân hoặc tài sản chưa rõ quyền lên PR.
