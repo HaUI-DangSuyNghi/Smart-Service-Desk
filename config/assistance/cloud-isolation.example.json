@@ -1,0 +1,7 @@
+{
+  "schemaVersion": "isolated-synthetic@0.1.0",
+  "environmentId": "REQUIRED_ISOLATED_ENVIRONMENT",
+  "catalogDigest": "REQUIRED_CATALOG_BYTE_SHA256",
+  "databasePurpose": "synthetic-only",
+  "production": false
+}

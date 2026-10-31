@@ -1,0 +1,27 @@
+{
+  "benchmarkClaim": false,
+  "holdout": "NOT_EVALUATED",
+  "recommendation": "REJECT_SECTION_POLICY",
+  "reports": {
+    "A2": {
+      "metrics": {
+        "hitAt1": 0.9166666666666666,
+        "hitAt3": 1.0,
+        "mrr": 0.9444444444444445,
+        "recallAt3": 0.9583333333333334
+      },
+      "result": "PASS"
+    },
+    "A3": {
+      "metrics": {
+        "hitAt1": 0.75,
+        "hitAt3": 1.0,
+        "mrr": 0.8611111111111112,
+        "recallAt3": 0.9583333333333334
+      },
+      "result": "FAIL"
+    }
+  },
+  "runtimePolicyUnchanged": true,
+  "schemaVersion": "0.2.0"
+}

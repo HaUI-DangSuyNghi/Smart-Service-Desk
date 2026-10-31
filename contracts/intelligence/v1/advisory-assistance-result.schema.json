@@ -1,0 +1,12 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Internal API advisory text; never verified retrieval evidence",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["contractVersion", "requestId", "answer"],
+  "properties": {
+    "contractVersion": {"const": "advisory@0.1.0"},
+    "requestId": {"type": "string", "format": "uuid"},
+    "answer": {"type": "string", "minLength": 1, "maxLength": 16000}
+  }
+}

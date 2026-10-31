@@ -1,0 +1,118 @@
+name: dx-platform
+services:
+  postgres:
+    image: postgres:16.15-bookworm@sha256:0ea6700a3b4f0ae6ce746519073558aed4d88a79d8d07622a9a644946c7319c4
+    environment:
+      POSTGRES_DB: core
+      POSTGRES_USER: core
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Run scripts/setup.ps1}
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./infra/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U core -d core"]
+      interval: 5s
+      retries: 20
+  keycloak:
+    image: quay.io/keycloak/keycloak:26.0.8@sha256:09a381c715ab0b111835b70f2905955274843a219c6f27efb348e4d9f4086858
+    command: [start-dev, --import-realm]
+    environment:
+      KC_DB: postgres
+      KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
+      KC_DB_USERNAME: core
+      KC_DB_PASSWORD: ${POSTGRES_PASSWORD:?Run scripts/setup.ps1}
+      KC_BOOTSTRAP_ADMIN_USERNAME: admin
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${KC_ADMIN_PASSWORD:?Run scripts/setup.ps1}
+      KC_HOSTNAME: http://localhost:8081
+      KC_HEALTH_ENABLED: 'true'
+    ports: ["127.0.0.1:8081:8080"]
+    volumes: ["./.local/dx-lab-realm.json:/opt/keycloak/data/import/dx-lab-realm.json:ro"]
+    depends_on:
+      postgres: {condition: service_healthy}
+    healthcheck:
+      test: [CMD-SHELL, "bash -c 'exec 3<>/dev/tcp/localhost/9000; printf \"GET /health/ready HTTP/1.0\\r\\n\\r\\n\" >&3; cat <&3 | grep -q UP'"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+  platform:
+    image: dx-platform:0.1.0
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment:
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Run scripts/setup.ps1}
+      DATABASE_URL: jdbc:postgresql://postgres:5432/core
+      DX_STORAGE_ROOT: /var/lib/dx/files
+      DX_ALLOW_UNSCANNED_UPLOAD: 'true'
+      INTELLIGENCE_TRIAGE_BASE_URL: ${INTELLIGENCE_TRIAGE_BASE_URL:-}
+      INTELLIGENCE_TRIAGE_TOKEN: ${INTELLIGENCE_TRIAGE_TOKEN:-}
+      SERVICE_DESK_ASSESSMENT_ENABLED: ${SERVICE_DESK_ASSESSMENT_ENABLED:-false}
+      SERVICE_DESK_ASSESSMENT_POLICY_BUNDLE_DIGEST: ${SERVICE_DESK_ASSESSMENT_POLICY_BUNDLE_DIGEST:-}
+      # Gợi ý ngữ cảnh: mặc định tắt; chế độ DISABLED / SHADOW / ASSISTED.
+      SERVICE_DESK_CONTEXT_ENABLED: ${SERVICE_DESK_CONTEXT_ENABLED:-false}
+      SERVICE_DESK_CONTEXT_MODE: ${SERVICE_DESK_CONTEXT_MODE:-DISABLED}
+      SERVICE_DESK_CONTEXT_POLICY_BUNDLE_DIGEST: ${SERVICE_DESK_CONTEXT_POLICY_BUNDLE_DIGEST:-}
+      SERVICE_DESK_CONTEXT_PROCESSING_RECEIPT: ${SERVICE_DESK_CONTEXT_PROCESSING_RECEIPT:-}
+      SERVICE_DESK_CONTEXT_PROCESSING_VERIFICATION_KEY: ${SERVICE_DESK_CONTEXT_PROCESSING_VERIFICATION_KEY:-}
+      SERVICE_DESK_ENRICHMENT_ENABLED: ${SERVICE_DESK_ENRICHMENT_ENABLED:-false}
+      SERVICE_DESK_INTAKE_NEW_TICKETS: ${SERVICE_DESK_INTAKE_NEW_TICKETS:-false}
+      SERVICE_DESK_INTAKE_TRUE_WAIT: ${SERVICE_DESK_INTAKE_TRUE_WAIT:-false}
+      SERVICE_DESK_CANONICAL_HUMAN_ENABLED: ${SERVICE_DESK_CANONICAL_HUMAN_ENABLED:-false}
+      SERVICE_DESK_INTAKE_TIMEOUT_SECONDS: ${SERVICE_DESK_INTAKE_TIMEOUT_SECONDS:-86400}
+      SERVICE_DESK_INTAKE_POLL_MS: ${SERVICE_DESK_INTAKE_POLL_MS:-60000}
+      SERVICE_DESK_ENRICHMENT_TIMERS_ENABLED: ${SERVICE_DESK_ENRICHMENT_TIMERS_ENABLED:-false}
+      SERVICE_DESK_ENRICHMENT_POLL_DELAY_MS: ${SERVICE_DESK_ENRICHMENT_POLL_DELAY_MS:-60000}
+      SERVICE_DESK_CONTEXTUAL_ASSESSMENT_ENABLED: ${SERVICE_DESK_CONTEXTUAL_ASSESSMENT_ENABLED:-false}
+      SERVICE_DESK_CONTEXTUAL_ASSESSMENT_POLICY_DIGEST: ${SERVICE_DESK_CONTEXTUAL_ASSESSMENT_POLICY_DIGEST:-}
+      JWT_JWKS: http://keycloak:8080/realms/dx-lab/protocol/openid-connect/certs
+      DX_DIRECTORY_URL: http://keycloak:8080
+      DX_DIRECTORY_CLIENT_SECRET: ${DIRECTORY_CLIENT_SECRET:?Run scripts/setup.ps1}
+      DX_BACKGROUND_TOKEN_URL: http://keycloak:8080/realms/dx-lab/protocol/openid-connect/token
+      DX_BACKGROUND_CLIENT_SECRET: ${BACKGROUND_CLIENT_SECRET:?Run scripts/setup.ps1}
+      SERVICE_DESK_BACKGROUND_WORKSPACES: ${SERVICE_DESK_BACKGROUND_WORKSPACES:-lab-a}
+    volumes: ["files:/var/lib/dx/files"]
+    depends_on:
+      postgres: {condition: service_healthy}
+      keycloak: {condition: service_healthy}
+    healthcheck:
+      test: [CMD-SHELL, "curl -fsS http://localhost:8080/actuator/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+  gateway:
+    image: dx-apisix:3.11.0-sec01
+    build:
+      context: .
+      dockerfile: infra/apisix/Dockerfile
+    ports: ["127.0.0.1:9080:9080"]
+    volumes:
+      - ./infra/apisix/config.yaml:/usr/local/apisix/conf/config.yaml:ro
+      - ./infra/apisix/apisix.yaml:/usr/local/apisix/conf/apisix.yaml:ro
+    depends_on:
+      platform: {condition: service_healthy}
+    healthcheck:
+      test: [CMD-SHELL, "bash -c 'exec 3<>/dev/tcp/localhost/9080; printf \"GET /health HTTP/1.0\\r\\nHost: localhost\\r\\n\\r\\n\" >&3; head -n 1 <&3 | grep -q \" 200 \"'"]
+      interval: 10s
+      timeout: 5s
+      retries: 20
+  frontend:
+    image: dx-frontend:0.1.0
+    build:
+      context: ./frontend
+      args:
+        VITE_OIDC_AUTHORITY: ${VITE_OIDC_AUTHORITY:-http://localhost:8081/realms/dx-lab}
+        VITE_OIDC_CLIENT_ID: ${VITE_OIDC_CLIENT_ID:-dx-web}
+    # Cổng 5173 vì Keycloak (client dx-web) chỉ cho redirect về 5173/9080.
+    # Muốn chạy `npm run dev` (hot reload) thì dừng service này trước: docker compose stop frontend
+    ports: ["127.0.0.1:5173:8080"]
+    depends_on:
+      gateway: {condition: service_healthy}
+    healthcheck:
+      # 127.0.0.1 chứ không localhost: trong Alpine localhost ra IPv6 (::1) còn nginx chỉ nghe IPv4
+      test: [CMD-SHELL, "wget -q --spider http://127.0.0.1:8080/ || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+volumes:
+  postgres-data:
+  files:

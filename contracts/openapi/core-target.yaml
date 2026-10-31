@@ -1,0 +1,65 @@
+# BẢN ĐÍCH – CHƯA CÀI ĐẶT. API thật đang chạy xem core.yaml.
+# Cài xong endpoint nào thì chuyển endpoint đó sang core.yaml trong cùng PR.
+# Schema dùng chung (Problem, PageMeta, Page, Size) lấy từ core.yaml.
+openapi: 3.0.3
+info:
+  title: DX-Lab Headless Core (bản đích)
+  version: 0.2.0-draft
+  description: Hợp đồng REST đích của Tầng 1. Chưa cài đặt; dùng để FE/BE làm song song.
+servers:
+  - url: http://localhost:9080/api/core/v1
+security:
+  - bearer: []
+paths:
+  /workspaces/{workspace}/instances/{id}/tasks/{taskId}/assign:
+    parameters:
+      - {$ref: 'core.yaml#/components/parameters/Workspace'}
+      - {$ref: 'core.yaml#/components/parameters/Instance'}
+      - {$ref: 'core.yaml#/components/parameters/TaskId'}
+    post:
+      operationId: assignTask
+      description: Coordinator giao task cho người khác. (P2)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [assignee]
+              properties:
+                assignee: {type: string, description: sub của người nhận}
+      responses:
+        '200':
+          description: Task đã giao
+          content:
+            application/json:
+              schema: {$ref: 'core.yaml#/components/schemas/Task'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+
+components:
+  securitySchemes:
+    bearer: {type: http, scheme: bearer, bearerFormat: JWT}
+  parameters: {}
+  # Mọi lỗi trả body Problem (code + requestId)
+  responses:
+    BadRequest:
+      description: VALIDATION_FAILED – sai định dạng, thiếu trường, có trường lạ
+      content: {application/problem+json: {schema: {$ref: 'core.yaml#/components/schemas/Problem'}}}
+    Unauthorized:
+      description: UNAUTHENTICATED – thiếu/sai/hết hạn token
+      content: {application/problem+json: {schema: {$ref: 'core.yaml#/components/schemas/Problem'}}}
+    Forbidden:
+      description: FORBIDDEN – không thuộc workspace hoặc thiếu vai trò
+      content: {application/problem+json: {schema: {$ref: 'core.yaml#/components/schemas/Problem'}}}
+    NotFound:
+      description: NOT_FOUND – không tồn tại hoặc người gọi không được biết
+      content: {application/problem+json: {schema: {$ref: 'core.yaml#/components/schemas/Problem'}}}
+    Conflict:
+      description: CONFLICT – trùng business key, task đã bị nhận, sai bước, gửi lặp
+      content: {application/problem+json: {schema: {$ref: 'core.yaml#/components/schemas/Problem'}}}
+  schemas: {}

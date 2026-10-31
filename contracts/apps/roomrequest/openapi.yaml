@@ -1,0 +1,384 @@
+openapi: 3.0.3
+info:
+  title: Room Request architecture reuse proof
+  version: 0.1.0
+security:
+- bearerAuth: []
+paths:
+  /api/apps/roomrequest/v1/workspaces/{workspace}/requests:
+    parameters:
+    - &id001
+      $ref: ../../hpdi/openapi.yaml#/components/parameters/Workspace
+    post:
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required:
+              - room
+              properties:
+                room:
+                  type: string
+                  minLength: 1
+                  maxLength: 50
+                knowledgeId:
+                  type: string
+                  format: uuid
+                  nullable: true
+      responses:
+        '201':
+          description: Application projection
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoomRequest'
+        '400':
+          $ref: ../../hpdi/openapi.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ../../hpdi/openapi.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ../../hpdi/openapi.yaml#/components/responses/Forbidden
+        '404':
+          $ref: ../../hpdi/openapi.yaml#/components/responses/NotFound
+        '409':
+          $ref: ../../hpdi/openapi.yaml#/components/responses/Conflict
+  /api/apps/roomrequest/v1/workspaces/{workspace}/requests/{id}:
+    parameters:
+    - *id001
+    - &id002
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    get:
+      responses:
+        '200':
+          description: Application projection
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoomRequest'
+        '400':
+          $ref: ../../hpdi/openapi.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ../../hpdi/openapi.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ../../hpdi/openapi.yaml#/components/responses/Forbidden
+        '404':
+          $ref: ../../hpdi/openapi.yaml#/components/responses/NotFound
+        '409':
+          $ref: ../../hpdi/openapi.yaml#/components/responses/Conflict
+  /api/apps/roomrequest/v1/workspaces/{workspace}/requests/{id}/progress:
+    parameters:
+    - *id001
+    - *id002
+    get:
+      responses:
+        '200':
+          description: Application projection
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoomProgress'
+        '400':
+          $ref: ../../hpdi/openapi.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ../../hpdi/openapi.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ../../hpdi/openapi.yaml#/components/responses/Forbidden
+        '404':
+          $ref: ../../hpdi/openapi.yaml#/components/responses/NotFound
+        '409':
+          $ref: ../../hpdi/openapi.yaml#/components/responses/Conflict
+  /api/apps/roomrequest/v1/workspaces/{workspace}/requests/{id}/suggestion:
+    parameters:
+    - *id001
+    - *id002
+    post:
+      responses:
+        '200':
+          description: Application projection
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RoomSuggestion'
+        '400':
+          $ref: ../../hpdi/openapi.yaml#/components/responses/BadRequest
+        '401':
+          $ref: ../../hpdi/openapi.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: ../../hpdi/openapi.yaml#/components/responses/Forbidden
+        '404':
+          $ref: ../../hpdi/openapi.yaml#/components/responses/NotFound
+        '409':
+          $ref: ../../hpdi/openapi.yaml#/components/responses/Conflict
+        '502':
+          description: Intelligence unavailable or invalid
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                required:
+                - code
+                - status
+                properties:
+                  code:
+                    type: string
+                  status:
+                    type: integer
+        '503':
+          description: Intelligence unavailable or invalid
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                required:
+                - code
+                - status
+                properties:
+                  code:
+                    type: string
+                  status:
+                    type: integer
+        '504':
+          description: Intelligence unavailable or invalid
+          content:
+            application/problem+json:
+              schema:
+                type: object
+                required:
+                - code
+                - status
+                properties:
+                  code:
+                    type: string
+                  status:
+                    type: integer
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    RoomRequest:
+      type: object
+      required:
+      - id
+      - workspace
+      - creator
+      - room
+      - knowledgeId
+      - process
+      properties:
+        id:
+          type: string
+          format: uuid
+        workspace:
+          type: string
+        creator:
+          type: string
+        room:
+          type: string
+        knowledgeId:
+          type: string
+          format: uuid
+          nullable: true
+        process:
+          $ref: '#/components/schemas/RoomProcessView'
+    RoomProcessView:
+      type: object
+      required:
+      - processInstanceId
+      - processKey
+      - businessKey
+      - workspace
+      properties:
+        id:
+          type: string
+        processInstanceId:
+          type: string
+        processKey:
+          type: string
+        businessKey:
+          type: string
+        workspace:
+          type: string
+    RoomProgress:
+      type: object
+      required:
+      - id
+      - ended
+      - currentTasks
+      properties:
+        id:
+          type: string
+        ended:
+          type: boolean
+        currentTasks:
+          type: array
+          items:
+            $ref: '#/components/schemas/WorkStep'
+    WorkStep:
+      type: object
+      required:
+      - id
+      - key
+      - name
+      - assignee
+      properties:
+        id:
+          type: string
+        key:
+          type: string
+        name:
+          type: string
+        assignee:
+          type: string
+          nullable: true
+    RoomSuggestion:
+      type: object
+      additionalProperties: false
+      required:
+      - contractVersion
+      - requestId
+      - profile
+      - workspaceId
+      - status
+      - result
+      - evidence
+      - explanation
+      - runtime
+      - needsReview
+      - error
+      properties:
+        contractVersion:
+          type: string
+          enum:
+          - 0.1.0
+        requestId:
+          type: string
+          minLength: 1
+        profile:
+          type: string
+          enum:
+          - room-request
+        workspaceId:
+          type: string
+          minLength: 1
+        status:
+          type: string
+          enum:
+          - SUCCESS
+          - DEGRADED
+        needsReview:
+          type: boolean
+        result:
+          type: object
+          nullable: true
+          additionalProperties: false
+          required:
+          - category
+          - priority
+          - suggestedGroup
+          properties:
+            category:
+              type: string
+              minLength: 1
+            priority:
+              type: string
+              minLength: 1
+            suggestedGroup:
+              type: string
+              minLength: 1
+        evidence:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required:
+            - type
+            - field
+            - text
+            properties:
+              type:
+                type: string
+                enum:
+                - INPUT
+              field:
+                type: string
+                enum:
+                - title
+                - description
+              text:
+                type: string
+                minLength: 1
+        explanation:
+          type: object
+          nullable: true
+          additionalProperties: false
+          required:
+          - matchedRules
+          - impact
+          - urgency
+          - reasonCode
+          - text
+          properties:
+            matchedRules:
+              type: array
+              uniqueItems: true
+              items:
+                type: string
+                minLength: 1
+            impact:
+              type: string
+              nullable: true
+            urgency:
+              type: string
+              nullable: true
+            reasonCode:
+              type: string
+              enum:
+              - CLASSIFIED
+              - ROOT_CAUSE_CONFLICT
+              - INSUFFICIENT_INFORMATION
+            text:
+              type: string
+              minLength: 1
+        runtime:
+          type: object
+          nullable: true
+          additionalProperties: false
+          required:
+          - engine
+          - profileVersion
+          properties:
+            engine:
+              type: string
+              minLength: 1
+            profileVersion:
+              type: string
+              enum:
+              - room-request@0.3.0
+            rulesVersion:
+              type: string
+              minLength: 1
+            modelVersion:
+              type: string
+              minLength: 1
+        error:
+          type: object
+          nullable: true
+          additionalProperties: false
+          required:
+          - code
+          properties:
+            code:
+              type: string
+              enum:
+              - INTELLIGENCE_UNAVAILABLE

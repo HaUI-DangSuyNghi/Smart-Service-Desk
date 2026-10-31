@@ -1,0 +1,6 @@
+# Apply after compose.api-assistance.yaml when API also classifies tickets.
+services:
+  intelligence-api:
+    networks:
+      local-model-private:
+        aliases: [intelligence-classification]

@@ -1,0 +1,274 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "cases": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "answerability": {
+            "enum": [
+              "answerable",
+              "unanswerable",
+              "conflict",
+              "ambiguous"
+            ]
+          },
+          "attackPattern": {
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "attackSurface": {
+            "enum": [
+              "none",
+              "question",
+              "evidence",
+              "format"
+            ]
+          },
+          "caseDigest": {
+            "pattern": "^[a-f0-9]{64}$",
+            "type": "string"
+          },
+          "caseId": {
+            "pattern": "^GEN-SD-[0-9]{4}$",
+            "type": "string"
+          },
+          "curationState": {
+            "enum": [
+              "STATIC_VALIDATED",
+              "AUTO_VALIDATED_DEV",
+              "HUMAN_REVIEW_PENDING"
+            ]
+          },
+          "difficulty": {
+            "enum": [
+              "easy",
+              "medium",
+              "hard"
+            ]
+          },
+          "factId": {
+            "anyOf": [
+              {
+                "maxLength": 200,
+                "minLength": 1,
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "familyId": {
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "generationSeed": {
+            "enum": [
+              20261024
+            ]
+          },
+          "language": {
+            "enum": [
+              "en",
+              "vi",
+              "vi-en",
+              "neutral"
+            ]
+          },
+          "metamorphicSiblingOf": {
+            "anyOf": [
+              {
+                "pattern": "^GEN-SD-[0-9]{4}$",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "mutationType": {
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "oracleGraph": {
+            "additionalProperties": false,
+            "properties": {
+              "contradictionPairs": {
+                "items": {
+                  "items": {
+                    "format": "uuid",
+                    "type": "string"
+                  },
+                  "maxItems": 2,
+                  "minItems": 2,
+                  "type": "array"
+                },
+                "maxItems": 3,
+                "minItems": 0,
+                "type": "array"
+              },
+              "precedence": {
+                "type": "null"
+              },
+              "requiredRelations": {
+                "items": {
+                  "maxLength": 200,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "maxItems": 3,
+                "minItems": 0,
+                "type": "array"
+              },
+              "supportingSourceIds": {
+                "items": {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                "maxItems": 3,
+                "minItems": 0,
+                "type": "array"
+              },
+              "unsupportedRelations": {
+                "items": {
+                  "maxLength": 200,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "maxItems": 3,
+                "minItems": 0,
+                "type": "array"
+              }
+            },
+            "required": [
+              "supportingSourceIds",
+              "requiredRelations",
+              "unsupportedRelations",
+              "contradictionPairs",
+              "precedence"
+            ],
+            "type": "object"
+          },
+          "oracleType": {
+            "enum": [
+              "none",
+              "symbolic_fact"
+            ]
+          },
+          "origin": {
+            "enum": [
+              "PRESERVED_V01",
+              "GENERATED_V02"
+            ]
+          },
+          "primaryAxis": {
+            "enum": [
+              "GROUNDING",
+              "REFUSAL",
+              "SECURITY",
+              "CONFLICT",
+              "VIETNAMESE",
+              "ROBUSTNESS"
+            ]
+          },
+          "risk": {
+            "enum": [
+              "normal",
+              "unsafe_excerpts",
+              "potential_secret"
+            ]
+          },
+          "sourceCount": {
+            "maximum": 10,
+            "minimum": 0,
+            "type": "integer"
+          },
+          "sourceTopology": {
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "templateId": {
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "templateVersion": {
+            "enum": [
+              "0.1.0",
+              "0.2.0"
+            ]
+          },
+          "textMode": {
+            "enum": [
+              "NFC",
+              "PRESERVE_NFD",
+              "LEGACY_BYTES"
+            ]
+          }
+        },
+        "required": [
+          "caseId",
+          "caseDigest",
+          "origin",
+          "primaryAxis",
+          "familyId",
+          "factId",
+          "templateId",
+          "templateVersion",
+          "generationSeed",
+          "language",
+          "answerability",
+          "difficulty",
+          "sourceCount",
+          "attackSurface",
+          "risk",
+          "mutationType",
+          "oracleType",
+          "sourceTopology",
+          "textMode",
+          "attackPattern",
+          "curationState",
+          "metamorphicSiblingOf",
+          "oracleGraph"
+        ],
+        "type": "object"
+      },
+      "maxItems": 400,
+      "minItems": 400,
+      "type": "array"
+    },
+    "holdoutState": {
+      "enum": [
+        "NOT_LOCKED"
+      ]
+    },
+    "humanReview": {
+      "enum": [
+        "PENDING"
+      ]
+    },
+    "rightsDecision": {
+      "enum": [
+        "PENDING"
+      ]
+    },
+    "schemaVersion": {
+      "enum": [
+        "0.2.0"
+      ]
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "rightsDecision",
+    "holdoutState",
+    "humanReview",
+    "cases"
+  ],
+  "type": "object"
+}

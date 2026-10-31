@@ -1,0 +1,195 @@
+name: AI06 synthetic v0.2 dataset
+
+on:
+  push:
+    branches: [develop]
+  pull_request:
+    branches: [develop]
+    paths:
+      - 'fixtures/intelligence/service-desk/generation/**'
+      - 'scripts/apps/servicedesk/ai06/**'
+      - 'scripts/intelligence/**'
+      - 'scripts/check-tier-boundaries.py'
+      - 'scripts/test-tier-boundaries.py'
+      - 'intelligence/**'
+      - 'contracts/intelligence/**'
+      - '.gitattributes'
+      - '.github/workflows/ai06-synthetic-v02.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ai06-v02-boundary-ownership:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version-file: intelligence/.python-version
+
+      - name: Install locked offline-test dependencies
+        run: python -m pip install -r intelligence/requirements.lock
+
+      - name: Preserve existing boundary and mutation gates
+        run: |
+          python scripts/check-tier-boundaries.py
+          python scripts/test-tier-boundaries.py
+
+      - name: Build the actual generic wheel
+        run: python -m build --no-isolation --outdir .local/ai06-v02-dist intelligence
+
+      - name: Inspect generic source, shared deltas and distribution bytes
+        run: >-
+          python scripts/apps/servicedesk/ai06/test-ai06-v02-semantic-ownership.py
+          --wheel .local/ai06-v02-dist/smart_service_intelligence-0.3.0-py3-none-any.whl
+          --output .local/ai06-synthetic-v02/ownership.json
+
+      - name: Require hostile source, resource, wheel and bypass mutations to fail
+        run: >-
+          python -m pytest
+          intelligence/tests/apps/servicedesk/generation/test_synthetic_v02_semantic_ownership.py
+          -q --tb=short
+
+      - name: Retain content-free ownership report
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ai06-v02-ownership
+          path: .local/ai06-synthetic-v02/ownership.json
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7
+
+  ai06-synthetic-v02-validation:
+    needs: ai06-v02-boundary-ownership
+    strategy:
+      matrix:
+        os: [ubuntu-24.04, windows-2022]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    env:
+      HDPI_PROFILE_ROOT: ${{ github.workspace }}/intelligence/src/apps/servicedesk/intelligence/profiles
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version-file: intelligence/.python-version
+
+      - name: Install locked dependencies
+        run: python -m pip install -r intelligence/requirements.lock
+
+      - name: Rebuild twice in disposable directories and compare canonical bytes
+        run: >-
+          python scripts/apps/servicedesk/ai06/compare-ai06-synthetic.py
+          --output .local/ai06-synthetic-v02/evidence/reproducibility.json
+
+      - name: Validate provenance, risk, quotas and declared duplicate relationships
+        run: >-
+          python scripts/apps/servicedesk/ai06/validate-ai06-synthetic.py
+          --output .local/ai06-synthetic-v02/evidence/data-quality.json
+
+      - name: Source app and generic contracts with unchanged historical controls
+        run: >-
+          python -m pytest intelligence/tests/apps/servicedesk/generation
+          intelligence/tests/cloud_integration
+          intelligence/tests/generation/test_snapshot_evidence.py
+          intelligence/tests/generation/test_generic_dataset_evaluation_contract.py
+          intelligence/tests/generation/test_generation_quality_evidence.py
+          -q --tb=short --junitxml=.local/ai06-synthetic-v02/source-tests.xml
+
+      - name: Source provisional DEV evaluation retaining safety findings
+        run: >-
+          python scripts/apps/servicedesk/ai06/run-ai06-synthetic-v02.py
+          --output .local/ai06-synthetic-v02/evidence/source.json
+
+      - name: Build and install separate generic and optional integration wheels
+        run: |
+          python -m build --no-isolation --outdir .local/ai06-v02-dist intelligence
+          python scripts/intelligence/install-built-wheel.py --dist .local/ai06-v02-dist
+          python -m build --no-isolation --outdir .local/ai06-v02-cloud-dist intelligence/integrations
+          python scripts/intelligence/install-cloud-wheel.py --dist .local/ai06-v02-cloud-dist
+
+      - name: Inspect actual shipped ownership on each operating system
+        run: >-
+          python scripts/apps/servicedesk/ai06/test-ai06-v02-semantic-ownership.py
+          --wheel .local/ai06-v02-dist/smart_service_intelligence-0.3.0-py3-none-any.whl
+          --output .local/ai06-synthetic-v02/evidence/ownership.json
+
+      - name: Installed-wheel contracts with external app-owned input
+        run: >-
+          python -I -m pytest -c scripts/intelligence/installed-pytest.ini
+          intelligence/tests/apps/servicedesk/generation
+          intelligence/tests/cloud_integration
+          intelligence/tests/generation/test_snapshot_evidence.py
+          intelligence/tests/generation/test_generic_dataset_evaluation_contract.py
+          intelligence/tests/generation/test_generation_quality_evidence.py
+          -q --tb=short --junitxml=.local/ai06-synthetic-v02/wheel-tests.xml
+
+      - name: Installed-wheel provisional DEV evaluation
+        run: >-
+          python -I scripts/apps/servicedesk/ai06/run-ai06-synthetic-v02.py --installed
+          --output .local/ai06-synthetic-v02/evidence/wheel.json
+
+      - name: Recompute trusted execution and require exact source-wheel semantics
+        run: >-
+          python -I scripts/apps/servicedesk/ai06/verify-ai06-synthetic-v02.py --installed
+          --compare-source-wheel .local/ai06-synthetic-v02/evidence/source.json
+          .local/ai06-synthetic-v02/evidence/wheel.json
+
+      - name: Retain only counts, case IDs and digests
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ai06-synthetic-v02-${{ matrix.os }}
+          path: .local/ai06-synthetic-v02/evidence/*.json
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7
+
+  ai06-synthetic-v02-cross-os:
+    needs: ai06-synthetic-v02-validation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      actions: read
+    env:
+      HDPI_PROFILE_ROOT: ${{ github.workspace }}/intelligence/src/apps/servicedesk/intelligence/profiles
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version-file: intelligence/.python-version
+
+      - name: Install the generic wheel for an independent trusted replay
+        run: |
+          python -m pip install -r intelligence/requirements.lock
+          python -m build --no-isolation --outdir .local/ai06-v02-dist intelligence
+          python scripts/intelligence/install-built-wheel.py --dist .local/ai06-v02-dist
+
+      - name: Download sanitized reports from both operating systems
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          gh run download "$RUN_ID" --name ai06-synthetic-v02-ubuntu-24.04 --dir .local/v02-linux
+          gh run download "$RUN_ID" --name ai06-synthetic-v02-windows-2022 --dir .local/v02-windows
+
+      - name: Require current-head Windows and Linux semantics to match recomputation
+        run: >-
+          python -I scripts/apps/servicedesk/ai06/verify-ai06-synthetic-v02.py --installed
+          --compare-source-wheel .local/v02-linux/wheel.json .local/v02-windows/wheel.json

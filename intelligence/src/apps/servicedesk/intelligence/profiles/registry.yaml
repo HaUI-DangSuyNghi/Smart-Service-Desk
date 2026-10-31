@@ -1,0 +1,11 @@
+registryVersion: '1'
+profiles:
+  service-desk@0.1.0:
+    file: service-desk/profile.yaml
+    executable: false
+  service-desk@0.2.0:
+    file: service-desk/versions/0.2.0/profile.yaml
+    executable: false
+  service-desk@0.3.0:
+    file: service-desk/versions/0.3.0/profile.yaml
+    executable: true

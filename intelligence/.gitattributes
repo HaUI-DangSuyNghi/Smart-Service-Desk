@@ -1,0 +1,5 @@
+*.md text eol=lf
+.gitattributes text eol=lf
+profiles/**/*.yaml text eol=lf
+profiles/**/*.md text eol=lf
+docs/**/*.md text eol=lf

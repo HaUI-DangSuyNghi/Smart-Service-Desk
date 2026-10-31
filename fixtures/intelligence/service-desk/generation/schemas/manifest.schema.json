@@ -1,0 +1,124 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "axes": {
+      "additionalProperties": {
+        "maximum": 1000000,
+        "minimum": 0,
+        "type": "integer"
+      },
+      "type": "object"
+    },
+    "baselineDigest": {
+      "pattern": "^[a-f0-9]{64}$",
+      "type": "string"
+    },
+    "caseCount": {
+      "enum": [
+        400
+      ]
+    },
+    "caseDigests": {
+      "additionalProperties": {
+        "pattern": "^[a-f0-9]{64}$",
+        "type": "string"
+      },
+      "minProperties": 1,
+      "type": "object"
+    },
+    "categories": {
+      "additionalProperties": {
+        "maximum": 1000000,
+        "minimum": 0,
+        "type": "integer"
+      },
+      "type": "object"
+    },
+    "curationDigest": {
+      "pattern": "^[a-f0-9]{64}$",
+      "type": "string"
+    },
+    "datasetDigest": {
+      "pattern": "^[a-f0-9]{64}$",
+      "type": "string"
+    },
+    "datasetRevision": {
+      "enum": [
+        "0.2.0"
+      ]
+    },
+    "generationSeed": {
+      "enum": [
+        20261024
+      ]
+    },
+    "holdoutState": {
+      "enum": [
+        "NOT_LOCKED"
+      ]
+    },
+    "inputDigests": {
+      "additionalProperties": {
+        "pattern": "^[a-f0-9]{64}$",
+        "type": "string"
+      },
+      "minProperties": 1,
+      "type": "object"
+    },
+    "namespace": {
+      "format": "uuid",
+      "type": "string"
+    },
+    "newCaseCount": {
+      "enum": [
+        348
+      ]
+    },
+    "rightsDecision": {
+      "enum": [
+        "PENDING"
+      ]
+    },
+    "schemaDigests": {
+      "additionalProperties": {
+        "pattern": "^[a-f0-9]{64}$",
+        "type": "string"
+      },
+      "minProperties": 1,
+      "type": "object"
+    },
+    "schemaVersion": {
+      "enum": [
+        "0.2.0"
+      ]
+    },
+    "toolingDigests": {
+      "additionalProperties": {
+        "pattern": "^[a-f0-9]{64}$",
+        "type": "string"
+      },
+      "minProperties": 1,
+      "type": "object"
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "datasetRevision",
+    "generationSeed",
+    "namespace",
+    "baselineDigest",
+    "datasetDigest",
+    "curationDigest",
+    "inputDigests",
+    "toolingDigests",
+    "schemaDigests",
+    "caseDigests",
+    "caseCount",
+    "newCaseCount",
+    "categories",
+    "axes",
+    "rightsDecision",
+    "holdoutState"
+  ],
+  "type": "object"
+}

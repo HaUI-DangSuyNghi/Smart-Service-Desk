@@ -1,0 +1,505 @@
+# BẢN ĐÍCH – CHƯA CÀI ĐẶT. API thật đang chạy xem openapi.yaml.
+# Theo plan nghiệp vụ ticket (R2–R8, mục 6): luật Tầng 2 dùng chung cho mọi app, không có chữ "ticket".
+# Cài xong endpoint nào thì chuyển endpoint đó sang openapi.yaml trong cùng PR.
+# Schema dùng chung (Problem, WorkItem, PageMeta, Page, Size, Workspace) lấy từ openapi.yaml.
+openapi: 3.0.3
+info:
+  title: H-P-D-I shared capability API (bản đích)
+  version: 0.2.0-draft
+  description: >-
+    Hàng đợi, trạng thái Đang làm/Đang chờ, đề xuất người, ca trực, thời gian ước tính (ET),
+    hạn xử lý (SLA), cảnh báo và cấu hình chung. App (Tầng 3) cung cấp đầu vào (tổ, ET mặc định,
+    mức ưu tiên, nhãn hiển thị) nhưng Tầng 2 không biết đó là loại yêu cầu gì.
+security:
+  - bearerAuth: []
+paths:
+  # ---------- R4: hàng đợi ----------
+  /api/hpdi/v1/workspaces/{workspace}/tasks/{id}/release:
+    $ref: 'openapi.yaml#/paths/~1api~1hpdi~1v1~1workspaces~1{workspace}~1tasks~1{id}~1release'
+
+  # ---------- R2: đề xuất người ----------
+  /api/hpdi/v1/workspaces/{workspace}/tasks/{id}/assignment-suggestion:
+    parameters:
+      - {$ref: 'openapi.yaml#/components/parameters/Workspace'}
+      - {$ref: '#/components/parameters/TaskId'}
+    get:
+      operationId: suggestAssignee
+      description: >-
+        Đề xuất người trong tổ của việc (quyền task:assign). Chỉ xét người đang trực, loại người tạo yêu cầu;
+        chọn tải thấp nhất, chênh dưới ngưỡng thì chọn người hôm nay nhận ít việc hơn rồi xoay vòng.
+        Trả cả người bị loại kèm lý do để điều phối viên thấy. Không giao việc; giao bằng API assign.
+      responses:
+        '200':
+          description: Đề xuất
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AssignmentSuggestion'}
+        '401': {$ref: 'openapi.yaml#/components/responses/Unauthorized'}
+        '403': {$ref: 'openapi.yaml#/components/responses/Forbidden'}
+        '404': {$ref: 'openapi.yaml#/components/responses/NotFound'}
+        '503': {$ref: 'openapi.yaml#/components/responses/ServiceUnavailable'}
+
+  # ---------- R2: xin sửa ET ----------
+  /api/hpdi/v1/workspaces/{workspace}/tasks/{id}/estimate-requests:
+    $ref: 'openapi.yaml#/paths/~1api~1hpdi~1v1~1workspaces~1{workspace}~1tasks~1{id}~1estimate-requests'
+
+  /api/hpdi/v1/workspaces/{workspace}/estimate-requests:
+    $ref: 'openapi.yaml#/paths/~1api~1hpdi~1v1~1workspaces~1{workspace}~1estimate-requests'
+
+  /api/hpdi/v1/workspaces/{workspace}/estimate-requests/{requestId}/decision:
+    $ref: 'openapi.yaml#/paths/~1api~1hpdi~1v1~1workspaces~1{workspace}~1estimate-requests~1{requestId}~1decision'
+
+  # ---------- R3: ca trực ----------
+  /api/hpdi/v1/workspaces/{workspace}/duty:
+    parameters:
+      - {$ref: 'openapi.yaml#/components/parameters/Workspace'}
+    get:
+      operationId: listDuty
+      description: Trạng thái trực của người xử lý trong workspace. Điều phối viên thấy tất cả; kỹ thuật viên chỉ thấy mình.
+      responses:
+        '200':
+          description: Danh sách trạng thái trực
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/DutyStatus'}
+        '401': {$ref: 'openapi.yaml#/components/responses/Unauthorized'}
+        '403': {$ref: 'openapi.yaml#/components/responses/Forbidden'}
+        '503': {$ref: 'openapi.yaml#/components/responses/ServiceUnavailable'}
+
+  /api/hpdi/v1/workspaces/{workspace}/duty/{subject}:
+    parameters:
+      - {$ref: 'openapi.yaml#/components/parameters/Workspace'}
+      - {name: subject, in: path, required: true, schema: {type: string}, description: 'subject; "me" = chính mình'}
+    put:
+      operationId: setDuty
+      description: Agents change only their own manual duty (subject or me). Coordinator changes for other agents and schedules are deferred. Off-duty never interrupts active work.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [onDuty]
+              properties:
+                onDuty: {type: boolean}
+                note: {type: string, maxLength: 500}
+      responses:
+        '200':
+          description: Trạng thái sau khi đổi
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/DutyStatus'}
+        '400': {$ref: 'openapi.yaml#/components/responses/BadRequest'}
+        '401': {$ref: 'openapi.yaml#/components/responses/Unauthorized'}
+        '403': {$ref: 'openapi.yaml#/components/responses/Forbidden'}
+        '404': {$ref: 'openapi.yaml#/components/responses/NotFound'}
+
+  # ---------- R7, R8, R11: cảnh báo ----------
+  /api/hpdi/v1/workspaces/{workspace}/alerts:
+    parameters:
+      - {$ref: 'openapi.yaml#/components/parameters/Workspace'}
+    get:
+      operationId: listAlerts
+      description: >-
+        Cảnh báo gửi cho người gọi, mới nhất trước. FE gọi định kỳ (polling); since để chỉ lấy cảnh báo mới.
+        Kỹ thuật viên nhận cảnh báo về việc mình giữ; điều phối viên nhận cảnh báo của cả workspace.
+      parameters:
+        - {name: since, in: query, required: false, schema: {type: string, format: date-time}, description: Chỉ lấy cảnh báo tạo sau mốc này}
+        - {name: unreadOnly, in: query, required: false, schema: {type: boolean, default: false}}
+        - {$ref: 'openapi.yaml#/components/parameters/Page'}
+        - {$ref: 'openapi.yaml#/components/parameters/Size'}
+      responses:
+        '200':
+          description: Một trang cảnh báo
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - {$ref: 'openapi.yaml#/components/schemas/PageMeta'}
+                  - type: object
+                    required: [items, unread]
+                    properties:
+                      unread: {type: integer, minimum: 0, description: "Tổng số chưa đọc, cho badge"}
+                      items: {type: array, items: {$ref: '#/components/schemas/Alert'}}
+        '400': {$ref: 'openapi.yaml#/components/responses/BadRequest'}
+        '401': {$ref: 'openapi.yaml#/components/responses/Unauthorized'}
+        '403': {$ref: 'openapi.yaml#/components/responses/Forbidden'}
+
+  /api/hpdi/v1/workspaces/{workspace}/alerts/{alertId}/read:
+    parameters:
+      - {$ref: 'openapi.yaml#/components/parameters/Workspace'}
+      - {name: alertId, in: path, required: true, schema: {type: string, format: uuid}}
+    post:
+      operationId: markAlertRead
+      description: Đánh dấu đã đọc; gọi lặp vẫn 204.
+      responses:
+        '204': {description: Đã đọc}
+        '401': {$ref: 'openapi.yaml#/components/responses/Unauthorized'}
+        '403': {$ref: 'openapi.yaml#/components/responses/Forbidden'}
+        '404': {$ref: 'openapi.yaml#/components/responses/NotFound'}
+
+  # ---------- Mục 6: cấu hình chung ----------
+  /api/hpdi/v1/settings/work:
+    $ref: 'openapi.yaml#/paths/~1api~1hpdi~1v1~1settings~1work'
+
+components:
+  securitySchemes:
+    bearerAuth: {type: http, scheme: bearer, bearerFormat: JWT}
+  parameters:
+    TaskId:
+      name: id
+      in: path
+      required: true
+      schema: {type: string}
+  schemas:
+    Priority:
+      type: string
+      enum: [LOW, MEDIUM, HIGH, CRITICAL]
+    WorkState:
+      type: string
+      description: 'R6. NOT_STARTED = đã giao, chưa bắt đầu; IN_PROGRESS = Đang làm; PENDING = Đang chờ (đã làm dở)'
+      enum: [NOT_STARTED, IN_PROGRESS, PENDING]
+    PendingReason:
+      type: string
+      enum: [WAITING_REQUESTER, WAITING_PARTS, WAITING_EXTERNAL, OTHER]
+    EffortSize:
+      type: string
+      description: Cỡ việc do AI phân loại (giai đoạn 3)
+      enum: [SMALL, MEDIUM, LARGE]
+    Estimate:
+      type: object
+      additionalProperties: false
+      description: R2. Backend tính; AI không trả số phút.
+      required: [minutes, basis]
+      properties:
+        minutes: {type: integer, minimum: 1}
+        basis:
+          type: string
+          description: 'COORDINATOR = điều phối viên đặt; SIMILAR_BY_SIZE = trung vị loại × ưu tiên × cỡ việc; SIMILAR = trung vị loại × ưu tiên; DEFAULT = bảng mặc định'
+          enum: [COORDINATOR, SIMILAR_BY_SIZE, SIMILAR, DEFAULT]
+        sampleSize: {type: integer, minimum: 1, nullable: true, description: Số việc đã xong dùng tính trung vị; null khi basis là COORDINATOR hoặc DEFAULT}
+        effortSize: {allOf: [{$ref: '#/components/schemas/EffortSize'}], nullable: true}
+    Sla:
+      $ref: 'openapi.yaml#/components/schemas/Sla'
+    QueueItem:
+      description: WorkItem kèm thông tin hàng đợi
+      allOf:
+        - {$ref: 'openapi.yaml#/components/schemas/WorkItem'}
+        - type: object
+          required: [label, workState, priority, basePriority, estimate, workedMinutes, remainingMinutes, reopenCount]
+          properties:
+            label: {type: string, maxLength: 200, description: Nhãn hiển thị do app cung cấp (ví dụ tiêu đề yêu cầu)}
+            workState: {$ref: '#/components/schemas/WorkState'}
+            pendingReason: {allOf: [{$ref: '#/components/schemas/PendingReason'}], nullable: true}
+            pendingNote: {type: string, nullable: true}
+            pendingSince: {type: string, format: date-time, nullable: true}
+            priority: {$ref: '#/components/schemas/Priority'}
+            basePriority: {$ref: '#/components/schemas/Priority'}
+            escalated: {type: boolean, description: priority cao hơn basePriority do chờ lâu (R5)}
+            estimate: {$ref: '#/components/schemas/Estimate'}
+            workedMinutes: {type: integer, minimum: 0, description: Tổng thời gian Đang làm}
+            remainingMinutes: {type: integer, minimum: 0, description: Phần tính vào tải theo bảng R2}
+            sla: {allOf: [{$ref: '#/components/schemas/Sla'}], nullable: true}
+            queuePosition: {type: integer, minimum: 1, nullable: true, description: Vị trí trong hàng đợi của người giữ}
+            expectedStartAt: {type: string, format: date-time, nullable: true, description: 'Dự kiến bắt đầu (R4); null nếu đã bắt đầu'}
+            suggestStartNow: {type: boolean, description: Người giữ không có việc Đang làm và đây là việc đầu hàng}
+            reopenCount: {type: integer, minimum: 0}
+    QueuePage:
+      allOf:
+        - {$ref: 'openapi.yaml#/components/schemas/PageMeta'}
+        - type: object
+          required: [items, assignee, loadMinutes]
+          properties:
+            assignee: {type: string}
+            loadMinutes: {type: integer, minimum: 0, description: Tổng tải của người này (R2)}
+            items: {type: array, items: {$ref: '#/components/schemas/QueueItem'}}
+    AssignmentCandidate:
+      type: object
+      additionalProperties: false
+      required: [subject, displayName, onDuty, loadMinutes, assignedToday, recommended]
+      properties:
+        subject: {type: string}
+        displayName: {type: string}
+        onDuty: {type: boolean}
+        loadMinutes: {type: integer, minimum: 0}
+        assignedToday: {type: integer, minimum: 0}
+        shiftRemainingMinutes: {type: integer, minimum: 0, nullable: true, description: 'ET dài hơn số này → điều phối viên quyết (R3)'}
+        recommended: {type: boolean}
+        excludedReason: {type: string, nullable: true, enum: [OFF_DUTY, IS_REQUESTER, null]}
+    AssignmentSuggestion:
+      type: object
+      additionalProperties: false
+      required: [taskId, group, estimateMinutes, candidates, reason]
+      properties:
+        taskId: {type: string}
+        group: {type: string, description: Tổ xét chọn}
+        estimateMinutes: {type: integer, minimum: 1}
+        recommended: {type: string, nullable: true, description: 'subject; null khi tổ không ai trực'}
+        reason: {type: string, description: 'Ví dụ: "A còn ~35 phút việc, B ~90 phút"'}
+        candidates: {type: array, items: {$ref: '#/components/schemas/AssignmentCandidate'}}
+    EstimateRequestStatus:
+      type: string
+      enum: [PENDING, APPROVED, REJECTED, SUPERSEDED]
+      description: Assignment changes atomically supersede pending requests from the previous assignee. Terminal requests cannot be decided.
+    EstimateRequest:
+      type: object
+      additionalProperties: false
+      required: [id, taskId, processInstanceId, businessKey, label, requestedBy, currentMinutes, proposedMinutes, reason, status, createdAt]
+      properties:
+        id: {type: string, format: uuid}
+        taskId: {type: string}
+        processInstanceId: {type: string}
+        businessKey: {type: string}
+        label: {type: string}
+        requestedBy: {type: string}
+        currentMinutes: {type: integer, minimum: 1}
+        proposedMinutes: {type: integer, minimum: 1}
+        reason: {type: string}
+        status: {$ref: '#/components/schemas/EstimateRequestStatus'}
+        decidedBy: {type: string, nullable: true}
+        decidedAt: {type: string, format: date-time, nullable: true}
+        decisionNote: {type: string, nullable: true}
+        supersededBy: {type: string, nullable: true, description: Actor triggering assignment supersession; not a decision.}
+        supersededAt: {type: string, format: date-time, nullable: true}
+        supersededReason: {type: string, nullable: true, description: ASSIGNMENT_CHANGED for superseded requests; otherwise null.}
+        createdAt: {type: string, format: date-time}
+    DutyStatus:
+      $ref: 'openapi.yaml#/components/schemas/DutyStatus'
+    Alert:
+      type: object
+      additionalProperties: false
+      required: [id, type, severity, processInstanceId, processKey, businessKey, label, createdAt]
+      properties:
+        id: {type: string, format: uuid}
+        type:
+          type: string
+          description: >-
+            START_OVERDUE: quá hạn bắt đầu (R8) · SLA_WARNING: còn dưới ngưỡng (R8) · SLA_BREACHED: quá SLA (R8) ·
+            PENDING_TOO_LONG: Đang chờ quá lâu (R8) · CRITICAL_NEW: việc khẩn cấp mới (R7) ·
+            CRITICAL_AUTO_QUEUED: khẩn cấp tự vào hàng đợi do chưa ai duyệt (R7) · REOPENED: người dùng báo chưa xong (R11) ·
+            REOPEN_UNCLAIMED: việc mở lại chưa được nhận lại (R11) · ASSIGNEE_OFF_DUTY: người giữ việc tắt trực (R3) ·
+            NO_ONE_ON_DUTY: tổ không ai trực (R3) · ESTIMATE_REQUESTED: có yêu cầu sửa ET (R2)
+          enum: [START_OVERDUE, SLA_WARNING, SLA_BREACHED, PENDING_TOO_LONG, CRITICAL_NEW, CRITICAL_AUTO_QUEUED, REOPENED, REOPEN_UNCLAIMED, ASSIGNEE_OFF_DUTY, NO_ONE_ON_DUTY, ESTIMATE_REQUESTED]
+        severity: {type: string, enum: [INFO, WARNING, CRITICAL]}
+        taskId: {type: string, nullable: true}
+        processInstanceId: {type: string}
+        processKey: {type: string}
+        businessKey: {type: string}
+        label: {type: string}
+        createdAt: {type: string, format: date-time}
+        readAt: {type: string, format: date-time, nullable: true}
+    SlaTarget:
+      type: object
+      additionalProperties: false
+      required:
+      - startWithinMinutes
+      - resolveWithinMinutes
+      properties:
+        startWithinMinutes:
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+        resolveWithinMinutes:
+          type: integer
+          minimum: 1
+          maximum: 2147483647
+    Shift:
+      type: object
+      additionalProperties: false
+      required:
+      - name
+      - start
+      - end
+      properties:
+        name:
+          type: string
+          maxLength: 50
+        start:
+          type: string
+          pattern: ^([01][0-9]|2[0-3]):[0-5][0-9]$
+          example: 07:00
+        end:
+          type: string
+          pattern: ^([01][0-9]|2[0-3]):[0-5][0-9]$
+          example: '11:30'
+    WorkSettings:
+      type: object
+      additionalProperties: false
+      description: 'Storage-only foundation. SLA seed matches r5-v1: 510 working minutes/day;
+        LOW 510/2550, MEDIUM 240/1020. Closing seed 3 preserves 72 continuous hours; no
+        runtime wiring. Shifts must be nonblank/unique, ordered start<end and non-overlapping;
+        resolve>=start; outlierMax>=outlierMin. All changes are audited; PUT rejects read-only
+        metadata and unknown fields.'
+      required:
+      - version
+      - assignment
+      - shifts
+      - sla
+      - critical
+      - alerts
+      - closing
+      - estimate
+      properties:
+        version:
+          type: integer
+          minimum: 0
+          description: Tăng mỗi lần lưu; PUT phải gửi version đang xem
+          maximum: 9223372036854775807
+        updatedAt:
+          type: string
+          format: date-time
+          readOnly: true
+        updatedBy:
+          type: string
+          readOnly: true
+        assignment:
+          type: object
+          additionalProperties: false
+          required:
+          - pendingLoadFactor
+          - tieThresholdMinutes
+          - maxInProgress
+          - minRemainingMinutes
+          properties:
+            pendingLoadFactor:
+              type: number
+              minimum: 0
+              maximum: 1
+              description: Mặc định 0,5
+            tieThresholdMinutes:
+              type: integer
+              minimum: 0
+              description: Mặc định 15
+              maximum: 2147483647
+            maxInProgress:
+              type: integer
+              minimum: 1
+              description: Mặc định 1
+              maximum: 2147483647
+            minRemainingMinutes:
+              type: integer
+              minimum: 0
+              description: Phần còn lại tối thiểu của việc Đang làm, mặc định 10
+              maximum: 2147483647
+        shifts:
+          type: array
+          minItems: 1
+          items:
+            $ref: '#/components/schemas/Shift'
+          description: Mặc định Sáng 07:00–11:30, Chiều 13:00–17:00
+        sla:
+          type: object
+          additionalProperties: false
+          required:
+          - targets
+          - escalateAfterRatio
+          - maxEscalatedPriority
+          - waitingExternalCounts
+          properties:
+            targets:
+              type: object
+              additionalProperties: false
+              required:
+              - LOW
+              - MEDIUM
+              - HIGH
+              - CRITICAL
+              description: Working-minute targets except CRITICAL continuous minutes.
+                Seed LOW 510/2550, MEDIUM 240/1020, HIGH 60/480, CRITICAL 15/120. Runtime
+                policy remains r5-v1 and is not changed by PUT.
+              properties:
+                LOW:
+                  $ref: '#/components/schemas/SlaTarget'
+                MEDIUM:
+                  $ref: '#/components/schemas/SlaTarget'
+                HIGH:
+                  $ref: '#/components/schemas/SlaTarget'
+                CRITICAL:
+                  $ref: '#/components/schemas/SlaTarget'
+            escalateAfterRatio:
+              type: number
+              minimum: 0
+              maximum: 1
+              description: Chờ quá tỉ lệ này của hạn bắt đầu thì lên 1 bậc, mặc định 0,5
+            maxEscalatedPriority:
+              $ref: '#/components/schemas/Priority'
+            waitingExternalCounts:
+              type: boolean
+              description: Chờ linh kiện / bên ngoài có tính vào hạn, mặc định true
+        critical:
+          type: object
+          additionalProperties: false
+          required:
+          - autoQueueAfterMinutes
+          properties:
+            autoQueueAfterMinutes:
+              type: integer
+              minimum: 1
+              description: Mặc định 5
+              maximum: 2147483647
+        alerts:
+          type: object
+          additionalProperties: false
+          required:
+          - warnRemainingRatio
+          - pendingRemindDays
+          - reopenUnclaimedMinutes
+          properties:
+            warnRemainingRatio:
+              type: number
+              minimum: 0
+              maximum: 1
+              description: Mặc định 0,2
+            pendingRemindDays:
+              type: integer
+              minimum: 1
+              description: Mặc định 3
+              maximum: 2147483647
+            reopenUnclaimedMinutes:
+              type: integer
+              minimum: 1
+              description: Mặc định 15
+              maximum: 2147483647
+        closing:
+          type: object
+          additionalProperties: false
+          required:
+          - autoCloseAfterDays
+          properties:
+            autoCloseAfterDays:
+              type: integer
+              minimum: 1
+              description: Tự đóng nếu người dùng không xác nhận, mặc định 3
+              maximum: 2147483647
+        estimate:
+          type: object
+          additionalProperties: false
+          required:
+          - minSamples
+          - windowMonths
+          - outlierMinMinutes
+          - outlierMaxMinutes
+          properties:
+            minSamples:
+              type: integer
+              minimum: 1
+              description: Mặc định 20
+              maximum: 2147483647
+            windowMonths:
+              type: integer
+              minimum: 1
+              description: Mặc định 6
+              maximum: 2147483647
+            outlierMinMinutes:
+              type: integer
+              minimum: 0
+              description: Mặc định 2
+              maximum: 2147483647
+            outlierMaxMinutes:
+              type: integer
+              minimum: 1
+              description: Mặc định 480 (8 giờ)
+              maximum: 2147483647

@@ -1,0 +1,48 @@
+# Shared backend wiring for local and API classification, always retaining CPU rules.
+services:
+  platform:
+    environment:
+      SPRING_PROFILES_ACTIVE: local-dev
+      DX_AI_RUNTIME_MODE: LOCAL_DEV
+      DX_AI_LOCAL_WORKSPACES: ${SSD_LOCAL_WORKSPACES:-auto}
+      INTELLIGENCE_CLASSIFICATION_BASE_URL: http://intelligence-classification:8003
+      INTELLIGENCE_CLASSIFICATION_TOKEN: ''
+      INTELLIGENCE_CLASSIFICATION_TOKEN_FILE: /run/secrets/local-classification-token
+      SERVICE_DESK_CLASSIFIER_MODE: ASSISTED
+      SERVICE_DESK_CLASSIFIER_PROVIDER: ${SSD_LOCAL_PROVIDER_ID:-qwen35-08b-lora-labops-silver-r1}
+      SERVICE_DESK_CLASSIFIER_MODEL_DIGEST: ${SSD_LOCAL_MODEL_DIGEST:?}
+      SERVICE_DESK_CLASSIFIER_POLICY_DIGEST: ${SSD_LOCAL_MODEL_POLICY_DIGEST:?}
+      SERVICE_DESK_ASSESSMENT_ENABLED: 'true'
+      SERVICE_DESK_ASSESSMENT_POLICY_BUNDLE_DIGEST: ${SSD_LOCAL_ASSESSMENT_DIGEST:?}
+      SERVICE_DESK_CONTEXT_ENABLED: 'true'
+      SERVICE_DESK_CONTEXT_MODE: ASSISTED
+      SERVICE_DESK_CONTEXT_POLICY_BUNDLE_DIGEST: ${SSD_LOCAL_CONTEXT_DIGEST:?}
+      SERVICE_DESK_CONTEXTUAL_ASSESSMENT_ENABLED: 'true'
+      SERVICE_DESK_CONTEXTUAL_ASSESSMENT_POLICY_DIGEST: ${SSD_LOCAL_CONTEXTUAL_DIGEST:?}
+      SERVICE_DESK_ENRICHMENT_ENABLED: 'true'
+      SERVICE_DESK_BACKGROUND_WORKSPACES: ${SSD_LOCAL_BACKGROUND_WORKSPACES:-lab-a}
+      DX_BACKGROUND_AUTO_WORKSPACES_ENABLED: 'false'
+      DX_BACKGROUND_AUTO_WORKSPACES_BASE_URL: ''
+      DX_BACKGROUND_AUTO_WORKSPACES_TOKEN_FILE: ''
+      INTELLIGENCE_TRIAGE_BASE_URL: http://intelligence:8000
+      DX_AI_PROVIDER_LABEL: ${SSD_LOCAL_PROVIDER_LABEL:-Qwen}
+      INTELLIGENCE_CLASSIFICATION_TIMEOUT_MS: ${SSD_CLASSIFICATION_TIMEOUT_MS:-4000}
+      serviceDesk.assistance.enabled: 'false'
+      serviceDesk.assistance.mode: disabled
+      INTELLIGENCE_ASSISTANCE_BASE_URL: ''
+      INTELLIGENCE_ASSISTANCE_TOKEN: ''
+      INTELLIGENCE_ASSISTANCE_TOKEN_FILE: ''
+    secrets:
+    - local-classification-token
+    networks:
+    - default
+    - local-model-private
+    depends_on:
+      intelligence:
+        condition: service_healthy
+secrets:
+  local-classification-token:
+    file: ${SSD_AI_CLASSIFICATION_TOKEN_FILE:-./.local/model/classification-token}
+networks:
+  local-model-private:
+    internal: true

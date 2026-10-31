@@ -1,0 +1,136 @@
+{
+  "purpose": "OWNED_SYNTHETIC_CONTRACT_FIXTURE_NOT_MODEL_INFERENCE",
+  "fields": {
+    "title": "🚀 cả phòng thi mất Wi-Fi",
+    "description": "thi sau 15 phút"
+  },
+  "result": {
+    "contractVersion": "ticket-intelligence-assessment@0.2.0",
+    "mode": "ASSISTED",
+    "status": "REVIEW_REQUIRED",
+    "classification": {
+      "decision": "PROPOSE",
+      "mainCategory": "NETWORK",
+      "subCategory": "WIFI_CONNECTION",
+      "subCategoryStatus": "SUPPORTED_BY_RULE",
+      "alternatives": [],
+      "confidence": null,
+      "confidenceSemantics": "NOT_CALIBRATED"
+    },
+    "assessment": {
+      "impact": "I3",
+      "urgency": "U4",
+      "priority": "CRITICAL",
+      "risk": {
+        "status": "NOT_ASSESSED",
+        "level": null,
+        "flags": [],
+        "reviewRequired": true
+      }
+    },
+    "attributes": [
+      {
+        "slot": "affectedScope",
+        "value": "I3",
+        "evidence": {
+          "field": "title",
+          "quote": "cả phòng thi mất Wi-Fi",
+          "start": 2,
+          "end": 24,
+          "supports": [
+            "impact"
+          ],
+          "verification": "LITERAL_SPAN",
+          "ruleId": "FACT-WHOLE-ROOM"
+        }
+      },
+      {
+        "slot": "timeEvidence",
+        "value": "U4",
+        "evidence": {
+          "field": "description",
+          "quote": "thi sau 15 phút",
+          "start": 0,
+          "end": 15,
+          "supports": [
+            "urgency"
+          ],
+          "verification": "LITERAL_SPAN",
+          "ruleId": "FACT-IMMINENT-EVENT"
+        }
+      },
+      {
+        "slot": "deadlineMinutes",
+        "value": "15",
+        "evidence": {
+          "field": "description",
+          "quote": "thi sau 15 phút",
+          "start": 0,
+          "end": 15,
+          "supports": [
+            "urgency"
+          ],
+          "verification": "LITERAL_SPAN",
+          "ruleId": "FACT-IMMINENT-EVENT"
+        }
+      }
+    ],
+    "evidence": [
+      {
+        "field": "title",
+        "quote": "mất Wi-Fi",
+        "start": 15,
+        "end": 24,
+        "supports": [
+          "subCategory"
+        ],
+        "verification": "LITERAL_SPAN",
+        "ruleId": "CHILD-WIFI_CONNECTION"
+      },
+      {
+        "field": "title",
+        "quote": "cả phòng thi mất Wi-Fi",
+        "start": 2,
+        "end": 24,
+        "supports": [
+          "impact"
+        ],
+        "verification": "LITERAL_SPAN",
+        "ruleId": "FACT-WHOLE-ROOM"
+      },
+      {
+        "field": "description",
+        "quote": "thi sau 15 phút",
+        "start": 0,
+        "end": 15,
+        "supports": [
+          "urgency"
+        ],
+        "verification": "LITERAL_SPAN",
+        "ruleId": "FACT-IMMINENT-EVENT"
+      }
+    ],
+    "missingInfo": [],
+    "questions": [],
+    "disposition": {
+      "needsReview": true,
+      "operationalAuthority": false,
+      "autoRoutingAllowed": false,
+      "reasons": [
+        "DRAFT_POLICY_REQUIRES_REVIEW",
+        "UNVERIFIED_MODEL_SUGGESTION"
+      ]
+    },
+    "provenance": {
+      "modelDigest": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "modelPolicyDigest": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+      "taxonomyVersion": "servicedesk-taxonomy@0.1.0",
+      "taxonomyDigest": "1adcd04d37be5b733a4881cddfcd56af3c5d3a3b86f5881942bda3eb6eba4f76",
+      "assessmentPolicyVersion": "servicedesk-assessment@0.1.1",
+      "assessmentPolicyDigest": "ed6b1ebfa821a8f417e9e2d3278057651b485ca869458aacef9e067a6d61a958",
+      "priorityPolicyDigest": "1b782b7c9388b145f1a8ad1c713eda8e42aea39bc1baadfde2b7845aff99a275",
+      "policyApprovalStatus": "DRAFT",
+      "contractVersion": "ticket-intelligence-assessment@0.2.0"
+    }
+  }
+}

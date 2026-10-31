@@ -1,0 +1,25 @@
+name: ai07-local
+
+services:
+  ai07-ollama-provision:
+    profiles: [ai07-local-provision]
+    image: ollama/ollama:0.40.8@sha256:242721b8a8dbb71c38fdc0a07ed60ca78363f278d33fdf171a48728abf40743a
+    environment:
+      OLLAMA_HOST: 127.0.0.1:11434
+      OLLAMA_MODELS: /models
+      OLLAMA_NO_CLOUD: '1'
+    volumes:
+      - ai07-ollama-models:/models
+    networks: [ai07-provision-only]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    logging: {driver: none}
+    restart: 'no'
+
+networks:
+  ai07-provision-only: {}
+
+volumes:
+  ai07-ollama-models:
+    external: true
+    name: ${AI07_MODEL_VOLUME:?Use the same volume for provisioning and offline runtime}

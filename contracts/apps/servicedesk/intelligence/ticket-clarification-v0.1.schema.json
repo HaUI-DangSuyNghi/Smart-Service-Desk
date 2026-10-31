@@ -1,0 +1,66 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:servicedesk:ticket-clarification-v0.1.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "contractVersion": {
+      "const": "ticket-clarification@0.1.0"
+    },
+    "clientAnswerId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "expectedContextRevision": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "answers": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "slot": {
+            "enum": [
+              "location.building",
+              "location.floor",
+              "location.room",
+              "device.type",
+              "device.identifier",
+              "device.scope",
+              "symptomCodes",
+              "affectedService",
+              "affectedCount",
+              "affectedScope",
+              "workBlocked",
+              "workaroundAvailable",
+              "timeWindow",
+              "problemEventStatus"
+            ]
+          },
+          "value": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          },
+          "correction": {
+            "type": "boolean"
+          }
+        },
+        "required": [
+          "slot",
+          "value"
+        ]
+      },
+      "maxItems": 8,
+      "minItems": 1
+    }
+  },
+  "required": [
+    "contractVersion",
+    "clientAnswerId",
+    "expectedContextRevision",
+    "answers"
+  ]
+}

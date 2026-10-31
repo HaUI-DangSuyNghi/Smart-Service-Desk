@@ -1,0 +1,699 @@
+{
+  "evaluatedDate": "2026-10-18",
+  "timezone": "Asia/Saigon",
+  "baseline": {
+    "runId": 39116445393,
+    "sourceCommit": "0e034bf936595661fc71e55e31510c019c84f695",
+    "scannerVersionAndDatabases": "Version: 0.76.0\nVulnerability DB:\n  Version: 2\n  UpdatedAt: 2026-10-18 07:12:07.771859408 +0000 UTC\n  NextUpdate: 2026-10-19 07:12:07.771859277 +0000 UTC\n  DownloadedAt: 2026-10-18 09:51:04.379075276 +0000 UTC\nJava DB:\n  Version: 1\n  UpdatedAt: 2026-10-18 00:58:00.305003613 +0000 UTC\n  NextUpdate: 2026-10-21 00:58:00.305003002 +0000 UTC\n  DownloadedAt: 2026-10-18 09:51:38.570005131 +0000 UTC\n",
+    "fullCveInventoryAvailable": false,
+    "missingEvidence": "Original artifact omits image-*.json; no per-CVE baseline reconstruction claimed",
+    "scanFindings": [
+      {
+        "image": "int01-39116445393-1-core:ci",
+        "scan": "PASS",
+        "high": 39,
+        "critical": 10,
+        "fixedHighCritical": 49,
+        "imageId": "sha256:a4495079b5dc71a64c3c8894dd96ef0faa9883f6979dc026d3e0d3caf059940a",
+        "digests": [],
+        "targets": [
+          {
+            "Target": "/scan/image-0.tar (ubuntu 22.04)",
+            "Class": "os-pkgs",
+            "Type": "ubuntu"
+          },
+          {
+            "Target": "Java",
+            "Class": "lang-pkgs",
+            "Type": "jar"
+          }
+        ],
+        "endOfSupport": false,
+        "productionGate": "FAIL"
+      },
+      {
+        "image": "int01-39116445393-1-intelligence:ci",
+        "scan": "PASS",
+        "high": 91,
+        "critical": 9,
+        "fixedHighCritical": 37,
+        "imageId": "sha256:6f47a233786570bfb7bd6bb691dfac4178c040d9278ff8ebdc3b76436793bca8",
+        "digests": [],
+        "targets": [
+          {
+            "Target": "/scan/image-1.tar (debian 12.13)",
+            "Class": "os-pkgs",
+            "Type": "debian"
+          },
+          {
+            "Target": "Python",
+            "Class": "lang-pkgs",
+            "Type": "python-pkg"
+          }
+        ],
+        "endOfSupport": false,
+        "productionGate": "FAIL"
+      },
+      {
+        "image": "postgres:16.6-bookworm",
+        "scan": "PASS",
+        "high": 211,
+        "critical": 24,
+        "fixedHighCritical": 161,
+        "imageId": "sha256:eee71f45c6dfebd5d85644a85eb955b1f27d84ea4edccf9e21f51761cbed3818",
+        "digests": [
+          "postgres@sha256:557fea37a744d5f4c8faab304b0a90858b53ab119735a88c131fd19dab802f36"
+        ],
+        "targets": [
+          {
+            "Target": "/scan/image-2.tar (debian 12.9)",
+            "Class": "os-pkgs",
+            "Type": "debian"
+          },
+          {
+            "Target": "usr/local/bin/gosu",
+            "Class": "lang-pkgs",
+            "Type": "gobinary"
+          }
+        ],
+        "endOfSupport": false,
+        "productionGate": "FAIL"
+      },
+      {
+        "image": "quay.io/keycloak/keycloak:26.0.7",
+        "scan": "PASS",
+        "high": 89,
+        "critical": 7,
+        "fixedHighCritical": 96,
+        "imageId": "sha256:469d050236bb5aa652a4ae97d5dbcf02c1af4c15bbb2ea088f7d30802f67fcf5",
+        "digests": [
+          "quay.io/keycloak/keycloak@sha256:4388e2379b7e870a447adbe7b80bd61f5fbf04e925832b19669fda4957f05a81"
+        ],
+        "targets": [
+          {
+            "Target": "/scan/image-3.tar (redhat 9.5)",
+            "Class": "os-pkgs",
+            "Type": "redhat"
+          },
+          {
+            "Target": "Java",
+            "Class": "lang-pkgs",
+            "Type": "jar"
+          }
+        ],
+        "endOfSupport": false,
+        "productionGate": "FAIL"
+      },
+      {
+        "image": "apache/apisix:3.11.0-debian",
+        "scan": "PASS",
+        "high": 97,
+        "critical": 7,
+        "fixedHighCritical": 34,
+        "imageId": "sha256:9b8c02bc264126640766345477dfef4aacc9cd7d64841a4f9fe82b7d93c42b09",
+        "digests": [
+          "apache/apisix@sha256:178d1f79c2c39834f50213bf6ace90284f6b985dc8189cc50f3666d9fb1037ad"
+        ],
+        "targets": [
+          {
+            "Target": "/scan/image-4.tar (debian 11.11)",
+            "Class": "os-pkgs",
+            "Type": "debian"
+          }
+        ],
+        "endOfSupport": true,
+        "productionGate": "FAIL"
+      }
+    ],
+    "totals": {
+      "high": 527,
+      "critical": 57,
+      "fixedHighCritical": 377,
+      "endOfSupport": 1
+    }
+  },
+  "final": {
+    "runId": 39121326727,
+    "sourceCommit": "207b9ace6daf24e678e9fa35b49966997353571d",
+    "scannerVersionAndDatabases": "Version: 0.76.0\nVulnerability DB:\n  Version: 2\n  UpdatedAt: 2026-10-18 07:12:07.771859408 +0000 UTC\n  NextUpdate: 2026-10-19 07:12:07.771859277 +0000 UTC\n  DownloadedAt: 2026-10-18 11:06:34.802937881 +0000 UTC\nJava DB:\n  Version: 1\n  UpdatedAt: 2026-10-18 00:58:00.305003613 +0000 UTC\n  NextUpdate: 2026-10-21 00:58:00.305003002 +0000 UTC\n  DownloadedAt: 2026-10-18 11:06:58.984369759 +0000 UTC\n",
+    "scanFindings": [
+      {
+        "image": "int01-39121326727-1-core:ci",
+        "scan": "PASS",
+        "high": 14,
+        "critical": 2,
+        "fixedHighCritical": 16,
+        "imageId": "sha256:1617ca43615759bafa61cb56f77284c285f04af3388ee4aeaa9f250f23587564",
+        "digests": [],
+        "targets": [
+          {
+            "Target": "/scan/image-0.tar (ubuntu 22.04)",
+            "Class": "os-pkgs",
+            "Type": "ubuntu"
+          },
+          {
+            "Target": "Java",
+            "Class": "lang-pkgs",
+            "Type": "jar"
+          }
+        ],
+        "endOfSupport": false,
+        "productionGate": "FAIL"
+      },
+      {
+        "image": "int01-39121326727-1-intelligence:ci",
+        "scan": "PASS",
+        "high": 61,
+        "critical": 2,
+        "fixedHighCritical": 0,
+        "imageId": "sha256:cee67c0cb71811d0e03233684d9e3b51e0898a554b329df989a05f81340e3f71",
+        "digests": [],
+        "targets": [
+          {
+            "Target": "/scan/image-1.tar (debian 12.15)",
+            "Class": "os-pkgs",
+            "Type": "debian"
+          },
+          {
+            "Target": "Python",
+            "Class": "lang-pkgs",
+            "Type": "python-pkg"
+          }
+        ],
+        "endOfSupport": false,
+        "productionGate": "FAIL"
+      },
+      {
+        "image": "postgres:16.15-bookworm@sha256:0ea6700a3b4f0ae6ce746519073558aed4d88a79d8d07622a9a644946c7319c4",
+        "scan": "PASS",
+        "high": 95,
+        "critical": 4,
+        "fixedHighCritical": 25,
+        "imageId": "sha256:e8538db784b854a9baac5c1be6d059dcf0db257af2d94c8c5807b5fc15f11222",
+        "digests": [
+          "postgres@sha256:0ea6700a3b4f0ae6ce746519073558aed4d88a79d8d07622a9a644946c7319c4"
+        ],
+        "targets": [
+          {
+            "Target": "/scan/image-2.tar (debian 12.15)",
+            "Class": "os-pkgs",
+            "Type": "debian"
+          },
+          {
+            "Target": "usr/local/bin/gosu",
+            "Class": "lang-pkgs",
+            "Type": "gobinary"
+          }
+        ],
+        "endOfSupport": false,
+        "productionGate": "FAIL"
+      },
+      {
+        "image": "quay.io/keycloak/keycloak:26.0.8@sha256:09a381c715ab0b111835b70f2905955274843a219c6f27efb348e4d9f4086858",
+        "scan": "PASS",
+        "high": 89,
+        "critical": 7,
+        "fixedHighCritical": 96,
+        "imageId": "sha256:e447933b6a5015646c24a1b927a40202ce07adbadac839e7a1f99c463d68a224",
+        "digests": [
+          "quay.io/keycloak/keycloak@sha256:09a381c715ab0b111835b70f2905955274843a219c6f27efb348e4d9f4086858"
+        ],
+        "targets": [
+          {
+            "Target": "/scan/image-3.tar (redhat 9.5)",
+            "Class": "os-pkgs",
+            "Type": "redhat"
+          },
+          {
+            "Target": "Java",
+            "Class": "lang-pkgs",
+            "Type": "jar"
+          }
+        ],
+        "endOfSupport": false,
+        "productionGate": "FAIL"
+      },
+      {
+        "image": "int01-39121326727-1-gateway:ci",
+        "scan": "PASS",
+        "high": 110,
+        "critical": 0,
+        "fixedHighCritical": 74,
+        "imageId": "sha256:58b32efb6f7e5fa92da79ee5d0161653bc75a7b6601744586a88368488402b24",
+        "digests": [],
+        "targets": [
+          {
+            "Target": "/scan/image-4.tar (redhat 8.10)",
+            "Class": "os-pkgs",
+            "Type": "redhat"
+          }
+        ],
+        "endOfSupport": false,
+        "productionGate": "FAIL"
+      }
+    ],
+    "totals": {
+      "high": 369,
+      "critical": 15,
+      "fixedHighCritical": 211,
+      "endOfSupport": 0
+    },
+    "ecosystems": [
+      {
+        "imageIndex": 0,
+        "image": "int01-39121326727-1-core:ci",
+        "target": "/scan/image-0.tar (ubuntu 22.04)",
+        "packageClass": "os-pkgs",
+        "ecosystem": "ubuntu",
+        "high": 0,
+        "critical": 0,
+        "fixedHighCritical": 0
+      },
+      {
+        "imageIndex": 0,
+        "image": "int01-39121326727-1-core:ci",
+        "target": "Java",
+        "packageClass": "lang-pkgs",
+        "ecosystem": "jar",
+        "high": 14,
+        "critical": 2,
+        "fixedHighCritical": 16
+      },
+      {
+        "imageIndex": 1,
+        "image": "int01-39121326727-1-intelligence:ci",
+        "target": "/scan/image-1.tar (debian 12.15)",
+        "packageClass": "os-pkgs",
+        "ecosystem": "debian",
+        "high": 61,
+        "critical": 2,
+        "fixedHighCritical": 0
+      },
+      {
+        "imageIndex": 1,
+        "image": "int01-39121326727-1-intelligence:ci",
+        "target": "Python",
+        "packageClass": "lang-pkgs",
+        "ecosystem": "python-pkg",
+        "high": 0,
+        "critical": 0,
+        "fixedHighCritical": 0
+      },
+      {
+        "imageIndex": 2,
+        "image": "postgres:16.15-bookworm@sha256:0ea6700a3b4f0ae6ce746519073558aed4d88a79d8d07622a9a644946c7319c4",
+        "target": "/scan/image-2.tar (debian 12.15)",
+        "packageClass": "os-pkgs",
+        "ecosystem": "debian",
+        "high": 71,
+        "critical": 3,
+        "fixedHighCritical": 0
+      },
+      {
+        "imageIndex": 2,
+        "image": "postgres:16.15-bookworm@sha256:0ea6700a3b4f0ae6ce746519073558aed4d88a79d8d07622a9a644946c7319c4",
+        "target": "usr/local/bin/gosu",
+        "packageClass": "lang-pkgs",
+        "ecosystem": "gobinary",
+        "high": 24,
+        "critical": 1,
+        "fixedHighCritical": 25
+      },
+      {
+        "imageIndex": 3,
+        "image": "quay.io/keycloak/keycloak:26.0.8@sha256:09a381c715ab0b111835b70f2905955274843a219c6f27efb348e4d9f4086858",
+        "target": "/scan/image-3.tar (redhat 9.5)",
+        "packageClass": "os-pkgs",
+        "ecosystem": "redhat",
+        "high": 21,
+        "critical": 0,
+        "fixedHighCritical": 21
+      },
+      {
+        "imageIndex": 3,
+        "image": "quay.io/keycloak/keycloak:26.0.8@sha256:09a381c715ab0b111835b70f2905955274843a219c6f27efb348e4d9f4086858",
+        "target": "Java",
+        "packageClass": "lang-pkgs",
+        "ecosystem": "jar",
+        "high": 68,
+        "critical": 7,
+        "fixedHighCritical": 75
+      },
+      {
+        "imageIndex": 4,
+        "image": "int01-39121326727-1-gateway:ci",
+        "target": "/scan/image-4.tar (redhat 8.10)",
+        "packageClass": "os-pkgs",
+        "ecosystem": "redhat",
+        "high": 110,
+        "critical": 0,
+        "fixedHighCritical": 74
+      }
+    ],
+    "verifiedInstalledPackages": [
+      {
+        "imageIndex": 0,
+        "name": "org.apache.tomcat.embed:tomcat-embed-core",
+        "version": "10.1.61",
+        "release": null
+      },
+      {
+        "imageIndex": 0,
+        "name": "org.postgresql:postgresql",
+        "version": "42.7.12",
+        "release": null
+      },
+      {
+        "imageIndex": 4,
+        "name": "apisix",
+        "version": "3.11.0",
+        "release": "0.ubi8.6"
+      },
+      {
+        "imageIndex": 4,
+        "name": "unbound-libs",
+        "version": "1.16.2",
+        "release": "5.14.el8_10.4"
+      },
+      {
+        "imageIndex": 4,
+        "name": "python3-unbound",
+        "version": "1.16.2",
+        "release": "5.14.el8_10.4"
+      }
+    ],
+    "customImageProvenance": [
+      {
+        "tag": "int01-39121326727-1-core:ci",
+        "id": "sha256:1617ca43615759bafa61cb56f77284c285f04af3388ee4aeaa9f250f23587564",
+        "revision": "207b9ace6daf24e678e9fa35b49966997353571d"
+      },
+      {
+        "tag": "int01-39121326727-1-intelligence:ci",
+        "id": "sha256:cee67c0cb71811d0e03233684d9e3b51e0898a554b329df989a05f81340e3f71",
+        "revision": "207b9ace6daf24e678e9fa35b49966997353571d"
+      },
+      {
+        "tag": "int01-39121326727-1-gateway:ci",
+        "id": "sha256:58b32efb6f7e5fa92da79ee5d0161653bc75a7b6601744586a88368488402b24",
+        "revision": "207b9ace6daf24e678e9fa35b49966997353571d"
+      }
+    ],
+    "rawReportsSHA256": {
+      "image-0.json": "f0d03c0c5649789d78535d14d646deafdc14f7ebaab09a1e4a3f3f5f0478ff72",
+      "image-1.json": "6c3187d59e218692856e1f2ffed773329739a876bfd0a234365296d3b862f009",
+      "image-2.json": "8ccbe17309861e195127f7303b0637f3cfdebcb5f6cedba6156714a294df6d00",
+      "image-3.json": "ae5bc6aa9f5d14c1c89019bbc402a0da164a144632f414273ace7f76df37399f",
+      "image-4.json": "2aa9eacf15059c5024db931d4de3ec56ac1d65871eafbdca8296f40ab305eeba"
+    },
+    "csvOccurrences": 384,
+    "javaRegression": {
+      "tests": 137,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "pythonSource": {
+      "tests": 265,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "pythonInstalledWheel": {
+      "tests": 265,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "javaPythonRealTransport": {
+      "javaHead": "207b9ace6daf24e678e9fa35b49966997353571d",
+      "pythonHead": "207b9ace6daf24e678e9fa35b49966997353571d",
+      "identity": "MockMvc JWT fixtures; NOT Keycloak/gateway/browser E2E",
+      "results": [
+        {
+          "scenario": "success",
+          "tests": 2,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "faultInjectedAfterRealPythonSuccess": false
+        },
+        {
+          "scenario": "wrong-token",
+          "tests": 1,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "faultInjectedAfterRealPythonSuccess": false
+        },
+        {
+          "scenario": "unavailable",
+          "tests": 1,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "faultInjectedAfterRealPythonSuccess": false
+        },
+        {
+          "scenario": "timeout",
+          "tests": 1,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "faultInjectedAfterRealPythonSuccess": true
+        },
+        {
+          "scenario": "malformed",
+          "tests": 1,
+          "failures": 0,
+          "errors": 0,
+          "skipped": 0,
+          "faultInjectedAfterRealPythonSuccess": true
+        }
+      ]
+    },
+    "gateway": {
+      "status": "PASS",
+      "identity": "Real Keycloak password login, JWT verification, APISIX and Java HTTP; no browser UI",
+      "cases": [
+        "lab-a:requester:real-triage-success",
+        "lab-a:agent:real-triage-success",
+        "lab-a:coordinator:real-triage-success",
+        "requester-cannot-read-another-requester-ticket",
+        "lab-a:authorization-isolation-and-no-state-mutation",
+        "lab-b:requester:real-triage-success",
+        "lab-b:agent:real-triage-success",
+        "lab-b:coordinator:real-triage-success",
+        "lab-b:authorization-isolation-and-no-state-mutation",
+        "private-python-route-not-exposed-by-gateway",
+        "real-python-outage-and-manual-workflow-completion"
+      ],
+      "project": "int01-39121326727-1"
+    },
+    "authorizedRetrieval": {
+      "status": "PASS_WITH_DOCUMENTED_CORE_LIMITS",
+      "scenarioCount": 8,
+      "limits": [
+        "Revocation verified with a refreshed JWT; existing JWT remains valid until Core expiry.",
+        "Core metadata is immutable; version change uses a new record and trusted catalog revision.",
+        "Core has no delete API; not-found is verified, actual metadata deletion is not claimed.",
+        "Checksum corruption is injected locally using real Core bytes, not by editing Core storage.",
+        "Outage uses an unavailable loopback authority; no running Core service is stopped."
+      ]
+    },
+    "packageVersion": "0.3.0",
+    "gates": {
+      "G1": "PASS",
+      "G2": "PASS",
+      "G3": "PASS",
+      "G4": "PASS",
+      "G5": "PASS",
+      "G6": "PASS",
+      "G7": "PASS",
+      "G8": "PASS",
+      "G9": "FAIL",
+      "G10": "PASS"
+    }
+  },
+  "rpmLocks": [
+    {
+      "file": "python3-unbound-aarch64.rpm",
+      "version": "1.16.2-5.14.el8_10.4",
+      "sha256": "7dc7ded57b383dc29e0ea0ab028f9c6fcd543aad07e0a6f3c7bb87a4c66357ca"
+    },
+    {
+      "file": "python3-unbound-x86_64.rpm",
+      "version": "1.16.2-5.14.el8_10.4",
+      "sha256": "ce863671ec0e43199c657c74f6ae9871d6f8e18c5ac246e800359b940fe92f94"
+    },
+    {
+      "file": "unbound-libs-aarch64.rpm",
+      "version": "1.16.2-5.14.el8_10.4",
+      "sha256": "de3cbf06ca40d8c6f3bb0d92a102f5a9bf932f5ee837f7863c79e2c791d9d08f"
+    },
+    {
+      "file": "unbound-libs-x86_64.rpm",
+      "version": "1.16.2-5.14.el8_10.4",
+      "sha256": "f1544e0e933245e1b32dc8161fbb97b88883ddef2617039087ff3213ea2b453b"
+    }
+  ],
+  "history": [
+    {
+      "runId": 39116445393,
+      "sourceCommit": "0e034bf936595661fc71e55e31510c019c84f695",
+      "artifactId": 12131894631,
+      "artifactArchiveSHA256": "155d02d8f2d8b94a9ea4a9e6a533ed9fc915975c82b9954dfee0006f88a43ca7",
+      "artifactExpiresAt": "2027-01-16T09:43:13Z",
+      "gates": {
+        "G1": "PASS",
+        "G2": "PASS",
+        "G3": "PASS",
+        "G4": "PASS",
+        "G5": "PASS",
+        "G6": "PASS",
+        "G7": "PASS",
+        "G8": "PASS",
+        "G9": "FAIL",
+        "G10": "PASS"
+      },
+      "technicalAcceptance": "PASS",
+      "imageScanExecution": "PASS"
+    },
+    {
+      "runId": 39117947321,
+      "sourceCommit": "848d64d9c76b8716b016e341de37e8f421340090",
+      "artifactId": 12132934543,
+      "artifactArchiveSHA256": "acef4d8881a2b0aeca82c1b605652f546b9ea412e4f04a324e50b63f2ca16683",
+      "artifactExpiresAt": "2027-01-16T10:06:28Z",
+      "gates": {
+        "G1": "PASS",
+        "G2": "PASS",
+        "G3": "PASS",
+        "G4": "PASS",
+        "G5": "PASS",
+        "G6": "PASS",
+        "G7": "PASS",
+        "G8": "PASS",
+        "G9": "FAIL",
+        "G10": "PASS"
+      },
+      "technicalAcceptance": "PASS",
+      "imageScanExecution": "PASS"
+    },
+    {
+      "runId": 39119585390,
+      "sourceCommit": "7cbc0c9c0db8ddc84e537901ee69b0db05fa5a3c",
+      "artifactId": 12133872651,
+      "artifactArchiveSHA256": "1760fc0024126b27b8e3b16727bf28a63a4de3196fe4b861d1186577cd8c73d4",
+      "artifactExpiresAt": "2027-01-16T10:31:23Z",
+      "gates": {
+        "G1": "PASS",
+        "G2": "PASS",
+        "G3": "PASS",
+        "G4": "PASS",
+        "G5": "PASS",
+        "G6": "PASS",
+        "G7": "PASS",
+        "G8": "PASS",
+        "G9": "FAIL",
+        "G10": "PASS"
+      },
+      "technicalAcceptance": "PASS",
+      "imageScanExecution": "PASS"
+    },
+    {
+      "runId": 39119831630,
+      "sourceCommit": "aabb19472625475449a3f9676186b6305c2f6c3f",
+      "artifactId": 12134340408,
+      "artifactArchiveSHA256": "b05356acf43cebd6048a2f2be466ecac63af438e32d366037c7de272507a2e8f",
+      "artifactExpiresAt": "2027-01-16T10:35:07Z",
+      "gates": {
+        "G1": "PASS",
+        "G2": "PASS",
+        "G3": "PASS",
+        "G4": "PASS",
+        "G5": "PASS",
+        "G6": "PASS",
+        "G7": "PASS",
+        "G8": "PASS",
+        "G9": "FAIL",
+        "G10": "PASS"
+      },
+      "technicalAcceptance": "PASS",
+      "imageScanExecution": "PASS"
+    },
+    {
+      "runId": 39120080272,
+      "sourceCommit": "ebffc039c7036ddf94d1588c4015c49873bd2666",
+      "artifactId": 12133609873,
+      "artifactArchiveSHA256": "c76a8706928bedeaefcfea1c1a9fc75f2c5d33ed181398ea4f6638d237c8edd2",
+      "artifactExpiresAt": "2027-01-16T10:38:58Z",
+      "gates": {
+        "G1": "PASS",
+        "G2": "PASS",
+        "G3": "PASS",
+        "G4": "PASS",
+        "G5": "PASS",
+        "G6": "PASS",
+        "G7": "PASS",
+        "G8": "PASS",
+        "G9": "FAIL",
+        "G10": "PASS"
+      },
+      "technicalAcceptance": "PASS",
+      "imageScanExecution": "PASS"
+    },
+    {
+      "runId": 39120938074,
+      "sourceCommit": "881cdbfd4c8fe49a5709e6cc252690b0d9b1acec",
+      "artifactId": 12134780473,
+      "artifactArchiveSHA256": "17e6f243b6b4e33a87761316dcd870de79556e7da756c8d82438ba9571828ddd",
+      "artifactExpiresAt": "2027-01-16T10:52:00Z",
+      "gates": {
+        "G1": "PASS",
+        "G2": "PASS",
+        "G3": "PASS",
+        "G4": "PASS",
+        "G5": "PASS",
+        "G6": "BLOCKED",
+        "G7": "BLOCKED",
+        "G8": "BLOCKED",
+        "G9": "BLOCKED",
+        "G10": "BLOCKED"
+      },
+      "technicalAcceptance": "FAIL",
+      "imageScanExecution": "BLOCKED"
+    },
+    {
+      "runId": 39121326727,
+      "sourceCommit": "207b9ace6daf24e678e9fa35b49966997353571d",
+      "artifactId": 12134154564,
+      "artifactArchiveSHA256": "57665913fa1b794a8cc92553ba42799f9d5c407276145e4c6e3cab1b06855b16",
+      "artifactExpiresAt": "2027-01-16T10:58:07Z",
+      "gates": {
+        "G1": "PASS",
+        "G2": "PASS",
+        "G3": "PASS",
+        "G4": "PASS",
+        "G5": "PASS",
+        "G6": "PASS",
+        "G7": "PASS",
+        "G8": "PASS",
+        "G9": "FAIL",
+        "G10": "PASS"
+      },
+      "technicalAcceptance": "PASS",
+      "imageScanExecution": "PASS"
+    }
+  ],
+  "releaseBlockers": {
+    "productionSecurity": "FAIL",
+    "businessProfileApproval": "PENDING",
+    "licenseGrant": "PENDING",
+    "fixtureDataRights": "PENDING",
+    "browserUiE2E": "NOT RUN",
+    "releaseApproval": "BLOCKED"
+  },
+  "mergeReadiness": "DRAFT_REVIEW_REQUIRED; PR22 must merge before retargeting develop",
+  "arm64RuntimeValidation": "NOT RUN; vendor RPM download/checksums verified only"
+}

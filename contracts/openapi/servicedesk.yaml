@@ -1,0 +1,1425 @@
+openapi: 3.0.3
+info:
+  title: Smart Service Desk Ticket Foundation
+  version: 0.1.0
+  description: Application API. Core owns authentication, workflow and audit. Triage is transient and never changes Ticket or Workflow state. Private attachments are out of scope.
+servers:
+  - url: http://localhost:9080/api/apps/servicedesk/v1
+security:
+  - bearer: []
+paths:
+  /workspaces/{workspace}/intelligence/status:
+    get:
+      operationId: getServiceDeskIntelligenceStatus
+      description: Authenticated workspace-scoped runtime configuration. modelEnabled describes the selected pipeline, not a live GPU readiness probe. No inference or secrets are returned.
+      parameters:
+        - {$ref: 'core.yaml#/components/parameters/Workspace'}
+      responses:
+        '200':
+          description: Current configured runtime
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [mode, engine, modelEnabled, assistanceMode]
+                properties:
+                  mode: {type: string, enum: [LOCAL_DEV, EXTERNAL]}
+                  engine: {type: string, enum: [hybrid, rules, disabled]}
+                  modelEnabled: {type: boolean}
+                  assistanceMode: {type: string, enum: [disabled, api, grounded]}
+        '401': {$ref: 'core.yaml#/components/responses/Unauthorized'}
+        '403': {$ref: 'core.yaml#/components/responses/Forbidden'}
+  /workspaces/{workspace}/tickets/{id}/assessment/retry:
+    post:
+      operationId: retryStoredTicketAssessment
+      description: Requeue failed background advice, or upgrade stored rules advice when LOCAL_DEV model processing is enabled. Rechecks ticket visibility. An active job or completed model result returns 409; sealed intake tickets use their own assessment flow. Never changes human classification or workflow state.
+      parameters:
+        - {$ref: 'core.yaml#/components/parameters/Workspace'}
+        - {$ref: '#/components/parameters/TicketId'}
+      responses:
+        '200':
+          description: Requeued assessment
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/StoredAssessment'}
+        '401': {$ref: 'core.yaml#/components/responses/Unauthorized'}
+        '403': {$ref: 'core.yaml#/components/responses/Forbidden'}
+        '404': {$ref: 'core.yaml#/components/responses/NotFound'}
+        '409': {$ref: 'core.yaml#/components/responses/Conflict'}
+  /settings:
+    get:
+      operationId: getServiceDeskSettings
+      description: Fresh platform-admin only. Persistent storage-only foundation (PERSISTED_NOT_ENFORCED).
+        No eligibility or estimate consumer wiring; no changes to approved ET.
+      responses:
+        '200':
+          description: Cấu hình hiện hành
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceDeskSettings'
+        '401':
+          $ref: core.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: core.yaml#/components/responses/Forbidden
+        '503': {$ref: '../hpdi/openapi.yaml#/components/responses/ServiceUnavailable'}
+    put:
+      operationId: updateServiceDeskSettings
+      description: Fresh platform-admin only. Persistent storage-only foundation (PERSISTED_NOT_ENFORCED).
+        No eligibility or estimate consumer wiring; no changes to approved ET.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ServiceDeskSettings'
+      responses:
+        '200':
+          description: Cấu hình sau khi lưu
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ServiceDeskSettings'
+        '400':
+          $ref: core.yaml#/components/responses/BadRequest
+        '401':
+          $ref: core.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: core.yaml#/components/responses/Forbidden
+        '409':
+          $ref: core.yaml#/components/responses/Conflict
+        '503': {$ref: '../hpdi/openapi.yaml#/components/responses/ServiceUnavailable'}
+  /workspaces/{workspace}/tickets/{id}/classification:
+    parameters:
+    - {$ref: 'core.yaml#/components/parameters/Workspace'}
+    - {$ref: '#/components/parameters/TicketId'}
+    patch:
+      operationId: correctClassification
+      description: >-
+        R9. Current independent Coordinator with task:handle and task:assign, or current Agent holding
+        the active handle with task:handle. A nonblank reason and either an actual business classification
+        change or explicit reaffirmation of business priority against a different auto-escalated effective
+        priority are required. Reaffirmation records a manual override audit and SLA amendment, not a
+        fictitious unchanged-field correction. Repeating an already effective manual priority is a 409 no-op.
+        Group change before START returns the same process to a fresh review using native Flowable state change.
+        IN_PROGRESS and PENDING retain assignment and pending episode. Active canonical links fail closed.
+        Priority amendments preserve policy, approval, elapsed budget and historical breach; manual priority
+        takes precedence over automatic escalation for this handle and its handover continuation.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [reason]
+              anyOf:
+              - {required: [category]}
+              - {required: [priority]}
+              properties:
+                category: {type: string, enum: [HARDWARE, NETWORK, SOFTWARE, ACCOUNT, OTHER]}
+                priority: {type: string, enum: [LOW, MEDIUM, HIGH, CRITICAL]}
+                reason: {type: string, minLength: 1, maxLength: 1000, pattern: '\S'}
+      responses:
+        '200':
+          description: Updated ticket with private correction history for authorized staff.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Ticket'}
+        '400': {$ref: 'core.yaml#/components/responses/BadRequest'}
+        '401': {$ref: 'core.yaml#/components/responses/Unauthorized'}
+        '403': {$ref: 'core.yaml#/components/responses/Forbidden'}
+        '404': {$ref: 'core.yaml#/components/responses/NotFound'}
+        '409': {$ref: 'core.yaml#/components/responses/Conflict'}
+        '503': {$ref: '../hpdi/openapi.yaml#/components/responses/ServiceUnavailable'}
+  /workspaces/{workspace}/tickets/{id}/assignment-suggestion:
+    parameters:
+    - $ref: core.yaml#/components/parameters/Workspace
+    - $ref: '#/components/parameters/TicketId'
+    get:
+      operationId: previewTicketAssignment
+      description: Independent Coordinator with task:assign previews pending review using explicit form category/priority and optional ET override. Read-only; never persists classifications, assignments or cursor. taskId is the current review task ID, not a future handle ID. Available before handle exists; returns 409 outside review.
+      parameters:
+      - name: category
+        in: query
+        required: true
+        schema: {type: string, enum: [HARDWARE, NETWORK, SOFTWARE, ACCOUNT, OTHER]}
+      - name: priority
+        in: query
+        required: true
+        schema: {type: string, enum: [LOW, MEDIUM, HIGH, CRITICAL]}
+      - name: estimateMinutes
+        in: query
+        schema: {type: integer, minimum: 1, maximum: 10080}
+      responses:
+        '200':
+          description: Transient recommendation for the supplied review form; not a decision.
+          content:
+            application/json:
+              schema: {$ref: '../hpdi/openapi.yaml#/components/schemas/AssignmentSuggestion'}
+        '400': {$ref: 'core.yaml#/components/responses/BadRequest'}
+        '401': {$ref: 'core.yaml#/components/responses/Unauthorized'}
+        '403': {$ref: 'core.yaml#/components/responses/Forbidden'}
+        '404': {$ref: 'core.yaml#/components/responses/NotFound'}
+        '409': {$ref: 'core.yaml#/components/responses/Conflict'}
+        '503': {$ref: '../hpdi/openapi.yaml#/components/responses/ServiceUnavailable'}
+  /workspaces/{workspace}/tickets/{id}/estimate-default:
+    parameters:
+    - $ref: core.yaml#/components/parameters/Workspace
+    - $ref: '#/components/parameters/TicketId'
+    get:
+      operationId: getTicketEstimateDefault
+      description: Coordinator with task:assign. The estimate review uses when estimateMinutes is omitted — median of closed work with the same category and priority (SIMILAR) when settings allow, otherwise the settings table (DEFAULT). Read-only.
+      parameters:
+      - name: category
+        in: query
+        required: true
+        schema: {type: string, enum: [HARDWARE, NETWORK, SOFTWARE, ACCOUNT, OTHER]}
+      - name: priority
+        in: query
+        required: true
+        schema: {type: string, enum: [LOW, MEDIUM, HIGH, CRITICAL]}
+      responses:
+        '200':
+          description: Default estimate for the review form.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [minutes, basis]
+                properties:
+                  minutes: {type: integer, minimum: 1, maximum: 10080}
+                  basis: {type: string, enum: [DEFAULT, SIMILAR]}
+                  sampleSize: {type: integer, minimum: 1, nullable: true}
+        '400': {$ref: 'core.yaml#/components/responses/BadRequest'}
+        '401': {$ref: 'core.yaml#/components/responses/Unauthorized'}
+        '403': {$ref: 'core.yaml#/components/responses/Forbidden'}
+        '404': {$ref: 'core.yaml#/components/responses/NotFound'}
+        '503': {$ref: '../hpdi/openapi.yaml#/components/responses/ServiceUnavailable'}
+  /workspaces/{workspace}/tickets/{id}/review:
+    parameters:
+    - $ref: core.yaml#/components/parameters/Workspace
+    - $ref: '#/components/parameters/TicketId'
+    post:
+      operationId: reviewTicket
+      description: Coordinator review with current task:assign and task:handle; independent agent required. Omit/null
+        estimateMinutes to freeze the default table, or supply an override. Reason is always required. Null assignee
+        leaves approved work unclaimed. No duty/SLA or automatic category-team routing. Old service-desk instances
+        retain the legacy flow and return 409 here.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewDecision'
+      responses:
+        '200':
+          description: Ticket sau khi duyệt
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ticket'
+        '400':
+          $ref: core.yaml#/components/responses/BadRequest
+        '401':
+          $ref: core.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: core.yaml#/components/responses/Forbidden
+        '404':
+          $ref: core.yaml#/components/responses/NotFound
+        '409':
+          $ref: core.yaml#/components/responses/Conflict
+  /workspaces/{workspace}/tickets/{id}/assistant/assessment:
+    parameters:
+      - {$ref: 'core.yaml#/components/parameters/Workspace'}
+      - {$ref: '#/components/parameters/TicketId'}
+    post:
+      operationId: assessTicketHierarchy
+      description: 'Đánh giá phân cấp chỉ đọc, mặc định tắt. Chỉ nhận title/description đã lưu và được phân quyền. Một lần phân loại model, nhãn con có bằng chứng, impact/urgency độc lập và ma trận priority hiện có. Grant độc lập phải ký model/policy và assessmentPolicyBundleDigest. Confidence và risk level null, luôn cần người duyệt; không sửa ticket, workflow, SLA hay phân công. SHADOW che toàn bộ nhãn, thuộc tính và bằng chứng; PROMOTED bị chặn. Kiểm tra lại actor/snapshot/grant/chính sách trước khi trả kết quả.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [contractVersion]
+              properties:
+                contractVersion: {type: string, enum: ['ticket-intelligence-assessment@0.2.0']}
+      responses:
+        '200':
+          description: 'Đề xuất cần duyệt hoặc DEGRADED với kết quả null. Cache-Control chứa no-store. Schema JSON 2020-12 được công bố riêng.'
+          headers:
+            Cache-Control:
+              schema: {type: string}
+          content:
+            application/json:
+              schema:
+                type: object
+                description: 'Hợp đồng đầy đủ tại contracts/apps/servicedesk/intelligence/ticket-assessment-v0.2.schema.json; kiểm thử Java/Python xác minh cùng fixture.'
+                externalDocs:
+                  url: '../apps/servicedesk/intelligence/ticket-assessment-v0.2.schema.json'
+        '400': {$ref: 'core.yaml#/components/responses/BadRequest'}
+        '401': {$ref: 'core.yaml#/components/responses/Unauthorized'}
+        '403': {$ref: 'core.yaml#/components/responses/Forbidden'}
+        '404': {$ref: 'core.yaml#/components/responses/NotFound'}
+        '409': {description: 'Snapshot, actor hoặc grant đã đổi; không công bố kết quả.'}
+        '502': {description: 'Cấu hình hoặc dữ liệu transport không hợp lệ.'}
+        '504': {description: 'Vượt hạn thời gian toàn luồng; không công bố kết quả.'}
+  /workspaces/{workspace}/tickets/{id}/assistant/classify:
+    parameters:
+      - {$ref: 'core.yaml#/components/parameters/Workspace'}
+      - {$ref: '#/components/parameters/TicketId'}
+    post:
+      operationId: classifyTicketWithModel
+      description: 'Additive model-primary category suggestion. DISABLED by default. SHADOW conceals the model observation; ASSISTED requires a separately signed workspace/model/policy processing grant. PROMOTED is refused pending independent Gold and release approval. Uses only persisted title/description; rule guards request review and never replace a class on a soft keyword. Actor, ticket snapshot and processing grant are checked again after inference. No routing, priority, workflow or ticket mutation; no calibrated confidence or semantic evidence claim. Existing assess/triage APIs are unchanged.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [contractVersion]
+              properties:
+                contractVersion: {type: string, enum: ['model-primary-assessment@0.1.0']}
+      responses:
+        '200':
+          description: 'Read-only model proposal or degraded abstention, always needsReview=true and Cache-Control=no-store.'
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ModelPrimaryAssessment'}
+        '400': {$ref: 'core.yaml#/components/responses/BadRequest'}
+        '401': {$ref: 'core.yaml#/components/responses/Unauthorized'}
+        '403': {$ref: 'core.yaml#/components/responses/Forbidden'}
+        '404': {$ref: 'core.yaml#/components/responses/NotFound'}
+        '409': {description: 'Ticket, actor or processing permission changed; no proposal is released.'}
+  /workspaces/{workspace}/tickets/{id}/assistant/assess:
+    parameters:
+      - {$ref: 'core.yaml#/components/parameters/Workspace'}
+      - {$ref: '#/components/parameters/TicketId'}
+    post:
+      operationId: assessTicket
+      description: 'AI07 additive assessment, disabled by default via serviceDesk.assistant.enabled. Uses persisted ticket input and authoritative rules service-desk@0.3.0. Models cannot override triage, priority, group or risk. includeGuidance=false performs no generation. Optional guidance reuses AI06 exact quotations and current source rights; semantic synthesis is disabled. Ticket identity, bytes, visibility and actor are rechecked before release. No caching, persistence or workflow mutation. COMPLETE describes requested components, not resolution or absence of human review. ReviewRequired can be true for a COMPLETE exact quotation. Source denial/drift and invalid upstream contracts fail the whole request.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/TicketAssessmentRequest'}
+      responses:
+        '200':
+          description: 'Assessment advice; Cache-Control: no-store. Provider timeout/unavailability yields PARTIAL or DEGRADED, preserving available rule output.'
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/TicketAssessmentResponse'}
+        '400': {$ref: 'core.yaml#/components/responses/BadRequest'}
+        '401': {$ref: 'core.yaml#/components/responses/Unauthorized'}
+        '403': {$ref: 'core.yaml#/components/responses/Forbidden'}
+        '404': {$ref: 'core.yaml#/components/responses/NotFound'}
+        '409':
+          description: Ticket or authorized source changed; no assessment is released.
+        '502':
+          description: Invalid private contract, rule projection or provider identity; no assessment is released.
+  /workspaces/{workspace}/tickets/{id}/assistance:
+    parameters:
+      - {$ref: 'core.yaml#/components/parameters/Workspace'}
+      - {$ref: '#/components/parameters/TicketId'}
+    post:
+      operationId: assistTicket
+      description: 'Disabled by default (404). LOCAL_DEV API mode sends only the question and visible ticket title/description to the explicitly configured provider. API advice uses public contract 0.2.0, reason MODEL_ADVICE, no citations and needsReview=true; it does not claim knowledge retrieval. Existing grounded modes retain contract 0.1.0, authorized source pins and verified quotation checks. Ticket access is rechecked after inference; API mode also rechecks actor and ticket content. No workflow mutation, answer persistence or caching.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/AssistanceQuestion'}
+      responses:
+        '200':
+          description: Verified quotation, explicit insufficient evidence, or explicitly labelled API model advice; Cache-Control no-store. Operational degradation uses 503/504.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/AssistanceResponse'}
+        '400': {$ref: 'core.yaml#/components/responses/BadRequest'}
+        '401': {$ref: 'core.yaml#/components/responses/Unauthorized'}
+        '403': {$ref: 'core.yaml#/components/responses/Forbidden'}
+        '404': {$ref: 'core.yaml#/components/responses/NotFound'}
+        '409':
+          description: Source provenance or rights changed. No answer or citations released.
+        '502':
+          description: Private response contract, pinned runtime or configuration failure. No answer released.
+        '503':
+          description: Private assistance unavailable or overloaded; manual workflow remains available.
+        '504':
+          description: Bounded private generation or transport deadline exceeded.
+  /workspaces/{workspace}/tickets/{id}/triage:
+    parameters:
+      - {$ref: 'core.yaml#/components/parameters/Workspace'}
+      - {$ref: '#/components/parameters/TicketId'}
+    post:
+      operationId: triageTicket
+      description: 'No request body is allowed: any body bytes, including {}, return 400. Requester sees own tickets; agent/coordinator sees workspace tickets. Input and profile are server-selected. The response is validated against contracts/intelligence/v1/triage-result.schema.json plus correlation, pinned profile and literal evidence checks. SUCCESS is advice only. DEGRADED has null result/explanation/runtime, empty evidence and needsReview=true. Never infer authorization or workflow actions from a suggestion.'
+      responses:
+        '200':
+          description: Valid logical SUCCESS or DEGRADED envelope, unchanged. Neither is a confirmed business decision.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/TriageResponse'}
+        '400': {$ref: 'core.yaml#/components/responses/BadRequest'}
+        '401': {$ref: 'core.yaml#/components/responses/Unauthorized'}
+        '403': {$ref: 'core.yaml#/components/responses/Forbidden'}
+        '404': {$ref: 'core.yaml#/components/responses/NotFound'}
+        '502':
+          description: Upstream contract failure or integration authentication/configuration failure; never an end-user login challenge.
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/TriageProblem'}
+        '503':
+          description: AI not configured, connection failure, upstream 429 or upstream 5xx. Manual workflow remains available.
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/TriageProblem'}
+        '504':
+          description: AI overall HTTP deadline exceeded, including response-body transfer.
+          content:
+            application/problem+json:
+              schema: {$ref: '#/components/schemas/TriageProblem'}
+  /workspaces/{workspace}/tickets:
+    parameters:
+    - $ref: core.yaml#/components/parameters/Workspace
+    post:
+      operationId: createTicket
+      description: Requester/agent/coordinator. Creator is the authenticated subject. Duplicate clientRequestId
+        per creator/workspace returns 409, including concurrent requests.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NewTicket'
+      responses:
+        '201':
+          description: Ticket, process scope, engine state and audit committed together.
+          headers:
+            X-Request-ID:
+              schema:
+                type: string
+                format: uuid
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Ticket'
+        '400':
+          $ref: core.yaml#/components/responses/BadRequest
+        '401':
+          $ref: core.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: core.yaml#/components/responses/Forbidden
+        '404':
+          $ref: core.yaml#/components/responses/NotFound
+        '409':
+          $ref: core.yaml#/components/responses/Conflict
+    get:
+      operationId: searchTickets
+      description: Requester sees own tickets; agent/coordinator sees workspace tickets. Stable newest-first ordering
+        by createdAt and id. Items carry the R6 state, classification, assessment and SLA like getTicket (legacy
+        service-desk tickets stay plain). state, priority, category, assignee and overdue use the same state rules as
+        statistics and may be combined. state=AWAITING_REVIEW alone (no other filter) is the coordinator review queue
+        (coordinator only; reviewed priority then oldest first).
+      parameters:
+      - $ref: '#/components/parameters/Query'
+      - $ref: '#/components/parameters/From'
+      - $ref: '#/components/parameters/To'
+      - $ref: core.yaml#/components/parameters/Page
+      - $ref: core.yaml#/components/parameters/Size
+      - name: state
+        in: query
+        style: form
+        explode: true
+        description: Repeat to select several states.
+        schema:
+          type: array
+          items:
+            type: string
+            enum: [AWAITING_REVIEW, ASSIGNED, IN_PROGRESS, PENDING, AWAITING_CONFIRMATION, REOPENED, INTAKE, FOLLOWING, CLOSED, UNCLASSIFIED]
+      - name: priority
+        in: query
+        style: form
+        explode: true
+        description: Effective priority (escalation applied) while handling, otherwise the latest reviewed priority. Unreviewed tickets never match.
+        schema:
+          type: array
+          items: {type: string, enum: [LOW, MEDIUM, HIGH, CRITICAL]}
+      - name: category
+        in: query
+        description: Reviewed category.
+        schema: {type: string, enum: [HARDWARE, NETWORK, SOFTWARE, ACCOUNT, OTHER]}
+      - name: assignee
+        in: query
+        description: Assignee of the current task; "me" is the caller.
+        schema: {type: string, maxLength: 100}
+      - name: overdue
+        in: query
+        description: true = handle task currently breaches its start or resolve SLA.
+        schema: {type: boolean}
+      - name: sort
+        in: query
+        schema:
+          type: string
+          enum:
+          - createdAt
+          - priority
+        description: createdAt = newest first (default). priority = queue order (R4) - IN_PROGRESS first, then effective priority, then nearest SLA deadline, then oldest first.
+      responses:
+        '200':
+          description: Authorized tickets only; total uses the same access filter.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TicketPage'
+        '400':
+          $ref: core.yaml#/components/responses/BadRequest
+        '401':
+          $ref: core.yaml#/components/responses/Unauthorized
+        '403':
+          $ref: core.yaml#/components/responses/Forbidden
+  /workspaces/{workspace}/tickets/statistics:
+    parameters:
+      - {$ref: 'core.yaml#/components/parameters/Workspace'}
+    get:
+      operationId: getTicketStatistics
+      description: One workspace only. Requester counts own tickets; agent/coordinator counts workspace tickets, including tasks not yet claimed. Filters match Ticket List. Current workflow states of tickets created in the selected interval, not historical completion counts. No caching or separate status storage.
+      parameters:
+        - {$ref: '#/components/parameters/Query'}
+        - {$ref: '#/components/parameters/From'}
+        - {$ref: '#/components/parameters/To'}
+      responses:
+        '200':
+          description: Single database snapshot; total equals the sum of the four mutually exclusive state counts. Empty results have all counts zero.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/TicketStatistics'}
+        '400': {$ref: 'core.yaml#/components/responses/BadRequest'}
+        '401': {$ref: 'core.yaml#/components/responses/Unauthorized'}
+        '403': {$ref: 'core.yaml#/components/responses/Forbidden'}
+  /workspaces/{workspace}/tickets/{id}:
+    parameters:
+      - {$ref: 'core.yaml#/components/parameters/Workspace'}
+      - {$ref: '#/components/parameters/TicketId'}
+    get:
+      operationId: getTicket
+      description: Same visibility as list. Missing or hidden ticket returns 404. Assessment is persisted background advice only; GET never calls Intelligence. PENDING may be polled; READY and DEGRADED are terminal and never block manual coordinator review.
+      responses:
+        '200':
+          description: Persisted ticket with canonical process reference.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/Ticket'}
+              examples:
+                pending:
+                  summary: Persisted ticket; background advice is not ready
+                  value: &backgroundTicketExample
+                    id: '11111111-1111-4111-8111-111111111111'
+                    workspace: lab-a
+                    creator: requester-subject
+                    clientRequestId: '22222222-2222-4222-8222-222222222222'
+                    title: wifi
+                    description: Network problem on one device; work can wait
+                    createdAt: '2026-10-27T00:00:00Z'
+                    process:
+                      processInstanceId: example-process-id
+                      processKey: service-desk-reviewed
+                      businessKey: '11111111-1111-4111-8111-111111111111'
+                      workspace: lab-a
+                    state: AWAITING_REVIEW
+                    classification: null
+                    assessment: {status: PENDING, version: 1, result: null, errorCode: null}
+                ready:
+                  summary: Illustrative persisted rules advice, not a coordinator decision
+                  value:
+                    <<: *backgroundTicketExample
+                    assessment:
+                      status: READY
+                      version: 1
+                      errorCode: null
+                      result:
+                        contractVersion: '0.1.0'
+                        profileVersion: service-desk@0.3.0
+                        engine: rules
+                        rulesVersion: '0.3.0'
+                        modelVersion: null
+                        category: NETWORK
+                        priority: LOW
+                        impact: I1
+                        urgency: U2
+                        reasonCode: CLASSIFIED
+                        evidence: [{field: title, text: wifi}]
+                        explanation:
+                          classificationReason: Network signals require coordinator confirmation.
+                          priorityReason: Low priority follows the I1/U2 policy matrix.
+                        needsReview: false
+                        nextQuestions: []
+                degraded:
+                  summary: Permanent service authorization failure; manual review remains available
+                  value:
+                    <<: *backgroundTicketExample
+                    assessment: {status: DEGRADED, version: 1, result: null, errorCode: AUTHORIZATION_REVOKED}
+        '400': {$ref: 'core.yaml#/components/responses/BadRequest'}
+        '401': {$ref: 'core.yaml#/components/responses/Unauthorized'}
+        '403': {$ref: 'core.yaml#/components/responses/Forbidden'}
+        '404': {$ref: 'core.yaml#/components/responses/NotFound'}
+  /workspaces/{workspace}/tickets/{id}/progress:
+    parameters:
+      - {$ref: 'core.yaml#/components/parameters/Workspace'}
+      - {$ref: '#/components/parameters/TicketId'}
+    get:
+      operationId: getTicketProgress
+      description: Ticket visibility plus unchanged Core history policy. Before claim an unrelated agent gets 404; discover work using Core candidate inbox, then claim. Creator, coordinator or prior assignee can read history.
+      responses:
+        '200':
+          description: Live Flowable history. handle resolved leads to confirm; confirm accepted ends, rework returns to handle.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/TicketProgress'}
+        '400': {$ref: 'core.yaml#/components/responses/BadRequest'}
+        '401': {$ref: 'core.yaml#/components/responses/Unauthorized'}
+        '403': {$ref: 'core.yaml#/components/responses/Forbidden'}
+        '404': {$ref: 'core.yaml#/components/responses/NotFound'}
+components:
+  securitySchemes:
+    bearer: {type: http, scheme: bearer, bearerFormat: JWT}
+  parameters:
+    Query:
+      name: q
+      in: query
+      description: Case-insensitive literal substring in title or description; no wildcard syntax or control characters. Empty or omitted matches all visible tickets.
+      schema: {type: string, maxLength: 200}
+    From:
+      name: from
+      in: query
+      description: Inclusive ticket createdAt lower bound, RFC3339 with timezone. Years 0001-9999, at most microsecond precision. Must precede to when both are supplied.
+      schema: {type: string, format: date-time}
+    To:
+      name: to
+      in: query
+      description: Exclusive ticket createdAt upper bound, RFC3339 with timezone. Years 0001-9999, at most microsecond precision. Omitted bounds are unbounded.
+      schema: {type: string, format: date-time}
+    TicketId:
+      name: id
+      in: path
+      required: true
+      schema: {type: string, format: uuid}
+  schemas:
+    ServiceDeskSettings:
+      type: object
+      additionalProperties: false
+      description: Administrative storage only. PUT rejects unknown and read-only metadata
+        fields. OTHER must remain null for Coordinator selection. Specialty names must
+        match [a-z][a-z0-9-]{0,49}; role/reserved names requester, agent, coordinator,
+        platform-admin, system, global are forbidden. Group existence and per-workspace
+        membership are not asserted by this global document.
+      required:
+      - version
+      - categoryGroups
+      - estimateDefaults
+      properties:
+        version:
+          type: integer
+          minimum: 0
+          maximum: 9223372036854775807
+        updatedAt:
+          type: string
+          format: date-time
+          readOnly: true
+        updatedBy:
+          type: string
+          readOnly: true
+        categoryGroups:
+          type: object
+          additionalProperties: false
+          description: 'R1. Loại lỗi → tổ (tên group Keycloak trong workspace). OTHER
+            = null: điều phối viên tự chọn'
+          required:
+          - HARDWARE
+          - NETWORK
+          - SOFTWARE
+          - ACCOUNT
+          - OTHER
+          properties:
+            HARDWARE:
+              type: string
+              example: hardware
+              pattern: ^[a-z][a-z0-9-]{0,49}$
+              minLength: 1
+              maxLength: 50
+            NETWORK:
+              type: string
+              example: network
+              pattern: ^[a-z][a-z0-9-]{0,49}$
+              minLength: 1
+              maxLength: 50
+            SOFTWARE:
+              type: string
+              example: software
+              pattern: ^[a-z][a-z0-9-]{0,49}$
+              minLength: 1
+              maxLength: 50
+            ACCOUNT:
+              type: string
+              example: sysadmin
+              pattern: ^[a-z][a-z0-9-]{0,49}$
+              minLength: 1
+              maxLength: 50
+            OTHER:
+              type: string
+              nullable: true
+              enum:
+              - null
+        estimateDefaults:
+          type: object
+          additionalProperties: false
+          description: R2. Bảng ET mặc định (phút) theo loại × ưu tiên
+          required:
+          - HARDWARE
+          - NETWORK
+          - SOFTWARE
+          - ACCOUNT
+          - OTHER
+          properties:
+            HARDWARE:
+              $ref: '#/components/schemas/EstimateRow'
+            NETWORK:
+              $ref: '#/components/schemas/EstimateRow'
+            SOFTWARE:
+              $ref: '#/components/schemas/EstimateRow'
+            ACCOUNT:
+              $ref: '#/components/schemas/EstimateRow'
+            OTHER:
+              $ref: '#/components/schemas/EstimateRow'
+    EstimateRow:
+      type: object
+      additionalProperties: false
+      required:
+      - LOW
+      - MEDIUM
+      - HIGH
+      - CRITICAL
+      properties:
+        LOW:
+          type: integer
+          minimum: 1
+          maximum: 10080
+        MEDIUM:
+          type: integer
+          minimum: 1
+          maximum: 10080
+        HIGH:
+          type: integer
+          minimum: 1
+          maximum: 10080
+        CRITICAL:
+          type: integer
+          minimum: 1
+          maximum: 10080
+    ReviewDecision:
+      type: object
+      additionalProperties: false
+      required:
+      - category
+      - priority
+      - assignee
+      - reason
+      properties:
+        expectedContextRevision:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Required for tickets enrolled in intake admission.
+        expectedIntakeVersion:
+          type: integer
+          format: int64
+          minimum: 0
+          description: Compare-and-set version returned by GET intake.
+        category:
+          $ref: '#/components/schemas/Category'
+        impact:
+          $ref: '#/components/schemas/Impact'
+        urgency:
+          $ref: '#/components/schemas/Urgency'
+        priority:
+          $ref: ../hpdi/openapi.yaml#/components/schemas/Priority
+        estimateMinutes:
+          type: integer
+          minimum: 1
+          maximum: 10080
+          nullable: true
+          description: Omit/null for a frozen default estimate; an integer is a coordinator override.
+        assignee:
+          type: string
+          nullable: true
+          description: subject; null = để chờ ca sau
+          maxLength: 100
+        reason:
+          type: string
+          maxLength: 1000
+          description: Bắt buộc khi có giá trị khác gợi ý AI hoặc khác người được đề xuất
+          minLength: 1
+    Category:
+      type: string
+      enum:
+      - HARDWARE
+      - NETWORK
+      - SOFTWARE
+      - ACCOUNT
+      - OTHER
+    Impact:
+      type: string
+      enum:
+      - I1
+      - I2
+      - I3
+      - I4
+    Urgency:
+      type: string
+      enum:
+      - U1
+      - U2
+      - U3
+      - U4
+    Classification:
+      type: object
+      additionalProperties: false
+      description: Effective classification after review/correction, or a background AI label before review. Only unresolved AI labels may have a null category.
+      required:
+      - category
+      - priority
+      - basePriority
+      - escalated
+      - group
+      - source
+      oneOf:
+      - properties:
+          source: {enum: [AI]}
+      - properties:
+          source: {enum: [COORDINATOR, AGENT]}
+          category:
+            $ref: '#/components/schemas/Category'
+      properties:
+        category:
+          anyOf:
+          - $ref: '#/components/schemas/Category'
+          - {type: string, nullable: true, enum: [null]}
+        impact:
+          type: string
+          nullable: true
+          enum:
+          - I1
+          - I2
+          - I3
+          - I4
+          - null
+        urgency:
+          type: string
+          nullable: true
+          enum:
+          - U1
+          - U2
+          - U3
+          - U4
+          - null
+        priority:
+          $ref: ../hpdi/openapi.yaml#/components/schemas/Priority
+        basePriority:
+          $ref: ../hpdi/openapi.yaml#/components/schemas/Priority
+        escalated:
+          type: boolean
+          description: Được nâng bậc do chờ lâu (R5)
+        priorityDefaulted:
+          type: boolean
+        group:
+          type: string
+          description: Support group of the category from Service Desk settings (categoryGroups); "manual" for OTHER (coordinator chooses).
+        source:
+          type: string
+          enum:
+          - AI
+          - COORDINATOR
+          - AGENT
+          description: Ai đặt giá trị hiện tại
+        reviewedBy:
+          type: string
+          nullable: true
+        reviewedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    ModelPrimaryAssessment:
+      type: object
+      additionalProperties: false
+      required: [contractVersion, mode, status, classification, policyDisposition, triage, needsReview, operationalAuthority]
+      properties:
+        contractVersion: {type: string, enum: ['model-primary-assessment@0.1.0']}
+        mode: {type: string, enum: [SHADOW, ASSISTED]}
+        status: {type: string, enum: [REVIEW_REQUIRED, DEGRADED]}
+        needsReview: {type: boolean, enum: [true]}
+        operationalAuthority: {type: boolean, enum: [false]}
+        classification:
+          type: object
+          nullable: true
+          additionalProperties: false
+          required: [decision, category, provider, modelDigest, policyDigest, score, scoreSemantics, evidenceStatus]
+          properties:
+            decision: {type: string, enum: [PROPOSE, ABSTAIN]}
+            category: {type: string, nullable: true, enum: [ACCOUNT, HARDWARE, NETWORK, OTHER, SOFTWARE, null]}
+            provider: {type: string, maxLength: 100}
+            modelDigest: {type: string, pattern: '^[0-9a-f]{64}$'}
+            policyDigest: {type: string, pattern: '^[0-9a-f]{64}$'}
+            score: {type: number, nullable: true, enum: [null]}
+            scoreSemantics: {type: string, enum: [NOT_AVAILABLE]}
+            evidenceStatus: {type: string, enum: [UNVERIFIED_BY_MODEL]}
+        policyDisposition:
+          type: object
+          additionalProperties: false
+          required: [status, reasonCodes, ruleMatches, autoRoutingAllowed]
+          properties:
+            status: {type: string, enum: [REVIEW_REQUIRED]}
+            reasonCodes: {type: array, items: {type: string}}
+            autoRoutingAllowed: {type: boolean, enum: [false]}
+            ruleMatches:
+              type: array
+              items:
+                type: object
+                additionalProperties: false
+                required: [ruleId, kind, field, start, end, text]
+                properties:
+                  ruleId: {type: string}
+                  kind: {type: string, enum: [SOFT_SIGNAL, HARD_EXCLUSION, REVIEW_CONFLICT, TAXONOMY_BOUNDARY, SAFETY_GATE]}
+                  field: {type: string, enum: [title, description]}
+                  start: {type: integer, minimum: 0}
+                  end: {type: integer, minimum: 1}
+                  text: {type: string}
+        triage:
+          type: object
+          additionalProperties: false
+          required: [impact, urgency, priority, riskStatus]
+          properties:
+            impact: {type: string, nullable: true, enum: [null]}
+            urgency: {type: string, nullable: true, enum: [null]}
+            priority: {type: string, nullable: true, enum: [null]}
+            riskStatus: {type: string, enum: [NOT_ASSESSED]}
+    TicketAssessmentRequest:
+      type: object
+      additionalProperties: false
+      required: [contractVersion, includeGuidance]
+      properties:
+        contractVersion: {type: string, enum: ['0.1.0']}
+        includeGuidance: {type: boolean}
+        question: {type: string, minLength: 1, maxLength: 2000, pattern: '\S', description: 'Optional. Nonblank; only tab/CR/LF control characters permitted. Body limit 16 KiB; duplicate keys and trailing JSON rejected.'}
+    TicketAssessmentResponse:
+      type: object
+      additionalProperties: false
+      required: [contractVersion, requestId, status, triage, risk, guidance, reviewRequired, reviewReasons, nextQuestions, runtime]
+      properties:
+        contractVersion: {type: string, enum: ['0.1.0']}
+        requestId: {type: string, format: uuid}
+        status: {type: string, enum: [COMPLETE, PARTIAL, REVIEW_REQUIRED, DEGRADED]}
+        triage: {$ref: '#/components/schemas/AssessmentTriage'}
+        risk:
+          type: object
+          additionalProperties: false
+          required: [status, level, reasonCode]
+          properties:
+            status: {type: string, enum: [NOT_ASSESSED]}
+            level: {type: string, nullable: true, enum: [null]}
+            reasonCode: {type: string, enum: [NO_APPROVED_RISK_RUBRIC]}
+        guidance:
+          type: object
+          additionalProperties: false
+          required: [status, answer, citations, reasonCode]
+          properties:
+            status: {type: string, enum: [SUPPORTED, INSUFFICIENT_EVIDENCE, UNAVAILABLE, NOT_REQUESTED]}
+            answer: {type: string, nullable: true}
+            citations:
+              type: array
+              items: {$ref: '#/components/schemas/AssistanceCitation'}
+            reasonCode: {type: string}
+        reviewRequired: {type: boolean}
+        reviewReasons: {type: array, uniqueItems: true, items: {type: string}}
+        nextQuestions: {type: array, maxItems: 2, items: {type: string}}
+        runtime:
+          type: object
+          additionalProperties: false
+          required: [triageProfileVersion, assistantPolicyVersion]
+          properties:
+            triageProfileVersion: {type: string, enum: ['service-desk@0.3.0']}
+            assistantPolicyVersion: {type: string, enum: ['ticket-assistant@0.1.0']}
+    AssessmentTriage:
+      type: object
+      additionalProperties: false
+      required: [status, category, priority, suggestedGroup, impact, urgency, reasonCode, matchedRules, inputEvidence, needsReview, explanation]
+      properties:
+        status: {type: string, enum: [SUCCESS, DEGRADED]}
+        category: {type: string, nullable: true, enum: [NETWORK, ACCOUNT, SOFTWARE, HARDWARE, OTHER, null]}
+        priority: {type: string, nullable: true, enum: [LOW, MEDIUM, HIGH, CRITICAL, null]}
+        suggestedGroup: {type: string, nullable: true, enum: [IT-NETWORK, IT-ACCOUNT, IT-SOFTWARE, IT-HARDWARE, GENERAL-SUPPORT, null]}
+        impact: {type: string, nullable: true, enum: [I1, I2, I3, I4, null]}
+        urgency: {type: string, nullable: true, enum: [U1, U2, U3, U4, null]}
+        reasonCode: {type: string, enum: [CLASSIFIED, ROOT_CAUSE_CONFLICT, INSUFFICIENT_INFORMATION, INTELLIGENCE_UNAVAILABLE]}
+        matchedRules: {type: array, maxItems: 16, uniqueItems: true, items: {type: string}}
+        inputEvidence:
+          type: array
+          maxItems: 16
+          items:
+            type: object
+            additionalProperties: false
+            required: [field, text]
+            properties:
+              field: {type: string, enum: [title, description]}
+              text: {type: string, minLength: 1, maxLength: 4000}
+        needsReview: {type: boolean}
+        explanation:
+          type: object
+          nullable: true
+          additionalProperties: false
+          required: [classificationReason, priorityReason]
+          properties:
+            classificationReason: {type: string}
+            priorityReason: {type: string}
+    AssistanceQuestion:
+      type: object
+      additionalProperties: false
+      required: [question]
+      properties:
+        question: {type: string, minLength: 1, maxLength: 2000, pattern: '\S', description: 'No control characters except tab/CR/LF. Entire UTF-8 request body is bounded to 16 KiB. Duplicate JSON keys are rejected.'}
+    AssistanceCitation:
+      type: object
+      additionalProperties: false
+      required: [citationId, displayTitle, sourceVersion]
+      properties:
+        citationId: {type: string, pattern: '^C[1-3]$'}
+        displayTitle: {type: string, minLength: 1, maxLength: 200}
+        sourceVersion: {type: string, minLength: 1, maxLength: 100}
+    AssistanceResponse:
+      oneOf:
+        - {$ref: '#/components/schemas/GroundedAssistanceResponse'}
+        - {$ref: '#/components/schemas/ApiAdvisoryAssistanceResponse'}
+    ApiAdvisoryAssistanceResponse:
+      type: object
+      additionalProperties: false
+      required: [contractVersion, requestId, status, answer, citations, needsReview, reasonCode]
+      properties:
+        contractVersion: {type: string, enum: ['0.2.0']}
+        requestId: {type: string, format: uuid}
+        status: {type: string, enum: [SUCCESS]}
+        answer: {type: string, minLength: 1, maxLength: 16000}
+        citations: {type: array, maxItems: 0, items: {$ref: '#/components/schemas/AssistanceCitation'}}
+        needsReview: {type: boolean, enum: [true]}
+        reasonCode: {type: string, enum: [MODEL_ADVICE]}
+    GroundedAssistanceResponse:
+      type: object
+      additionalProperties: false
+      required: [contractVersion, requestId, status, answer, citations, needsReview, reasonCode]
+      properties:
+        contractVersion: {type: string, enum: ['0.1.0']}
+        requestId: {type: string, format: uuid}
+        status: {type: string, enum: [SUCCESS, INSUFFICIENT_EVIDENCE]}
+        answer: {type: string, nullable: true, minLength: 1, maxLength: 16000}
+        citations: {type: array, maxItems: 3, items: {$ref: '#/components/schemas/AssistanceCitation'}}
+        needsReview: {type: boolean, enum: [true]}
+        reasonCode: {type: string, enum: [GROUNDED, INSUFFICIENT_EVIDENCE]}
+      oneOf:
+        - properties:
+            status: {enum: [SUCCESS]}
+            answer: {type: string, minLength: 1}
+            citations: {minItems: 1}
+            reasonCode: {enum: [GROUNDED]}
+        - properties:
+            status: {enum: [INSUFFICIENT_EVIDENCE]}
+            answer: {nullable: true, enum: [null]}
+            citations: {maxItems: 0}
+            reasonCode: {enum: [INSUFFICIENT_EVIDENCE]}
+    TriageProblem:
+      type: object
+      required: [type, title, status, detail, code]
+      properties:
+        type: {type: string}
+        title: {type: string}
+        status: {type: integer, enum: [502, 503, 504]}
+        detail: {type: string}
+        instance: {type: string}
+        requestId: {type: string}
+        code: {type: string, enum: [INTELLIGENCE_CONTRACT_FAILED, INTELLIGENCE_INTEGRATION_FAILED, INTELLIGENCE_UNAVAILABLE, INTELLIGENCE_TIMEOUT]}
+    TriageResponse:
+      type: object
+      additionalProperties: false
+      required: [contractVersion, requestId, profile, workspaceId, status, result, evidence, explanation, runtime, needsReview, error]
+      properties:
+        contractVersion: {type: string, enum: ['0.1.0']}
+        requestId: {type: string, minLength: 1}
+        profile: {type: string, enum: [service-desk]}
+        workspaceId: {type: string, minLength: 1}
+        status: {type: string, enum: [SUCCESS, DEGRADED]}
+        needsReview: {type: boolean}
+        result:
+          type: object
+          nullable: true
+          additionalProperties: false
+          required: [category, priority, suggestedGroup]
+          properties:
+            category: {type: string, minLength: 1}
+            priority: {type: string, minLength: 1}
+            suggestedGroup: {type: string, minLength: 1}
+        evidence:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [type, field, text]
+            properties:
+              type: {type: string, enum: [INPUT]}
+              field: {type: string, enum: [title, description]}
+              text: {type: string, minLength: 1}
+        explanation:
+          type: object
+          nullable: true
+          additionalProperties: false
+          required: [matchedRules, impact, urgency, reasonCode, text]
+          properties:
+            matchedRules: {type: array, uniqueItems: true, items: {type: string, minLength: 1}}
+            impact: {type: string, nullable: true}
+            urgency: {type: string, nullable: true}
+            reasonCode: {type: string, enum: [CLASSIFIED, ROOT_CAUSE_CONFLICT, INSUFFICIENT_INFORMATION]}
+            text: {type: string, minLength: 1}
+        runtime:
+          type: object
+          nullable: true
+          additionalProperties: false
+          required: [engine, profileVersion]
+          properties:
+            engine: {type: string, minLength: 1}
+            profileVersion: {type: string, enum: ['service-desk@0.3.0']}
+            rulesVersion: {type: string, minLength: 1}
+            modelVersion: {type: string, minLength: 1}
+        error:
+          type: object
+          nullable: true
+          additionalProperties: false
+          required: [code]
+          properties:
+            code: {type: string, enum: [INTELLIGENCE_UNAVAILABLE]}
+    TicketStatistics:
+      description: >
+        V2 partition: intake + following + awaitingReview + assigned + inProgress + pending + reopened + awaitingConfirmation + closed + unclassified = total.
+        Legacy awaitingHandling and completed are aliases/rollups, not additional partition members.
+        Intake and following are now classified rather than included in legacy unclassified.
+      type: object
+      additionalProperties: false
+      required: [workspace, visibility, total, awaitingHandling, awaitingConfirmation, completed, unclassified, awaitingReview, assigned, inProgress, pending, reopened, closed, overdue, intake, following]
+      properties:
+        workspace: {type: string}
+        visibility: {type: string, enum: [own, workspace]}
+        total: {type: integer, format: int64, minimum: 0}
+        awaitingHandling: {type: integer, format: int64, minimum: 0, description: 'Legacy rollup of active review and handle tasks; includes awaitingReview, assigned, inProgress, pending and reopened.'}
+        awaitingConfirmation: {type: integer, format: int64, minimum: 0, description: Exactly one active confirm task.}
+        completed: {type: integer, format: int64, minimum: 0, description: Normal ticket completion with no remaining work; excludes cancelled processes.}
+        unclassified: {type: integer, format: int64, minimum: 0, description: 'Missing or mismatched scope/history, suspended, deleted or unexpected task configuration; never assumed completed.'}
+        awaitingReview: {type: integer, format: int64, minimum: 0, description: "Active review without prior rework."}
+        assigned: {type: integer, format: int64, minimum: 0, description: "Active handle not started and without prior rework; may be unclaimed."}
+        inProgress: {type: integer, format: int64, minimum: 0, description: "Active handle with native executionState IN_PROGRESS."}
+        pending: {type: integer, format: int64, minimum: 0, description: "Active handle with native executionState PENDING."}
+        reopened: {type: integer, format: int64, minimum: 0, description: "Review or not-started handle after rework; counted once per ticket."}
+        closed: {type: integer, format: int64, minimum: 0, description: "Alias of completed, including R11 AUTO and REQUESTER closure."}
+        overdue: {type: integer, format: int64, minimum: 0, description: "Cross-cutting current unresolved handle SLA breach; excludes resolved work and historical breaches. Uses snapshotted policy and paused business clock; strict deadline comparison."}
+        intake: {type: integer, format: int64, minimum: 0, description: "Active intake task, including rework admission."}
+        following: {type: integer, format: int64, minimum: 0, description: "Active canonical follower, not yet closed."}
+    Correction:
+      type: object
+      additionalProperties: false
+      required: [operationId, processInstanceId, reviewTaskId, handleTaskId, field, previousValue, newValue, fromAi, by, reason, at]
+      properties:
+        operationId: {type: string, format: uuid}
+        processInstanceId: {type: string}
+        reviewTaskId: {type: string}
+        handleTaskId: {type: string}
+        field: {type: string, enum: [category, priority]}
+        previousValue: {type: string}
+        newValue: {type: string}
+        fromAi: {type: boolean, enum: [false], description: Previous authoritative values are human-reviewed; no unproven AI attribution.}
+        by: {type: string}
+        reason: {type: string, minLength: 1, maxLength: 1000}
+        at: {type: string, format: date-time}
+    NewTicket:
+      type: object
+      additionalProperties: false
+      required: [clientRequestId, title, description]
+      properties:
+        clientRequestId: {type: string, format: uuid, description: 'Submission key, not the X-Request-ID tracing header.'}
+        title: {type: string, minLength: 1, maxLength: 200, description: Nonblank; no control characters.}
+        description: {type: string, minLength: 1, maxLength: 4000, description: Nonblank; only tab/CR/LF control characters permitted.}
+    Ticket:
+      type: object
+      additionalProperties: false
+      required:
+      - id
+      - workspace
+      - creator
+      - clientRequestId
+      - title
+      - description
+      - createdAt
+      - process
+      properties:
+        id:
+          type: string
+          format: uuid
+        workspace:
+          type: string
+        creator:
+          type: string
+        clientRequestId:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        process:
+          $ref: '#/components/schemas/TicketProcessView'
+        state:
+          type: string
+          enum:
+          - AWAITING_REVIEW
+          - ASSIGNED
+          - IN_PROGRESS
+          - PENDING
+          - AWAITING_CONFIRMATION
+          - REOPENED
+          - INTAKE
+          - FOLLOWING
+          - CLOSED
+          - UNCLASSIFIED
+        taskId:
+          type: string
+          nullable: true
+        assignee:
+          type: string
+          nullable: true
+        estimate:
+          anyOf:
+          - $ref: ../hpdi/openapi.yaml#/components/schemas/Estimate
+          - type: object
+            nullable: true
+            enum:
+            - null
+        workState:
+          type: string
+          nullable: true
+          enum:
+          - NOT_STARTED
+          - IN_PROGRESS
+          - PENDING
+          - null
+        workedMinutes:
+          type: integer
+          minimum: 0
+          nullable: true
+        remainingMinutes:
+          type: integer
+          minimum: 0
+          nullable: true
+        reopenCount:
+          type: integer
+          minimum: 0
+        closedAt: {type: string, format: date-time, nullable: true}
+        closedBy: {type: string, nullable: true, enum: [REQUESTER, AUTO, null]}
+        handleResolvedAt: {type: string, format: date-time}
+        confirmStartedAt: {type: string, format: date-time}
+        confirmDeadlineAt: {type: string, format: date-time, description: Confirm start plus 72 continuous hours in UTC; not business days.}
+        confirmGeneration: {type: string, description: Immutable Flowable confirm task identifier.}
+        confirmationHistory: {type: array, items: {$ref: '#/components/schemas/ConfirmationHistory'}}
+        corrections:
+          type: array
+          description: Present for current staff only; omitted for Requester and ticket creator. Ordered by time, operation and field.
+          items: {$ref: '#/components/schemas/Correction'}
+        classification:
+          anyOf:
+          - $ref: '#/components/schemas/Classification'
+          - type: object
+            nullable: true
+            enum:
+            - null
+
+        sla:
+          description: Null before approval, during rework review, or for pre-R5 rounds. FE must not recalculate deadlines.
+          anyOf:
+          - $ref: '../hpdi/openapi.yaml#/components/schemas/Sla'
+          - {type: object, nullable: true, enum: [null]}
+        assessment:
+          description: Persisted background advice only; never assigns or reviews a ticket. Null for tickets without a stored assessment. GET does not invoke AI.
+          anyOf:
+          - $ref: '#/components/schemas/StoredAssessment'
+          - {type: object, nullable: true, enum: [null]}
+
+    StoredAssessment:
+      type: object
+      additionalProperties: false
+      required: [status, version, result]
+      properties:
+        errorCode: {type: string, nullable: true, description: 'Safe machine code only; never upstream response text. May be present during a retry.'}
+        status: {type: string, enum: [PENDING, READY, DEGRADED]}
+        version: {type: integer, enum: [1]}
+        result:
+          anyOf:
+          - $ref: '#/components/schemas/StoredAssessmentResult'
+          - {type: object, nullable: true, enum: [null]}
+      oneOf:
+      - properties:
+          status: {enum: [READY]}
+          result: {$ref: '#/components/schemas/StoredAssessmentResult'}
+      - properties:
+          status: {enum: [PENDING, DEGRADED]}
+          result: {type: object, nullable: true, enum: [null]}
+
+    StoredAssessmentResult:
+      type: object
+      additionalProperties: false
+      required: [contractVersion, profileVersion, engine, rulesVersion, modelVersion, category, priority, impact, urgency, reasonCode, evidence, explanation, needsReview, nextQuestions]
+      properties:
+        contractVersion: {type: string, enum: ['0.1.0']}
+        profileVersion: {type: string, enum: ['service-desk@0.3.0', 'service-desk-local@1.0.0', 'service-desk-hybrid@1.0.0']}
+        engine: {type: string, enum: [rules, model, hybrid]}
+        rulesVersion: {type: string, enum: ['0.3.0', 'servicedesk-local-facts@0.1.0', '0.3.0+local-facts@0.1.0']}
+        modelVersion: {type: string, nullable: true, description: 'SHA-256 model identity for model advice; null for the rules pipeline.'}
+        category: {type: string, nullable: true, enum: [NETWORK, SOFTWARE, HARDWARE, ACCOUNT, OTHER, null]}
+        priority: {type: string, nullable: true, enum: [LOW, MEDIUM, HIGH, CRITICAL, null]}
+        impact: {type: string, nullable: true, enum: [I1, I2, I3, I4, null]}
+        urgency: {type: string, nullable: true, enum: [U1, U2, U3, U4, null]}
+        reasonCode: {type: string, enum: [CLASSIFIED, ROOT_CAUSE_CONFLICT, INSUFFICIENT_INFORMATION, MODEL_CLASSIFIED, MODEL_ABSTAINED, MODEL_REVIEW_REQUIRED, MODEL_UNAVAILABLE, HYBRID_CONFLICT, RULES_SUPPORTED]}
+        cooperation:
+          type: object
+          nullable: true
+          additionalProperties: false
+          required: [provider, modelCategory, rulesCategory, modelStatus, rulesStatus, decision]
+          properties:
+            provider: {type: string}
+            modelCategory: {type: string, nullable: true}
+            rulesCategory: {type: string, nullable: true}
+            modelStatus: {type: string, enum: [AVAILABLE, UNAVAILABLE, ABSTAINED, BLOCKED]}
+            rulesStatus: {type: string, enum: [CLASSIFIED, UNAVAILABLE, INSUFFICIENT_INFORMATION]}
+            decision: {type: string, enum: [AGREEMENT, CONFLICT, MODEL_SUPPORTED, RULES_SUPPORTED, MANUAL_REVIEW, INSUFFICIENT_INFORMATION]}
+        evidence:
+          type: array
+          minItems: 0
+          maxItems: 64
+          items:
+            type: object
+            additionalProperties: false
+            required: [field, text]
+            properties:
+              field: {type: string, enum: [title, description]}
+              text: {type: string, minLength: 1}
+        explanation:
+          type: object
+          additionalProperties: false
+          required: [classificationReason, priorityReason]
+          properties:
+            classificationReason: {type: string}
+            priorityReason: {type: string}
+        needsReview: {type: boolean}
+        nextQuestions: {type: array, items: {type: string}}
+
+    TicketPage:
+      allOf:
+        - {$ref: '#/components/schemas/TicketPageMeta'}
+        - type: object
+          required: [items]
+          properties:
+            items: {type: array, items: {$ref: '#/components/schemas/Ticket'}}
+
+    TicketProcessView:
+      type: object
+      required: [processInstanceId, processKey, businessKey, workspace]
+      properties:
+        id: {type: string, description: Legacy alias of processInstanceId}
+        processInstanceId: {type: string}
+        processKey: {type: string}
+        businessKey: {type: string}
+        workspace: {type: string}
+
+    TicketProgress:
+      type: object
+      required: [id, processKey, businessKey, workspace, initiator, startedAt, currentTasks, steps]
+      properties:
+        closedAt: {type: string, format: date-time, nullable: true}
+        closedBy: {type: string, nullable: true, enum: [REQUESTER, AUTO, null]}
+        handleResolvedAt: {type: string, format: date-time}
+        confirmStartedAt: {type: string, format: date-time}
+        confirmDeadlineAt: {type: string, format: date-time}
+        confirmGeneration: {type: string}
+        confirmationHistory: {type: array, items: {$ref: '#/components/schemas/ConfirmationHistory'}}
+        ended: {type: boolean, description: Legacy completion flag}
+        tasks: {type: array, description: Legacy alias of steps, items: {$ref: '#/components/schemas/TicketStep'}}
+        id: {type: string}
+        processKey: {type: string}
+        businessKey: {type: string}
+        workspace: {type: string}
+        initiator: {type: string}
+        startedAt: {type: string, format: date-time}
+        endedAt: {type: string, format: date-time, nullable: true}
+        currentTasks: {type: array, items: {$ref: '#/components/schemas/TicketTask'}}
+        steps: {type: array, items: {$ref: '#/components/schemas/TicketStep'}}
+
+    ConfirmationHistory:
+      type: object
+      additionalProperties: false
+      required: [generation, confirmStartedAt, deadlineAt]
+      properties:
+        generation: {type: string}
+        confirmStartedAt: {type: string, format: date-time}
+        deadlineAt: {type: string, format: date-time}
+        decision: {type: string, nullable: true, enum: [REQUESTER, AUTO, REWORK, null]}
+        decidedAt: {type: string, format: date-time, nullable: true}
+        decidedBy: {type: string, nullable: true}
+        reopenDeadlineAt: {type: string, format: date-time, nullable: true}
+        reopenReceivedAt: {type: string, format: date-time, nullable: true}
+        reopenReceivedReason: {type: string, nullable: true, enum: [ASSIGNED, CANONICAL, null]}
+        reopenAlertedAt: {type: string, format: date-time, nullable: true}
+        rolloutHold: {type: boolean, nullable: true}
+
+    TicketTask:
+      type: object
+      required: [id, processInstanceId, key, name, candidateGroups, createdAt]
+      properties:
+        id: {type: string}
+        processInstanceId: {type: string}
+        key: {type: string, description: id của userTask trong BPMN}
+        name: {type: string}
+        candidateGroups: {type: array, items: {type: string, example: 'lab-a:coordinator'}}
+        assignee: {type: string, nullable: true, description: null nếu chưa ai nhận}
+        createdAt: {type: string, format: date-time}
+
+    TicketStep:
+      type: object
+      required: [key, name, startedAt]
+      properties:
+        id: {type: string}
+        actor: {type: string, nullable: true, description: Legacy alias of assignee}
+        key: {type: string}
+        name: {type: string}
+        assignee: {type: string, nullable: true}
+        outcome: {type: string, nullable: true}
+        comment: {type: string, nullable: true}
+        startedAt: {type: string, format: date-time}
+        claimedAt: {type: string, format: date-time, nullable: true}
+        endedAt: {type: string, format: date-time, nullable: true}
+
+    TicketPageMeta:
+      type: object
+      required: [page, size, total]
+      properties:
+        page: {type: integer, minimum: 0}
+        size: {type: integer, minimum: 1, maximum: 100}
+        total: {type: integer, format: int64, minimum: 0}

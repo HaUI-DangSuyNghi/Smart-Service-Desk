@@ -1,0 +1,28 @@
+# Overlay paths resolve from the first file: always use -f compose.yaml first.
+services:
+  intelligence:
+    profiles: [intelligence]
+    build:
+      context: .
+      dockerfile: intelligence/Dockerfile
+    environment:
+      INTELLIGENCE_TRIAGE_TOKEN: ${INTELLIGENCE_TRIAGE_TOKEN:-}
+      HDPI_PROFILE_ROOT: /profiles
+      HDPI_REQUIRED_PROFILES: ${INTELLIGENCE_REQUIRED_PROFILES:-service-desk@0.3.0}
+    volumes:
+      - ${INTELLIGENCE_PROFILE_ROOT:-./intelligence/src/apps/servicedesk/intelligence/profiles}:/profiles:ro
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    pids_limit: 64
+    mem_limit: 256m
+    cpus: 1
+    healthcheck:
+      test: [CMD, python, -c, "import socket; socket.create_connection(('127.0.0.1', 8000), timeout=1).close()"]
+      interval: 10s
+      timeout: 2s
+      retries: 5
+  platform:
+    environment:
+      INTELLIGENCE_TRIAGE_BASE_URL: ${INTELLIGENCE_TRIAGE_BASE_URL:-}
+      INTELLIGENCE_TRIAGE_TOKEN: ${INTELLIGENCE_TRIAGE_TOKEN:-}

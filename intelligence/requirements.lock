@@ -1,0 +1,21 @@
+# Resolution AI-02 + AI-03, CPython 3.12 (Linux/Windows); not a CVE audit.
+scikit-learn==1.6.1
+numpy==2.2.6
+scipy==1.15.3
+joblib==1.4.2
+threadpoolctl==3.6.0
+PyYAML==6.0.2
+jsonschema==4.23.0
+attrs==24.2.0
+jsonschema-specifications==2023.12.1
+referencing==0.35.1
+rpds-py==0.20.0
+pytest==8.3.5
+iniconfig==2.0.0
+packaging==24.1
+pluggy==1.5.0
+colorama==0.4.6; sys_platform == 'win32'
+build==1.2.2.post1
+pyproject-hooks==1.2.0
+setuptools==75.1.0
+wheel==0.44.0

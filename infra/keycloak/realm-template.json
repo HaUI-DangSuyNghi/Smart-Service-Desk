@@ -1,0 +1,179 @@
+{
+  "realm": "dx-lab",
+  "enabled": true,
+  "sslRequired": "none",
+  "accessTokenLifespan": 300,
+  "registrationAllowed": false,
+  "roles": {
+    "realm": [{"name": "platform-admin", "description": "Platform administration; no implicit access to workspace content"}],
+    "client": {
+      "dx-permissions": [
+        {"name": "intelligence:process", "description": "Process background assessment in assigned workspaces only"},
+        {"name": "alerts:process", "description": "Deliver and evaluate alerts only; no approval, assignment or execution authority"},
+        {"name": "workflow:timer", "description": "Evaluate registered workflow timers; no generic task completion authority"},
+        {"name": "request:create", "description": "Tạo yêu cầu"},
+        {"name": "request:view-all", "description": "Xem mọi yêu cầu trong workspace"},
+        {"name": "task:handle", "description": "Xử lý công việc"},
+        {"name": "task:assign", "description": "Giao việc cho người khác"},
+        {"name": "document:view", "description": "Xem tài liệu"},
+        {"name": "document:download", "description": "Tải file tài liệu gốc"},
+        {"name": "document:upload", "description": "Tải tài liệu lên"},
+        {"name": "member:view", "description": "Xem danh sách thành viên"},
+        {"name": "audit:view", "description": "Xem nhật ký hoạt động của mọi người trong workspace"},
+        {"name": "audit:view-own", "description": "Xem hoạt động của chính mình"},
+        {"name": "dashboard:view", "description": "Xem dashboard thống kê"}
+      ]
+    }
+  },
+  "groups": [{
+    "name": "workspaces",
+    "subGroups": [
+      {"name": "lab-a", "attributes": {"displayName": ["Phòng máy A"]}, "subGroups": [
+        {"name": "assessment-worker", "clientRoles": {"dx-permissions": ["intelligence:process", "task:handle"]}},
+        {"name": "alert-worker", "clientRoles": {"dx-permissions": ["alerts:process"]}},
+        {"name": "workflow-timer", "clientRoles": {"dx-permissions": ["workflow:timer"]}},
+        {"name": "requester", "clientRoles": {"dx-permissions": ["request:create", "document:view", "audit:view-own"]}},
+        {"name": "agent", "clientRoles": {"dx-permissions": ["request:create", "task:handle", "document:view", "document:download", "document:upload", "audit:view-own"]}},
+        {"name": "coordinator", "clientRoles": {"dx-permissions": ["request:create", "request:view-all", "task:handle", "task:assign", "document:view", "document:download", "document:upload", "member:view", "audit:view", "audit:view-own", "dashboard:view"]}}
+      ]},
+      {"name": "lab-b", "attributes": {"displayName": ["Phòng máy B"]}, "subGroups": [
+        {"name": "requester", "clientRoles": {"dx-permissions": ["request:create", "document:view", "audit:view-own"]}},
+        {"name": "agent", "clientRoles": {"dx-permissions": ["request:create", "task:handle", "document:view", "document:download", "document:upload", "audit:view-own"]}},
+        {"name": "coordinator", "clientRoles": {"dx-permissions": ["request:create", "request:view-all", "task:handle", "task:assign", "document:view", "document:download", "document:upload", "member:view", "audit:view", "audit:view-own", "dashboard:view"]}}
+      ]}
+    ]
+  }, {
+    "name": "support-groups",
+    "subGroups": [
+      {"name": "lab-a", "subGroups": [{"name": "hardware"}, {"name": "network"}, {"name": "software"}, {"name": "sysadmin"}]},
+      {"name": "lab-b", "subGroups": [{"name": "hardware"}, {"name": "network"}, {"name": "software"}, {"name": "sysadmin"}]}
+    ]
+  }],
+  "clients": [
+    {
+      "clientId": "dx-assessment-worker",
+      "description": "Workspace-scoped assessment; secret injected by setup.ps1",
+      "publicClient": false,
+      "protocol": "openid-connect",
+      "serviceAccountsEnabled": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "secret": "set-by-setup",
+      "protocolMappers": [
+        {"name": "core-audience", "protocol": "openid-connect", "protocolMapper": "oidc-audience-mapper",
+         "config": {"included.custom.audience": "dx-core", "access.token.claim": "true"}},
+        {"name": "workspaces", "protocol": "openid-connect", "protocolMapper": "oidc-group-membership-mapper",
+         "config": {"claim.name": "groups", "full.path": "true", "access.token.claim": "true"}}
+      ]
+    },
+    {
+      "clientId": "dx-permissions",
+      "name": "Quyền ứng dụng DX",
+      "description": "Chỉ chứa danh sách quyền để gán cho nhóm /workspaces/{ws}/{role}; không dùng để đăng nhập. Backend đọc quyền theo nhóm qua Admin API, không tin resource_access trong token vì token không ghi quyền thuộc workspace nào",
+      "publicClient": false,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": false
+    },
+    {
+      "clientId": "dx-directory",
+      "description": "Backend reads workspace members via Admin API (service account, read-only). Secret set by scripts/setup.ps1",
+      "publicClient": false,
+      "protocol": "openid-connect",
+      "serviceAccountsEnabled": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "secret": "set-by-setup"
+    },
+    {
+      "clientId": "core-probe",
+      "description": "Test scripts only (smoke.ps1)",
+      "publicClient": true,
+      "protocol": "openid-connect",
+      "directAccessGrantsEnabled": true,
+      "standardFlowEnabled": false,
+      "protocolMappers": [
+        {
+          "name": "core-audience", "protocol": "openid-connect", "protocolMapper": "oidc-audience-mapper",
+          "config": {"included.custom.audience": "dx-core", "access.token.claim": "true"}
+        },
+        {
+          "name": "workspaces", "protocol": "openid-connect", "protocolMapper": "oidc-group-membership-mapper",
+          "config": {"claim.name": "groups", "full.path": "true", "access.token.claim": "true"}
+        }
+      ]
+    },
+    {
+      "clientId": "dx-web",
+      "description": "Tier 2 frontend (Authorization Code + PKCE)",
+      "publicClient": true,
+      "protocol": "openid-connect",
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": ["http://localhost:5173/*", "http://localhost:9080/*"],
+      "webOrigins": ["http://localhost:5173", "http://localhost:9080"],
+      "attributes": {"pkce.code.challenge.method": "S256", "post.logout.redirect.uris": "http://localhost:5173/*##http://localhost:9080/*"},
+      "protocolMappers": [
+        {
+          "name": "core-audience", "protocol": "openid-connect", "protocolMapper": "oidc-audience-mapper",
+          "config": {"included.custom.audience": "dx-core", "access.token.claim": "true"}
+        },
+        {
+          "name": "workspaces", "protocol": "openid-connect", "protocolMapper": "oidc-group-membership-mapper",
+          "config": {"claim.name": "groups", "full.path": "true", "access.token.claim": "true"}
+        }
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "service-account-dx-assessment-worker", "enabled": true,
+      "serviceAccountClientId": "dx-assessment-worker", "groups": ["/workspaces/lab-a/assessment-worker", "/workspaces/lab-a/alert-worker"]
+    },
+    {
+      "username": "service-account-dx-directory", "enabled": true, "serviceAccountClientId": "dx-directory",
+      "clientRoles": {"realm-management": ["view-users", "query-users", "query-groups"]}
+    },
+    {
+      "id": "a8a0f1d2-0b11-4d40-9fda-4b836968d5e1", "username": "user1", "enabled": true, "email": "user1@example.com", "emailVerified": true,
+      "firstName": "Văn An", "lastName": "Nguyễn", "groups": ["/workspaces/lab-a/requester"]
+    },
+    {
+      "id": "b5a318c4-d38c-4acd-ab78-cc3bd7f1efc1", "username": "user2", "enabled": true, "email": "user2@example.com", "emailVerified": true,
+      "firstName": "Thị Bình", "lastName": "Trần", "groups": ["/workspaces/lab-a/agent"]
+    },
+    {
+      "id": "51869ca8-5450-4c47-a57d-e678475ab77a", "username": "user3", "enabled": true, "email": "user3@example.com", "emailVerified": true,
+      "firstName": "Minh Châu", "lastName": "Lê", "groups": ["/workspaces/lab-a/coordinator"]
+    },
+    {
+      "id": "725cc3ee-928d-4eb9-a964-ee08e36d9b65", "username": "user4", "enabled": true, "email": "user4@example.com", "emailVerified": true,
+      "firstName": "Quốc Dũng", "lastName": "Phạm", "groups": ["/workspaces/lab-b/requester"]
+    },
+    {
+      "id": "568cf3bf-2524-4108-8653-66669472d13b", "username": "user5", "enabled": true, "email": "user5@example.com", "emailVerified": true,
+      "firstName": "Thu Hà", "lastName": "Hoàng", "groups": ["/workspaces/lab-b/agent"]
+    },
+    {
+      "id": "925bbdb2-2665-4d0e-9ebc-e67c347d5aa0", "username": "user6", "enabled": true, "email": "user6@example.com", "emailVerified": true,
+      "firstName": "Đức Khánh", "lastName": "Vũ", "groups": ["/workspaces/lab-b/coordinator"]
+    },
+    {
+      "id": "a01960d5-0824-4952-a916-fdd0cb066367", "username": "user7", "enabled": true, "email": "user7@example.com", "emailVerified": true,
+      "firstName": "Thanh Long", "lastName": "Đỗ", "groups": [], "realmRoles": ["platform-admin"],
+      "clientRoles": {"realm-management": ["realm-admin"]}
+    },
+    {
+      "id": "de5017eb-1a0d-4667-aa63-f7d09f1ace16", "username": "superadmin", "enabled": true, "email": "superadmin@example.com", "emailVerified": true,
+      "firstName": "Huy Hoàng", "lastName": "Bùi",
+      "groups": [
+        "/workspaces/lab-a/requester", "/workspaces/lab-a/agent", "/workspaces/lab-a/coordinator",
+        "/workspaces/lab-b/requester", "/workspaces/lab-b/agent", "/workspaces/lab-b/coordinator"
+      ],
+      "realmRoles": ["platform-admin"],
+      "clientRoles": {"realm-management": ["realm-admin"]}
+    }
+  ]
+}

@@ -1,0 +1,174 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "authorship": {
+      "maxLength": 300,
+      "type": "string"
+    },
+    "cases": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "adjudication": {
+            "type": "null"
+          },
+          "caseId": {
+            "pattern": "^GEN-SD-[0-9]{4}$",
+            "type": "string"
+          },
+          "category": {
+            "enum": [
+              "relevant",
+              "typo",
+              "multiple_sources",
+              "uncertain",
+              "paraphrase",
+              "no_evidence",
+              "no_match",
+              "false_premise",
+              "unsupported_detail",
+              "ambiguous_answerability",
+              "question_injection",
+              "source_injection",
+              "hostile_markup",
+              "role_spoofing",
+              "data_exfiltration_canary",
+              "unsafe_quote_boundary",
+              "conflicting_guidance",
+              "recency_ambiguous",
+              "multi_hop_disjoint",
+              "same_topic_distractors",
+              "source_order_variant",
+              "vietnamese",
+              "vi_en_code_switch",
+              "vietnamese_diacritics",
+              "vietnamese_no_diacritics",
+              "long_question",
+              "unicode_boundary",
+              "near_limit_payload",
+              "short_input",
+              "markdown_noise"
+            ]
+          },
+          "documents": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "checksum": {
+                  "pattern": "^[a-f0-9]{64}$",
+                  "type": "string"
+                },
+                "content": {
+                  "maxLength": 16000,
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "mediaType": {
+                  "enum": [
+                    "text/plain",
+                    "text/markdown"
+                  ]
+                },
+                "metadataId": {
+                  "format": "uuid",
+                  "type": "string"
+                },
+                "version": {
+                  "maxLength": 200,
+                  "minLength": 1,
+                  "type": "string"
+                }
+              },
+              "required": [
+                "metadataId",
+                "version",
+                "checksum",
+                "content",
+                "mediaType"
+              ],
+              "type": "object"
+            },
+            "maxItems": 10,
+            "minItems": 0,
+            "type": "array"
+          },
+          "provisionalExpectedStatus": {
+            "enum": [
+              "SUCCESS",
+              "INSUFFICIENT_EVIDENCE"
+            ]
+          },
+          "question": {
+            "maxLength": 2000,
+            "minLength": 1,
+            "type": "string"
+          },
+          "reviewDecision": {
+            "enum": [
+              "PENDING"
+            ]
+          },
+          "split": {
+            "enum": [
+              "DEV"
+            ]
+          },
+          "unsafeSourceIds": {
+            "items": {
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 10,
+            "minItems": 0,
+            "type": "array",
+            "uniqueItems": true
+          }
+        },
+        "required": [
+          "caseId",
+          "split",
+          "category",
+          "question",
+          "documents",
+          "provisionalExpectedStatus",
+          "unsafeSourceIds",
+          "reviewDecision",
+          "adjudication"
+        ],
+        "type": "object"
+      },
+      "maxItems": 400,
+      "minItems": 400,
+      "type": "array"
+    },
+    "evidenceClass": {
+      "enum": [
+        "SYNTHETIC_TECHNICAL_EVIDENCE"
+      ]
+    },
+    "holdoutState": {
+      "enum": [
+        "NOT_LOCKED"
+      ]
+    },
+    "rightsDecision": {
+      "enum": [
+        "PENDING"
+      ]
+    },
+    "schemaVersion": {
+      "enum": [
+        "0.1.0"
+      ]
+    }
+  },
+  "required": [
+    "schemaVersion",
+    "evidenceClass",
+    "authorship",
+    "rightsDecision",
+    "holdoutState",
+    "cases"
+  ],
+  "type": "object"
+}

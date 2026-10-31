@@ -1,0 +1,12 @@
+{
+  "schemaVersion": "ai07-qwen-letter-map@0.1.0",
+  "letters": {
+    "A": "ACCOUNT",
+    "B": "HARDWARE",
+    "C": "NETWORK",
+    "D": "OTHER",
+    "E": "SOFTWARE",
+    "F": null
+  },
+  "abstainId": "UNDETERMINED"
+}

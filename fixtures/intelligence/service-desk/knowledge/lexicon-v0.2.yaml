@@ -1,0 +1,299 @@
+schemaVersion: 0.2.0
+version: 0.2.0
+concepts:
+- conceptId: wifi
+  preferredTerm: wifi
+  variants:
+  - wi-fi
+  - wi fi
+  - wireless
+  language: vi-en
+  scope: service-desk
+  ambiguity: low
+  owner: Service Desk Process Owner
+  reviewStatus: DRAFT
+  provenance:
+    generationSource: LLM_DRAFT
+    humanReviewed: false
+    reviewer: null
+- conceptId: internet
+  preferredTerm: truy cập Internet
+  variants:
+  - Internet
+  - mất kết nối mạng
+  - không vào mạng
+  language: vi-en
+  scope: service-desk
+  ambiguity: contextual
+  owner: Service Desk Process Owner
+  reviewStatus: DRAFT
+  provenance:
+    generationSource: LLM_DRAFT
+    humanReviewed: false
+    reviewer: null
+- conceptId: authentication
+  preferredTerm: xác thực
+  variants:
+  - đăng nhập
+  - login
+  - sign in
+  - authentication failed
+  language: vi-en
+  scope: service-desk
+  ambiguity: contextual
+  owner: Service Desk Process Owner
+  reviewStatus: DRAFT
+  provenance:
+    generationSource: LLM_DRAFT
+    humanReviewed: false
+    reviewer: null
+- conceptId: account-lock
+  preferredTerm: tài khoản bị khóa
+  variants:
+  - account locked
+  - locked account
+  - khóa tài khoản
+  language: vi-en
+  scope: service-desk
+  ambiguity: low
+  owner: Service Desk Process Owner
+  reviewStatus: DRAFT
+  provenance:
+    generationSource: LLM_DRAFT
+    humanReviewed: false
+    reviewer: null
+- conceptId: permission
+  preferredTerm: quyền truy cập
+  variants:
+  - thiếu quyền
+  - permission denied
+  - access denied
+  language: vi-en
+  scope: service-desk
+  ambiguity: contextual
+  owner: Service Desk Process Owner
+  reviewStatus: DRAFT
+  provenance:
+    generationSource: LLM_DRAFT
+    humanReviewed: false
+    reviewer: null
+- conceptId: application-crash
+  preferredTerm: ứng dụng bị đóng
+  variants:
+  - crash
+  - app không mở
+  - Visual Studio Code
+  - đóng ngay
+  - application failure
+  language: vi-en
+  scope: service-desk
+  ambiguity: contextual
+  owner: Service Desk Process Owner
+  reviewStatus: DRAFT
+  provenance:
+    generationSource: LLM_DRAFT
+    humanReviewed: false
+    reviewer: null
+- conceptId: application-update
+  preferredTerm: cập nhật ứng dụng
+  variants:
+  - lỗi sau cập nhật
+  - update failure
+  - software update
+  language: vi-en
+  scope: service-desk
+  ambiguity: contextual
+  owner: Service Desk Process Owner
+  reviewStatus: DRAFT
+  provenance:
+    generationSource: LLM_DRAFT
+    humanReviewed: false
+    reviewer: null
+- conceptId: no-power
+  preferredTerm: không lên nguồn
+  variants:
+  - mất nguồn
+  - không có đèn nguồn
+  - power button
+  - no power
+  - won't turn on
+  language: vi-en
+  scope: service-desk
+  ambiguity: low
+  owner: Service Desk Process Owner
+  reviewStatus: DRAFT
+  provenance:
+    generationSource: LLM_DRAFT
+    humanReviewed: false
+    reviewer: null
+- conceptId: no-signal
+  preferredTerm: màn hình không tín hiệu
+  variants:
+  - no signal
+  - monitor
+  - màn hình không có tín hiệu
+  - display
+  language: vi-en
+  scope: service-desk
+  ambiguity: contextual
+  owner: Service Desk Process Owner
+  reviewStatus: DRAFT
+  provenance:
+    generationSource: LLM_DRAFT
+    humanReviewed: false
+    reviewer: null
+- conceptId: peripheral
+  preferredTerm: thiết bị ngoại vi
+  variants:
+  - keyboard
+  - mouse
+  - bàn phím
+  - chuột
+  - device not detected
+  language: vi-en
+  scope: service-desk
+  ambiguity: contextual
+  owner: Service Desk Process Owner
+  reviewStatus: DRAFT
+  provenance:
+    generationSource: LLM_DRAFT
+    humanReviewed: false
+    reviewer: null
+- conceptId: workaround
+  preferredTerm: phương án thay thế
+  variants:
+  - workaround
+  - cách xử lý tạm
+  - giải pháp tạm thời
+  language: vi-en
+  scope: service-desk
+  ambiguity: contextual
+  owner: Service Desk Process Owner
+  reviewStatus: DRAFT
+  provenance:
+    generationSource: LLM_DRAFT
+    humanReviewed: false
+    reviewer: null
+- conceptId: blocking
+  preferredTerm: chặn hoạt động
+  variants:
+  - không thể tiếp tục
+  - bị chặn công việc
+  - blocking
+  language: vi-en
+  scope: service-desk
+  ambiguity: contextual
+  owner: Service Desk Process Owner
+  reviewStatus: DRAFT
+  provenance:
+    generationSource: LLM_DRAFT
+    humanReviewed: false
+    reviewer: null
+- conceptId: impact
+  preferredTerm: phạm vi ảnh hưởng
+  variants:
+  - impact
+  - một máy
+  - cả phòng
+  - nhiều máy
+  language: vi-en
+  scope: service-desk
+  ambiguity: contextual
+  owner: Service Desk Process Owner
+  reviewStatus: DRAFT
+  provenance:
+    generationSource: LLM_DRAFT
+    humanReviewed: false
+    reviewer: null
+- conceptId: urgency
+  preferredTerm: mức độ khẩn cấp
+  variants:
+  - urgency
+  - có thể chờ
+  - cấp bách
+  language: vi-en
+  scope: service-desk
+  ambiguity: contextual
+  owner: Service Desk Process Owner
+  reviewStatus: DRAFT
+  provenance:
+    generationSource: LLM_DRAFT
+    humanReviewed: false
+    reviewer: null
+- conceptId: escalation
+  preferredTerm: chuyển người phụ trách
+  variants:
+  - escalation
+  - human review
+  - bằng chứng mâu thuẫn
+  - sự cố tái diễn
+  language: vi-en
+  scope: service-desk
+  ambiguity: contextual
+  owner: Service Desk Process Owner
+  reviewStatus: DRAFT
+  provenance:
+    generationSource: LLM_DRAFT
+    humanReviewed: false
+    reviewer: null
+- conceptId: insufficient-information
+  preferredTerm: chưa đủ thông tin
+  variants:
+  - máy không dùng được
+  - không rõ nguyên nhân
+  - chưa xác định
+  - thiếu triệu chứng
+  language: vi-en
+  scope: service-desk
+  ambiguity: contextual
+  owner: Service Desk Process Owner
+  reviewStatus: DRAFT
+  provenance:
+    generationSource: LLM_DRAFT
+    humanReviewed: false
+    reviewer: null
+- conceptId: facilities
+  preferredTerm: tiện ích phòng
+  variants:
+  - điều hòa
+  - air conditioning
+  - đèn phòng
+  - cơ sở vật chất
+  language: vi-en
+  scope: service-desk
+  ambiguity: low
+  owner: Service Desk Process Owner
+  reviewStatus: DRAFT
+  provenance:
+    generationSource: LLM_DRAFT
+    humanReviewed: false
+    reviewer: null
+- conceptId: credential-security
+  preferredTerm: thông tin bí mật
+  variants:
+  - password
+  - OTP
+  - recovery code
+  - access token
+  language: vi-en
+  scope: service-desk
+  ambiguity: contextual
+  owner: Service Desk Process Owner
+  reviewStatus: DRAFT
+  provenance:
+    generationSource: LLM_DRAFT
+    humanReviewed: false
+    reviewer: null
+- conceptId: broad-network
+  preferredTerm: mạng
+  variants:
+  - network
+  language: vi-en
+  scope: service-desk
+  ambiguity: high
+  owner: Service Desk Process Owner
+  reviewStatus: DRAFT
+  provenance:
+    generationSource: LLM_DRAFT
+    humanReviewed: false
+    reviewer: null

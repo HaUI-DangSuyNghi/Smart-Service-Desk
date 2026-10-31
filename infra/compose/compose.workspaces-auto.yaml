@@ -1,0 +1,51 @@
+# Development IAM setup for every existing workspace, on demand; no realm reset.
+services:
+  workspace-bootstrap:
+    profiles: [local-model]
+    image: python:3.12.15-slim-bookworm@sha256:34386ef0cb081344d7ec1c103ba398e6e9f64e9ab3a1509accc92a4e24a07258
+    entrypoint: [python, /opt/workspace-bootstrap.py]
+    environment:
+      WORKSPACE_BOOTSTRAP_ENVIRONMENT: local-dev
+      WORKSPACE_BOOTSTRAP_KEYCLOAK_URL: http://keycloak:8080
+      WORKSPACE_BOOTSTRAP_TOKEN_FILE: /run/secrets/workspace-bootstrap-token
+      WORKSPACE_BOOTSTRAP_ADMIN_PASSWORD_FILE: /run/secrets/workspace-keycloak-admin
+      WORKSPACE_BOOTSTRAP_POLICY_FILE: /opt/automatic-workspaces-policy.json
+      WORKSPACE_BOOTSTRAP_CODE_DIGEST: ${SSD_WORKSPACE_BOOTSTRAP_CODE_DIGEST:?}
+    volumes:
+      - ./scripts/intelligence/workspace-bootstrap.py:/opt/workspace-bootstrap.py:ro
+      - ./infra/keycloak/automatic-workspaces-policy.json:/opt/automatic-workspaces-policy.json:ro
+      - workspace-bootstrap-state:/state
+    secrets: [workspace-bootstrap-token, workspace-keycloak-admin]
+    networks: [default, local-model-private]
+    depends_on:
+      keycloak: {condition: service_healthy}
+    read_only: true
+    tmpfs: ['/tmp:rw,noexec,nosuid,size=8m']
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 128m
+    cpus: 0.5
+    pids_limit: 64
+    logging:
+      driver: json-file
+      options: {max-size: 1m, max-file: '2'}
+    healthcheck:
+      test: [CMD, python, /opt/workspace-bootstrap.py, --health]
+      interval: 10s
+      timeout: 3s
+      retries: 10
+  platform:
+    environment:
+      DX_BACKGROUND_AUTO_WORKSPACES_ENABLED: 'true'
+      DX_BACKGROUND_AUTO_WORKSPACES_BASE_URL: http://workspace-bootstrap:8005
+      DX_BACKGROUND_AUTO_WORKSPACES_TOKEN_FILE: /run/secrets/workspace-bootstrap-token
+    secrets: [workspace-bootstrap-token]
+    depends_on:
+      workspace-bootstrap: {condition: service_healthy}
+secrets:
+  workspace-bootstrap-token:
+    file: ${SSD_WORKSPACE_BOOTSTRAP_TOKEN_FILE:?}
+  workspace-keycloak-admin:
+    file: ${SSD_WORKSPACE_KEYCLOAK_ADMIN_FILE:?}
+volumes:
+  workspace-bootstrap-state:

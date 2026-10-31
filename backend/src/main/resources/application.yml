@@ -1,0 +1,106 @@
+spring:
+  servlet:
+    multipart:
+      max-file-size: 5MB
+      max-request-size: 10MB
+  datasource:
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/core}
+    username: core
+    password: ${POSTGRES_PASSWORD}
+  jackson:
+    deserialization:
+      fail-on-unknown-properties: true
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: ${JWT_ISSUER:http://localhost:8081/realms/dx-lab}
+          jwk-set-uri: ${JWT_JWKS:http://localhost:8081/realms/dx-lab/protocol/openid-connect/certs}
+          audiences: dx-core
+flowable:
+  process-definition-location-prefix: classpath*:/apps/
+  process-definition-location-suffixes: "**/process/*.bpmn20.xml"
+  database-schema-update: true
+  async-executor-activate: false
+  history-level: full
+dx:
+  # Danh bạ workspace (Keycloak Admin API, service account dx-directory chỉ đọc user/group)
+  directory:
+    url: ${DX_DIRECTORY_URL:}
+    realm: dx-lab
+    client-id: dx-directory
+    client-secret: ${DX_DIRECTORY_CLIENT_SECRET:}
+  intelligence:
+    triage:
+      base-url: ${INTELLIGENCE_TRIAGE_BASE_URL:}
+      token: ${INTELLIGENCE_TRIAGE_TOKEN:}
+  storage:
+    root: ${DX_STORAGE_ROOT:./.local/files}
+    allow-unscanned-upload: ${DX_ALLOW_UNSCANNED_UPLOAD:false}
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health
+  endpoint:
+    health:
+      show-details: never
+serviceDesk:
+  intake:
+    canonical-human-enabled: ${SERVICE_DESK_CANONICAL_HUMAN_ENABLED:false}
+    incident-threshold: ${SERVICE_DESK_INCIDENT_THRESHOLD:3}
+    true-wait: ${SERVICE_DESK_INTAKE_TRUE_WAIT:false}
+    new-tickets: ${SERVICE_DESK_INTAKE_NEW_TICKETS:false}
+    timeout-seconds: ${SERVICE_DESK_INTAKE_TIMEOUT_SECONDS:86400}
+    poll-ms: ${SERVICE_DESK_INTAKE_POLL_MS:60000}
+  contextual-assessment:
+    # true/false: cho phép 0/1 lượt model trên input augmented; false vẫn tính facts CPU từ revision mới.
+    # Cần benchmark input mới và grant độc lập, không dùng flag để promote model.
+    enabled: ${SERVICE_DESK_CONTEXTUAL_ASSESSMENT_ENABLED:false}
+    # SHA-256 gộp policy input mới + extraction + assessment + model/prompt pins.
+    policy-digest: ${SERVICE_DESK_CONTEXTUAL_ASSESSMENT_POLICY_DIGEST:}
+  enrichment:
+    # true/false: lưu lifecycle/job advisory khi tạo ticket hoặc nhận câu trả lời.
+    enabled: ${SERVICE_DESK_ENRICHMENT_ENABLED:false}
+    # true/false: quét deadline DB để nhắc/chuyển manual; không gọi AI hoặc sửa BPMN.
+    timers-enabled: ${SERVICE_DESK_ENRICHMENT_TIMERS_ENABLED:false}
+    # Chu kỳ quét metadata, đơn vị ms; default 60 giây, mỗi đợt tối đa 50 case.
+    poll-delay-ms: ${SERVICE_DESK_ENRICHMENT_POLL_DELAY_MS:60000}
+  context:
+    # true/false: bật hoặc tắt gợi ý ngữ cảnh và ticket trùng. Mặc định tắt.
+    # Lưu câu trả lời bổ sung hoạt động độc lập, kể cả khi cờ này là false.
+    enabled: ${SERVICE_DESK_CONTEXT_ENABLED:false}
+    # DISABLED: tắt; SHADOW: chạy nhưng ẩn gợi ý; ASSISTED: gợi ý để người duyệt.
+    # PROMOTED: chưa được phép sử dụng; backend từ chối chế độ này.
+    mode: ${SERVICE_DESK_CONTEXT_MODE:DISABLED}
+    # SHA-256 của bộ policy đang chạy; phải khớp grant được cấp độc lập.
+    policy-bundle-digest: ${SERVICE_DESK_CONTEXT_POLICY_BUNDLE_DIGEST:}
+    # Đường dẫn grant ký HMAC; scope OWN_TICKET hoặc WORKSPACE_REVIEW.
+    processing-receipt: ${SERVICE_DESK_CONTEXT_PROCESSING_RECEIPT:}
+    # Khóa xác minh HMAC (ít nhất 32 ký tự); chỉ đặt qua biến môi trường/bí mật triển khai.
+    verification-key: ${SERVICE_DESK_CONTEXT_PROCESSING_VERIFICATION_KEY:}
+    verification-key-file: ${SERVICE_DESK_CONTEXT_PROCESSING_VERIFICATION_KEY_FILE:}
+  assessment:
+    enabled: ${SERVICE_DESK_ASSESSMENT_ENABLED:false}
+    policy-bundle-digest: ${SERVICE_DESK_ASSESSMENT_POLICY_BUNDLE_DIGEST:}
+  classifier:
+    mode: ${SERVICE_DESK_CLASSIFIER_MODE:DISABLED}
+    provider: ${SERVICE_DESK_CLASSIFIER_PROVIDER:}
+    model-digest: ${SERVICE_DESK_CLASSIFIER_MODEL_DIGEST:}
+    policy-digest: ${SERVICE_DESK_CLASSIFIER_POLICY_DIGEST:}
+    processing-receipt: ${SERVICE_DESK_CLASSIFIER_PROCESSING_RECEIPT:}
+    processing-verification-key: ${SERVICE_DESK_CLASSIFIER_PROCESSING_VERIFICATION_KEY:}
+    processing-verification-key-file: ${SERVICE_DESK_CLASSIFIER_PROCESSING_VERIFICATION_KEY_FILE:}
+intelligence:
+  classification:
+    timeout-ms: ${INTELLIGENCE_CLASSIFICATION_TIMEOUT_MS:4000}
+    base-url: ${INTELLIGENCE_CLASSIFICATION_BASE_URL:}
+    token: ${INTELLIGENCE_CLASSIFICATION_TOKEN:}
+    token-file: ${INTELLIGENCE_CLASSIFICATION_TOKEN_FILE:}
+server:
+  error:
+    include-message: never
+logging:
+  pattern:
+    # Mỗi dòng log kèm requestId (đặt bởi RequestIdFilter) để tra theo X-Request-ID
+    level: "%5p [%X{requestId:-}]"

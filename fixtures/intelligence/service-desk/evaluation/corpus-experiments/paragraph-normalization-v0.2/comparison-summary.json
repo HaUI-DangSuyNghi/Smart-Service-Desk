@@ -1,0 +1,40 @@
+{
+  "benchmarkClaim": false,
+  "comparisonKind": "CROSS_CORPUS_LEGACY_FAMILY_CONTROL",
+  "holdout": "NOT_EVALUATED",
+  "humanV02Qrels": "PENDING",
+  "reports": {
+    "A0": {
+      "fingerprint": "sha256:85dc08cc6c638a47fea2e4f15f4c12e49cf160282174ce8b9574846c64de3d3b",
+      "metrics": {
+        "hitAt1": 0.5833333333333334,
+        "hitAt3": 0.9166666666666666,
+        "mrr": 0.7388888888888889,
+        "recallAt3": 0.875
+      },
+      "result": "PASS"
+    },
+    "A1": {
+      "fingerprint": "sha256:1dfb56ab3fe384005222ceae801bd9e471ef30f02d526e919065ac4b7c8e3711",
+      "metrics": {
+        "hitAt1": 0.9166666666666666,
+        "hitAt3": 1.0,
+        "mrr": 0.9583333333333334,
+        "recallAt3": 0.9166666666666666
+      },
+      "result": "PASS"
+    },
+    "A2": {
+      "fingerprint": "sha256:17ff2076f07de41db1429796e7bb4307ddb5c8c64b55e36db339ab3f2bd59174",
+      "metrics": {
+        "hitAt1": 0.9166666666666666,
+        "hitAt3": 1.0,
+        "mrr": 0.9583333333333334,
+        "recallAt3": 0.9583333333333334
+      },
+      "result": "PASS"
+    }
+  },
+  "result": "PASS",
+  "schemaVersion": "0.2.0"
+}

@@ -1,0 +1,5 @@
+services:
+  ai07-qwen:
+    volumes:
+      - ${AI07_QWEN_TEST_CLIENT:?Specify the local test client}:/run/classify-client.py:ro
+      - ${AI07_QWEN_PACKAGE_METADATA:?Specify package metadata}:/run/package.json:ro

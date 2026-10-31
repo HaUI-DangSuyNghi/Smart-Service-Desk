@@ -1,0 +1,76 @@
+name: Service Desk triage bridge
+on:
+  push:
+    branches: [feature/ai07-ticket-intelligence, feature/ai07-hierarchical-assessment]
+    paths: ['backend/**', 'contracts/**', '.github/workflows/servicedesk-triage.yml']
+  pull_request:
+    branches: [develop]
+    paths: ['backend/**', 'contracts/**', 'compose.yaml', '.dockerignore', 'scripts/test-*.ps1', '.github/workflows/servicedesk-triage.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  windows-assessment-contract:
+    runs-on: windows-2022
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Hierarchy, literal evidence, grants and compatible contracts
+        run: >-
+          mvn -B -f backend/pom.xml
+          "-Dtest=FactualAssessmentTest,SubcategoryBenchmarkTest,HierarchicalPolicyTest,TicketAssessmentControllerTest,TicketAssessmentOrchestratorTest,ClassifierProcessingGateTest,TicketClassificationControllerTest,TicketClassificationOrchestratorTest,TrustedClassificationCapabilityTest"
+          test
+  postgresql-regression:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    services:
+      postgres:
+        image: postgres:16.15-bookworm@sha256:0ea6700a3b4f0ae6ce746519073558aed4d88a79d8d07622a9a644946c7319c4
+        env:
+          POSTGRES_USER: workflow
+          POSTGRES_PASSWORD: isolated-ci-only
+          POSTGRES_DB: file_storage
+        ports: ['5432:5432']
+        options: --health-cmd pg_isready --health-interval 5s --health-retries 20
+    env:
+      FILE_TEST_JDBC_URL: jdbc:postgresql://localhost:5432/file_storage
+      FILE_TEST_DB_PASSWORD: isolated-ci-only
+      WORKFLOW_TEST_JDBC_URL: jdbc:postgresql://localhost:5432/workflow_approval
+      WORKFLOW_TEST_DB_PASSWORD: isolated-ci-only
+      BACKGROUND_TEST_JDBC_URL: jdbc:postgresql://localhost:5432/background_assessment
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Create isolated workflow regression database
+        env:
+          PGPASSWORD: isolated-ci-only
+        run: |
+          psql -h localhost -U workflow -d file_storage -c 'CREATE DATABASE workflow_approval'
+          psql -h localhost -U workflow -d file_storage -c 'CREATE DATABASE duty_upgrade'
+          psql -h localhost -U workflow -d file_storage -c 'CREATE DATABASE background_assessment'
+      - name: Java bridge, PostgreSQL authorization and Core/Ticket/Statistics regression
+        shell: pwsh
+        run: ./scripts/test-fresh-admin.ps1 -Profile full
+      - name: Reject skipped regression tests
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          reports = list(Path('backend/target/surefire-reports').glob('TEST-*.xml'))
+          assert reports, 'Missing reports'
+          for report in reports:
+              suite = ET.parse(report).getroot()
+              assert all(int(suite.get(key, 0)) == 0 for key in ('failures', 'errors', 'skipped')), report
+          print('PASS: all default Java regression tests executed without skips')
+          PY

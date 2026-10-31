@@ -1,0 +1,184 @@
+{
+  "version": "servicedesk-assessment@0.1.1",
+  "approvalStatus": "DRAFT",
+  "riskRubricStatus": "DRAFT",
+  "prioritySource": "triage-policy.json",
+  "maxEvidence": 64,
+  "signals": {
+    "impact": {
+      "I1": [
+        "một máy bị ảnh hưởng",
+        "một người bị ảnh hưởng",
+        "one device is affected"
+      ],
+      "I2": [
+        "nhiều máy bị ảnh hưởng",
+        "vài người bị ảnh hưởng",
+        "several users are affected"
+      ],
+      "I3": [
+        "cả phòng bị ảnh hưởng",
+        "cả phòng mất mạng",
+        "cả phòng thi mất Wi-Fi",
+        "the whole room is affected"
+      ],
+      "I4": [
+        "nhiều phòng bị ảnh hưởng",
+        "nhiều phòng mất mạng",
+        "multiple rooms are affected"
+      ]
+    },
+    "urgency": {
+      "U1": [
+        "có cách xử lý tạm",
+        "có phương án thay thế",
+        "workaround is available"
+      ],
+      "U2": [
+        "có thể chờ",
+        "can wait"
+      ],
+      "U3": [
+        "không thể làm việc",
+        "công việc bị chặn",
+        "cannot work"
+      ],
+      "U4": [
+        "thi sau 15 phút",
+        "thi sau 10 phút",
+        "exam starts in 15 minutes",
+        "deadline in 15 minutes"
+      ]
+    },
+    "risk": {
+      "SECURITY_EXPOSURE": [
+        "tài khoản bị xâm nhập",
+        "credentials were exposed"
+      ],
+      "DATA_LOSS": [
+        "dữ liệu đã bị mất",
+        "data was lost"
+      ],
+      "SAFETY": [
+        "thiết bị rò điện",
+        "thiết bị bốc cháy",
+        "device is on fire"
+      ],
+      "SERVICE_CONTINUITY": [
+        "dịch vụ ngừng hoạt động",
+        "service is down"
+      ],
+      "WIDESPREAD_INCIDENT_POSSIBLE": [
+        "nhiều phòng mất mạng",
+        "multiple rooms are affected"
+      ]
+    }
+  },
+  "questions": {
+    "impact": "Có bao nhiêu thiết bị/người/phòng bị ảnh hưởng?",
+    "urgency": "Công việc có đang bị chặn không? Có hạn thời gian cụ thể không?",
+    "subCategory": "Triệu chứng cụ thể đang xảy ra là gì?"
+  },
+  "requiredSlots": {
+    "ACCOUNT": [
+      "impact",
+      "urgency",
+      "subCategory"
+    ],
+    "HARDWARE": [
+      "impact",
+      "urgency",
+      "subCategory"
+    ],
+    "NETWORK": [
+      "impact",
+      "urgency",
+      "subCategory"
+    ],
+    "SOFTWARE": [
+      "impact",
+      "urgency",
+      "subCategory"
+    ],
+    "OTHER": [
+      "impact",
+      "urgency",
+      "subCategory"
+    ]
+  },
+  "structuredExtraction": {
+    "version": "servicedesk-factual-signals@0.1.0",
+    "approvalStatus": "DRAFT",
+    "maxRelationChars": 160,
+    "imminentWindowMinutes": 15,
+    "imminentLevel": "U4",
+    "wholeRoomLevel": "I3",
+    "quantityPattern": "(?<![\\p{L}\\p{N}.,+\\-])(?<count>[0-9]{1,4}|một|hai|ba|bốn|năm|sáu|bảy|tám|chín|mười|one|two|three)\\s+(?<unit>máy tính|máy|thiết bị|người dùng|người|sinh viên|phòng|devices?|computers?|PCs?|users?|rooms?)(?![\\p{L}\\p{N}])",
+    "failurePattern": "không\\s+(?:thể\\s+)?(?:truy cập|kết nối|đăng nhập|hoạt động|khởi động|in được|lên nguồn|hiển thị)(?:\\s+được)?|mất\\s+(?:mạng|kết nối|Internet|điện|Wi[ -]?Fi)|(?:bị\\s+)?(?:hỏng|lỗi)|ngừng hoạt động|cannot\\s+(?:access|connect|log in|work|start)|(?:are|is)\\s+(?:down|broken|affected)",
+    "wholeRoomPattern": "(?<![\\p{L}\\p{N}])(?:(?:cả|toàn(?: bộ)?|tất cả)\\s+(?:các\\s+)?(?:(?:máy|thiết bị)\\s+(?:trong|của)\\s+)?phòng(?:\\s+[A-Z]?[0-9]{2,5})?|(?:the\\s+)?(?:whole|entire)\\s+room)(?![\\p{L}\\p{N}])",
+    "relativeTimePattern": "(?<![\\p{L}\\p{N}])(?:sau|còn|trong|in)\\s+(?<amount>[0-9]{1,4}(?:[.,][0-9]{1,2})?)\\s*(?<unit>phút|phut|giờ|minutes?|mins?|hours?|hrs?)(?![\\p{L}\\p{N}])",
+    "eventPattern": "(?<![\\p{L}\\p{N}])(?:thi|tiết học|buổi học|bài kiểm tra|hạn nộp|đến hạn|deadline|exam|class|lesson)(?:\\s+(?:sẽ\\s+)?(?:bắt đầu|diễn ra|starts?|begins?|is due))?\\s*$",
+    "nonFactualPattern": "(?<![\\p{L}\\p{N}])(?:nếu|giả sử|ví dụ|suppose|example|hypothetical|đã khắc phục|đã hết lỗi|đã hoạt động bình thường|hôm qua|yesterday|đã kết thúc|đã bắt đầu|started yesterday)(?![\\p{L}\\p{N}])",
+    "quantityUnits": {
+      "máy": "DEVICE",
+      "máy tính": "DEVICE",
+      "thiết bị": "DEVICE",
+      "device": "DEVICE",
+      "devices": "DEVICE",
+      "computer": "DEVICE",
+      "computers": "DEVICE",
+      "pc": "DEVICE",
+      "pcs": "DEVICE",
+      "người": "USER",
+      "người dùng": "USER",
+      "sinh viên": "USER",
+      "user": "USER",
+      "users": "USER",
+      "phòng": "ROOM",
+      "room": "ROOM",
+      "rooms": "ROOM"
+    },
+    "countWords": {
+      "một": 1,
+      "hai": 2,
+      "ba": 3,
+      "bốn": 4,
+      "năm": 5,
+      "sáu": 6,
+      "bảy": 7,
+      "tám": 8,
+      "chín": 9,
+      "mười": 10,
+      "one": 1,
+      "two": 2,
+      "three": 3
+    },
+    "countLevels": {
+      "DEVICE": {
+        "one": "I1",
+        "multiple": "I2"
+      },
+      "USER": {
+        "one": "I1",
+        "multiple": "I2"
+      },
+      "ROOM": {
+        "one": "I3",
+        "multiple": "I4"
+      }
+    },
+    "timeUnitMinutes": {
+      "phút": 1,
+      "phut": 1,
+      "minute": 1,
+      "minutes": 1,
+      "min": 1,
+      "mins": 1,
+      "giờ": 60,
+      "hour": 60,
+      "hours": 60,
+      "hr": 60,
+      "hrs": 60
+    }
+  }
+}

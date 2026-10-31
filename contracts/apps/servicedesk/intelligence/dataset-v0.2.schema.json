@@ -1,0 +1,368 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Service Desk dataset-v0.2 v0.2",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "id",
+    "version",
+    "status",
+    "benchmarkClaim",
+    "rightsStatus",
+    "projectionVersion",
+    "holdout",
+    "components",
+    "schemas"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "const": "0.2.0"
+    },
+    "id": {
+      "type": "string",
+      "minLength": 1
+    },
+    "version": {
+      "const": "0.2.0"
+    },
+    "status": {
+      "enum": [
+        "DRAFT_AWAITING_HUMAN_REVIEW",
+        "REVIEWED"
+      ]
+    },
+    "benchmarkClaim": {
+      "const": false
+    },
+    "rightsStatus": {
+      "enum": [
+        "PENDING_OWNER_APPROVAL",
+        "APPROVED_INTERNAL_EVAL"
+      ]
+    },
+    "projectionVersion": {
+      "const": "service-desk-knowledge-projection@0.2.0"
+    },
+    "holdout": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "state",
+        "lock"
+      ],
+      "properties": {
+        "state": {
+          "enum": [
+            "DRAFT_NOT_LOCKED",
+            "LOCKED"
+          ]
+        },
+        "lock": {
+          "anyOf": [
+            {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "reviewer",
+                "authoringIndependent",
+                "collectionDigest",
+                "queriesDigest",
+                "qrelsDigest",
+                "projectionDigest",
+                "frozenBeforeEvaluation"
+              ],
+              "properties": {
+                "reviewer": {
+                  "type": "string",
+                  "minLength": 1
+                },
+                "authoringIndependent": {
+                  "const": true
+                },
+                "collectionDigest": {
+                  "type": "string",
+                  "pattern": "^[a-f0-9]{64}$"
+                },
+                "queriesDigest": {
+                  "type": "string",
+                  "pattern": "^[a-f0-9]{64}$"
+                },
+                "qrelsDigest": {
+                  "type": "string",
+                  "pattern": "^[a-f0-9]{64}$"
+                },
+                "projectionDigest": {
+                  "type": "string",
+                  "pattern": "^[a-f0-9]{64}$"
+                },
+                "frozenBeforeEvaluation": {
+                  "const": true
+                }
+              }
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      }
+    },
+    "components": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "knowledge",
+        "lexicon",
+        "queries",
+        "qrels",
+        "legacyEvidence"
+      ],
+      "properties": {
+        "knowledge": {
+          "type": "object",
+          "required": [
+            "path",
+            "sha256",
+            "byteSize"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "path": {
+              "type": "string",
+              "minLength": 1
+            },
+            "sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "byteSize": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        },
+        "lexicon": {
+          "type": "object",
+          "required": [
+            "path",
+            "sha256",
+            "byteSize"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "path": {
+              "type": "string",
+              "minLength": 1
+            },
+            "sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "byteSize": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        },
+        "queries": {
+          "type": "object",
+          "required": [
+            "path",
+            "sha256",
+            "byteSize"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "path": {
+              "type": "string",
+              "minLength": 1
+            },
+            "sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "byteSize": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        },
+        "qrels": {
+          "type": "object",
+          "required": [
+            "path",
+            "sha256",
+            "byteSize"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "path": {
+              "type": "string",
+              "minLength": 1
+            },
+            "sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "byteSize": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        },
+        "legacyEvidence": {
+          "type": "object",
+          "required": [
+            "path",
+            "sha256",
+            "byteSize"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "path": {
+              "type": "string",
+              "minLength": 1
+            },
+            "sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "byteSize": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "knowledge-metadata",
+        "lexicon",
+        "query",
+        "qrels",
+        "dataset-v0.2"
+      ],
+      "properties": {
+        "knowledge-metadata": {
+          "type": "object",
+          "required": [
+            "path",
+            "sha256",
+            "byteSize"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "path": {
+              "type": "string",
+              "minLength": 1
+            },
+            "sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "byteSize": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        },
+        "lexicon": {
+          "type": "object",
+          "required": [
+            "path",
+            "sha256",
+            "byteSize"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "path": {
+              "type": "string",
+              "minLength": 1
+            },
+            "sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "byteSize": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        },
+        "query": {
+          "type": "object",
+          "required": [
+            "path",
+            "sha256",
+            "byteSize"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "path": {
+              "type": "string",
+              "minLength": 1
+            },
+            "sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "byteSize": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        },
+        "qrels": {
+          "type": "object",
+          "required": [
+            "path",
+            "sha256",
+            "byteSize"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "path": {
+              "type": "string",
+              "minLength": 1
+            },
+            "sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "byteSize": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        },
+        "dataset-v0.2": {
+          "type": "object",
+          "required": [
+            "path",
+            "sha256",
+            "byteSize"
+          ],
+          "additionalProperties": false,
+          "properties": {
+            "path": {
+              "type": "string",
+              "minLength": 1
+            },
+            "sha256": {
+              "type": "string",
+              "pattern": "^[a-f0-9]{64}$"
+            },
+            "byteSize": {
+              "type": "integer",
+              "minimum": 1
+            }
+          }
+        }
+      }
+    }
+  }
+}

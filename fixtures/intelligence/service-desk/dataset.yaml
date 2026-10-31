@@ -1,0 +1,26 @@
+schemaVersion: '1.0'
+id: service-desk-authored-eval
+version: 0.1.0
+classification:
+  evidence: AUTHORED
+  benchmark: false
+rights:
+  synthetic: true
+  status: PENDING_OWNER_APPROVAL
+components:
+  knowledge:
+    path: knowledge/manifest.json
+    sha256: 115d078dc2ac4264108968fc064e5894674ee26fc0cc92e15a1bff0eb01683a9
+    byteSize: 3448
+  tickets:
+    path: tickets/tickets-v0.1.jsonl
+    sha256: 317a844338ae12e6c0cde109f8d7cc15879f8bf4c5d2f1a02e71a4e0cbf692f5
+    byteSize: 16124
+  ticketManifest:
+    path: tickets/manifest.json
+    sha256: ace43d5db26f2b8f617a798a552ae399327cf28509e74ea703a4c7b974993fb5
+    byteSize: 728
+  retrieval:
+    path: retrieval/gold-v0.1.json
+    sha256: 2a6879067b04e7b3e9fffd869916a6c71fb5105c097f8e523d1688a51080767a
+    byteSize: 2123

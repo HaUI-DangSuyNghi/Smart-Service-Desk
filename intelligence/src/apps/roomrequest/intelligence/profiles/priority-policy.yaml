@@ -1,0 +1,21 @@
+status: PROPOSED
+policyVersion: room-policy@1
+owner: Room Request / Process Owner
+technicalImplementer: Intelligence
+requiredReviewers:
+- Process Owner
+impact:
+  ONE: One request
+urgency:
+  WAIT: Can wait
+matrix:
+  ONE:
+    WAIT: NORMAL
+reviewFallback:
+  category: OTHER
+  priority: NORMAL
+  suggestedGroup: ROOM-REVIEW
+  impact: null
+  urgency: null
+  needsReview: true
+  reasonCode: INSUFFICIENT_INFORMATION

@@ -1,0 +1,2 @@
+include .python-version requirements.lock
+include requirements-dense.lock

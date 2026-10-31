@@ -1,0 +1,38 @@
+status: PROPOSED
+rulesVersion: 0.3.0
+categoryRules:
+  ROOM-BOOK:
+    category: BOOKING
+    positiveSignals:
+    - room
+  ROOM-OTHER:
+    category: OTHER
+    positiveSignals:
+    - unrelated
+conflictRules:
+  ROOM-CONFLICT:
+    overrides:
+    - winnerRule: ROOM-BOOK
+      overruledRules:
+      - ROOM-OTHER
+      allOf:
+      - - room
+reviewRules:
+  ROOM-REVIEW:
+    policyRef: ../../priority-policy.yaml#/reviewFallback
+impactRules:
+  ONE:
+    ruleId: ROOM-IMPACT
+    positiveSignals:
+    - single
+    countSignals: []
+    overrides: []
+urgencyRules:
+  WAIT:
+    ruleId: ROOM-URGENCY
+    positiveSignals:
+    - can wait
+    countSignals: []
+    overrides: []
+priorityRuleIds:
+  NORMAL: ROOM-PRIORITY

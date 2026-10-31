@@ -1,0 +1,548 @@
+name: Intelligence runtime
+on:
+  push:
+    branches: [develop, feature/ai07-ticket-intelligence, feature/ai07-qwen-lora-provider, feature/ai07-hierarchical-assessment]
+  pull_request:
+    branches: [develop]
+    paths:
+      - 'intelligence/**'
+      - 'licenses/**'
+      - 'contracts/intelligence/**'
+      - 'contracts/openapi/servicedesk.yaml'
+      - 'contracts/apps/servicedesk/intelligence/**'
+      - 'fixtures/intelligence/**'
+      - 'scripts/intelligence/**'
+      - 'scripts/apps/servicedesk/ai06/**'
+      - 'scripts/apps/servicedesk/ai07/**'
+      - 'scripts/check-tier-boundaries.py'
+      - 'scripts/test-tier-boundaries.py'
+      - 'scripts/acceptance/intelligence-*'
+      - 'scripts/acceptance/servicedesk-assistance.py'
+      - 'backend/src/main/java/vn/haui/dx/core/**'
+      - 'backend/src/main/java/vn/haui/dx/hpdi/intelligence/**'
+      - 'backend/src/test/java/vn/haui/dx/hpdi/intelligence/**'
+      - 'backend/src/main/java/vn/haui/dx/hpdi/data/**'
+      - 'backend/src/main/java/vn/haui/dx/hpdi/human/**'
+      - 'backend/src/main/java/vn/haui/dx/apps/servicedesk/assistance/**'
+      - 'backend/src/main/java/vn/haui/dx/apps/servicedesk/intelligence/**'
+      - 'backend/src/main/java/vn/haui/dx/apps/servicedesk/TicketService.java'
+      - 'backend/src/test/java/vn/haui/dx/apps/servicedesk/assistance/**'
+      - 'backend/src/test/java/vn/haui/dx/apps/servicedesk/intelligence/**'
+      - 'backend/src/main/resources/**'
+      - 'infra/**'
+      - 'compose.yaml'
+      - 'infra/compose/compose.triage.yaml'
+      - 'infra/compose/compose.generation.yaml'
+      - 'infra/compose/compose.cloud.yaml'
+      - 'config/assistance/**'
+      - '.gitattributes'
+      - '.github/workflows/intelligence-runtime.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    env:
+      HDPI_PROFILE_ROOT: ${{ github.workspace }}/intelligence/src/apps/servicedesk/intelligence/profiles
+    strategy:
+      matrix:
+        os: [ubuntu-24.04, windows-2022]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5.6.0
+        with:
+          python-version-file: intelligence/.python-version
+      - name: Install pinned runtime and build tools
+        run: python -m pip install -r intelligence/requirements.lock
+      - name: Check dependency consistency
+        run: python -m pip check
+      - name: Foundation and immutable executable profiles
+        env:
+          INTELLIGENCE_PROFILE_BASE_REF: ${{ github.event.pull_request.base.sha || github.sha }}
+        run: python scripts/intelligence/validate-foundation.py
+      - name: Strict evaluation ownership
+        run: python scripts/check-tier-boundaries.py
+      - name: Boundary mutation proofs
+        run: python scripts/test-tier-boundaries.py
+      - name: Unit, contract, conformance and regression tests
+        id: source-tests
+        run: python -m pytest intelligence/tests -q --junitxml=.local/ai04/source-tests.xml
+      - name: Source evaluation and executable quality security provenance gates
+        if: ${{ !cancelled() && steps.source-tests.outcome != 'skipped' }}
+        run: >-
+          python scripts/intelligence/run-evaluation.py
+          --dataset fixtures/intelligence/service-desk
+          --baseline fixtures/intelligence/service-desk/evaluation/baseline-v0.1.json
+          --checks fixtures/intelligence/service-desk/evaluation/security-checks.json
+          --conformance-config fixtures/intelligence/service-desk/evaluation/conformance-config-v0.3.json
+          --junit .local/ai04/source-tests.xml --output .local/ai04/source
+      - name: AI07 immutable data audit and DEV engineering controls (no model promotion)
+        run: |
+          python scripts/apps/servicedesk/ai07/audit-datasets.py --output .local/ai07/audit.json
+          python scripts/apps/servicedesk/ai07/prepare-triage-worksheets.py --dataset ssd-v0.2 --split DEV --output .local/ai07/dev-worksheets.json
+          python scripts/apps/servicedesk/ai07/evaluate-triage-candidates.py --mode shadow --split DEV --output .local/ai07/metrics.json
+          python scripts/apps/servicedesk/ai07/verify-triage-acceptance.py --report .local/ai07/metrics.json
+      - name: AI07 classification-only source conformance (no weights or inference)
+        run: python scripts/apps/servicedesk/ai07/local-contract-evidence.py --output .local/ai07/contracts-source.json
+      - name: AI07 model-primary guard source controls (owned synthetic inputs only)
+        run: python scripts/apps/servicedesk/ai07/model-primary-evidence.py --output .local/ai07/model-primary-source.json
+      - name: Qwen fake provider controls without weights or private data
+        run: |
+          python scripts/apps/servicedesk/ai07/qwen-contract-evidence.py --output .local/ai07/qwen-source.json
+          python scripts/intelligence/qwen-neutral-proof.py
+      - name: Validate isolated AI07 Compose base and GPU overlay without pulling images
+        if: runner.os == 'Linux'
+        env:
+          AI07_BRIDGE_IMAGE: 'sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+          AI07_MODEL_VOLUME: ai07-ci-config-only
+          AI07_RUNTIME_CONFIG: /tmp/ai07-config-only/runtime.json
+          AI07_POLICY_DIRECTORY: /tmp/ai07-config-only/policies
+          AI07_AUTH_TOKEN_FILE: /tmp/ai07-config-only/token
+          AI07_QWEN_IMAGE: 'sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+          AI07_QWEN_MODEL_DIGEST: 'bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb'
+          AI07_QWEN_BUNDLE: /tmp/ai07-config-only/model
+          AI07_QWEN_APP_ROOT: /tmp/ai07-config-only/apps
+          AI07_QWEN_TOKEN_FILE: /tmp/ai07-config-only/qwen-token
+        run: |
+          docker compose -f infra/compose/compose.ai07-local-models.yaml --profile ai07-local config --quiet
+          docker compose -f infra/compose/compose.ai07-local-models.yaml -f infra/compose/compose.ai07-local-gpu.yaml --profile ai07-local config --quiet
+          docker compose -f infra/compose/compose.ai07-qwen-lora.yaml --profile ai07-qwen config --quiet
+      - name: Source knowledge enrichment controls
+        run: python scripts/intelligence/knowledge-data.py compare --output .local/ai045/source
+      - name: Source grounded assistance foundation evidence
+        run: python scripts/intelligence/generation-evidence.py --output .local/ai06/source.json
+      - name: Source synthetic generation DEV controls (not official quality)
+        run: python scripts/intelligence/run-generation-evaluation.py --output .local/ai06-quality/source.json
+      - name: Source governed selector security contract evidence
+        run: python scripts/intelligence/ai06-provider-evidence.py --mode fake --output .local/ai06-provider/source.json
+      - name: Source A2 TF-IDF versus BM25 engine comparison
+        run: python scripts/intelligence/knowledge-data.py engine-compare --output .local/ai05/a2-source
+      - name: Source BM25 candidate against historical A0 compatibility controls
+        run: >-
+          python scripts/intelligence/run-evaluation.py --candidate bm25
+          --dataset fixtures/intelligence/service-desk
+          --baseline fixtures/intelligence/service-desk/evaluation/baseline-v0.1.json
+          --checks fixtures/intelligence/service-desk/evaluation/security-checks.json
+          --conformance-config fixtures/intelligence/service-desk/evaluation/conformance-config-v0.3.json
+          --junit .local/ai04/source-tests.xml --output .local/ai05/source
+      - name: Build source distribution and wheel without new resolution
+        run: python -m build --no-isolation --outdir .local/ai04-dist intelligence
+      - name: Install built wheel
+        run: python scripts/intelligence/install-built-wheel.py --dist .local/ai04-dist
+      - name: Build the separate optional cloud integration wheel
+        run: python -m build --no-isolation --outdir .local/cloud-dist intelligence/integrations
+      - name: Verify and install the external cloud wheel
+        run: python scripts/intelligence/install-cloud-wheel.py --dist .local/cloud-dist
+      - name: Verify installed package without source imports
+        run: python -I scripts/intelligence/verify-installed-package.py
+      - name: Run regression and security suite against installed wheel
+        id: wheel-tests
+        run: python -I -m pytest -c scripts/intelligence/installed-pytest.ini intelligence/tests -q --junitxml=.local/ai04/wheel-tests.xml
+      - name: AI07 installed classification-only conformance and source-wheel equivalence
+        run: |
+          python -I scripts/apps/servicedesk/ai07/local-contract-evidence.py --output .local/ai07/contracts-wheel.json
+          python -I scripts/apps/servicedesk/ai07/local-contract-evidence.py --compare .local/ai07/contracts-source.json .local/ai07/contracts-wheel.json
+          python -I scripts/apps/servicedesk/ai07/model-primary-evidence.py --output .local/ai07/model-primary-wheel.json
+          python -I scripts/apps/servicedesk/ai07/model-primary-evidence.py --compare .local/ai07/model-primary-source.json .local/ai07/model-primary-wheel.json
+          python -I scripts/apps/servicedesk/ai07/qwen-contract-evidence.py --output .local/ai07/qwen-wheel.json
+          python -I scripts/apps/servicedesk/ai07/qwen-contract-evidence.py --compare .local/ai07/qwen-source.json .local/ai07/qwen-wheel.json
+          python -I scripts/intelligence/qwen-neutral-proof.py
+      - name: Retain safe AI07 audit and conformance evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ai07-contracts-${{ matrix.os }}
+          path: |
+            .local/ai07/audit.json
+            .local/ai07/metrics.json
+            .local/ai07/contracts-source.json
+            .local/ai07/contracts-wheel.json
+            .local/ai07/model-primary-source.json
+            .local/ai07/model-primary-wheel.json
+            .local/ai07/qwen-source.json
+            .local/ai07/qwen-wheel.json
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7
+      - name: Evaluate shipped wheel with executable gates
+        if: ${{ !cancelled() && steps.wheel-tests.outcome != 'skipped' }}
+        run: >-
+          python -I scripts/intelligence/run-evaluation.py --installed
+          --dataset fixtures/intelligence/service-desk
+          --baseline fixtures/intelligence/service-desk/evaluation/baseline-v0.1.json
+          --checks fixtures/intelligence/service-desk/evaluation/security-checks.json
+          --conformance-config fixtures/intelligence/service-desk/evaluation/conformance-config-v0.3.json
+          --junit .local/ai04/wheel-tests.xml --output .local/ai04/wheel
+      - name: Require source and installed wheel evidence to agree
+        run: python -I scripts/intelligence/verify-evaluation-equivalence.py .local/ai04/source .local/ai04/wheel
+      - name: Installed wheel grounded assistance foundation evidence
+        run: python -I scripts/intelligence/generation-evidence.py --installed --output .local/ai06/wheel.json
+      - name: Require identical generation source and wheel evidence
+        run: python -I scripts/intelligence/generation-evidence.py --compare .local/ai06/source.json .local/ai06/wheel.json
+      - name: Installed wheel synthetic generation DEV controls
+        run: python -I scripts/intelligence/run-generation-evaluation.py --installed --output .local/ai06-quality/wheel.json
+      - name: Require current generation DEV identities and source wheel parity
+        run: python -I scripts/intelligence/verify-generation-evidence.py --installed .local/ai06-quality/source.json .local/ai06-quality/wheel.json
+      - name: Retain content-free generation DEV evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ai06-quality-${{ matrix.os }}
+          path: .local/ai06-quality/*.json
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7
+      - name: Installed wheel governed selector security contract evidence
+        run: python -I scripts/intelligence/ai06-provider-evidence.py --installed --mode fake --output .local/ai06-provider/wheel.json
+      - name: Require current selector identities and source wheel equivalence
+        run: python -I scripts/intelligence/verify-ai06-provider-evidence.py --installed .local/ai06-provider/source.json .local/ai06-provider/wheel.json
+      - name: Retain content-free synthetic selector evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ai06-provider-${{ matrix.os }}
+          path: .local/ai06-provider/*.json
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7
+      - name: Retain safe generation foundation evidence
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ai06-foundation-${{ matrix.os }}
+          path: .local/ai06/*.json
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7
+      - name: Installed BM25 candidate against historical A0 compatibility controls
+        run: >-
+          python -I scripts/intelligence/run-evaluation.py --installed --candidate bm25
+          --dataset fixtures/intelligence/service-desk
+          --baseline fixtures/intelligence/service-desk/evaluation/baseline-v0.1.json
+          --checks fixtures/intelligence/service-desk/evaluation/security-checks.json
+          --conformance-config fixtures/intelligence/service-desk/evaluation/conformance-config-v0.3.json
+          --junit .local/ai04/wheel-tests.xml --output .local/ai05/wheel
+      - name: Require BM25 historical compatibility evidence to agree
+        run: python -I scripts/intelligence/verify-evaluation-equivalence.py .local/ai05/source .local/ai05/wheel
+      - name: Installed A2 TF-IDF versus BM25 engine comparison
+        run: python -I scripts/intelligence/knowledge-data.py --installed engine-compare --output .local/ai05/a2-wheel
+      - name: Require A2 engine source and wheel evidence to agree
+        run: python -I scripts/intelligence/verify-knowledge-evidence.py --engine .local/ai05/a2-source .local/ai05/a2-wheel
+      - name: Retain safe BM25 candidate evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ai05-bm25-${{ matrix.os }}
+          path: |
+            .local/ai05/source/*.json
+            .local/ai05/wheel/*.json
+            .local/ai05/a2-source/*.json
+            .local/ai05/a2-wheel/*.json
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7
+      - name: Installed wheel knowledge enrichment controls
+        run: python -I scripts/intelligence/knowledge-data.py --installed compare --output .local/ai045/wheel
+      - name: Require knowledge source and wheel evidence to agree
+        run: python -I scripts/intelligence/verify-knowledge-evidence.py .local/ai045/source .local/ai045/wheel
+      - name: Retain safe knowledge experiment evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ai045-corpus-${{ matrix.os }}
+          path: |
+            .local/ai045/source/*.json
+            .local/ai045/wheel/*.json
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7
+      - name: Retain safe authored evaluation evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ai04-evaluation-${{ matrix.os }}
+          path: |
+            .local/ai04/source/*.json
+            .local/ai04/wheel/*.json
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7
+      - name: Verify diff whitespace
+        env:
+          INTELLIGENCE_PR_BASE_SHA: ${{ github.event.pull_request.base.sha || '' }}
+        run: python scripts/intelligence/verify-pr-range.py
+  dense-candidate:
+    strategy:
+      matrix:
+        os: [ubuntu-24.04, windows-2022]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    env:
+      HDPI_PROFILE_ROOT: ${{ github.workspace }}/intelligence/src/apps/servicedesk/intelligence/profiles
+      HDPI_DENSE_MODEL_ROOT: ${{ github.workspace }}/.local/ai0502-model
+      HDPI_REQUIRE_DENSE_MODEL: '1'
+      HF_HUB_OFFLINE: '1'
+      TOKENIZERS_PARALLELISM: 'false'
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version-file: intelligence/.python-version
+      - name: Install the optional locked CPU reference
+        run: python -m pip install -r intelligence/requirements-dense.lock
+      - name: Check dependency consistency
+        run: python -m pip check
+      - name: Explicitly provision immutable public model artifacts
+        run: python scripts/intelligence/prepare-dense-model.py --directory .local/ai0502-model
+      - name: Verify provisioned artifacts without network
+        run: python scripts/intelligence/prepare-dense-model.py --offline --directory .local/ai0502-model
+      - name: Source suite including required offline model and 72-query smoke
+        run: python -m pytest intelligence/tests -q --junitxml=.local/ai0502/source-tests.xml
+      - name: Source B0 B1 B2 on the frozen A2 projection
+        run: >-
+          python scripts/intelligence/knowledge-data.py engine-compare --include-dense
+          --model-directory .local/ai0502-model --output .local/ai0502/source
+      - name: Source Hybrid on frozen A2
+        run: >-
+          python scripts/intelligence/knowledge-data.py engine-compare --include-hybrid
+          --model-directory .local/ai0502-model --output .local/ai0503/source
+      - name: Source working v0.2 qrels comparison on DEV
+        run: >-
+          python scripts/intelligence/knowledge-data.py provisional-compare
+          --model-directory .local/ai0502-model --output .local/ai0503/v02-source
+      - name: Build and install the generic wheel
+        run: |
+          python -m build --no-isolation --outdir .local/ai0502-dist intelligence
+          python scripts/intelligence/install-built-wheel.py --dist .local/ai0502-dist
+          python -m build --no-isolation --outdir .local/cloud-dist intelligence/integrations
+          python scripts/intelligence/install-cloud-wheel.py --dist .local/cloud-dist
+      - name: Installed suite with required offline model
+        run: >-
+          python -I -m pytest -c scripts/intelligence/installed-pytest.ini
+          intelligence/tests -q --junitxml=.local/ai0502/wheel-tests.xml
+      - name: Installed B0 B1 B2 on the frozen A2 projection
+        run: >-
+          python -I scripts/intelligence/knowledge-data.py --installed engine-compare --include-dense
+          --model-directory .local/ai0502-model --output .local/ai0502/wheel
+      - name: Require source and wheel dense evidence to agree
+        run: python -I scripts/intelligence/verify-knowledge-evidence.py --dense .local/ai0502/source .local/ai0502/wheel
+      - name: Installed Hybrid on frozen A2
+        run: >-
+          python -I scripts/intelligence/knowledge-data.py --installed engine-compare --include-hybrid
+          --model-directory .local/ai0502-model --output .local/ai0503/wheel
+      - name: Require source and wheel Hybrid evidence to agree
+        run: python -I scripts/intelligence/verify-knowledge-evidence.py --hybrid .local/ai0503/source .local/ai0503/wheel
+      - name: Installed working v0.2 qrels comparison on DEV
+        run: >-
+          python -I scripts/intelligence/knowledge-data.py --installed provisional-compare
+          --model-directory .local/ai0502-model --output .local/ai0503/v02-wheel
+      - name: Require source and wheel graded working-data evidence to agree
+        run: python -I scripts/intelligence/verify-candidate-matrix.py --require-current-identities .local/ai0503/v02-source .local/ai0503/v02-wheel
+      - name: Retain safe Hybrid and working-dataset comparison evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ai0503-hybrid-${{ matrix.os }}
+          path: |
+            .local/ai0503/source/*.json
+            .local/ai0503/wheel/*.json
+            .local/ai0503/v02-source/*.json
+            .local/ai0503/v02-wheel/*.json
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7
+      - name: Retain safe dense comparison evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ai0502-dense-${{ matrix.os }}
+          path: |
+            .local/ai0502/source/*.json
+            .local/ai0502/wheel/*.json
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7
+  dense-equivalence:
+    needs: dense-candidate
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Download safe reports from both operating systems
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          gh run download "$RUN_ID" --name ai0502-dense-ubuntu-24.04 --dir .local/ai0502-linux
+          gh run download "$RUN_ID" --name ai0502-dense-windows-2022 --dir .local/ai0502-windows
+          gh run download "$RUN_ID" --name ai0503-hybrid-ubuntu-24.04 --dir .local/ai0503-linux
+          gh run download "$RUN_ID" --name ai0503-hybrid-windows-2022 --dir .local/ai0503-windows
+      - name: Require identical dense rankings metrics gates and fingerprints
+        run: python3 -I scripts/intelligence/verify-knowledge-evidence.py --dense .local/ai0502-linux/wheel .local/ai0502-windows/wheel
+      - name: Require identical Hybrid rankings and child identities
+        run: python3 -I scripts/intelligence/verify-knowledge-evidence.py --hybrid .local/ai0503-linux/wheel .local/ai0503-windows/wheel
+      - name: Require identical working v0.2 graded evidence and provenance
+        run: python3 -I scripts/intelligence/verify-candidate-matrix.py --require-current-identities .local/ai0503-linux/v02-wheel .local/ai0503-windows/v02-wheel
+  knowledge-data-quality:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version-file: intelligence/.python-version
+      - name: Install locked tools
+        run: python -m pip install -r intelligence/requirements.lock
+      - name: Validate schema integrity safety and draft annotation boundaries
+        run: python scripts/intelligence/knowledge-data.py validate --output .local/ai045/data-quality.json
+      - name: Build deterministic draft projection
+        run: python scripts/intelligence/knowledge-data.py project --draft --output .local/ai045/projection
+      - name: Validate the explicit working v0.2 qrel profile
+        run: python scripts/intelligence/knowledge-data.py provisional-validate --output .local/ai0503/working-data-validation.json
+      - name: Record actual data and selection readiness
+        run: python scripts/intelligence/knowledge-data.py selection-readiness --output .local/ai0503/selection-readiness.json
+      - name: Analyze responsibilities vocabulary and DEV phrase overlap
+        run: python scripts/intelligence/knowledge-data.py analyze --output .local/ai045/corpus-quality.json
+      - name: Reproduce corpus-only evidence
+        run: python scripts/intelligence/knowledge-data.py compare --output .local/ai045/paragraph
+      - name: Verify normalization v0.2 corpus reference candidate
+        run: python scripts/intelligence/verify-knowledge-evidence.py .local/ai045/paragraph fixtures/intelligence/service-desk/evaluation/corpus-experiments/paragraph-normalization-v0.2
+      - name: Reproduce separate section experiment
+        run: python scripts/intelligence/knowledge-data.py chunk-experiment --output .local/ai045/section
+      - name: Verify normalization v0.2 section reference candidate
+        run: python scripts/intelligence/verify-knowledge-evidence.py --section .local/ai045/section fixtures/intelligence/service-desk/evaluation/corpus-experiments/section-normalization-v0.2
+      - name: Retain safe data-quality summaries
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ai045-data-quality
+          path: |
+            .local/ai045/data-quality.json
+            .local/ai045/corpus-quality.json
+            .local/ai045/section/chunk-comparison.json
+            .local/ai0503/working-data-validation.json
+            .local/ai0503/selection-readiness.json
+          include-hidden-files: true
+          retention-days: 7
+  evaluation-equivalence:
+    needs: verify
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      actions: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Download evaluation evidence from both operating systems
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          gh run download "$RUN_ID" --name ai04-evaluation-ubuntu-24.04 --dir .local/ai04-linux
+          gh run download "$RUN_ID" --name ai04-evaluation-windows-2022 --dir .local/ai04-windows
+          gh run download "$RUN_ID" --name ai045-corpus-ubuntu-24.04 --dir .local/ai045-linux
+          gh run download "$RUN_ID" --name ai045-corpus-windows-2022 --dir .local/ai045-windows
+          gh run download "$RUN_ID" --name ai05-bm25-ubuntu-24.04 --dir .local/ai05-linux
+          gh run download "$RUN_ID" --name ai05-bm25-windows-2022 --dir .local/ai05-windows
+          gh run download "$RUN_ID" --name ai06-foundation-ubuntu-24.04 --dir .local/ai06-linux
+          gh run download "$RUN_ID" --name ai06-foundation-windows-2022 --dir .local/ai06-windows
+          gh run download "$RUN_ID" --name ai06-provider-ubuntu-24.04 --dir .local/ai06-provider-linux
+          gh run download "$RUN_ID" --name ai06-provider-windows-2022 --dir .local/ai06-provider-windows
+          gh run download "$RUN_ID" --name ai06-quality-ubuntu-24.04 --dir .local/ai06-quality-linux
+          gh run download "$RUN_ID" --name ai06-quality-windows-2022 --dir .local/ai06-quality-windows
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version-file: intelligence/.python-version
+      - name: Require equivalent current selector contracts across operating systems
+        run: python -I scripts/intelligence/verify-ai06-provider-evidence.py .local/ai06-provider-linux/wheel.json .local/ai06-provider-windows/wheel.json
+      - name: Require equivalent generation foundation evidence across operating systems
+        run: python3 -I scripts/intelligence/generation-evidence.py --compare .local/ai06-linux/wheel.json .local/ai06-windows/wheel.json
+      - name: Require current synthetic generation DEV parity across operating systems
+        run: python3 -I scripts/intelligence/verify-generation-evidence.py --compare .local/ai06-quality-linux/wheel.json .local/ai06-quality-windows/wheel.json
+      - name: Require equivalent rankings metrics gates and fingerprints
+        run: python3 -I scripts/intelligence/verify-evaluation-equivalence.py .local/ai04-linux/wheel .local/ai04-windows/wheel
+      - name: Require equivalent knowledge enrichment evidence
+        run: python3 -I scripts/intelligence/verify-knowledge-evidence.py .local/ai045-linux/wheel .local/ai045-windows/wheel
+      - name: Require equivalent BM25 historical rankings metrics gates and fingerprints
+        run: python3 -I scripts/intelligence/verify-evaluation-equivalence.py .local/ai05-linux/wheel .local/ai05-windows/wheel
+      - name: Require equivalent A2 TF-IDF versus BM25 engine evidence
+        run: python3 -I scripts/intelligence/verify-knowledge-evidence.py --engine .local/ai05-linux/a2-wheel .local/ai05-windows/a2-wheel
+  assistance-integration:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version-file: intelligence/.python-version
+      - name: Install locked Python runtime
+        run: python -m pip install -r intelligence/requirements.lock
+      - name: Verify actual Core PostgreSQL Java Python and AI02 regression
+        run: python scripts/acceptance/servicedesk-assistance.py --output .local/ai06-app-acceptance
+      - name: Retain content-free synthetic integration summary only
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ai06-app-synthetic-acceptance
+          path: .local/ai06-app-acceptance/summary.json
+          include-hidden-files: true
+          if-no-files-found: error
+          retention-days: 7
+  core-integration:
+    env:
+      HDPI_PROFILE_ROOT: ${{ github.workspace }}/intelligence/src/apps/servicedesk/intelligence/profiles
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version-file: intelligence/.python-version
+      - name: Install locked tools and build isolated wheel
+        run: |
+          python -m pip install -r intelligence/requirements.lock
+          python -m build --no-isolation --outdir .local/ai03-integration-dist intelligence
+          python scripts/intelligence/install-built-wheel.py --dist .local/ai03-integration-dist
+      - name: Prepare disposable local identity configuration
+        shell: pwsh
+        run: ./scripts/setup.ps1
+      - name: Start isolated real Core and identity services
+        run: docker compose -p dx-ai03-hardening -f compose.yaml -f scripts/acceptance/intelligence-compose.yaml up -d --build --wait --wait-timeout 300
+      - name: Verify authenticated Core retrieval and negative authorization paths
+        run: python -I scripts/acceptance/intelligence-retrieval.py --output .local/ai03-core-acceptance.json
+      - name: Retain safe synthetic acceptance summary
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ai03-core-acceptance-summary
+          path: .local/ai03-core-acceptance.json
+          include-hidden-files: true
+          retention-days: 7
+      - name: Stop isolated acceptance services
+        if: always()
+        run: docker compose -p dx-ai03-hardening -f compose.yaml -f scripts/acceptance/intelligence-compose.yaml stop

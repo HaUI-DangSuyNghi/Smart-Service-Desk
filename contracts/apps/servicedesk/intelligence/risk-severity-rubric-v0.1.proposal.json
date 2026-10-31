@@ -1,0 +1,55 @@
+{
+  "version": "servicedesk-risk-severity@0.1.0",
+  "status": "DRAFT",
+  "productionApproved": false,
+  "owners": ["Process Owner", "Security", "Operations"],
+  "authority": "HUMAN_REVIEW_ONLY",
+  "levelPublication": "WITHHELD_UNTIL_APPROVAL",
+  "principles": [
+    "Đánh giá hậu quả có bằng chứng; không suy mức rủi ro từ category, impact hoặc urgency.",
+    "Độ chắc chắn và mức hậu quả là hai trục độc lập; lời mô tả chưa được xác minh phải ghi UNVERIFIED.",
+    "Không có tín hiệu không đồng nghĩa LOW. Thiếu bằng chứng, mâu thuẫn hoặc chỉ giả định phải để null.",
+    "Risk không tự sửa priority, SLA, phân công hoặc escalation. Coordinator giữ quyền quyết định.",
+    "Bằng chứng phải có sourceField, quote và offset Unicode code point; không thu thập password, OTP hoặc token."
+  ],
+  "evidenceCertainty": ["VERIFIED", "UNVERIFIED", "CONFLICT", "UNKNOWN"],
+  "levels": [
+    {
+      "id": "LOW",
+      "definition": "Hậu quả nhỏ, giới hạn rõ ràng, có khả năng phục hồi đã được xác minh.",
+      "requiredFacts": ["Phạm vi hậu quả được xác minh", "Biện pháp khôi phục/giảm thiểu đã kiểm chứng", "Không có bằng chứng hậu quả cao hơn đang chờ xử lý"],
+      "counterExamples": ["Không nhắc tới bảo mật", "Chỉ có workaround cho công việc", "Chưa kiểm tra tình trạng dữ liệu"]
+    },
+    {
+      "id": "MEDIUM",
+      "definition": "Gián đoạn hoặc tổn thất có thể khôi phục, cần can thiệp nhưng chưa có hậu quả nghiêm trọng được xác minh.",
+      "requiredFacts": ["Hậu quả thực tế được xác minh", "Khả năng khôi phục hoặc giới hạn lan truyền đã được xác minh"],
+      "counterExamples": ["Nghi mất dữ liệu nhưng chưa xác định", "Chỉ có từ 'nguy hiểm' trong mô tả"]
+    },
+    {
+      "id": "HIGH",
+      "definition": "Hậu quả nghiêm trọng được xác minh: truy cập trái phép, mất dữ liệu không thể phục hồi hoặc mất kiểm soát dịch vụ quan trọng.",
+      "requiredFacts": ["Loại tài sản/dịch vụ bị ảnh hưởng", "Hậu quả nghiêm trọng có chứng cứ", "Trạng thái hiện tại và biện pháp cô lập nếu có"],
+      "counterExamples": ["Không truy cập được dữ liệu nhưng chưa biết có mất hay không", "Phishing chỉ được nhắc trong tài liệu hướng dẫn"]
+    },
+    {
+      "id": "CRITICAL",
+      "definition": "Nguy hại đang diễn ra hoặc hậu quả cực kỳ nghiêm trọng đã được xác minh, ví dụ cháy thiết bị đang hoạt động hoặc compromise chưa kiểm soát ở tài sản trọng yếu.",
+      "requiredFacts": ["Nguy hại/hậu quả đang diễn ra được xác minh", "Tài sản hoặc con người có thể chịu hậu quả trực tiếp", "Reviewer có thẩm quyền xác nhận"],
+      "counterExamples": ["Cháy thiết bị trong bài diễn tập", "Sự cố đã khắc phục được nhắc lại", "U4 hoặc I4 đơn thuần"]
+    }
+  ],
+  "aggregation": {
+    "rule": "Mức cao nhất có đủ bằng chứng đã xác minh; không lấy điểm trung bình.",
+    "missingFacts": "null",
+    "contradictoryFacts": "null và yêu cầu phân xử",
+    "unverifiedReport": "Chỉ ghi đề xuất riêng để người duyệt xác minh; không công bố level chính thức."
+  },
+  "acceptanceBeforePublication": [
+    "Process Owner, Security và Operations duyệt rubric và phạm vi tài sản trọng yếu.",
+    "Có tập double-review/adjudication riêng cho từng mức và từng loại cờ, gồm các ca âm tính.",
+    "Khai báo trước ngưỡng false-positive/false-negative và support tối thiểu.",
+    "Ghim rubricDigest, kiểm tra quyền xử lý và phát hành hợp đồng API mới nếu thêm proposal/approval fields.",
+    "Mọi thay đổi vận hành vẫn cần luồng phê duyệt hiện hành."
+  ]
+}

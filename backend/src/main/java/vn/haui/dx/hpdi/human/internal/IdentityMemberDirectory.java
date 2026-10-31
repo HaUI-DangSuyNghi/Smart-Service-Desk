@@ -1,0 +1,85 @@
+package vn.haui.dx.hpdi.human.internal;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.TreeSet;
+import java.util.stream.Collectors;
+import org.springframework.stereotype.Service;
+import vn.haui.dx.core.common.CoreException;
+import vn.haui.dx.core.common.ErrorCode;
+import vn.haui.dx.core.identity.api.WorkspaceAccess;
+import vn.haui.dx.core.identity.api.WorkspaceDirectory;
+import vn.haui.dx.hpdi.human.api.MemberDirectory;
+import vn.haui.dx.hpdi.human.api.WorkspaceContext;
+import vn.haui.dx.hpdi.human.api.WorkspaceMember;
+import vn.haui.dx.hpdi.human.api.WorkspacePermission;
+/**
+ * Ghép danh bạ của Core với vai trò trong token. Lỗi quyền (CoreException) để Errors của Core xử lý;
+ * chỉ lỗi danh bạ không phản hồi được hạ cấp ở những chỗ hiển thị phụ (tên workspace, tên người tạo).
+ */
+@Service
+public class IdentityMemberDirectory implements MemberDirectory, vn.haui.dx.hpdi.human.api.AgentDirectory {
+    public List<WorkspaceMember> currentAgents(String workspace, String supportGroup) {
+        directory.refresh(workspace);
+        var permissions = directory.rolePermissions(workspace);
+        var supported = supportGroup == null ? null : directory.supportGroupMembers(workspace, supportGroup);
+        boolean canHandle = permissions.getOrDefault("agent", List.of()).stream()
+            .anyMatch(permission -> "task:handle".equals(permission.name()));
+        if (!canHandle) return List.of();
+        return members(workspace).stream().filter(member -> member.roles().contains("agent"))
+            .filter(member -> supported == null || supported.contains(member.subject())).toList();
+    }
+    private final WorkspaceAccess access;
+    private final WorkspaceDirectory directory;
+    public IdentityMemberDirectory(WorkspaceAccess access, WorkspaceDirectory directory) {
+        this.access = access; this.directory = directory;
+    }
+    public List<WorkspaceContext> myWorkspaces() {
+        // Vai trò lấy từ token đã ký, danh bạ chỉ góp tên hiển thị
+        Map<String, TreeSet<String>> roles = new TreeMap<>();
+        access.current().memberships().forEach(m ->
+            roles.computeIfAbsent(m.workspace(), key -> new TreeSet<>()).add(m.role().value()));
+        return roles.entrySet().stream()
+            .map(entry -> new WorkspaceContext(entry.getKey(), nameOrCode(entry.getKey()), entry.getValue()))
+            .toList();
+    }
+    public List<WorkspaceMember> members(String workspace) {
+        return directory.members(workspace).stream()
+            .map(m -> new WorkspaceMember(m.sub(), m.username(), m.fullName(),
+                m.roles().stream().map(role -> role.value()).collect(Collectors.toSet())))
+            .toList();
+    }
+    public Map<String, String> displayNames(String workspace) {
+        try {
+            return directory.members(workspace).stream().collect(Collectors.toUnmodifiableMap(
+                m -> m.sub(), m -> m.fullName() != null ? m.fullName() : m.username()));
+        } catch (CoreException error) {
+            if (error.code() == ErrorCode.SERVICE_UNAVAILABLE) return Map.of();
+            throw error;
+        }
+    }
+    public Map<String, String> names(String workspace, Set<String> subjects) {
+        return displayNames(workspace).entrySet().stream().filter(entry -> subjects.contains(entry.getKey()))
+            .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
+    }
+    public List<WorkspacePermission> myPermissions(String workspace) {
+        var byRole = directory.rolePermissions(workspace);
+        // Vai trò lấy từ token đã ký, không lấy từ danh bạ; nhiều vai trò cùng quyền thì chỉ giữ một
+        Map<String, WorkspacePermission> merged = new TreeMap<>();
+        access.current().memberships().stream()
+            .filter(m -> m.workspace().equals(workspace))
+            .flatMap(m -> byRole.getOrDefault(m.role().value(), List.of()).stream())
+            .forEach(p -> merged.putIfAbsent(p.name(),
+                new WorkspacePermission(p.name(), p.description() != null ? p.description() : p.name())));
+        return List.copyOf(merged.values());
+    }
+    private String nameOrCode(String workspace) {
+        try {
+            return directory.displayName(workspace);
+        } catch (CoreException error) {
+            if (error.code() == ErrorCode.SERVICE_UNAVAILABLE) return workspace;
+            throw error;
+        }
+    }
+}

@@ -1,0 +1,37 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:servicedesk:ticket-clarification-result-v0.1.schema.json",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "contractVersion": {
+      "const": "ticket-clarification@0.1.0"
+    },
+    "ticketId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "answerId": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "contextRevision": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "assessmentStatus": {
+      "const": "AI07_REFRESH_REQUIRED"
+    },
+    "replayed": {
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "contractVersion",
+    "ticketId",
+    "answerId",
+    "contextRevision",
+    "assessmentStatus",
+    "replayed"
+  ]
+}
