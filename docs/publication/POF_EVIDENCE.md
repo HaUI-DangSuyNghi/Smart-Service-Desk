@@ -8,7 +8,7 @@ This post-release documentation does not alter the v0.1.0 tag or source archives
 | Criterion | Weight | Status | Evidence / remaining limit |
 | --- | ---: | --- | --- |
 | Public repository and development history | 5 | ĐẠT | [Repository](https://github.com/HaUI-DangSuyNghi/Smart-Service-Desk), [GitHub metadata](https://api.github.com/repos/HaUI-DangSuyNghi/Smart-Service-Desk), [release commit history](https://github.com/HaUI-DangSuyNghi/Smart-Service-Desk/commits/v0.1.0/), [PRs](https://github.com/HaUI-DangSuyNghi/Smart-Service-Desk/pulls?q=is%3Apr), [branches](https://github.com/HaUI-DangSuyNghi/Smart-Service-Desk/branches); three-member examples below. |
-| License and compatibility | 10 | CẦN BỔ SUNG | Official [Apache-2.0](../../LICENSE), scoped [LICENSING](../../LICENSING.md), [82-asset rights manifest](release-distribution-status.csv), preserved [third-party licenses](../../licenses/). Four external document/photo permission terms remain unrecorded; publishing a release does not clear them. |
+| License and compatibility | 10 | CẦN BỔ SUNG | Official [Apache-2.0](../../LICENSE), scoped [LICENSING](../../LICENSING.md), [82-asset rights manifest](release-distribution-status.csv), preserved [third-party licenses](../../licenses/). Four asset-specific owner/permission confirmations are now recorded from the team leader: two direct author permissions and two reported HaUI permissions. School written/email/link evidence still needs archiving; no independent verification or external Apache relicensing is claimed. |
 | Release and versioning | 5 | ĐẠT | [Published v0.1.0](https://github.com/HaUI-DangSuyNghi/Smart-Service-Desk/releases/tag/v0.1.0), [release API](https://api.github.com/repos/HaUI-DangSuyNghi/Smart-Service-Desk/releases/tags/v0.1.0), [ZIP](https://github.com/HaUI-DangSuyNghi/Smart-Service-Desk/archive/refs/tags/v0.1.0.zip), [tar.gz](https://github.com/HaUI-DangSuyNghi/Smart-Service-Desk/archive/refs/tags/v0.1.0.tar.gz), [CHANGELOG](../../CHANGELOG.md). No tag movement/new release. |
 | Build/install from source | 10 | ĐẠT | [Startup/build/demo](../../README.md), [21-check integrated source](https://github.com/HaUI-DangSuyNghi/Smart-Service-Desk/commit/7b56e71ea1fe608d7d39de5b7a225abdb4c31de0/checks), [7-check final-tree CI](https://github.com/HaUI-DangSuyNghi/Smart-Service-Desk/actions/runs/41172037297), [CI procedure](../../.github/workflows/tier-boundaries.yml). Exact source/evidence distinctions below. |
 | Dependencies and provenance | 10 | ĐẠT | [Pinned inventories, production SBOM and reproduction](pof/README.md): 602 npm lock entries, 119 production SBOM components, 160 resolved Java artifacts, 20 Python pins and 19 image references. Metadata provenance is not complete image/native-license certification. |
@@ -54,9 +54,14 @@ PR #71 is not reachable from this release; PR #68 artwork is not required.
 
 ## Small remaining owner action
 
-Record owner/provenance, redistribution permission and attribution conditions for
-the three files under `docs/references/` and `frontend/public/landing/banner-phong-may.jpg`
-listed individually in [LICENSING](../../LICENSING.md). A team ownership assertion
-must identify which file it covers; external ownership must not be relabeled Apache.
+The four asset-specific confirmations dated 2026-10-31 are recorded in
+[LICENSING](../../LICENSING.md) and the [82-asset manifest](release-distribution-status.csv).
+The team leader authored and authorized distribution of the DX-Lab PDF/XLSX;
+HaUI owns the exam PDF and room photo, with school permission reported by the
+team leader. Archive the dated leader statement and the school's written/email/link
+confirmation identifying the two HaUI assets and any attribution/conditions.
+No separate school evidence is supplied or independently verified here. HaUI rights
+remain separate from the team's Apache-2.0 code grant; readiness remains
+CẦN BỔ SUNG for this archival evidence, not for a missing leader confirmation.
 Review issue #16's acceptance links and close it only if its existing work is verified.
 Have another member approve/merge this documentation PR; do not move the released tag.
