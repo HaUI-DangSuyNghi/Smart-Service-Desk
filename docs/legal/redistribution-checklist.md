@@ -1,4 +1,14 @@
-# License and redistribution release checklist
+# Redistribution review and historical checklist
+
+## Current scope and historical status
+
+Documentation update: 2026-11-01. The team's approval of Apache-2.0 for authorized team-owned work is recorded in [LICENSING.md](../../LICENSING.md); the official text is in the root [LICENSE](../../LICENSE). Asset-specific distribution statements and evidence boundaries are recorded in the [release manifest](../publication/release-distribution-status.csv). Third-party terms and outstanding external permission evidence are not overridden by the team grant.
+
+The checklist below is a **historical planning snapshot**, preserved rather than retroactively marking its gates complete. Its "grant pending" statements and unchecked tasks do not supersede the later scoped approval in LICENSING.md, nor do they establish the current security or runtime readiness of a release. See [PoF evidence](../publication/POF_EVIDENCE.md) for dated records.
+
+This document and the [dependency inventory](dependency-inventory.md) are supporting records, not additional licenses for the project. Earlier release manifests retain their original paths and hashes as historical evidence; those records are not rewritten by this documentation relocation.
+
+## Historical checklist (preserved)
 
 **Status: APACHE-2.0 TEAM DIRECTION CONFIRMED — final rights review and license grant pending.**
 
@@ -32,7 +42,7 @@ The team intends to license its original source code under **Apache License 2.0 
 ## References
 
 - `LICENSING.md`
-- `docs/dependency-licenses.md`
+- `docs/legal/dependency-inventory.md`
 - `docs/requirements-mapping.md`
 - `intelligence/docs/governance/intelligence-dependency-candidates.md`
 - `fixtures/intelligence/service-desk/knowledge/manifest.json`

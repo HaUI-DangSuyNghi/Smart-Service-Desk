@@ -112,13 +112,13 @@ README, CHANGELOG, LICENSE, release/tag and secret hygiene are explicit evidence
 | Item | State / next owner action |
 | --- | --- |
 | README / CHANGELOG | Updated integration entry points; baseline versions unchanged until #23 merges |
-| Java / Python inventory | Existing `docs/dependency-tree.txt`, `docs/dependency-licenses.md`, `intelligence/requirements.lock`, AI-03 dependency resolution; full current transitive/image license closure still pending |
+| Java / Python inventory | Existing `docs/dependency-tree.txt`, `docs/legal/dependency-inventory.md`, `intelligence/requirements.lock`, AI-03 dependency resolution; full current transitive/image license closure still pending |
 | Third-party notices | BLOCKED: complete distribution-specific notices from resolved dependencies/images; existing AI-03 license documentation is not a repository-wide notice bundle |
 | Source LICENSE / public repository / release-tag | BLOCKED owner approval; intended Apache-2.0 is not a formal grant; no publication or tag performed |
 | References / AI fixtures | BLOCKED rights review; PDFs/XLSX not automatically team-owned; fixture manifests still `PENDING_OWNER_APPROVAL`, `usageRights=null` |
 | Secret scan | See validation below; scanners are evidence, not proof that every secret was detected |
 | Source build / Compose | See validation below; no existing developer volume reused/deleted; offline reproducibility and cross-platform builds not claimed |
-| Release checklist | `docs/license-release-checklist.md` remains authoritative; require G9, rights, notices, browser demo, final clean-source CI and owner approval before release |
+| Release checklist | `docs/legal/redistribution-checklist.md` remains authoritative; require G9, rights, notices, browser demo, final clean-source CI and owner approval before release |
 
 ## F-H. Scope and coordination
 

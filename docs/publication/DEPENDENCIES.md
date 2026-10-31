@@ -20,7 +20,7 @@ still needs supplementing/review before any binary distribution.
 
 | Component | Exact baseline/version source | Declared upstream terms/evidence | Gap |
 | --- | --- | --- | --- |
-| Backend / Spring Boot | backend/pom.xml: 3.3.13, Java 17; project 0.1.0-SNAPSHOT | Apache-2.0; existing docs/dependency-licenses.md | Current effective transitive/plugin notices |
+| Backend / Spring Boot | backend/pom.xml: 3.3.13, Java 17; project 0.1.0-SNAPSHOT | Apache-2.0; existing docs/legal/dependency-inventory.md | Current effective transitive/plugin notices |
 | Flowable / networknt | 7.1.0 / 1.5.9 in POM | Apache-2.0 in existing inventory | Exact bundled notices |
 | Jackson | 2.18.11 BOM in POM / existing resolved report | Upstream component review required | Confirm all modules and notices |
 | Flyway / JDBC / test deps | Boot-managed; docs/security/release-readiness-20261026-dependencies.txt | Existing inventory says Apache-2.0 / BSD-2-Clause; JUnit EPL-2.0, Mockito MIT | Historical table versions are not current resolution |
@@ -39,7 +39,7 @@ still needs supplementing/review before any binary distribution.
 | Node / nginx / Python images | 22.14.0-alpine / 1.27.4-alpine / 3.12.15-slim-bookworm | Mixed runtime/OS terms | Full image closure; Node/nginx tags not digest-pinned |
 | Optional CUDA toolkit | 12.8.1 supplement evidence | NVIDIA EULA, not OSI license | Keep outside all-FOSS Core claim; no binary export |
 
-Existing docs/dependency-licenses.md contains older historical tables (Boot 3.3.4,
+Existing docs/legal/dependency-inventory.md contains older historical tables (Boot 3.3.4,
 Keycloak 26.0.7 etc.). Use current manifests/resolution, not those historical pins.
 Its security/... link omits docs/; original report actually lives in docs/security.
 Evidence provenance is not source licensing or a production-security waiver.

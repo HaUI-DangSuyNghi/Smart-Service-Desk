@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="900" viewBox="0 0 1120 900" role="img" aria-labelledby="title desc"><title id="title">Kiến trúc ba tầng Smart Service Desk</title><desc id="desc">Người dùng đăng nhập qua Keycloak, giao diện React gọi API qua Apache APISIX. Ứng dụng Service Desk và Đặt phòng sử dụng H-P-D-I, lõi kỹ thuật và runtime Python Intelligence. Hạ tầng gồm PostgreSQL và kho tệp.</desc><defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M1 1 L7 4 L1 7" fill="none" stroke="#637857" stroke-width="1.5"/></marker><pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="1" fill="#dce5d6"/></pattern></defs><rect width="1120" height="900" rx="24" fill="#f6f8f3"/><rect width="1120" height="900" rx="24" fill="url(#grid)" opacity="0.4"/><g font-family="Segoe UI, DejaVu Sans, sans-serif">
+<text x="40" y="38" font-size="12" fill="#60754d" font-weight="700">SMART SERVICE DESK / DX-OS OPEN-CORE</text>
+<text x="40" y="78" font-size="30" fill="#192b22" font-weight="700">Một lõi dùng chung. Nhiều ứng dụng.</text>
+<text x="40" y="108" font-size="15" fill="#607063" font-weight="400">Giao diện và nghiệp vụ tách khỏi các năng lực nền tảng, kết nối qua API.</text>
+<rect x="40" y="142" width="296" height="84" rx="16" fill="#ffffff" stroke="#dce5d6"/>
+<text x="60" y="174" font-size="11" fill="#60754d" font-weight="700">NGƯỜI DÙNG / WEB</text>
+<text x="60" y="204" font-size="20" fill="#192b22" font-weight="650">React · TypeScript</text>
+<rect x="412" y="142" width="296" height="84" rx="16" fill="#192b22" stroke="#192b22"/>
+<text x="432" y="174" font-size="11" fill="#c6dda4" font-weight="700">CỔNG TRUY CẬP API</text>
+<text x="432" y="204" font-size="20" fill="#ffffff" font-weight="650">Apache APISIX</text>
+<rect x="784" y="142" width="296" height="84" rx="16" fill="#ffffff" stroke="#dce5d6"/>
+<text x="804" y="174" font-size="11" fill="#60754d" font-weight="700">ĐỊNH DANH / SSO</text>
+<text x="804" y="204" font-size="20" fill="#192b22" font-weight="650">Keycloak · OIDC</text>
+<path d="M336 184 H398" fill="none" stroke="#637857" stroke-width="2" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path d="M188 142 V126 H932 V142" fill="none" stroke="#637857" stroke-width="2" stroke-linejoin="round" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+<text x="466" y="135" font-size="11" fill="#60754d" font-weight="400">Đăng nhập và token</text>
+<path d="M560 226 V254" fill="none" stroke="#637857" stroke-width="2" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="40" y="270" width="1040" height="128" rx="16" fill="#ffffff" stroke="#c9d8bb"/>
+<text x="60" y="302" font-size="12" fill="#466b17" font-weight="700">TẦNG 3</text>
+<text x="60" y="333" font-size="23" fill="#192b22" font-weight="650">Ứng dụng</text>
+<text x="60" y="361" font-size="13" fill="#607063" font-weight="400">Nghiệp vụ theo miền</text>
+<rect x="330" y="290" width="344" height="88" rx="12" fill="#f2f6eb" stroke="#e4ecd9"/>
+<text x="348" y="322" font-size="19" fill="#192b22" font-weight="650">Service Desk</text>
+<text x="348" y="350" font-size="13" fill="#607063" font-weight="400">Ticket · tiếp nhận · điều phối · SLA</text>
+<rect x="690" y="290" width="370" height="88" rx="12" fill="#f2f6eb" stroke="#e4ecd9"/>
+<text x="708" y="322" font-size="19" fill="#192b22" font-weight="650">Đặt phòng</text>
+<text x="708" y="350" font-size="13" fill="#607063" font-weight="400">Tạo yêu cầu · phê duyệt · theo dõi</text>
+<path d="M560 398 V426" fill="none" stroke="#637857" stroke-width="2" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="40" y="442" width="1040" height="146" rx="16" fill="#edf4e3" stroke="#c9d8bb"/>
+<text x="60" y="474" font-size="12" fill="#466b17" font-weight="700">TẦNG 2</text>
+<text x="60" y="505" font-size="23" fill="#192b22" font-weight="650">H-P-D-I</text>
+<text x="60" y="533" font-size="13" fill="#607063" font-weight="400">Năng lực dùng chung</text>
+<rect x="330" y="464" width="172" height="102" rx="12" fill="#ffffff" stroke="#dce5d6"/>
+<text x="344" y="500" font-size="18" fill="#192b22" font-weight="650">Human</text>
+<text x="344" y="530" font-size="12" fill="#607063" font-weight="400">Người và quyền</text>
+<rect x="516" y="464" width="172" height="102" rx="12" fill="#ffffff" stroke="#dce5d6"/>
+<text x="530" y="500" font-size="18" fill="#192b22" font-weight="650">Process</text>
+<text x="530" y="530" font-size="12" fill="#607063" font-weight="400">Việc và quy trình</text>
+<rect x="702" y="464" width="172" height="102" rx="12" fill="#ffffff" stroke="#dce5d6"/>
+<text x="716" y="500" font-size="18" fill="#192b22" font-weight="650">Data</text>
+<text x="716" y="530" font-size="12" fill="#607063" font-weight="400">Tài liệu và dữ liệu</text>
+<rect x="888" y="464" width="172" height="102" rx="12" fill="#ffffff" stroke="#dce5d6"/>
+<text x="902" y="500" font-size="18" fill="#192b22" font-weight="650">Intelligence</text>
+<text x="902" y="530" font-size="12" fill="#607063" font-weight="400">Trợ lý nghiệp vụ</text>
+<path d="M418 588 V616" fill="none" stroke="#637857" stroke-width="2" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path d="M974 588 V616" fill="none" stroke="#637857" stroke-width="2" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="40" y="632" width="724" height="112" rx="16" fill="#ffffff" stroke="#dce5d6"/>
+<text x="60" y="660" font-size="12" fill="#466b17" font-weight="700">TẦNG 1 / CORE KỸ THUẬT</text>
+<text x="60" y="691" font-size="21" fill="#192b22" font-weight="650">Định danh · Workflow · Tệp · Audit</text>
+<text x="60" y="720" font-size="14" fill="#607063" font-weight="400">Java 17 · Spring Boot · Flowable</text>
+<rect x="784" y="632" width="296" height="112" rx="16" fill="#eaf2f5" stroke="#d7e4e8"/>
+<text x="804" y="660" font-size="11" fill="#486977" font-weight="700">RUNTIME INTELLIGENCE</text>
+<text x="804" y="691" font-size="21" fill="#192b22" font-weight="650">Python</text>
+<text x="804" y="720" font-size="13" fill="#607063" font-weight="400">Model / API theo cấu hình</text>
+<path d="M402 744 V772" fill="none" stroke="#637857" stroke-width="2" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<rect x="40" y="788" width="724" height="68" rx="16" fill="#192b22" stroke="#192b22"/>
+<text x="60" y="817" font-size="11" fill="#c6dda4" font-weight="700">LƯU TRỮ</text>
+<text x="180" y="831" font-size="18" fill="#ffffff" font-weight="600">PostgreSQL 16 · Kho tệp nội bộ</text>
+<rect x="784" y="788" width="296" height="68" rx="16" fill="#ffffff" stroke="#dce5d6"/>
+<text x="804" y="816" font-size="11" fill="#466b17" font-weight="700">AI LÀ TÙY CHỌN</text>
+<text x="804" y="840" font-size="13" fill="#607063" font-weight="400">Luồng thủ công không cần AI.</text>
+<text x="40" y="882" font-size="12" fill="#607063" font-weight="400">Sơ đồ logic: thể hiện ranh giới năng lực, không phải mỗi hộp là một container riêng.</text>
+</g></svg>

@@ -341,7 +341,7 @@ Root cause môi trường audit không có Docker, cùng với cơ chế tests d
 
 ### F08 - P2 - Inventory và README không theo kịp source [CONFIRMED]
 
-Mục 5/10 cần phiên bản/nguồn gốc/tài liệu rõ → có README/dependency table nhưng mô tả baseline cũ → `README.md:25` nói rendered UI/dashboard còn là task; `docs/dependency-licenses.md:18` ghi Boot 3.3.4 và image cũ, trong `backend/pom.xml:3` là 3.3.13, Compose đã patch và FE H/P/D đã có → source/doc lệch, thiếu closure/font/JS inventory → giảm PoF và gây setup/demo sai kỳ vọng → regenerate resolved inventories, cập nhật status theo current SHA, tách historical evidence thành mục riêng.
+Mục 5/10 cần phiên bản/nguồn gốc/tài liệu rõ → có README/dependency table nhưng mô tả baseline cũ → `README.md:25` nói rendered UI/dashboard còn là task; `docs/legal/dependency-inventory.md:18` ghi Boot 3.3.4 và image cũ, trong `backend/pom.xml:3` là 3.3.13, Compose đã patch và FE H/P/D đã có → source/doc lệch, thiếu closure/font/JS inventory → giảm PoF và gây setup/demo sai kỳ vọng → regenerate resolved inventories, cập nhật status theo current SHA, tách historical evidence thành mục riêng.
 
 **DoD:** README mô tả đúng H/P/D đã có và Service Desk/I UI còn thiếu; versions khớp lock/effective POM/image manifest; notice/compatibility review không còn chỉ top-level declaration. Không sửa/xóa evidence lịch sử để làm đẹp.
 
