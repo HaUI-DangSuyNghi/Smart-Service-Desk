@@ -2,7 +2,7 @@
 
 Notable changes use Keep a Changelog categories. v0.1.0 was published on
 2026-10-31 at 12:31:12 UTC+07, commit ba82b2fc5eb36ea309563d2d7442db95b96a7608.
-The released tag/source archives are preserved; subsequent documentation is Unreleased.
+The historical v0.1.0 tag/source archives and its evidence are preserved.
 
 ## [Unreleased]
 
@@ -11,6 +11,25 @@ The released tag/source archives are preserved; subsequent documentation is Unre
   and contribution/issue guidance; synchronize published release status.
 - Keep external document/photo permission evidence and the MODERATE fast-uri
   finding explicit; no dependency/code change or new release.
+
+## [1.0.0] - 2026-11-01
+
+Published at 02:22:52 UTC+07 (2026-10-31 19:22:52 UTC).
+Tag: `v1.0.0`; source commit: `f845ff3dd0e2e49cb2a94608daaf365777f58877`.
+The existing tag and source archives are unchanged.
+
+### Added
+- Frontend Markdown/GFM rendering and STOMP client dependencies recorded in the
+  released package manifests, alongside merged frontend fixes (PRs #71, #76,
+  #77, #80 and #81; release integration PR #82).
+
+### Release evidence (post-release supplement)
+- [v1.0.0 evidence and reproduction instructions](docs/publication/v1.0.0/README.md),
+  frontend production CycloneDX SBOM, exact input hashes and SHA256SUMS.
+- The SBOM covers frontend production dependencies only, not backend, Python,
+  container operating-system packages or a vulnerability/security certification.
+- Historical v0.1.0 test logs and inventories remain scoped to their recorded
+  source commits; they do not certify v1.0.0 runtime behavior.
 
 ## [0.1.0] - 2026-10-31
 

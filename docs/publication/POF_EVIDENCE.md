@@ -1,4 +1,14 @@
-# PoF evidence - Smart Service Desk v0.1.0
+# PoF evidence - Smart Service Desk
+
+## Current release: v1.0.0
+
+Tag `v1.0.0` resolves to `f845ff3dd0e2e49cb2a94608daaf365777f58877`.
+Published 2026-11-01 02:22:52 UTC+07 (2026-10-31 19:22:52 UTC).
+See the [v1.0.0 supplement](v1.0.0/README.md) for the frontend production SBOM,
+input provenance and checksums. This is dependency evidence, not a new runtime
+acceptance result. School permission evidence and issue acceptance remain separate.
+
+## Historical snapshot: v0.1.0
 
 Snapshot: 2026-10-31. Six criteria/weights below follow the team leader's supplied
 rubric (50 points total); these are evidence-readiness labels, NOT Council marks.

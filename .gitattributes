@@ -33,3 +33,6 @@ scripts/acceptance/core/*.sql text eol=lf
 # Shell script cho Git Bash/Linux phai giu LF; file .cmd giu CRLF cho cmd.exe
 /dx text eol=lf
 /dx.cmd text eol=crlf
+
+# Keep release supplement bytes stable for published SHA-256 checksums.
+docs/publication/v1.0.0/** -text whitespace=cr-at-eol
