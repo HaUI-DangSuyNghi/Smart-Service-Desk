@@ -22,6 +22,12 @@ Tiếp nhận sự cố, điều phối kỹ thuật viên, quản lý đặt ph
 
 ![Smart Service Desk - Hỗ trợ CNTT tập trung, theo dõi đến khi hoàn tất](frontend/public/readme-banner.png)
 
+## Bản phát hành v1.0.0
+
+Phát hành ngày **01/11/2026 (UTC+07)**, tag [`v1.0.0`](https://github.com/HaUI-DangSuyNghi/Smart-Service-Desk/releases/tag/v1.0.0), commit `f845ff3dd0e2e49cb2a94608daaf365777f58877`.
+Xem [Changelog](CHANGELOG.md) và [minh chứng v1.0.0, SBOM frontend, SHA-256](docs/publication/v1.0.0/README.md).
+SBOM chỉ bao phủ dependencies production của frontend. Hồ sơ kiểm thử/PoF v0.1.0 được giữ nguyên như minh chứng lịch sử, không phải xác nhận kiểm thử cho v1.0.0.
+
 ## Giới thiệu
 
 Một máy tính không lên nguồn, đường truyền gặp sự cố hay một yêu cầu đặt phòng đều cần được tiếp nhận đúng nơi và theo dõi đến khi có kết quả. Khi thông tin nằm rải rác trong tin nhắn và bảng tính, người gửi khó biết yêu cầu đang ở đâu, còn người điều phối khó nắm được ai đang xử lý việc gì.
