@@ -47,7 +47,7 @@ export const TicketActions = ({ ticket }: { ticket: TicketView }) => {
   if (canRelease) {
     return (
       <section className="flex flex-wrap items-center gap-2 border-b border-crm-line px-4 py-3">
-        <Button size="sm" variant="info" onClick={() => setDialog("release")}>
+        <Button size="sm" variant="warning" onClick={() => setDialog("release")}>
           Tiếp nhận
         </Button>
         <ReleaseIntakeDialog
@@ -79,7 +79,7 @@ export const TicketActions = ({ ticket }: { ticket: TicketView }) => {
           )}
         >
           {canReview && (
-            <Button size="sm" onClick={() => setDialog("review")}>
+            <Button size="sm" variant="success" onClick={() => setDialog("review")}>
               Duyệt và giao việc
             </Button>
           )}

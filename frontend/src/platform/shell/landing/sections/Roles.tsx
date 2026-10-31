@@ -5,27 +5,27 @@ const ROLES = [
     tag: "Requester",
     title: "Người yêu cầu",
     items: [
-      "Tạo ticket hỗ trợ CNTT mới",
-      "Theo dõi tiến độ ticket của mình",
-      "Xác nhận đã xong hoặc yêu cầu làm lại",
+      "Gửi ticket hỗ trợ CNTT và yêu cầu đặt phòng",
+      "Theo dõi, trao đổi và sửa hoặc hủy khi còn được phép",
+      "Xác nhận kết quả ticket hoặc yêu cầu xử lý lại",
     ],
   },
   {
     tag: "Agent",
     title: "Kỹ thuật viên",
     items: [
-      "Nhận việc từ hàng chờ của nhóm",
-      "Xử lý và đánh dấu đã giải quyết",
-      "Tham khảo gợi ý phân loại của AI",
+      "Xem công việc được giao theo danh sách hoặc ngày",
+      "Bắt đầu, tạm dừng, tiếp tục và báo xong công việc",
+      "Đăng ký ca trực, tra cứu tài liệu và cập nhật tiến độ",
     ],
   },
   {
     tag: "Coordinator",
     title: "Điều phối viên",
     items: [
-      "Xem toàn bộ ticket trong workspace",
-      "Theo dõi thống kê và lịch sử quy trình",
-      "Nhận việc khi có thêm vai trò kỹ thuật viên",
+      "Tiếp nhận thông tin, duyệt và giao ticket",
+      "Điều phối người xử lý, ca trực và yêu cầu đặt phòng",
+      "Theo dõi tồn đọng, quá hạn và thống kê trong workspace",
     ],
   },
 ];
@@ -42,11 +42,11 @@ export const Roles = () => {
             Phân quyền
           </div>
           <h2 className="mb-3.5 text-[clamp(34px,4vw,50px)] leading-tight font-extrabold tracking-tight text-(--landing-text)">
-            Ba vai trò, một luồng làm việc
+            Đúng việc cho từng vai trò
           </h2>
           <p className="text-xl leading-relaxed text-(--landing-text-dim)">
-            Vai trò gắn theo từng workspace. Mỗi người chỉ thấy đúng dữ liệu của workspace mình, và
-            backend luôn tự kiểm quyền.
+            Người gửi theo dõi yêu cầu, kỹ thuật viên tập trung xử lý, điều phối viên tổ chức công
+            việc. Giao diện và quyền thao tác được xác định theo vai trò trong workspace đang chọn.
           </p>
         </Reveal>
 

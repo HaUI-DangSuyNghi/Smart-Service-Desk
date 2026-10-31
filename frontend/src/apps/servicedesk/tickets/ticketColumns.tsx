@@ -22,8 +22,12 @@ export const titleColumn: DataTableColumn<TicketView> = {
   key: "title",
   header: "Tiêu đề",
   icon: IconAbc,
-  width: "320px",
-  cell: (ticket) => <span className="block truncate">{ticket.title}</span>,
+  width: "220px",
+  cell: (ticket) => (
+    <span className="block max-w-55 truncate" title={ticket.title}>
+      {ticket.title}
+    </span>
+  ),
 };
 
 export const createdAtColumn: DataTableColumn<TicketView> = {
@@ -61,7 +65,7 @@ export const workflowColumns = (
     key: "priority",
     header: "Ưu tiên",
     icon: IconFlag,
-    width: "130px",
+    width: "90px",
     cell: (ticket) => {
       // Chưa duyệt thì hiện gợi ý AI cho điều phối viên sắp xếp
       const priority = ticket.classification?.priority ?? aiSuggestion(ticket.assessment)?.priority;
@@ -93,7 +97,7 @@ export const workflowColumns = (
     key: "sla",
     header: "Hạn",
     icon: IconClockHour4,
-    width: "180px",
+    width: "150px",
     cell: (ticket) =>
       ticket.sla ? <SlaIndicator sla={ticket.sla} started={isStarted(ticket)} /> : NONE,
   },

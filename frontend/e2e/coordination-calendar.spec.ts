@@ -15,6 +15,7 @@ const makeTask = (key: string, createdAt: string, assignee: string | null = null
   processKey: "service-desk-intake-reviewed",
   businessKey: id,
 });
+const table = (page: Page) => page.getByRole("region", { name: "Bảng công việc", exact: true });
 const setup = async (page: Page) => {
   const fixture = await mockWorkCalendar(page, ["task:handle", "task:assign"]);
   await page.route("**/api/hpdi/v1/workspaces/*/duty*", (route) => route.fulfill({ json: [] }));
@@ -26,10 +27,31 @@ const setup = async (page: Page) => {
   ];
   const requests: string[] = [];
   await page.route("**/api/hpdi/v1/workspaces/*/inbox?*", (route) => {
-    const url = new URL(route.request().url());
-    requests.push(url.toString());
+    requests.push(route.request().url());
     return route.fulfill({ json: { items: tasks, total: tasks.length, page: 0, size: 100 } });
   });
+  await page.route(`**/tickets/${id}`, (route) =>
+    route.fulfill({
+      json: {
+        id,
+        workspace: "lab-a",
+        creator: "another-user",
+        clientRequestId: id,
+        title: "Máy tính phòng A201 không lên nguồn",
+        description: "Cần hỗ trợ thiết bị",
+        createdAt: "2026-10-31T01:00:00Z",
+        state: "AWAITING_REVIEW",
+        taskId: "coord-review",
+        assignee: null,
+        process: {
+          processInstanceId: "process-review",
+          processKey: "service-desk-intake-reviewed",
+          businessKey: id,
+          workspace: "lab-a",
+        },
+      },
+    }),
+  );
   await page.route(`**/tickets/${id}/intake`, (route) =>
     route.fulfill({
       json: {
@@ -52,52 +74,46 @@ const setup = async (page: Page) => {
 };
 
 for (const width of [360, 1440]) {
-  test(`lịch điều phối dùng việc của workspace và có thao tác tiếp nhận ở ${width}px`, async ({
+  test(`điều phối có một bảng yêu cầu theo ngày và thao tác đúng vai trò ở ${width}px`, async ({
     page,
   }) => {
     await page.setViewportSize({ width, height: 1000 });
     const { fixture, requests } = await setup(page);
     await page.goto("/inbox");
-    await expect(page.getByRole("heading", { name: "Lịch điều phối", exact: true })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Lịch của tôi", exact: true })).toHaveCount(0);
-    await expect(page.getByText("Ngày phát sinh công việc", { exact: true })).toBeVisible();
-    await expect(page.getByText("Hạn hoàn thành", { exact: true })).toHaveCount(0);
+    await expect(page.getByRole("table")).toHaveCount(1);
+    await expect(table(page).getByRole("row")).toHaveCount(3);
+    await expect(table(page)).toContainText("Máy tính phòng A201 không lên nguồn");
+    await expect(page.getByRole("article")).toHaveCount(0);
+    await expect(page.getByRole("group", { name: "Nhóm việc điều phối" })).toHaveCount(0);
+    await expect(table(page).getByRole("button", { name: "Tiếp nhận", exact: true })).toHaveCount(
+      1,
+    );
     await expect(
-      page.getByRole("button", { name: "Phát sinh trong ngày 2", exact: true }),
-    ).toBeVisible();
-    const region = page.getByRole("region", { name: "Việc cần điều phối" });
-    await expect(region.getByRole("article")).toHaveCount(2);
-    await expect(region.getByRole("button", { name: "Tiếp nhận", exact: true })).toBeVisible();
-    await expect(
-      region.getByRole("button", { name: "Duyệt và giao việc", exact: true }),
-    ).toBeVisible();
-    await expect(region.getByText(/Ước tính/)).toHaveCount(0);
-    await expect(region.getByRole("button", { name: "Bắt đầu", exact: true })).toHaveCount(0);
-    expect(fixture.calls.some((value) => value.includes("/queue?"))).toBe(false);
-    expect(requests.some((value) => value.includes("scope=ALL"))).toBe(true);
-    await region.getByRole("button", { name: "Tiếp nhận", exact: true }).click();
+      table(page).getByRole("button", { name: "Duyệt và giao việc", exact: true }),
+    ).toHaveCount(1);
+    await expect(table(page).getByRole("button", { name: "Bắt đầu", exact: true })).toHaveCount(0);
+    expect(fixture.calls.some((url) => url.includes("/queue?"))).toBe(false);
+    expect(requests.some((url) => url.includes("scope=ALL"))).toBe(true);
+    await table(page).getByRole("button", { name: "Tiếp nhận", exact: true }).click();
     await expect(page.getByRole("dialog", { name: "Tiếp nhận ticket" })).toBeVisible();
     await page.keyboard.press("Escape");
-    await page.getByRole("button", { name: "Tồn từ trước 1", exact: true }).click();
-    await expect(region.getByRole("article")).toHaveCount(1);
-    await expect(region.getByRole("button", { name: "Giao lại", exact: true })).toBeVisible();
-    await page.getByRole("button", { name: "Tất cả đang mở 3", exact: true }).click();
-    await expect(region.getByRole("article")).toHaveCount(3);
-    await page.getByRole("button", { name: "Tình trạng giao việc", exact: true }).click();
-    await page.getByRole("menuitem", { name: "Chưa giao", exact: true }).click();
-    await expect(region.getByRole("article")).toHaveCount(2);
-    await page.getByLabel("Tìm việc điều phối", { exact: true }).fill("tiep nhan");
-    await expect(region.getByRole("article")).toHaveCount(1);
-    await expect(region).toContainText("Tiếp nhận thông tin");
-    const overflow = await page.evaluate(
-      () => document.documentElement.scrollWidth > innerWidth + 1,
+    await page.getByRole("button", { name: "Ngày trước", exact: true }).click();
+    await expect(table(page).getByRole("row")).toHaveCount(2);
+    await expect(table(page).getByRole("button", { name: "Giao lại", exact: true })).toHaveCount(1);
+    await page.getByRole("button", { name: "Hôm nay", exact: true }).click();
+    await page.getByLabel("Tìm công việc", { exact: true }).fill("may tinh phong A201");
+    await expect(table(page).getByRole("row")).toHaveCount(3);
+    await page.getByRole("button", { name: "Bước công việc", exact: true }).click();
+    await page.getByRole("menuitem", { name: "Tiếp nhận thông tin", exact: true }).click();
+    await expect(table(page).getByRole("row")).toHaveCount(2);
+    expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)).toBe(
+      false,
     );
-    expect(overflow).toBe(false);
-    await page.screenshot({ path: `../.local/coordination-calendar-${width}.png` });
+    await page.screenshot({ path: `../.local/daily-work-coordinator-${width}.png` });
   });
 }
 
-test("lịch điều phối không bỏ sót bước tiếp nhận ở trang thứ hai", async ({ page }) => {
+test("bảng điều phối lấy đủ dữ liệu trang sau rồi lọc đúng ngày", async ({ page }) => {
   await setup(page);
   const tasks = [
     ...Array.from({ length: 100 }, (_, index) => ({
@@ -108,8 +124,8 @@ test("lịch điều phối không bỏ sót bước tiếp nhận ở trang th�
   ];
   await page.route("**/api/hpdi/v1/workspaces/*/inbox?*", (route) => {
     const url = new URL(route.request().url());
-    const index = Number(url.searchParams.get("page"));
-    const size = Number(url.searchParams.get("size"));
+    const index = Number(url.searchParams.get("page")),
+      size = Number(url.searchParams.get("size"));
     return route.fulfill({
       json: {
         items: tasks.slice(index * size, (index + 1) * size),
@@ -120,29 +136,21 @@ test("lịch điều phối không bỏ sót bước tiếp nhận ở trang th�
     });
   });
   await page.goto("/inbox?view=calendar");
-  await expect(
-    page.getByRole("button", { name: "Phát sinh trong ngày 1", exact: true }),
-  ).toBeVisible();
-  await expect(
-    page
-      .getByRole("region", { name: "Việc cần điều phối" })
-      .getByRole("button", { name: "Tiếp nhận", exact: true }),
-  ).toBeVisible();
-  await expect(page.getByRole("button", { name: "Tồn từ trước 100", exact: true })).toBeVisible();
+  await expect(table(page).getByRole("row")).toHaveCount(2);
+  await expect(table(page).getByRole("button", { name: "Tiếp nhận", exact: true })).toBeVisible();
 });
 
-test("đổi workspace không giữ lại công việc của workspace cũ", async ({ page }) => {
+test("đổi workspace không giữ lại bảng công việc cũ", async ({ page }) => {
   await setup(page);
   await page.route("**/api/hpdi/v1/workspaces/lab-b/inbox?*", (route) =>
     route.fulfill({ json: { items: [], total: 0, page: 0, size: 100 } }),
   );
   await page.goto("/inbox");
-  await expect(
-    page.getByRole("region", { name: "Việc cần điều phối" }).getByRole("article"),
-  ).toHaveCount(2);
+  await expect(table(page).getByRole("row")).toHaveCount(3);
   await page.getByRole("button", { name: /Phòng máy A/ }).click();
   await page.getByRole("menuitem", { name: /Phòng máy B/ }).click();
+  await expect(page.getByRole("table")).toHaveCount(0);
   await expect(
-    page.getByRole("region", { name: "Việc cần điều phối" }).getByRole("article"),
-  ).toHaveCount(0);
+    page.getByText("Không có công việc trong ngày đã chọn.", { exact: true }),
+  ).toBeVisible();
 });

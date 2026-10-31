@@ -1,19 +1,12 @@
-import { LifeBuoy } from "lucide-react";
-import { cn } from "cn";
-
-/** Logo chữ thay cho logo ảnh. */
+/** Light lettering on dark backgrounds; dark lettering on the white navigation. */
 export const Wordmark = ({ light }: { light: boolean }) => {
   return (
-    <span
-      className={cn(
-        "flex items-center gap-2 text-xl font-black tracking-tight",
-        light ? "text-white" : "text-(--landing-text)",
-      )}
-    >
-      <span className="grid size-8 place-items-center rounded-lg bg-(--landing-accent) text-white">
-        <LifeBuoy className="size-5" />
-      </span>
-      Smart Service Desk
-    </span>
+    <img
+      src={light ? "/logo-svd-light-removebg-preview.png" : "/logo-svd-dark-removebg-preview.png"}
+      alt="Smart Service Desk"
+      width={666}
+      height={375}
+      className="h-12 w-52 shrink-0 object-cover object-center"
+    />
   );
 };

@@ -12,6 +12,7 @@ export const HomeRequestsPanel = () => {
     <HomePanel
       title="Yêu cầu của tôi"
       icon={IconSend}
+      tone="turquoise"
       to="/requests"
       total={query.isSuccess ? query.data.total : undefined}
     >
@@ -29,6 +30,9 @@ export const HomeRequestsPanel = () => {
             to={processLink(request.processKey, request.businessKey) || `/processes/${request.id}`}
             className="flex min-w-0 items-center gap-3 px-4 py-3 outline-none transition-colors duration-100 hover:bg-crm-hover focus-visible:bg-crm-accent-soft focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-crm-focus"
           >
+            <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-crm-tone-turquoise-soft text-crm-tone-turquoise">
+              <IconSend size={16} />
+            </div>
             <div className="min-w-0 flex-1">
               <p className="truncate font-medium text-crm-text">
                 {labels.processName(request.processKey)}

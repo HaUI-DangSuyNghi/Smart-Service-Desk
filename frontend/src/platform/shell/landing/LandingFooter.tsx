@@ -7,9 +7,9 @@ const COLUMNS = [
   {
     title: "Sản phẩm",
     links: [
-      { label: "Ticket & quy trình", href: "#services" },
-      { label: "AI Triage", href: "#services" },
-      { label: "Dữ liệu & tri thức", href: "#services" },
+      { label: "Ticket & đặt phòng", href: "#services" },
+      { label: "AI hỗ trợ phân loại", href: "#services" },
+      { label: "Kho tri thức", href: "#services" },
       { label: "Dashboard", href: "#services" },
     ],
   },
@@ -52,8 +52,8 @@ export const LandingFooter = () => {
               <Wordmark light />
             </div>
             <p className="mb-5 text-sm leading-relaxed text-white/40">
-              Hỗ trợ CNTT cho đơn vị đại học — ticket theo quy trình BPMN, gợi ý AI có giải thích và
-              con người quyết định, chạy trên nền tảng DX-OS Open-Core.
+              Quản lý hỗ trợ CNTT và yêu cầu đặt phòng cho đơn vị đại học. Kết nối người gửi, điều
+              phối viên và kỹ thuật viên từ lúc tiếp nhận đến khi hoàn tất.
             </p>
             <div className="flex gap-2.5">
               <a

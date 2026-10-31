@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router";
 import { IconInbox } from "@tabler/icons-react";
-import { cn } from "cn";
 import { PERMISSIONS, useCurrentWorkspace, usePermissions } from "@/platform/human/workspace";
 import type { InboxScope, WorkItem } from "@/platform/services";
+import { Button } from "@/platform/shared/ui/button";
 import { EmptyState } from "@/platform/shared/ui/EmptyState";
 import { ErrorState } from "@/platform/shared/ui/ErrorState";
 import { PageBody, PageToolbar } from "@/platform/shared/ui/page";
@@ -90,17 +90,14 @@ export const InboxListView = () => {
             className="flex min-w-0 flex-wrap items-center gap-1"
           >
             {scopes.map((item) => (
-              <button
+              <Button
                 key={item}
                 type="button"
                 aria-pressed={scope === item}
                 onClick={() => handleScopeChange(item)}
-                className={cn(
-                  "inline-flex min-h-9 items-center gap-1.5 rounded-crm-sm px-2.5 text-crm-sm outline-none transition-colors duration-100 focus-visible:ring-2 focus-visible:ring-crm-focus md:min-h-7",
-                  scope === item
-                    ? "bg-crm-accent-soft font-medium text-crm-accent"
-                    : "text-crm-text-2 hover:bg-crm-hover",
-                )}
+                variant={scope === item ? "info" : "outline"}
+                size="sm"
+                className="min-h-9 md:min-h-7"
               >
                 {SCOPE_LABELS[item]}
                 {views[item].isSuccess && (
@@ -108,7 +105,7 @@ export const InboxListView = () => {
                     {views[item].data.total}
                   </span>
                 )}
-              </button>
+              </Button>
             ))}
           </div>
         }

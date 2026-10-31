@@ -10,14 +10,15 @@ export const HomeKnowledgePanel = () => {
     <HomePanel
       title="Kho tri thức"
       icon={IconBook}
+      tone="purple"
       to="/knowledge"
       total={query.isSuccess ? query.data.total : undefined}
       actions={
         <Link
           to="/knowledge-chat"
-          className="m-3 flex min-h-11 items-center gap-2 rounded-crm-sm border border-crm-line bg-crm-subtle px-3 text-crm-md text-crm-text outline-none hover:bg-crm-hover focus-visible:ring-2 focus-visible:ring-crm-focus"
+          className="m-3 flex min-h-11 items-center gap-2 rounded-xl border border-crm-tone-purple/20 bg-crm-tone-purple-soft/60 px-3 text-crm-md text-crm-tone-purple outline-none transition-colors hover:bg-crm-tone-purple-soft focus-visible:ring-2 focus-visible:ring-crm-focus"
         >
-          <IconSparkles size={16} className="text-crm-accent" />
+          <IconSparkles size={16} />
           <span className="min-w-0 flex-1 font-medium">Hỏi đáp tài liệu</span>
           <IconArrowUpRight size={16} className="shrink-0 text-crm-text-3" />
         </Link>
@@ -37,7 +38,9 @@ export const HomeKnowledgePanel = () => {
             to={`/knowledge/${item.id}`}
             className="flex min-w-0 items-start gap-2.5 px-4 py-3 outline-none transition-colors duration-100 hover:bg-crm-hover focus-visible:bg-crm-accent-soft focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-crm-focus"
           >
-            <IconFileText size={16} className="mt-0.5 shrink-0 text-crm-text-3" />
+            <span className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-crm-tone-purple-soft text-crm-tone-purple">
+              <IconFileText size={16} />
+            </span>
             <div className="min-w-0 flex-1">
               <p className="truncate text-crm-text">{item.title}</p>
               <div className="mt-1 flex flex-wrap gap-x-2 gap-y-1 text-crm-xs text-crm-text-3">

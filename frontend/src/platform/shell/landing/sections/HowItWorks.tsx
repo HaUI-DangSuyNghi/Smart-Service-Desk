@@ -4,18 +4,18 @@ import { Reveal } from "../Reveal";
 const PILLARS = [
   {
     icon: Server,
-    title: "Tầng 1 — Open-Core",
-    desc: "Nền tảng headless dùng chung: Keycloak cho định danh, APISIX làm cổng API, Flowable chạy quy trình, PostgreSQL lưu dữ liệu và nhật ký audit. Không có giao diện, mọi thứ qua API.",
+    title: "01. Gửi và theo dõi yêu cầu",
+    desc: "Mô tả sự cố CNTT hoặc gửi yêu cầu đặt phòng. Xem trạng thái và tiến độ trên trang chi tiết; trao đổi trên ticket khi cần làm rõ thông tin sự cố.",
   },
   {
     icon: Blocks,
-    title: "Tầng 2 — H-P-D-I",
-    desc: "Không gian năng lực số dùng chung cho mọi ứng dụng: Human (người dùng, workspace), Process (hộp việc, timeline), Data (tri thức, thống kê), Intelligence (AI gợi ý).",
+    title: "02. Tiếp nhận, duyệt và giao",
+    desc: "Điều phối viên kiểm tra thông tin, xem gợi ý phân loại nếu AI được bật, xác định ưu tiên và giao ticket cho kỹ thuật viên phù hợp.",
   },
   {
     icon: AppWindow,
-    title: "Tầng 3 — Ứng dụng",
-    desc: "Smart Service Desk chỉ viết phần nghiệp vụ riêng: ticket, quy trình hỗ trợ, thống kê. Phần còn lại dùng lại từ hai tầng dưới — ứng dụng khác cũng cắm vào được như vậy.",
+    title: "03. Xử lý và xác nhận",
+    desc: "Kỹ thuật viên bắt đầu, cập nhật tình trạng và báo xong. Người gửi xác nhận kết quả hoặc yêu cầu xử lý lại nếu sự cố chưa được giải quyết.",
   },
 ];
 
@@ -25,11 +25,11 @@ export const HowItWorks = () => {
       <div className="mx-auto max-w-360">
         <Reveal className="mx-auto mb-14 max-w-250 text-center">
           <h2 className="mb-5 text-[clamp(34px,4.5vw,58px)] leading-[1.1] font-extrabold tracking-tight text-(--landing-text)">
-            Ba Tầng, Một Nền Tảng Dùng Chung
+            Từ lúc gửi đến khi giải quyết
           </h2>
           <p className="text-xl leading-relaxed text-(--landing-text-dim)">
-            Theo kiến trúc DX-OS: dịch vụ lõi chạy ngầm, năng lực số dùng chung ở giữa, và ứng dụng
-            nghiệp vụ ở trên cùng — thay ứng dụng không phải sửa nền tảng.
+            Mỗi bước đều có người phụ trách và lịch sử để tra cứu. Cả người gửi, điều phối viên và
+            kỹ thuật viên cùng theo dõi một yêu cầu xuyên suốt quá trình xử lý.
           </p>
         </Reveal>
 

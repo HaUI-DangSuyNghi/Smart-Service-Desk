@@ -76,7 +76,7 @@ export const DataTable = <Row,>({ columns, rows, getRowKey, onRowClick }: Props<
                 {/* Cắt chữ ở thẻ div bọc trong: max-width trên td không chạy ổn định ở mọi trình duyệt */}
                 <div
                   className={cn(
-                    column.fit ? "w-max" : "max-w-[320px] truncate",
+                    column.fit ? "w-full min-w-max" : "max-w-[320px] truncate",
                     index === 0 && STICKY_WIDTH,
                   )}
                 >

@@ -47,9 +47,14 @@ export const ProcessStatsTable = ({ processes }: { processes: readonly ProcessCo
   ];
 
   return (
-    <section className="flex flex-col gap-2">
-      <h2 className="font-medium">Theo quy trình</h2>
-      <div className="overflow-x-auto rounded-crm-md border border-crm-line">
+    <section className="min-w-0 overflow-hidden rounded-2xl border border-crm-tone-turquoise/20 bg-crm-surface">
+      <h2 className="flex items-center gap-2 border-b border-crm-line-light bg-linear-to-r from-crm-tone-turquoise-soft/60 to-crm-surface px-4 py-3 font-semibold">
+        <span className="flex size-8 items-center justify-center rounded-xl bg-crm-tone-turquoise-soft text-crm-tone-turquoise">
+          <IconRoute size={17} />
+        </span>
+        Theo quy trình
+      </h2>
+      <div className="overflow-x-auto">
         <DataTable columns={columns} rows={processes} getRowKey={(row) => row.processKey} />
       </div>
     </section>

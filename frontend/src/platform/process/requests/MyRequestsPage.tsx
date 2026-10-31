@@ -30,9 +30,7 @@ import type { ProcessLabels } from "../catalog/processLabels";
 import { useProcessLabels } from "../catalog/useProcessCatalog";
 import { BusinessKeyLink } from "../common/BusinessKeyLink";
 import { processLink } from "../common/processLinks";
-import { requestAction } from "../common/requestActions";
 import { REQUESTS_PAGE_SIZE, useRequests } from "./useMyRequests";
-import { RequestActions } from "./RequestActions";
 
 const SCOPE_LABELS: Record<RequestScope, string> = { mine: "Của tôi", all: "Tất cả yêu cầu" };
 
@@ -40,7 +38,6 @@ const requestColumns = (
   labels: ProcessLabels,
   names: ReadonlyMap<string, string>,
   showInitiator: boolean,
-  showActions: boolean,
 ): DataTableColumn<ProcessSummary>[] => {
   const columns: DataTableColumn<ProcessSummary>[] = [
     {
@@ -109,27 +106,6 @@ const requestColumns = (
       ),
     },
   );
-  // Quản lý/lịch sử dùng chung luôn có; thao tác riêng của app chỉ cho danh sách của mình.
-  columns.push({
-    key: "action",
-    header: "Thao tác",
-    fit: true,
-    cell: (request) => {
-      const Action = showActions && !request.endedAt ? requestAction(request.processKey) : null;
-      return (
-        <div className="inline-flex w-max items-center gap-1">
-          <RequestActions processId={request.id} compact />
-          {Action ? (
-            <Action
-              processKey={request.processKey}
-              businessKey={request.businessKey}
-              activeTaskKeys={request.activeTaskKeys}
-            />
-          ) : null}
-        </div>
-      );
-    },
-  });
   return columns;
 };
 
@@ -154,7 +130,6 @@ const MyRequestsPage = () => {
   const requests = views[scope];
   const items = requests.data?.items ?? [];
   const names = usePeopleNames(scope === "all" ? items.map((request) => request.initiator) : []);
-  const hasActions = scope === "mine";
 
   const handleScopeChange = (next: RequestScope) => {
     setScope(next);
@@ -208,7 +183,7 @@ const MyRequestsPage = () => {
         )}
         {items.length > 0 && (
           <DataTable
-            columns={requestColumns(labels, names, scope === "all", hasActions)}
+            columns={requestColumns(labels, names, scope === "all")}
             rows={items}
             getRowKey={(request) => request.id}
             // App có trang chi tiết (nội dung + AI) thì mở trang đó; quy trình không có app mở tiến độ chung

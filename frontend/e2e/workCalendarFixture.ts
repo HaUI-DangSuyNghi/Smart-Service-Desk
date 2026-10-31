@@ -17,7 +17,7 @@ export const calendarTask = (
   businessKey: id,
   candidateGroups: ["lab-a:agent"],
   assignee: "home-user",
-  createdAt: "2026-10-30T07:00:00Z",
+  createdAt: deadline ?? "2026-10-30T07:00:00Z",
   workState: state,
   pendingReason: state === "PENDING" ? "WAITING_REQUESTER" : null,
   pendingNote: null,
@@ -52,10 +52,7 @@ export const calendarTasks = () => [
   calendarTask("undated", "Kiểm kê thiết bị chưa có hạn", null, "PENDING"),
 ];
 
-export const mockWorkCalendar = async (
-  page: Page,
-  permissions = ["task:handle"],
-) => {
+export const mockWorkCalendar = async (page: Page, permissions = ["task:handle"]) => {
   const calls = await mockHome(page, permissions);
   await page.clock.setFixedTime(new Date("2026-10-31T03:00:00Z"));
   let items = calendarTasks();

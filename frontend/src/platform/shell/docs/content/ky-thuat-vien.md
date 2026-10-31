@@ -3,26 +3,20 @@
 1. Kiểm tra workspace và ca trực.
 2. Kiểm tra trạng thái trực trong menu workspace, nhất là khi hôm trước đã chuyển sang nghỉ đột xuất.
 3. Mở **Công việc**; giao diện mặc định là lịch ngày hôm nay.
-4. Kiểm tra **Quá hạn** trước, sau đó các việc **Trong ngày**.
+4. Chọn ngày cần xem để kiểm tra bảng công việc của ngày đó.
 5. Mở một việc được giao để xem đầy đủ nội dung và thao tác.
 
 ## Đọc lịch công việc
 
-Lịch dựa trên **hạn hoàn thành hiện có** của những công việc trong hàng đợi của bạn. Chọn ngày bằng lịch tháng hoặc thanh ngày trong tuần; dùng **Hôm nay** để quay lại ngày hiện tại.
+Tab **Lịch** là một bảng các công việc đang mở được giao cho bạn, lọc theo **ngày phát sinh bước công việc**. Chọn ngày bằng ô lịch hoặc nút Ngày trước / Ngày sau; dùng **Hôm nay** để quay lại ngày hiện tại.
 
-| Nhóm        | Ý nghĩa                                                    |
-| ----------- | ---------------------------------------------------------- |
-| Trong ngày  | Các việc có hạn hoàn thành rơi vào ngày đang chọn          |
-| Quá hạn     | Các việc đang quá hạn; không chỉ giới hạn ở ngày đang chọn |
-| Chưa có hạn | Các việc chưa có hạn hoàn thành hợp lệ để xếp theo ngày    |
-
-Một việc đến hạn hôm nay và đã quá giờ có thể xuất hiện khi xem cả Trong ngày lẫn Quá hạn. Hai nhóm này không phải hai tập dữ liệu luôn tách rời nhau.
+Bảng hiển thị nội dung yêu cầu, mã, bước, trạng thái, mức ưu tiên, hạn xử lý và thao tác. Hạn xử lý có cột riêng; một việc phát sinh hôm nay và đến hạn ngày mai vẫn nằm trong ngày hôm nay.
 
 Bạn có thể tìm công việc theo từ khóa, lọc **Chưa bắt đầu / Đang làm / Đang chờ** và bấm làm mới lịch.
 
-**Lịch này không phải lịch hẹn tự đặt giờ.** Thời gian trên thẻ là hạn hoàn thành, không phải giờ bắt buộc bắt đầu làm. Lịch cũng không phải danh sách việc đã hoàn tất trong ngày.
+Nút Bắt đầu / Báo xong / Tiếp tục nằm ngay trên dòng công việc. Menu ⋯ giữ các thao tác Tạm dừng, Xin sửa ước tính và Trả việc. Bấm nội dung yêu cầu để mở chi tiết. Bảng chỉ lấy việc đang mở, không phải nhật ký việc đã hoàn tất.
 
-<!-- TODO: Ảnh A05 — Lịch công việc hôm nay. Chụp giao diện đủ chiều rộng, ngày đang chọn, ba nhóm Trong ngày/Quá hạn/Chưa có hạn, bộ lọc và một thẻ việc có hạn, ưu tiên, ước tính còn lại. -->
+<!-- TODO: Ảnh A05 — Bảng công việc theo ngày: bộ chọn ngày, nội dung yêu cầu, trạng thái, hạn xử lý và nút thao tác. -->
 
 ## Chuyển sang danh sách công việc
 
@@ -32,7 +26,7 @@ Chọn **Danh sách** ở đầu trang Công việc.
 - **Có thể nhận:** nhiệm vụ hợp lệ mà bạn có thể nhận theo quyền và nhóm xử lý.
 - **Tất cả việc:** chỉ có khi được cấp quyền giao việc; hiển thị phạm vi điều phối được phép xem trong workspace.
 
-Tài khoản có quyền giao việc mặc định mở Tất cả việc ở chế độ danh sách. Tài khoản không có quyền này mặc định mở Việc của tôi. Phạm vi Tất cả việc không thay đổi lịch cá nhân thành lịch toàn bộ nhân sự.
+Trong tab Lịch, kỹ thuật viên xem công việc được giao cho mình; điều phối viên xem yêu cầu cần điều phối trong workspace theo ngày phát sinh. Trong tab Danh sách, điều phối viên mặc định vào Tất cả việc; kỹ thuật viên mặc định vào Việc của tôi.
 
 Bấm **Nhận việc** khi nhiệm vụ cho phép. Sau khi nhận thành công, việc chuyển sang phạm vi của bạn. Những ticket cần điều phối viên duyệt/giao vẫn phải đi qua đúng bước đó.
 

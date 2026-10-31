@@ -12,6 +12,7 @@ import { ErrorState } from "@/platform/shared/ui/ErrorState";
 import { Page, PageBody, PageHeader } from "@/platform/shared/ui/page";
 import { PageSkeleton } from "@/platform/shared/ui/Skeleton";
 import { InboxListView } from "./InboxListView";
+import { CoordinationListView } from "./CoordinationListView";
 import { WorkCalendar } from "./calendar/WorkCalendar";
 import { CoordinationCalendar } from "./calendar/CoordinationCalendar";
 
@@ -41,7 +42,7 @@ const InboxPage = () => {
                   return (
                     <Button
                       key={value}
-                      variant={view === value ? "secondary" : "ghost"}
+                      variant={view === value ? "info" : "outline"}
                       size="sm"
                       className="min-h-9 md:min-h-7"
                       aria-pressed={view === value}
@@ -82,6 +83,8 @@ const InboxPage = () => {
         ) : (
           <WorkCalendar key={current} />
         )
+      ) : canCoordinate ? (
+        <CoordinationListView key={current} />
       ) : (
         <InboxListView key={current} />
       )}

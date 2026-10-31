@@ -4,18 +4,18 @@ import { Reveal } from "../Reveal";
 const ITEMS = [
   {
     icon: KeyRound,
-    title: "Đăng nhập SSO, quyền ở backend",
-    desc: "Đăng nhập qua Keycloak bằng Authorization Code + PKCE. Backend tự kiểm token, workspace và vai trò cho mọi request — không tin dữ liệu client gửi lên.",
+    title: "Đăng nhập và xác định vai trò",
+    desc: "Tài khoản được quản lý tập trung qua Keycloak. Quyền truy cập gắn với từng workspace và được kiểm tra khi thực hiện thao tác.",
   },
   {
     icon: Gauge,
-    title: "Giới hạn ngay tại cổng API",
-    desc: "APISIX là lối vào duy nhất: giới hạn tần suất request và chặn body quá lớn trước khi tới backend.",
+    title: "Truy cập qua cổng API",
+    desc: "Các yêu cầu tới dịch vụ đi qua APISIX để định tuyến và áp dụng giới hạn truy cập theo cấu hình triển khai.",
   },
   {
     icon: ScrollText,
-    title: "Audit không tách rời dữ liệu",
-    desc: "Bản ghi audit ghi cùng transaction với dữ liệu nghiệp vụ: ai, làm gì, lúc nào, kèm request id.",
+    title: "Ghi nhận thay đổi nghiệp vụ",
+    desc: "Nhật ký lưu người thực hiện, hành động và thời điểm; lịch sử yêu cầu giúp đối chiếu các lần sửa, hủy và đóng.",
   },
 ];
 
@@ -27,13 +27,13 @@ export const SecuritySection = () => {
         <div className="relative">
           <div className="mb-12 max-w-190">
             <h3 className="mb-4 text-[clamp(34px,4vw,50px)] leading-[1.07] font-extrabold tracking-tight text-(--landing-text)">
-              Bảo mật &amp; Cô lập
+              Truy cập theo vai trò,
               <br />
-              Theo Workspace
+              dữ liệu theo workspace
             </h3>
             <p className="text-base leading-relaxed text-(--landing-text-dim)">
-              Mỗi đơn vị là một workspace riêng: người ngoài workspace không đọc được ticket, tài
-              liệu hay gợi ý AI của workspace khác.
+              Chọn workspace để làm việc trong đúng phạm vi của đơn vị. Ticket, tài liệu, công việc
+              và các thao tác được hiển thị theo quyền của tài khoản tại workspace đó.
             </p>
           </div>
 

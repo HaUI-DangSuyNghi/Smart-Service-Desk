@@ -1,6 +1,6 @@
 import type { ComponentType } from "react";
 import type { DashboardWidget } from "@/platform/data/dashboard";
-import type { RequestActionProps, InboxActionProps } from "@/platform/process";
+import type { RequestActionProps, InboxActionProps, InboxLabelLoader } from "@/platform/process";
 
 /** Một trang của app, path tương đối với gốc, ví dụ "servicedesk/tickets". */
 export interface AppRoute {
@@ -56,6 +56,8 @@ export interface AppModule {
   readonly requestActions?: Readonly<Record<string, ComponentType<RequestActionProps>>>;
   /** Thao tác điều phối riêng của app trên dòng Công việc. */
   readonly inboxActions?: Readonly<Record<string, ComponentType<InboxActionProps>>>;
+  /** Nội dung yêu cầu do ứng dụng cung cấp cho bảng công việc. */
+  readonly inboxLabels?: Readonly<Record<string, InboxLabelLoader>>;
   /** Khối số liệu của app hiện trên dashboard chung (ví dụ thống kê ticket). */
   readonly dashboardWidgets?: readonly DashboardWidget[];
   /** Cấu hình riêng của app, hiện dưới phần cấu hình chung. */
@@ -69,6 +71,7 @@ export interface AppRegistry {
   processLink: (processKey: string, businessKey: string) => string | null;
   requestAction: (processKey: string) => ComponentType<RequestActionProps> | null;
   inboxAction: (processKey: string) => ComponentType<InboxActionProps> | null;
+  inboxLabel: (processKey: string) => InboxLabelLoader | null;
   dashboardWidgets: () => readonly DashboardWidget[];
   settingsSections: () => readonly SettingsSection[];
 }
@@ -100,6 +103,8 @@ export const createAppRegistry = (): AppRegistry => {
       modules.find((m) => m.requestActions?.[processKey])?.requestActions?.[processKey] ?? null,
     inboxAction: (processKey) =>
       modules.find((m) => m.inboxActions?.[processKey])?.inboxActions?.[processKey] ?? null,
+    inboxLabel: (processKey) =>
+      modules.find((m) => m.inboxLabels?.[processKey])?.inboxLabels?.[processKey] ?? null,
     dashboardWidgets: () => modules.flatMap((m) => m.dashboardWidgets ?? []),
     settingsSections: () => modules.flatMap((m) => m.settingsSections ?? []),
   };

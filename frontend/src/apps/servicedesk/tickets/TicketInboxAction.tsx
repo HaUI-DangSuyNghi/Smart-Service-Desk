@@ -51,10 +51,16 @@ export const TicketInboxAction = ({ task, fallback }: InboxActionProps) => {
   const intake = task.key === "intake";
   return (
     <span
+      className="block w-full"
       onClick={(event) => event.stopPropagation()}
       onKeyDown={(event) => event.stopPropagation()}
     >
-      <Button size="xs" variant={intake ? "info" : "default"} onClick={() => setOpen(true)}>
+      <Button
+        size="sm"
+        variant={intake ? "warning" : "success"}
+        className="min-h-9 w-full md:min-h-7"
+        onClick={() => setOpen(true)}
+      >
         {intake ? "Tiếp nhận" : "Duyệt và giao việc"}
       </Button>
       {intake ? (

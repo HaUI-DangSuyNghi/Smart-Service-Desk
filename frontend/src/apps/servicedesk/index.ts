@@ -6,6 +6,7 @@ import { TicketStatsWidget } from "./dashboard/TicketStatsWidget";
 import { ServiceDeskSettingsSection } from "./settings/ServiceDeskSettingsSection";
 import { TicketRequestAction } from "./tickets/TicketRequestAction";
 import { TicketInboxAction } from "./tickets/TicketInboxAction";
+import { TicketInboxLabel } from "./tickets/TicketInboxLabel";
 
 // Trang lazy hiện skeleton của AppLayout trong lúc tải, không cần giữ thời gian tối thiểu
 const TicketListPage = lazy(() => import("./pages/TicketListPage"));
@@ -55,6 +56,11 @@ export const registerServiceDesk = (registry: AppRegistry) => {
       "service-desk": TicketInboxAction,
       "service-desk-reviewed": TicketInboxAction,
       "service-desk-intake-reviewed": TicketInboxAction,
+    },
+    inboxLabels: {
+      "service-desk": TicketInboxLabel,
+      "service-desk-reviewed": TicketInboxLabel,
+      "service-desk-intake-reviewed": TicketInboxLabel,
     },
     // Thống kê ticket hiện trên dashboard chung của điều phối viên
     dashboardWidgets: [

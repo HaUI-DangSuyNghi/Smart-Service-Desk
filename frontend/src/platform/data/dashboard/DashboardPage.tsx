@@ -35,6 +35,7 @@ const DocumentTile = () => {
     <StatTile
       label="Tài liệu"
       icon={IconBook}
+      tone="purple"
       value={documents.data ? String(documents.data.total) : "—"}
       hint="trong Knowledge Hub"
     />
@@ -66,12 +67,14 @@ const DashboardPage = () => {
       <PageHeader title="Dashboard" icon={IconChartBar} />
       <PageToolbar
         start={
-          <ViewTabs
-            label="Khoảng thời gian"
-            tabs={PERIODS.map((item) => ({ key: item.key, label: item.label }))}
-            value={periodKey}
-            onChange={handlePeriodChange}
-          />
+          <div className="[&_[aria-selected=true]]:bg-crm-tone-blue-soft [&_[aria-selected=true]]:text-crm-tone-blue">
+            <ViewTabs
+              label="Khoảng thời gian"
+              tabs={PERIODS.map((item) => ({ key: item.key, label: item.label }))}
+              value={periodKey}
+              onChange={handlePeriodChange}
+            />
+          </div>
         }
       />
       <PageBody>
@@ -81,7 +84,7 @@ const DashboardPage = () => {
         )}
         {statistics.error && <ErrorState error={statistics.error} />}
         {statistics.data && totals && (
-          <div className="flex flex-col gap-6 p-4">
+          <div className="flex min-h-full w-full min-w-0 flex-col gap-5 bg-crm-subtle/50 p-4 lg:p-6">
             <section className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-6">
               <StatTile
                 label="Yêu cầu mới"
@@ -92,24 +95,28 @@ const DashboardPage = () => {
               <StatTile
                 label="Đang chạy"
                 icon={IconProgress}
+                tone="turquoise"
                 value={String(totals.running)}
                 hint={periodHint}
               />
               <StatTile
                 label="Đã kết thúc"
                 icon={IconCircleCheck}
+                tone="green"
                 value={String(totals.completed)}
                 hint={periodHint}
               />
               <StatTile
                 label="Việc chờ nhận"
                 icon={IconHourglass}
+                tone="orange"
                 value={String(totals.waitingClaim)}
                 hint={`hiện tại · ${totals.inProgress} đang xử lý`}
               />
               <StatTile
                 label="Xử lý trung bình"
                 icon={IconClockHour4}
+                tone="purple"
                 value={
                   totals.averageCompletionSeconds === null
                     ? "—"
@@ -134,8 +141,16 @@ const DashboardPage = () => {
 
             {/* Khối số liệu do app đăng ký (ví dụ thống kê ticket); dashboard chỉ cấp khung và khoảng thời gian */}
             {widgets.map((widget) => (
-              <section key={widget.id} className="flex flex-col gap-2">
-                <h2 className="font-medium">{widget.title}</h2>
+              <section
+                key={widget.id}
+                className="flex min-w-0 flex-col gap-4 rounded-2xl border border-crm-tone-purple/15 bg-crm-surface p-4"
+              >
+                <h2 className="flex items-center gap-2 font-semibold">
+                  <span className="flex size-8 items-center justify-center rounded-xl bg-crm-tone-purple-soft text-crm-tone-purple">
+                    <IconChartBar size={17} />
+                  </span>
+                  {widget.title}
+                </h2>
                 <widget.component from={range.from} to={range.to} />
               </section>
             ))}
