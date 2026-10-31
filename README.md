@@ -228,6 +228,11 @@ npm run build
 
 Browser test: cài Chromium bằng `npx playwright install chromium`, sau đó chạy `npm run test:e2e`. Các browser contract test sử dụng API giả lập; kiểm chứng tích hợp hệ thống thật được ghi riêng trong tài liệu nghiệm thu.
 
+## Dành cho người đánh giá
+
+- [Bản đồ tiêu chí, tính năng và minh chứng](docs/EVALUATION_GUIDE.md): đối chiếu kiến trúc, source, hợp đồng và phạm vi kiểm chứng.
+- [Kịch bản demo 5–10 phút](docs/DEMO_EVALUATION.md): chuẩn bị ba vai trò, trình diễn vòng xử lý và ghi nhận kết quả thực tế.
+
 ## Tài liệu
 
 | Nội dung | Tài liệu |
