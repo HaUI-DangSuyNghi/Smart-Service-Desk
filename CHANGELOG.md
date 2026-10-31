@@ -1,14 +1,15 @@
 # Changelog
 
-Notable changes use Keep a Changelog categories. No product release has been
-published; component versions are not separate product releases.
+Notable changes use Keep a Changelog categories. The first submission is dated
+2026-10-31; GitHub publication remains subject to final approval. If publication
+occurs on another date, update the date before tagging; do not backdate it.
 
 ## [Unreleased]
 
 ### Changed
 - Prepare minimal public-repository release and safe clean-install documentation.
 
-## [0.1.0] - Unreleased
+## [0.1.0] - 2026-10-31
 
 ### Added
 - Headless Core: Keycloak identity/workspace authorization, PostgreSQL data/files,
@@ -32,5 +33,7 @@ published; component versions are not separate product releases.
 - Workspace authorization, audit/provenance and document download controls.
 - Production dependency audit after these fixes reports no HIGH/CRITICAL findings;
   fast-uri 3.1.8 remains MODERATE and is not waived. This is not full-stack certification.
-- License/notices and asset rights remain release gates.
-  No unreviewed OCR/local work is included.
+- Record the team leader's distribution approval for the reviewed fixtures in
+  an exact-path, exact-hash release manifest; do not alter payload bytes or
+  evaluation/ingestion approval states. External document/photo permission terms
+  still need confirmation. No unreviewed OCR/local work is included.

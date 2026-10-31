@@ -1,13 +1,15 @@
 # Smart Service Desk
 
-## v0.1.0 release preparation
+## v0.1.0 submission candidate - 2026-10-31
 
 The existing repository is public. Preserve its real Git history; do not create a
 replacement repository or follow older history-filtering/publication proposals.
-**Not released. Authorized team-owned work is licensed under Apache-2.0; see
-root LICENSE. Supplied documents, photo, fixtures and third-party content are
-not automatically covered. Asset rights still block release.** See `LICENSING.md`
-and `RELEASE_NOTES_v0.1.0.md`.
+**Authorized team-owned work is licensed under Apache-2.0; see root LICENSE.**
+The team leader confirmed distribution rights for the reviewed assets. External
+ownership is retained: supplied document/photo permission terms still need to be
+recorded before public release. See `LICENSING.md`,
+`docs/publication/release-distribution-status.csv` and `RELEASE_NOTES_v0.1.0.md`.
+This is the submission candidate, not an already-published GitHub Release.
 
 Release baseline: the merged develop source, including Core / H-P-D-I,
 Service Desk, Room Request and existing Knowledge/Intelligence integrations.
@@ -44,16 +46,16 @@ existing databases. Resolve image/runtime problems before the first installation
   <img src="https://img.shields.io/badge/APISIX-3.11-orange.svg" alt="APISIX" />
   <img src="https://img.shields.io/badge/PostgreSQL-16.15-blue.svg" alt="PostgreSQL" />
   <img src="https://img.shields.io/badge/Docker-Compose%20v2-blue.svg" alt="Docker" />
-  <img src="https://img.shields.io/badge/License-Pending%20Approval-lightgrey.svg" alt="License approval pending" />
+  <img src="https://img.shields.io/badge/License-Apache--2.0-blue.svg" alt="Apache-2.0 for authorized team-owned work" />
 </p>
 
 Nền tảng headless Tier-1 dành cho DX-OS Open-Core (Smart Service Desk). Hệ thống cung cấp dịch vụ định danh tập trung, kiểm soát truy cập đa không gian làm việc (multi-workspace RBAC), động cơ quy trình nghiệp vụ BPMN (Flowable), quản lý siêu dữ liệu/tệp tin bảo mật và ghi vết kiểm toán giao dịch (transactional audit).
 
 > [!NOTE]
 > Headless Core and Service Desk Backend are implemented, including ticket APIs and a real Flowable process. Java-Python AI Triage is integrated and tested through Keycloak/APISIX. See [Ticket Foundation](docs/servicedesk-ticket-foundation.md), [application OpenAPI](contracts/openapi/servicedesk.yaml) and [integration evidence](docs/BE_POSTMERGE01.md#validation).
-> Frontend has a strict TypeScript platform/app scaffold with independent builds and import guards; rendered browser UI remains a frontend task. AI-03 Retrieval has no public Knowledge Search endpoint.
-> Dashboard counts and shared time filters are documented in [Service Desk statistics](docs/servicedesk-statistics.md); dashboard UI remains a frontend task.
-> Production Security G9 is FAIL; release is BLOCKED. Functional acceptance does not imply release readiness.
+> The React workspace, Service Desk lifecycle/dashboard, Room Request and Knowledge library/preview/download/chat/history UI are implemented in this main snapshot. Frontend typecheck, lint, unit and browser contracts have passing evidence on the equivalent tested source tree.
+> Supported submission startup is manual/no-AI. OCR experiments, GPU/Qwen and unaccepted cloud runtime modes are outside the v0.1.0 acceptance scope.
+> The recorded production npm audit has zero HIGH/CRITICAL findings and one MODERATE fast-uri finding. Functional acceptance is not full production-security certification; optional full image scanning is not covered by a green functional job.
 
 ---
 
