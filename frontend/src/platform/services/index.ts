@@ -1,5 +1,6 @@
 // Mọi API của Tầng 2 (core, hpdi). API riêng của app nằm ở apps/<app>/services.
 export { getActor, type Actor } from "./actorService";
+export { getCalendarWork } from "./workCalendarService";
 export {
   getMyActivity,
   getWorkspaceAudit,
@@ -49,24 +50,28 @@ export {
   type WorkItem,
 } from "./processService";
 export {
+  cancelShiftSlot,
   decideEstimateRequest,
+  decideShiftSlot,
   getAssignmentSuggestion,
   getQueue,
+  getSchedulePolicy,
   getWorkSettings,
   listAlerts,
   listDuty,
   listEstimateRequests,
-  listSchedules,
+  listShiftSlots,
+  listWorkModes,
   markAlertRead,
   pauseWork,
+  registerShiftSlot,
   releaseWork,
   requestEstimateChange,
   resumeWork,
   setMyDuty,
+  setWorkMode,
   startWork,
-  updateSchedule,
   updateWorkSettings,
-  type AgentSchedule,
   type Alert,
   type AlertPage,
   type AlertSeverity,
@@ -79,6 +84,7 @@ export {
   type EstimateRequest,
   type EstimateRequestStatus,
   type ExcludedReason,
+  type Holiday,
   type PauseInput,
   type PendingReason,
   type Priority,
@@ -86,10 +92,13 @@ export {
   type QueuePage,
   type ReleaseInput,
   type ReleaseReason,
-  type ScheduledShift,
+  type SchedulePolicy,
   type Shift,
+  type ShiftSlot,
   type Sla,
   type SlaTarget,
+  type WorkMode,
+  type WorkModeKind,
   type WorkSettings,
   type WorkState,
 } from "./workService";
@@ -102,3 +111,12 @@ export {
   type WorkspacePermission,
   type WorkspaceSummary,
 } from "./workspaceService";
+export {
+  listNotifications,
+  readAllNotifications,
+  readNotification,
+  type NotificationCategory,
+  type NotificationInbox,
+  type NotificationItem,
+  type NotificationSeverity,
+} from "./notificationService";

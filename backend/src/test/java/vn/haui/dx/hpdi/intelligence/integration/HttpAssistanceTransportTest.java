@@ -50,6 +50,27 @@ class HttpAssistanceTransportTest {
     }
 
     @Test
+    void streamsBoundedEventsAndRejectsTruncatedOrInvalidFrames() throws Exception {
+        var payload = new java.util.concurrent.atomic.AtomicReference<>("{\"type\":\"delta\",\"text\":\"First\"}\n{\"type\":\"done\",\"grounded\":true}\n");
+        server.createContext("/internal/intelligence/v1/knowledge", exchange -> {
+            assertEquals("Bearer " + TOKEN, exchange.getRequestHeaders().getFirst("Authorization"));
+            exchange.getRequestBody().readAllBytes();
+            exchange.getResponseHeaders().add("Content-Type", "application/x-ndjson");
+            exchange.sendResponseHeaders(200, 0);
+            exchange.getResponseBody().write(payload.get().getBytes(StandardCharsets.UTF_8));
+            exchange.getResponseBody().flush();
+            exchange.close();
+        });
+        var events = new java.util.ArrayList<com.fasterxml.jackson.databind.JsonNode>();
+        transport().streamKnowledge(json.createObjectNode(), events::add);
+        assertEquals(java.util.List.of("delta", "done"), events.stream().map(event -> event.path("type").asText()).toList());
+        for (String invalid : java.util.List.of("{\"type\":\"delta\"}", "{bad}\n", "{\"type\":\"done\",\"type\":\"error\"}\n", "x".repeat(65538) + "\n")) {
+            payload.set(invalid);
+            assertThrows(IntelligenceFailure.class, () -> transport().streamKnowledge(json.createObjectNode(), event -> {}));
+        }
+    }
+
+    @Test
     void callsDedicatedPrivateRouteWithServiceCredential() {
         assertEquals("SUCCESS", transport().assist(json.createObjectNode()).path("status").asText());
         assertEquals(1, calls.get());

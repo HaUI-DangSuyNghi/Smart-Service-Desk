@@ -28,14 +28,16 @@ public class JdbcMetadataService implements MetadataService {
     private final AuditService audit;
     private final Validator validator;
     private final ObjectProvider<FileService> files;
+    private final MetadataReadPolicy reads;
 
     public JdbcMetadataService(MetadataRepository repository, WorkspaceAccess access, AuditService audit,
-            Validator validator, ObjectProvider<FileService> files) {
+            Validator validator, ObjectProvider<FileService> files, MetadataReadPolicy reads) {
         this.repository = repository;
         this.access = access;
         this.audit = audit;
         this.validator = validator;
         this.files = files;
+        this.reads = reads;
     }
 
     @Override
@@ -68,19 +70,20 @@ public class JdbcMetadataService implements MetadataService {
     @Override
     @Transactional(readOnly = true)
     public MetadataRecord get(String workspace, UUID id) {
-        member(workspace);
+        var user = member(workspace);
         if (id == null) throw CoreException.validation("metadata id is required");
-        return repository.find(workspace, id).orElseThrow(() -> CoreException.notFound("Metadata not found"));
+        return repository.find(workspace, id).filter(record -> reads.canRead(user, record))
+            .orElseThrow(() -> CoreException.notFound("Metadata not found"));
     }
 
     @Override
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public Page<MetadataRecord> search(String workspace, MetadataQuery query, PageRequest page) {
-        member(workspace);
+        var user = member(workspace);
         if (query == null || page == null) throw CoreException.validation("query and page are required");
         if (query.q() != null) text(query.q(), 200);
         if (query.source() != null) text(query.source(), 1000);
-        return repository.search(workspace, query, page);
+        return repository.search(workspace, query, page, reads.canReadInternal(user, workspace));
     }
 
     private CurrentUser member(String workspace) {

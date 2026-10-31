@@ -1,37 +1,83 @@
-# Licensing direction — Apache-2.0 (team alignment; release approval pending)
+# Licensing - Apache-2.0 for authorized team-owned work
 
-> **Status: TEAM DIRECTION CONFIRMED / FORMAL LICENSE GRANT PENDING**  
-> The project team has aligned on **Apache License, Version 2.0 (SPDX: Apache-2.0)** as the intended license for original project code. This document records that direction only. It is **not** a present license grant, final rights clearance, or a statement that the entire repository can be redistributed.
+## Approval and scope
 
-## Intended licensing policy
+On 2026-10-31, the team leader confirmed that all three BE, FE and AI members
+approved Apache License 2.0 for components the team has the right to license.
+Root `LICENSE` contains the unmodified official Apache License 2.0 text.
+The grant covers authorized original team-owned source, contracts, schemas,
+scripts, infrastructure and technical documentation, not others' ownership.
+Keep existing third-party licenses, attribution and required notices unchanged.
 
-| Asset | Intended handling | Current status |
+## Final submission approval and published status
+
+In the 2026-10-31 FINAL SUBMISSION instruction, the team leader additionally
+confirmed the team's distribution rights for the reviewed asset scope. This
+owner/maintainer statement is the recorded basis, not an independently verified
+permission receipt from HaUI or an external copyright holder. No external owner,
+license identifier, permission letter or attribution condition is invented.
+
+v0.1.0 was published on 2026-10-31 at commit
+`ba82b2fc5eb36ea309563d2d7442db95b96a7608`. Publication is a verified release event,
+not additional evidence of an external owner's permission. The following dated
+confirmation updates distribution metadata only; it does not change the released
+tag, asset bytes, evaluation manifests or third-party notices.
+
+## Asset-specific team leader confirmation - 2026-10-31
+
+The team leader explicitly identified the owners and permissions below in the
+submission instruction. This instruction is the recorded basis; school permission
+has not been independently verified. No permission letter, external license or
+approval URL was supplied or is invented here.
+
+| Asset | Owner / author as confirmed | Distribution basis and scope |
 | --- | --- | --- |
-| Team-authored Core/backend, future apps/frontend, Intelligence code, infrastructure and scripts | Apache-2.0 | DIRECTION ALIGNED; release approval pending |
-| Team-authored OpenAPI, schemas and integration contracts | Apache-2.0 | DIRECTION ALIGNED; release approval pending |
-| Team-authored technical documentation | Prefer Apache-2.0 for consistency; any exception must be explicit | RIGHTS/RELEASE REVIEW PENDING |
-| Synthetic AI fixtures and team-authored knowledge | Prefer Apache-2.0 after author and content-rights confirmation; no implicit permission | PENDING_OWNER_APPROVAL in manifests |
-| Provided competition/planning PDFs, XLSX and other materials under `docs/references/` | Original rights and permissions only; exclude from public redistribution unless authorized | UNVERIFIED |
-| Third-party dependencies, container images, models, weights, datasets and provider content | Their own license/terms, notices and restrictions | INVENTORY/AUDIT PENDING |
+| `docs/references/De_thi_PMNM_HaUI_2026_BAN_CHINH_THUC.pdf` | HaUI; issued by HaUI | Team leader reports HaUI authorized the team to post publicly. Archive the school's written/email/link confirmation and any applicable conditions. |
+| `docs/references/Ke_hoach_DX_Lab_14_ngay_3_nguoi.pdf` | Team leader; self-authored | Direct author confirmation permits the team to distribute this document. Copyright retained; no additional Apache-2.0 grant is inferred. |
+| `docs/references/Phan_cong_DX_Lab_14_ngay_3_nguoi.xlsx` | Team leader; self-authored | Direct author confirmation permits the team to distribute this spreadsheet. Copyright retained; no additional Apache-2.0 grant is inferred. |
+| `frontend/public/landing/banner-phong-may.jpg` | HaUI | Team leader reports HaUI authorized the team's use and public posting. Archive the school's written/email/link confirmation and any applicable attribution/conditions. |
 
-Choosing the same license family as many of our dependencies does **not** relicense third-party components or prove license compliance. A project's source license also does not override the licenses of datasets or AI model weights.
+The release manifest `docs/publication/release-distribution-status.csv` enumerates
+all 82 exact paths and unchanged SHA-256 values. Its statuses distinguish:
 
-## Current effect and safeguards
+- `TEAM_APPROVED_DISTRIBUTION`: the 78 reviewed fixture/schema/derived files,
+  approved on the existing team leader confirmation. This does not relicense
+  external incorporated content.
+- `AUTHOR_AUTHORIZED_DISTRIBUTION`: the two self-authored DX-Lab documents;
+  direct permission from the author, recorded above.
+- `PERMISSION_REPORTED_EVIDENCE_TO_ARCHIVE`: the two HaUI assets; the team
+  leader explicitly reports school permission, but the school's written/email/link
+  evidence still needs to be archived. This is not independently verified approval.
 
-There is **no root `LICENSE` file yet** on this branch. Until the relevant copyright holders approve the final grant and its scope, do not label this repository as already “Apache-2.0 licensed” on GitHub, in README badges, PRs or release submissions. Publishing code on GitHub alone does not provide a general reuse/redistribution license.
+Retain the dated team leader confirmation with the submission records. For HaUI,
+add the actual school confirmation identifying the assets, authorized public use
+and any attribution or distribution conditions when available. No separate school
+record is currently supplied here; do not claim it has been verified or archived.
 
-This is a **documentation-only preparation branch**, not an authorization to publish reference documents, ingest pending-rights AI fixtures into a public corpus, or release models/dependencies without their required notices.
+Original ownership remains with the respective rights holders. Distribution
+permission is not transfer of copyright or automatic Apache-2.0 relicensing.
+The team grant does not override third-party, university or contest conditions.
 
-## Finalization before release
+## Release manifest versus evaluation manifests
 
-1. Confirm authors/contributors and other relevant rights holders; verify any university or contest conditions.
-2. Approve the Apache-2.0 license grant for specified team-owned assets and agree on copyright attribution.
-3. Add the **unmodified official Apache License 2.0 text** to root `LICENSE`; add appropriate notices/headers where required.
-4. Document the licensing scope, third-party exceptions and separately licensed assets here.
-5. Resolve `PENDING_OWNER_APPROVAL` for the knowledge/ticket fixtures, and review supplied references for public redistribution.
-6. Review dependency/container/model notices and SBOM; verify the repository and release artifacts before public distribution.
-7. Update README, repository license metadata and releases only after approval; follow Git Flow and merge gates.
+The release CSV is the current distribution-approval manifest. Payload bytes,
+checksums and existing evaluation manifests remain unchanged. Their pending
+human-review/internal-evaluation/ingestion states describe frozen worksheets,
+not a grant of runtime ingestion or a reviewed-gold benchmark. Public submission
+approval does not imply `APPROVED_INTERNAL_EVAL`, model-training rights or a
+change to runtime evidence gates. Do not rewrite embedded digest chains or
+silently mark unreviewed gold as reviewed just to update distribution metadata.
 
-See [license release checklist](docs/license-release-checklist.md) and [dependency/license inventory](docs/dependency-licenses.md).
+## Third-party components and history
 
-This is a project-governance draft, not legal advice.
+Dependencies, generated/copied third-party UI, fonts/icons, containers, models,
+weights, datasets and provider content retain their own terms. `licenses/**`
+is preserved verbatim; this release does not bundle model weights or images.
+A blanket project NOTICE is not a substitute for required upstream notices.
+
+The existing repository/history is retained. Tip deletion or filtering a release
+attachment would not remove older public copies. No asset was removed or history
+rewritten. The four asset-specific statements above record the current reported
+permission scope, not a new grant over external content or removal of older copies.
+Older pending-source-grant statements in governance documents are historical;
+this document and the dated release manifest record the current scoped decision.

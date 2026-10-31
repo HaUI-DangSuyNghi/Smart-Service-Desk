@@ -173,7 +173,7 @@ components:
         status:
           type: string
           enum: [NEW, NEEDS_ENRICHMENT, DUPLICATE_HOLD, FINAL_ASSESSMENT_QUEUED, ASSESSING,
-                 REVIEW_RELEASED, MANUAL_REQUIRED, REVIEWED, CANONICAL_FOLLOWER]
+                 REVIEW_RELEASED, MANUAL_REQUIRED, REVIEWED, CANONICAL_FOLLOWER, CANCELLED, CLOSED]
         deadlineAt: {type: string, format: date-time}
         sealedRevision: {type: integer, format: int64, minimum: 0, nullable: true}
         contextDigest: {type: string, pattern: '^[0-9a-f]{64}$', nullable: true}

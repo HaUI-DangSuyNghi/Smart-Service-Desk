@@ -33,7 +33,7 @@ class SettingsMigrationProfileTest {
                 }
                 var flyway = Flyway.configure().dataSource(source).schemas(schema).load();
                 flyway.migrate(); assertTrue(flyway.validateWithResult().validationSuccessful);
-                assertEquals(core ? "4" : serviceSeed ? "33" : "32", flyway.info().current().getVersion().toString());
+                assertEquals(core ? "4" : serviceSeed ? "42" : "32", flyway.info().current().getVersion().toString());
                 if (upgrade) {
                     assertEquals(before, jdbc.queryForList("select version,checksum from flyway_schema_history where version is not null and version::int<=" + (core ? "4" : "31") + " order by installed_rank"));
                     assertEquals(1, jdbc.queryForObject("select count(*) from audit_event", Integer.class));

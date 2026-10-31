@@ -20,6 +20,7 @@ public class ContributionRegistry implements ProcessRegistration {
             List<vn.haui.dx.core.workflow.api.TaskView> active) {
         owner(key).afterComplete(workspace, key, processId, item(completed), outcome,
             active.stream().map(ContributionRegistry::item).toList());
+        workChanged(workspace);
     }
     public String evaluateTimer(String workspace, String key, String processId, String businessKey,
             String initiator, String generation, vn.haui.dx.core.workflow.api.TaskView active, java.time.Instant now) {
@@ -32,6 +33,7 @@ public class ContributionRegistry implements ProcessRegistration {
     }
     @Override public void afterAssignmentChanged(String workspace, String taskId, String assignee, String actor) {
         estimateLifecycle.assignmentChanged(workspace, taskId, assignee, actor);
+        workChanged(workspace);
     }
     public String releaseTarget(String processKey, String taskKey) {
         return contributions.stream().filter(value -> value.definitions().stream().anyMatch(definition -> definition.processKey().equals(processKey)))
@@ -41,6 +43,7 @@ public class ContributionRegistry implements ProcessRegistration {
             String reviewId, long workedMillis, String actor, String reason, String note) {
         contributions.stream().filter(value -> value.definitions().stream().anyMatch(definition -> definition.processKey().equals(processKey)))
             .findFirst().orElseThrow().afterRelease(workspace, processKey, processId, taskId, reviewId, workedMillis, actor, reason, note);
+        workChanged(workspace);
     }
     @Override public void afterExecution(String workspace, String processKey, String processId, String taskId,
             vn.haui.dx.core.workflow.api.TaskExecution.Action action, String reason, java.time.Instant at) {
@@ -48,16 +51,19 @@ public class ContributionRegistry implements ProcessRegistration {
             .anyMatch(definition -> definition.processKey().equals(processKey))).findFirst().orElseThrow()
             .afterExecution(workspace, processKey, processId, taskId,
                 vn.haui.dx.hpdi.process.api.WorkExecution.Action.valueOf(action.name()), reason, at);
+        workChanged(workspace);
     }
     @Override public void afterAssign(String workspace, String processKey, String processId, String taskKey, String subject) {
         contributions.stream().filter(contribution -> contribution.definitions().stream()
             .anyMatch(definition -> definition.processKey().equals(processKey))).findFirst().orElseThrow()
             .afterAssign(workspace, processKey, processId, taskKey, subject);
+        workChanged(workspace);
     }
     private final List<ProcessPolicy> policies;
     private final List<ProcessContribution> contributions;
     private final java.util.Map<String, java.util.Set<String>> executionTasks;
     private final EstimateRequestLifecycle estimateLifecycle;
+    private vn.haui.dx.hpdi.human.api.LiveUpdates live;
     public ContributionRegistry(List<ProcessContribution> contributions, EstimateRequestLifecycle estimateLifecycle) {
         this.estimateLifecycle = estimateLifecycle;
         this.contributions = List.copyOf(contributions);
@@ -79,6 +85,13 @@ public class ContributionRegistry implements ProcessRegistration {
                 d.observerRoles().stream().map(WorkspaceRole::new).collect(java.util.stream.Collectors.toUnmodifiableSet()),
                 d.readerRoles().stream().map(WorkspaceRole::new).collect(java.util.stream.Collectors.toUnmodifiableSet()),
                 d.selfService())).toList();
+    }
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    void setLive(vn.haui.dx.hpdi.human.api.LiveUpdates live) { this.live = live; }
+
+    // Mọi đổi việc của mọi app đều qua đây: báo hàng đợi / việc của tôi làm mới
+    private void workChanged(String workspace) {
+        if (live != null) live.toChannel(workspace, vn.haui.dx.hpdi.human.api.LiveUpdates.WORK, "WORK_CHANGED", "work", null);
     }
     public List<ProcessPolicy> policies() { return policies; }
     public void beforeAssign(String workspace, String processKey, String processId, String taskKey, String subject) {

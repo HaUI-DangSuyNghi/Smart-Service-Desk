@@ -45,9 +45,9 @@ public class ContextSnapshotAssembler {
             throw CapabilityException.conflict("Clarification snapshot limit reached");
         }
         var sources = new ArrayList<ContextSnapshot.Source>();
-        sources.add(new ContextSnapshot.Source("title", 0, state.title(), null, false));
-        sources.add(new ContextSnapshot.Source("description", 0, state.description(), null, false));
-        long revision = 0;
+        sources.add(new ContextSnapshot.Source("title", state.contentRevision(), state.title(), null, false));
+        sources.add(new ContextSnapshot.Source("description", state.contentRevision(), state.description(), null, false));
+        long revision = state.contentRevision();
         for (var event : events) {
             if (!state.id().equals(event.ticketId()) || event.expectedRevision() != revision
                     || event.contextRevision() != revision + 1 || event.answers().size() > 8) {

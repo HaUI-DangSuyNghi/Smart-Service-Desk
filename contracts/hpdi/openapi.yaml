@@ -7,6 +7,12 @@ info:
 security:
 - bearerAuth: []
 paths:
+  /api/hpdi/v1/workspaces/{workspace}/instances/{id}/request:
+    $ref: 'request-lifecycle-openapi.yaml#/paths/~1api~1hpdi~1v1~1workspaces~1{workspace}~1instances~1{id}~1request'
+  /api/hpdi/v1/workspaces/{workspace}/instances/{id}/request/cancel:
+    $ref: 'request-lifecycle-openapi.yaml#/paths/~1api~1hpdi~1v1~1workspaces~1{workspace}~1instances~1{id}~1request~1cancel'
+  /api/hpdi/v1/workspaces/{workspace}/instances/{id}/request/close:
+    $ref: 'request-lifecycle-openapi.yaml#/paths/~1api~1hpdi~1v1~1workspaces~1{workspace}~1instances~1{id}~1request~1close'
   /api/hpdi/v1/workspaces/{workspace}/schedules:
     parameters:
       - {$ref: '#/components/parameters/Workspace'}
@@ -76,6 +82,177 @@ paths:
             application/json:
               schema: {$ref: '#/components/schemas/EffectiveDuty'}
         '403': {$ref: '#/components/responses/Forbidden'}
+  /api/hpdi/v1/workspaces/{workspace}/notifications:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+      - {name: unreadOnly, in: query, schema: {type: boolean, default: false}}
+      - {name: page, in: query, schema: {type: integer, minimum: 0, default: 0}}
+      - {name: size, in: query, schema: {type: integer, minimum: 1, maximum: 50, default: 20}}
+    get:
+      operationId: listNotifications
+      description: >-
+        Current member (any role, including requesters) reads own notifications, newest first: process
+        state changes (NOTICE) and copies of delivered alerts (ALERT). unread counts every unread item.
+      responses:
+        '200':
+          description: Notification page
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/NotificationInbox'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+  /api/hpdi/v1/workspaces/{workspace}/notifications/{id}/read:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+      - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+    post:
+      operationId: readNotification
+      description: Idempotent; only the recipient can mark it.
+      responses:
+        '204': {description: Read}
+        '404': {$ref: '#/components/responses/NotFound'}
+  /api/hpdi/v1/workspaces/{workspace}/notifications/read-all:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+    post:
+      operationId: readAllNotifications
+      responses:
+        '204': {description: Every own notification read}
+  /api/hpdi/v1/workspaces/{workspace}/schedules/policy:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+    get:
+      operationId: getSchedulePolicy
+      description: Agent with task:handle or Coordinator with task:assign. Shifts from work settings, registration cutoff (first shift start of the day), weekend and approval switches, today in business zone.
+      responses:
+        '200':
+          description: Registration rules
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/SchedulePolicy'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+  /api/hpdi/v1/workspaces/{workspace}/schedules/slots:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+      - {name: from, in: query, required: true, schema: {type: string, format: date}}
+      - {name: to, in: query, required: true, schema: {type: string, format: date}, description: Inclusive; at most 62 days after from}
+    get:
+      operationId: listShiftSlots
+      description: Agent reads only own slots; Coordinator reads every slot in the workspace.
+      responses:
+        '200':
+          description: Slots ordered by date, start, subject
+          content:
+            application/json:
+              schema: {type: array, items: {$ref: '#/components/schemas/ShiftSlot'}}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+  /api/hpdi/v1/workspaces/{workspace}/schedules/{subject}/slots:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+      - {name: subject, in: path, required: true, schema: {type: string, maxLength: 100}, description: Current Agent subject or me}
+    post:
+      operationId: registerShiftSlot
+      description: >-
+        Agent registers own slot before the first shift start of that day (409 otherwise), PENDING when approval is required.
+        Coordinator registers on behalf until the shift ends, always APPROVED. Weekend and holidays only when enabled (409); OFFICE agents only register days off (409).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [date, shift]
+              properties:
+                date: {type: string, format: date, description: At most 62 days ahead}
+                shift: {type: string, maxLength: 50, description: Shift name from work settings}
+      responses:
+        '201':
+          description: Registered
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ShiftSlot'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /api/hpdi/v1/workspaces/{workspace}/schedules/{subject}/slots/{id}:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+      - {name: subject, in: path, required: true, schema: {type: string, maxLength: 100}, description: Current Agent subject or me}
+      - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+    delete:
+      operationId: cancelShiftSlot
+      description: Same deadline as registration for Agents; Coordinator cancels on behalf until the shift ends.
+      responses:
+        '204': {description: Cancelled}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '404': {$ref: '#/components/responses/NotFound'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /api/hpdi/v1/workspaces/{workspace}/schedules/work-modes:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+    get:
+      operationId: listWorkModes
+      description: Agent reads own mode; Coordinator reads every current Agent. Missing mode is SHIFT.
+      responses:
+        '200':
+          description: Work modes
+          content:
+            application/json:
+              schema: {type: array, items: {$ref: '#/components/schemas/WorkMode'}}
+        '403': {$ref: '#/components/responses/Forbidden'}
+  /api/hpdi/v1/workspaces/{workspace}/schedules/{subject}/work-mode:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+      - {name: subject, in: path, required: true, schema: {type: string, maxLength: 100}}
+    put:
+      operationId: setWorkMode
+      description: Agent changes own mode (subject me); Coordinator changes any current Agent. Switching to OFFICE removes unfinished weekday slots. OFFICE agents are on duty in every configured shift Monday-Friday except holidays, without registering; they may still register days off when enabled.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              required: [mode]
+              properties:
+                mode: {type: string, enum: [SHIFT, OFFICE]}
+      responses:
+        '200':
+          description: Saved
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/WorkMode'}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+  /api/hpdi/v1/workspaces/{workspace}/schedules/slots/{id}/approve:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+      - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+    post:
+      operationId: approveShiftSlot
+      description: Coordinator approves a PENDING slot; only approved slots count toward duty.
+      responses:
+        '200':
+          description: Approved
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/ShiftSlot'}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '409': {$ref: '#/components/responses/Conflict'}
+  /api/hpdi/v1/workspaces/{workspace}/schedules/slots/{id}/reject:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+      - {name: id, in: path, required: true, schema: {type: string, format: uuid}}
+    post:
+      operationId: rejectShiftSlot
+      description: Coordinator rejects (removes) a PENDING slot.
+      responses:
+        '204': {description: Rejected}
+        '403': {$ref: '#/components/responses/Forbidden'}
+        '409': {$ref: '#/components/responses/Conflict'}
   /api/hpdi/v1/workspaces/{workspace}/tasks/{id}/release:
     parameters:
       - {$ref: '#/components/parameters/Workspace'}
@@ -255,7 +432,7 @@ paths:
     - $ref: '#/components/parameters/Workspace'
     get:
       operationId: listDuty
-      description: Shared HPDI human capability, available without Service Desk. Agents see their own duty; coordinators with task:assign see current workspace agents. Missing duty defaults to off. No schedules.
+      description: Shared HPDI human capability, available without Service Desk. Agents see their own duty; coordinators with task:assign see current workspace agents. Missing duty row means on (agent switches off manually). No schedules.
       responses:
         '200':
           description: Current agent duty states
@@ -901,7 +1078,7 @@ paths:
     parameters:
     - *id001
     get:
-      description: Knowledge Hub – tài liệu văn bản (text/plain, text/markdown) của workspace, mới nhất trước.
+      description: Requires document:view. TXT, Markdown, text PDFs and DOCX in the workspace, newest first.
       parameters:
       - name: q
         in: query
@@ -924,6 +1101,37 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '403':
           $ref: '#/components/responses/Forbidden'
+  /api/hpdi/v1/workspaces/{workspace}/knowledge/chat:
+    parameters:
+      - {$ref: '#/components/parameters/Workspace'}
+    post:
+      operationId: chatWithKnowledge
+      description: >-
+        Requires document:view. Server resolves authorized documents, retrieves exact excerpts,
+        then streams provider text. Data-only SSE events are status, sources, delta, done, error.
+        Sources include index, metadataId, title, version, excerpt. Delta includes text.
+        Done includes grounded; only a done event confirms successful completion.
+        Error leaves any partial answer unverified. No conversation or arbitrary context is accepted.
+        Empty documentIds searches the whole workspace, limited to 50 documents and 1 MB extracted UTF-8.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [question, documentIds]
+              properties:
+                question: {type: string, minLength: 1, maxLength: 2000}
+                documentIds: {type: array, maxItems: 50, uniqueItems: true, items: {type: string, format: uuid}}
+      responses:
+        '200':
+          description: SSE stream; original document bytes are never sent to the model.
+          content:
+            text/event-stream:
+              schema: {type: string}
+        '400': {$ref: '#/components/responses/BadRequest'}
+        '401': {$ref: '#/components/responses/Unauthorized'}
+        '403': {$ref: '#/components/responses/Forbidden'}
   /api/hpdi/v1/workspaces/{workspace}/knowledge/{id}:
     parameters:
     - *id001
@@ -940,7 +1148,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AuthorizedKnowledge'
+                $ref: '#/components/schemas/KnowledgePreview'
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -1198,6 +1406,39 @@ components:
               minimum: 1
               description: Mặc định 480 (8 giờ)
               maximum: 2147483647
+        schedule:
+          type: object
+          additionalProperties: false
+          description: Không bắt buộc (bản lưu trước V39 chưa có); thiếu thì coi như tắt cả hai
+          required:
+          - weekendRegistration
+          - approvalRequired
+          - holidays
+          properties:
+            weekendRegistration:
+              type: boolean
+              description: Cho kỹ thuật viên đăng ký ca Thứ 7, Chủ nhật
+            approvalRequired:
+              type: boolean
+              description: Ca kỹ thuật viên tự đăng ký chờ điều phối viên duyệt mới tính trực
+            holidays:
+              type: array
+              maxItems: 400
+              description: Ngày lễ được nghỉ (không tính hạn SLA, người làm hành chính nghỉ, đăng ký ca như ngày nghỉ); ngày không trùng
+              items:
+                type: object
+                additionalProperties: false
+                required:
+                - date
+                - name
+                properties:
+                  date:
+                    type: string
+                    format: date
+                  name:
+                    type: string
+                    maxLength: 100
+                    description: Ghi chú hiện trên lịch trực
     Shift:
       type: object
       additionalProperties: false
@@ -1353,6 +1594,82 @@ components:
         shiftRemainingMinutes: {type: integer, minimum: 0, nullable: true}
         scheduleVersion: {type: integer, format: int64, minimum: 0}
         reason: {type: string, enum: [MANUAL_OFF_DUTY, OUTSIDE_SHIFT, SCHEDULE_AND_MANUAL, LEGACY_MANUAL]}
+    NotificationItem:
+      type: object
+      additionalProperties: false
+      required: [id, type, category, severity, title, body, link, processKey, businessKey, createdAt, readAt]
+      properties:
+        id: {type: string, format: uuid}
+        type: {type: string, pattern: '^[A-Z][A-Z0-9_]{1,59}$', description: 'TICKET_CREATED, TICKET_ASSIGNED, SHIFT_APPROVED, SLA_BREACHED...'}
+        category: {type: string, enum: [NOTICE, ALERT]}
+        severity: {type: string, enum: [INFO, WARNING, CRITICAL]}
+        title: {type: string, maxLength: 300}
+        body: {type: string, nullable: true, maxLength: 1000}
+        link: {type: string, nullable: true, description: In-app path; null means resolve the app page from processKey and businessKey}
+        processKey: {type: string, nullable: true}
+        businessKey: {type: string, nullable: true}
+        createdAt: {type: string, format: date-time}
+        readAt: {type: string, format: date-time, nullable: true}
+    NotificationInbox:
+      type: object
+      additionalProperties: false
+      required: [items, page, size, total, unread]
+      properties:
+        items: {type: array, items: {$ref: '#/components/schemas/NotificationItem'}}
+        page: {type: integer, minimum: 0}
+        size: {type: integer, minimum: 1}
+        total: {type: integer, minimum: 0}
+        unread: {type: integer, minimum: 0}
+    SchedulePolicy:
+      type: object
+      additionalProperties: false
+      required: [zone, shifts, cutoff, weekendRegistration, approvalRequired, today, holidays]
+      properties:
+        zone: {type: string, description: IANA business zone}
+        shifts:
+          type: array
+          items:
+            type: object
+            additionalProperties: false
+            required: [name, start, end]
+            properties:
+              name: {type: string}
+              start: {type: string, description: Local time HH:mm or HH:mm:ss}
+              end: {type: string, description: Local time HH:mm or HH:mm:ss}
+        cutoff: {type: string, description: Local time; Agents register or cancel a day only before this time on that day}
+        weekendRegistration: {type: boolean}
+        approvalRequired: {type: boolean}
+        today: {type: string, format: date}
+        holidays:
+          type: array
+          description: Holidays from work settings (date and note shown on the calendar)
+          items:
+            type: object
+            additionalProperties: false
+            required: [date, name]
+            properties:
+              date: {type: string, format: date}
+              name: {type: string}
+    WorkMode:
+      type: object
+      additionalProperties: false
+      required: [subject, mode]
+      properties:
+        subject: {type: string}
+        mode: {type: string, enum: [SHIFT, OFFICE]}
+    ShiftSlot:
+      type: object
+      additionalProperties: false
+      required: [id, subject, date, shift, startsAt, endsAt, status, registeredBy]
+      properties:
+        id: {type: string, format: uuid}
+        subject: {type: string}
+        date: {type: string, format: date}
+        shift: {type: string}
+        startsAt: {type: string, format: date-time}
+        endsAt: {type: string, format: date-time}
+        status: {type: string, enum: [PENDING, APPROVED]}
+        registeredBy: {type: string, description: Subject who registered (the Agent or a Coordinator on behalf)}
     Priority:
       type: string
       enum:
@@ -1519,6 +1836,7 @@ components:
       - steps
       - variables
       properties:
+        cancelled: {type: boolean, description: Ended by explicit cancellation; history preserved}
         ended:
           type: boolean
           description: Legacy completion flag
@@ -1725,6 +2043,7 @@ components:
       - startedAt
       - activeTaskKeys
       properties:
+        cancelled: {type: boolean}
         id:
           type: string
         processKey:
@@ -1971,6 +2290,16 @@ components:
             type: array
             items:
               $ref: '#/components/schemas/WorkItem'
+    KnowledgePreview:
+      type: object
+      additionalProperties: false
+      required: [metadataId, title, version, mediaType, text]
+      properties:
+        metadataId: {type: string, format: uuid}
+        title: {type: string}
+        version: {type: string}
+        mediaType: {type: string}
+        text: {type: string, description: Extracted text only. No original file or base64 bytes.}
     AuthorizedKnowledge:
       type: object
       required:

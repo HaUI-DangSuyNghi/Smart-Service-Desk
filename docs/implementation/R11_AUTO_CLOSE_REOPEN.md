@@ -119,7 +119,7 @@ R11 guard implemented:
 | Whole OpenAPI Baseline Comparison | 4 docs | 4 docs | 0 | 0 | 0 | Zero regressions vs develop baseline |
 | Tier Boundaries | 43 checks | 43 | 0 | 0 | 0 | Python architectural gates pass |
 
-### Probe Check Breakdown (`scripts/acceptance/r11-confirmation.py`)
+### Probe Check Breakdown (`scripts/apps/servicedesk/acceptance/r11-confirmation.py`)
 1. `deadline is exactly 72 continuous hours`: PASS
 2. `requester provenance is persisted`: PASS
 3. `real JWT Agent cannot confirm`: PASS (HTTP 403)
@@ -181,7 +181,7 @@ scripts/test-task-execution.ps1 -Profile full -BuildImage maven:3.9.11-eclipse-t
 scripts/test-task-execution.ps1 -Profile core-only -BuildImage maven:3.9.11-eclipse-temurin-21
 scripts/test-task-execution.ps1 -Profile second-domain -BuildImage maven:3.9.11-eclipse-temurin-21
 scripts/test-task-execution.ps1 -Profile full -Test 'TicketIntegrationTest,ConfirmationUpgradeIntegrationTest,ServiceDeskMigrationIntegrationTest,AgentDutyUpgradeIntegrationTest,CanonicalTicketIntegrationTest,IntakeAdmissionIntegrationTest' -BuildImage maven:3.9.11-eclipse-temurin-21
-python scripts/acceptance/r11-confirmation.py
+python scripts/apps/servicedesk/acceptance/r11-confirmation.py
 python scripts/check-core-contract.py .local/r11-http.json contracts/openapi/servicedesk.yaml
 python scripts/check-tier-boundaries.py
 python scripts/test-tier-boundaries.py

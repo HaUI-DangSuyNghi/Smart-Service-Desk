@@ -3,7 +3,7 @@ import { useAuth } from "../../../platform/human/auth";
 import { getIntake } from "../services/intakeService";
 
 // Trạng thái đã xong thì thôi hỏi lại
-const SETTLED = ["REVIEWED", "CANONICAL_FOLLOWER"];
+const SETTLED = ["REVIEWED", "CANONICAL_FOLLOWER", "CANCELLED", "CLOSED"];
 const POLL_MS = 5000;
 
 /**

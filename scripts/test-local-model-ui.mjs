@@ -20,7 +20,7 @@ try {
   const page = await browser.newPage({ viewport: { width: 1440, height: 1000 } });
   stage = "demo coordinator login";
   await page.goto(`http://localhost:5173/servicedesk/tickets/${ticketId}`);
-  await page.locator("#username").fill("user3");
+  await page.locator("#username").fill("coordinator1");
   await page.locator("#password").fill(config.DEMO_PASSWORD);
   await page.locator("#kc-login").click();
   await page.waitForURL(url => url.origin === "http://localhost:5173" && !url.pathname.startsWith("/auth/"), { timeout: 30000 });

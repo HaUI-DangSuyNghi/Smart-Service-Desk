@@ -1,17 +1,7 @@
 import { NavLink } from "react-router";
 import { cn } from "cn";
-import type { MenuItem, MenuTone } from "../../router/registry";
-
-// Viết đủ tên class để Tailwind sinh ra được
-export const TONE_CLASS: Record<MenuTone, string> = {
-  gray: "text-crm-tone-gray",
-  blue: "text-crm-tone-blue",
-  red: "text-crm-tone-red",
-  green: "text-crm-tone-green",
-  orange: "text-crm-tone-orange",
-  purple: "text-crm-tone-purple",
-  turquoise: "text-crm-tone-turquoise",
-};
+import type { MenuItem } from "../../router/registry";
+import { TONE_CLASS } from "./menuTree";
 
 interface Props {
   item: MenuItem;
@@ -41,7 +31,7 @@ export const NavItem = ({ item, collapsed }: Props) => {
       {!collapsed && <span className="min-w-0 flex-1 truncate">{label}</span>}
       {/* Thu gọn thì số đếm nằm đè góc icon */}
       {Badge && (
-        <span className={cn("flex", collapsed && "absolute -top-1 -right-1")}>
+        <span className={cn("flex", collapsed && "absolute top-0 right-0")}>
           <Badge />
         </span>
       )}

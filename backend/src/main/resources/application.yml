@@ -10,6 +10,18 @@ spring:
   jackson:
     deserialization:
       fail-on-unknown-properties: true
+  # Gửi thông báo qua email (Gmail: smtp.gmail.com:587 + App Password). MAIL_HOST trống = không gửi email
+  mail:
+    host: ${MAIL_HOST:}
+    port: ${MAIL_PORT:587}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+      mail.smtp.connectiontimeout: 10000
+      mail.smtp.timeout: 10000
+      mail.smtp.writetimeout: 10000
   security:
     oauth2:
       resourceserver:
@@ -24,6 +36,17 @@ flowable:
   async-executor-activate: false
   history-level: full
 dx:
+  notifications:
+    # Tên người gửi và địa chỉ web để tạo link trong email
+    mail-from-name: ${MAIL_FROM_NAME:Smart Desk App}
+    app-url: ${APP_BASE_URL:http://localhost:5173}
+    mail-poll-ms: ${NOTIFICATION_MAIL_POLL_MS:10000}
+  # WebSocket (STOMP) ở /ws: báo "có thay đổi" để FE tải lại; tắt thì FE tự quay về polling
+  realtime:
+    enabled: ${REALTIME_ENABLED:true}
+    # Địa chỉ web của app luôn được phép; REALTIME_ALLOWED_ORIGINS thêm domain khác (phân tách bằng dấu phẩy)
+    allowed-origins: ${APP_BASE_URL:http://localhost:5173},http://localhost:5173,http://127.0.0.1:5173,${REALTIME_ALLOWED_ORIGINS:}
+    max-connections-per-user: 5
   # Danh bạ workspace (Keycloak Admin API, service account dx-directory chỉ đọc user/group)
   directory:
     url: ${DX_DIRECTORY_URL:}
@@ -45,6 +68,10 @@ management:
   endpoint:
     health:
       show-details: never
+  health:
+    # Không để SMTP (Gmail) quyết định trạng thái healthy của backend
+    mail:
+      enabled: false
 serviceDesk:
   intake:
     canonical-human-enabled: ${SERVICE_DESK_CANONICAL_HUMAN_ENABLED:false}

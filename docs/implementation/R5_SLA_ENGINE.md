@@ -71,7 +71,7 @@ Flyway's versionless schema-creation row while preserving every applied version.
 Runtime reproduction additionally supports:
 
 ```powershell
-py -3.11 scripts/acceptance/sla-engine.py --intake
+py -3.11 scripts/apps/servicedesk/acceptance/sla-engine.py --intake
 ```
 
 Both real JWT probes use direct HTTP, not Gateway E2E. Intake smoke uses human
@@ -312,7 +312,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/test-task-execution.
 py -3.11 scripts/check-tier-boundaries.py
 py -3.11 scripts/test-tier-boundaries.py
 py -3.11 scripts/test-servicedesk-execution-contract.py <servicedesk-http-evidence.json> --sla-evidence <r5-sla-http-evidence.json> --baseline origin/develop
-py -3.11 scripts/acceptance/sla-engine.py
+py -3.11 scripts/apps/servicedesk/acceptance/sla-engine.py
 git diff --check
 ```
 

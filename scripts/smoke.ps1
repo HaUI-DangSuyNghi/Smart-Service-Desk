@@ -85,13 +85,13 @@ function Call($method, $path, $token, $body, $expected) {
     }
 }
 try {
-    # user1..user7: xem bảng tài khoản demo trong README
-    $requesterA = Token 'user1'
-    $agentA = Token 'user2'
-    $coordinatorA = Token 'user3'
-    $agentB = Token 'user5'
-    $coordinatorB = Token 'user6'
-    $platformAdmin = Token 'user7'
+    # Tài khoản demo đặt theo vai trò: xem bảng trong README
+    $requesterA = Token 'requester1'
+    $agentA = Token 'agent1'
+    $coordinatorA = Token 'coordinator1'
+    $agentB = Token 'agent6'
+    $coordinatorB = Token 'coordinator2'
+    $platformAdmin = Token 'admin1'
     if ($ComposeProject) {
         Direct '/me' '' 401
         Direct '/me' $requesterA 200
@@ -101,7 +101,7 @@ try {
     if ($unauthenticated.code -ne 'UNAUTHENTICATED' -or !$unauthenticated.requestId) { throw '401 body must carry code and requestId' }
     Call GET '/me' 'invalid' $null 401 | Out-Null
     $me = Call GET '/me' $requesterA $null 200
-    if ($me.username -ne 'user1' -or $me.platformAdmin -or @($me.memberships).Count -ne 1 -or
+    if ($me.username -ne 'requester1' -or $me.platformAdmin -or @($me.memberships).Count -ne 1 -or
         $me.memberships[0].workspace -ne 'lab-a' -or $me.memberships[0].role -ne 'requester') { throw 'Unexpected /me memberships' }
     $adminMe = Call GET '/me' $platformAdmin $null 200
     # Request ID: giữ X-Request-ID hợp lệ từ client/gateway, thay thế giá trị không hợp lệ
@@ -122,10 +122,10 @@ try {
     if ($denied.code -ne 'FORBIDDEN') { throw '403 body must carry code FORBIDDEN' }
     Call POST '/workspaces/lab-a/metadata' $agentB $data 403 | Out-Null
     Call POST '/workspaces/lab-a/metadata' $agentA @{title='invalid'} 400 | Out-Null
-    Call POST '/workspaces/lab-a/metadata' $agentA ($data + @{owner='user1'}) 400 | Out-Null
+    Call POST '/workspaces/lab-a/metadata' $agentA ($data + @{owner='requester1'}) 400 | Out-Null
     $record = Call POST '/workspaces/lab-a/metadata' $agentA $data 201
     Call POST '/workspaces/lab-a/metadata' $coordinatorA $data 201 | Out-Null
-    Call GET "/workspaces/lab-a/metadata/$($record.id)" $requesterA $null 403 | Out-Null
+    Call GET "/workspaces/lab-a/metadata/$($record.id)" $requesterA $null 200 | Out-Null
     $read = Call GET "/workspaces/lab-a/metadata/$($record.id)" $agentA $null 200
     if ($read.source -ne $data.source -or $read.version -ne '1' -or $read.workspace -ne 'lab-a') { throw 'Metadata round trip mismatch' }
     Call GET "/workspaces/lab-a/metadata/$($record.id)" $agentB $null 403 | Out-Null
@@ -143,7 +143,7 @@ try {
     $file = Upload $agentA $payload 'integration.txt' 'text/plain' 201
     Upload $agentA (New-Object byte[] 5242881) 'oversize.txt' 'text/plain' 413 | Out-Null
     Upload $agentA $payload 'blocked.exe' 'application/octet-stream' 415 | Out-Null
-    Call GET "/workspaces/lab-a/files/$($file.id)" $requesterA $null 403 | Out-Null
+    Call GET "/workspaces/lab-a/files/$($file.id)" $requesterA $null 200 | Out-Null
     Call GET "/workspaces/lab-a/files/$($file.id)" $agentA $null 200 | Out-Null
     Call GET "/workspaces/lab-b/files/$($file.id)" $agentB $null 404 | Out-Null
     Call GET "/workspaces/lab-a/files/$($file.id)" $platformAdmin $null 403 | Out-Null
@@ -151,11 +151,12 @@ try {
         title='Linked runtime file'; source='team-authored:integration'; version='1'; usageRights='CC0-1.0'; fileId=$file.id
     } 201
     if ($linked.fileId -ne $file.id -or $linked.checksum -ne $file.checksum -or $linked.PSObject.Properties.Name -contains 'file_id') { throw 'File-backed JSON contract mismatch' }
-    Call GET '/workspaces/lab-a/metadata?q=Linked%20runtime%20file&size=100' $requesterA $null 403 | Out-Null
+    Call GET '/workspaces/lab-a/metadata?q=Linked%20runtime%20file&size=100' $requesterA $null 200 | Out-Null
     $matches = Call GET '/workspaces/lab-a/metadata?q=Linked%20runtime%20file&size=100' $agentA $null 200
     if ($linked.id -notin @($matches.items.id)) { throw 'Linked metadata missing from search' }
     $foreignMatches = Call GET '/workspaces/lab-b/metadata?q=Linked%20runtime%20file&size=100' $agentB $null 200
     if ($linked.id -in @($foreignMatches.items.id)) { throw 'Cross-workspace search leak' }
+    Call GET "/workspaces/lab-a/files/$($file.id)/content" $requesterA $null 403 | Out-Null
     $download = New-Object System.Net.Http.HttpRequestMessage
     $download.Method = [System.Net.Http.HttpMethod]::Get
     $download.RequestUri = "http://localhost:9080/api/core/v1/workspaces/lab-a/files/$($file.id)/content"

@@ -718,7 +718,7 @@ the evidence directory. No bearer tokens or credentials are written to responses
 
 ### OpenAPI and failures (not waived)
 
-scripts/test-settings-contract.py validates 62 non-500 settings HTTP responses
+scripts/apps/servicedesk/acceptance/test-settings-contract.py validates 62 non-500 settings HTTP responses
 per Full run against live schemas, checks target/live schema parity and promoted
 route references. Second-domain validates 31 and marks Service Desk absent as
 NOT_APPLICABLE, not a skipped backend test. The two expected audit-failure 500

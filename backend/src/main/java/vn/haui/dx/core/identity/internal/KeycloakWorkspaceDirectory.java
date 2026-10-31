@@ -192,6 +192,24 @@ class KeycloakWorkspaceDirectory implements WorkspaceDirectory {
         return List.copyOf(result);
     }
 
+    @Override
+    public Map<String, String> emails(java.util.Collection<String> subjects) {
+        // Máy chủ tự gọi (worker gửi thông báo): không có người gọi nên không kiểm thành viên workspace
+        if (http == null || clientSecret == null || clientSecret.isBlank() || subjects == null) return Map.of();
+        var result = new LinkedHashMap<String, String>();
+        for (String subject : new HashSet<>(subjects)) {
+            if (subject == null || subject.isBlank() || subject.length() > 100) continue;
+            try {
+                JsonNode user = get("/admin/realms/{realm}/users/{id}", realm, subject);
+                String email = user == null ? "" : user.path("email").asText("").trim();
+                if (!email.isEmpty()) result.put(subject, email);
+            } catch (RestClientException failure) {
+                LOG.warn("Cannot read email of {}: {}", subject, failure.getMessage());
+            }
+        }
+        return Map.copyOf(result);
+    }
+
     /** GET Admin API; 404 → null, lỗi khác → RestClientException. */
     private JsonNode get(String uri, Object... variables) {
         return http.get().uri(uri, variables)
@@ -230,7 +248,7 @@ class KeycloakWorkspaceDirectory implements WorkspaceDirectory {
     }
 
     private static String fullName(JsonNode user) {
-        // Tên người Việt viết họ trước: Keycloak lưu họ ở lastName, tên ở firstName → "Bùi" + "Huy Hoàng"
+        // Tên người Việt viết họ trước: Keycloak lưu họ ở lastName, tên ở firstName → "Nguyễn" + "Văn An"
         String name = (user.path("lastName").asText("") + " " + user.path("firstName").asText("")).trim();
         return name.isEmpty() ? null : name;
     }

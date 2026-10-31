@@ -4,9 +4,10 @@
 #       scripts/start.ps1 -AiProfile roomrequest   chay kem AI, nap profile app dat phong thay cho Service Desk
 #       scripts/start.ps1 -Model   Qwen local; saves AI_MODE=model in .env
 #       scripts/start.ps1 -Api     Gemini/OpenAI-compatible API + rules; saves AI_MODE=api
+#       scripts/start.ps1 -Remote  Qwen on a separate GPU machine (Cloudflare Access); saves AI_MODE=remote
 #       scripts/start.ps1 -Model -AskApi   Qwen + rules for classification, external API for Q&A
 #       scripts/start.ps1 -NoAi    disable AI and save AI_MODE=disabled
-param([switch]$Reset, [switch]$Intelligence, [ValidateSet('servicedesk', 'roomrequest')][string]$AiProfile, [switch]$Model, [switch]$NoAi, [switch]$Api, [switch]$AskApi)
+param([switch]$Reset, [switch]$Intelligence, [ValidateSet('servicedesk', 'roomrequest')][string]$AiProfile, [switch]$Model, [switch]$NoAi, [switch]$Api, [switch]$AskApi, [switch]$Remote)
 $ErrorActionPreference = 'Stop'
 # PowerShell khong co tham so dang --reset; nhan them de ai quen cu phap bash van dung duoc
 if ($args -contains '--reset') { $Reset = $true }
@@ -15,13 +16,13 @@ if ($AiProfile) { $Intelligence = $true }
 
 & "$PSScriptRoot/setup.ps1"
 . "$PSScriptRoot/docker-native.ps1"
-$explicitModes = @([bool]$Model, [bool]$NoAi, [bool]$Intelligence, [bool]$Api) | Where-Object { $_ }
-if ($explicitModes.Count -gt 1) { throw 'Choose only one of -Model, -Api, -Intelligence/-AiProfile, or -NoAi.' }
+$explicitModes = @([bool]$Model, [bool]$NoAi, [bool]$Intelligence, [bool]$Api, [bool]$Remote) | Where-Object { $_ }
+if ($explicitModes.Count -gt 1) { throw 'Choose only one of -Model, -Remote, -Api, -Intelligence/-AiProfile, or -NoAi.' }
 $configuredMode = 'disabled'
 Get-Content .env -Encoding UTF8 | ForEach-Object { if ($_ -match '^AI_MODE=(.*)$') { $configuredMode = $Matches[1] } }
-if ($Model) { $configuredMode = 'model' } elseif ($Api) { $configuredMode = 'api' } elseif ($NoAi) { $configuredMode = 'disabled' } elseif ($Intelligence) { $configuredMode = 'rules' }
-if ($configuredMode -notin @('disabled', 'rules', 'model', 'api')) { throw 'AI_MODE in .env must be disabled, rules, model, or api.' }
-if ($AskApi -and $configuredMode -notin @('model', 'api')) { throw 'Use -Model -AskApi for Qwen classification plus API Q&A, or -Api for both tasks via API.' }
+if ($Model) { $configuredMode = 'model' } elseif ($Remote) { $configuredMode = 'remote' } elseif ($Api) { $configuredMode = 'api' } elseif ($NoAi) { $configuredMode = 'disabled' } elseif ($Intelligence) { $configuredMode = 'rules' }
+if ($configuredMode -notin @('disabled', 'rules', 'model', 'remote', 'api')) { throw 'AI_MODE in .env must be disabled, rules, model, remote, or api.' }
+if ($AskApi -and $configuredMode -notin @('model', 'remote', 'api')) { throw 'Use -Model -AskApi (or -Remote -AskApi) for Qwen classification plus API Q&A, or -Api for both tasks via API.' }
 function Save-AiMode {
     $lines = @(Get-Content .env -Encoding UTF8 | Where-Object { $_ -notmatch '^AI_MODE=' })
     if ($Api -or $AskApi -or $NoAi) {
@@ -30,8 +31,8 @@ function Save-AiMode {
     }
     [IO.File]::WriteAllLines((Join-Path $PWD '.env'), [string[]]($lines + "AI_MODE=$configuredMode"), (New-Object Text.UTF8Encoding $false))
 }
-if ($configuredMode -in @('model', 'api')) {
-    & "$PSScriptRoot/start-model.ps1" -Reset:$Reset -Api:($configuredMode -eq 'api') -AskApi:$AskApi
+if ($configuredMode -in @('model', 'remote', 'api')) {
+    & "$PSScriptRoot/start-model.ps1" -Reset:$Reset -Api:($configuredMode -eq 'api') -Remote:($configuredMode -eq 'remote') -AskApi:$AskApi
     if ($explicitModes.Count -gt 0 -or $AskApi) { Save-AiMode }
     return
 }

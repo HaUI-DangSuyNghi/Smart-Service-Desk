@@ -12,6 +12,7 @@ const ticket = (overrides: Partial<TicketView>): TicketView =>
     creator: "requester",
     taskId: "task",
     state: "IN_PROGRESS",
+    workState: "ASSIGNED",
     assignee: "agent-a",
     ...overrides,
   }) as TicketView;
@@ -94,10 +95,14 @@ describe("dropTargets", () => {
     expect(dropTargets(assigned, holdingCoordinator)).toEqual({});
   });
 
-  it("siêu quản trị không kéo thẻ của kỹ thuật viên, kể cả ticket đang gán cho mình", () => {
+  it("siêu quản trị kéo được ticket mình đang giữ, không kéo được ticket của kỹ thuật viên khác", () => {
     const admin = viewer({ subject: "admin", canAssign: true, isPlatformAdmin: true });
+    expect(dropTargets(ticket({ state: "ASSIGNED", assignee: "admin" }), admin)).toEqual({
+      inProgress: "start",
+      review: "release",
+    });
     for (const state of ["ASSIGNED", "REOPENED", "IN_PROGRESS", "PENDING"] as const) {
-      expect(dropTargets(ticket({ state, assignee: "admin" }), admin)).toEqual({});
+      expect(dropTargets(ticket({ state, assignee: "agent-b" }), admin)).toEqual({});
     }
   });
 
@@ -106,6 +111,14 @@ describe("dropTargets", () => {
       expect(dropTargets(ticket({ state }), agentA)).toEqual({});
     }
     expect(dropTargets(ticket({ taskId: null }), agentA)).toEqual({});
+  });
+});
+
+describe("reopened review", () => {
+  it("requires reassignment before a reopened ticket can be handled", () => {
+    const reopened = ticket({ state: "REOPENED", workState: null });
+    expect(dropTargets(reopened, agentA)).toEqual({});
+    expect(dropTargets(reopened, coordinator)).toEqual({ assigned: "review" });
   });
 });
 

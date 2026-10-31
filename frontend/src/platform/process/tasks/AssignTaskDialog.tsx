@@ -1,11 +1,10 @@
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { roleLabel, useMembers } from "@/platform/human/workspace";
 import type { WorkItem } from "@/platform/services";
 import { submitOnEnter } from "@/platform/shared/lib/submitOnEnter";
 import { Button } from "@/platform/shared/ui/button";
-import { ChoiceCard } from "@/platform/shared/ui/ChoiceCard";
 import {
   Dialog,
   DialogContent,
@@ -15,6 +14,7 @@ import {
   DialogTitle,
 } from "@/platform/shared/ui/dialog";
 import { ErrorState } from "@/platform/shared/ui/ErrorState";
+import { SelectField } from "@/platform/shared/ui/SelectField";
 import { TextSkeleton } from "@/platform/shared/ui/Skeleton";
 import { toast, toastError } from "@/platform/shared/ui/toast";
 import { useProcessLabels } from "../catalog/useProcessCatalog";
@@ -90,16 +90,25 @@ const AssignTaskForm = ({ task, onDone }: FormProps) => {
         {members.data && eligible.length === 0 && (
           <p className="text-crm-sm text-crm-text-3">Không có ai trong nhóm xử lý của bước này.</p>
         )}
-        {eligible.map((member) => (
-          <ChoiceCard key={member.subject} value={member.subject} {...form.register("assignee")}>
-            <span className="flex items-center justify-between gap-2">
-              <span className="truncate">{member.fullName ?? member.username}</span>
-              {member.subject === task.assignee && (
-                <span className="shrink-0 text-crm-sm text-crm-text-3">đang giữ</span>
-              )}
-            </span>
-          </ChoiceCard>
-        ))}
+        {eligible.length > 0 && (
+          <Controller
+            control={form.control}
+            name="assignee"
+            render={({ field }) => (
+              <SelectField
+                aria-label="Người nhận việc"
+                placeholder="Chọn người nhận việc"
+                options={eligible.map((member) => ({
+                  value: member.subject,
+                  label: `${member.fullName ?? member.username}${member.subject === task.assignee ? " · đang giữ" : ""}`,
+                }))}
+                value={field.value}
+                onValueChange={field.onChange}
+                className="h-9 w-full max-w-none sm:h-8"
+              />
+            )}
+          />
+        )}
         {errors.assignee && (
           <p className="text-crm-sm text-crm-danger">{errors.assignee.message}</p>
         )}

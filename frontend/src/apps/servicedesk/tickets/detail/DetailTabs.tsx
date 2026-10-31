@@ -1,30 +1,29 @@
 import { useState } from "react";
-import { AssistantPanel } from "../../../../platform/intelligence";
 import { ViewTabs, type ViewTab } from "../../../../platform/shared/ui/ViewTabs";
-import { askTicketAssistance, type TicketView } from "../../services/ticketService";
+import type { TicketView } from "../../services/ticketService";
 import { CorrectionsList } from "../CorrectionsList";
+import { TicketComments } from "./TicketComments";
 
-type Tab = "corrections" | "ask";
+type Tab = "comments" | "corrections";
 
 interface Props {
   workspace: string;
   ticket: TicketView;
   /** Người gửi không thấy lịch sử sửa. */
   isRequesterView: boolean;
-  assistanceMode?: "api" | "grounded" | "disabled";
 }
 
-/** Dưới phần mô tả: Lịch sử sửa / Hỏi AI (kiểu Activity của Jira); chỉ còn một mục thì hiện thẳng, không tab. */
-export const DetailTabs = ({ workspace, ticket, isRequesterView, assistanceMode }: Props) => {
-  const [tab, setTab] = useState<Tab>("ask");
+/** Dưới phần mô tả: Bình luận / Lịch sử sửa (kiểu Activity của Jira); chỉ còn một mục thì hiện thẳng, không tab. */
+export const DetailTabs = ({ workspace, ticket, isRequesterView }: Props) => {
+  const [tab, setTab] = useState<Tab>("comments");
   const hasCorrections = !isRequesterView && (ticket.corrections?.length ?? 0) > 0;
   const tabs: ViewTab<Tab>[] = [
+    { key: "comments", label: "Bình luận" },
     ...(hasCorrections
       ? [{ key: "corrections" as const, label: "Lịch sử sửa", count: ticket.corrections?.length }]
       : []),
-    { key: "ask", label: "Hỏi AI" },
   ];
-  const active = tabs.some((item) => item.key === tab) ? tab : "ask";
+  const active = tabs.some((item) => item.key === tab) ? tab : "comments";
 
   return (
     <div>
@@ -32,19 +31,12 @@ export const DetailTabs = ({ workspace, ticket, isRequesterView, assistanceMode 
         {tabs.length > 1 ? (
           <ViewTabs label="Hoạt động của ticket" tabs={tabs} value={active} onChange={setTab} />
         ) : (
-          <h2 className="px-1 py-0.5 font-medium">Hỏi AI</h2>
+          <h2 className="px-1 py-0.5 font-medium">Bình luận</h2>
         )}
       </div>
+      {active === "comments" && <TicketComments workspace={workspace} ticketId={ticket.id} />}
       {active === "corrections" && ticket.corrections && (
         <CorrectionsList corrections={ticket.corrections} />
-      )}
-      {active === "ask" && (
-        <AssistantPanel
-          ask={(question, signal) => askTicketAssistance(workspace, ticket.id, question, signal)}
-          subjectLabel="ticket"
-          mode={assistanceMode === "grounded" || assistanceMode === undefined ? "grounded" : "api"}
-          available={assistanceMode !== "disabled"}
-        />
       )}
     </div>
   );

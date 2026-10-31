@@ -34,6 +34,11 @@ def test_public_assistance_cannot_accept_profile_model_or_source_overrides():
     assert question["required"] == ["question"]
     assert set(question["properties"]) == {"question"}
     assert question["properties"]["question"]["maxLength"] == 2000
-    assert api["components"]["schemas"]["AssistanceResponse"]["properties"][
-        "needsReview"
-    ]["enum"] == [True]
+    variants = api["components"]["schemas"]["AssistanceResponse"]["oneOf"]
+    assert {variant["$ref"] for variant in variants} == {
+        "#/components/schemas/GroundedAssistanceResponse",
+        "#/components/schemas/ApiAdvisoryAssistanceResponse",
+    }
+    for variant in variants:
+        schema = api["components"]["schemas"][variant["$ref"].rsplit("/", 1)[1]]
+        assert schema["properties"]["needsReview"]["enum"] == [True]

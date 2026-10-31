@@ -4,7 +4,7 @@ import { IconChevronRight } from "@tabler/icons-react";
 import { cn } from "cn";
 import type { MenuItem } from "../../router/registry";
 import { activeChildIndex, subItemState, type SubItemState } from "./menuTree";
-import { TONE_CLASS } from "./NavItem";
+import { TONE_CLASS } from "./menuTree";
 
 // Nét dẫn hướng: xám nhạt; đoạn từ nhóm xuống mục đang chọn đậm hơn
 const lineClass = (darker: boolean) => (darker ? "bg-crm-text-3" : "bg-crm-line-strong");

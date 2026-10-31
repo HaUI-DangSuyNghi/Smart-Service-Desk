@@ -106,11 +106,11 @@ def main():
     user_id, admin = None, None
     try:
         admin = token('admin', settings['KC_ADMIN_PASSWORD'], admin=True)
-        agent = token('user2', settings['DEMO_PASSWORD'])
+        agent = token('agent1', settings['DEMO_PASSWORD'])
         password = secrets.token_urlsafe(24)
         http('POST', admin_api+'/users', token=admin, expected=201, content_type='application/json', body=json.dumps({
             'username': marker, 'enabled': True, 'emailVerified': True, 'email': marker+'@example.invalid',
-            'firstName': 'Acceptance', 'lastName': 'AI03', 'groups': ['/workspaces/lab-a/requester'],
+            'firstName': 'Acceptance', 'lastName': 'AI03', 'groups': ['/workspaces/lab-a/agent'],
             'credentials': [{'type': 'password', 'value': password, 'temporary': False}]}).encode())
         users = http('GET', admin_api+'/users?'+urlencode({'username': marker, 'exact': 'true'}), token=admin)
         if len(users) != 1:
@@ -135,6 +135,14 @@ def main():
 
         metadata, raw = seed('# Tài khoản\n\nHướng dẫn đăng nhập và mật khẩu.', 'acceptance-v1')
         adapter = CoreAuthorizedCorpusAdapter(client, CoreCorpusCatalog('lab-a', marker+'-v1', (metadata['id'],)))
+        requester = token('requester1', settings['DEMO_PASSWORD'])
+        preview = http('GET', args.core_url+'/api/hpdi/v1/workspaces/lab-a/knowledge/'+metadata['id'], token=requester)
+        assert preview['metadataId'] == metadata['id'] and preview['text'] == raw.decode('utf-8')
+        http('GET', args.core_url+'/api/core/v1/workspaces/lab-a/files/'+metadata['fileId']+'/content', token=requester, expected=403)
+        requester_client = CoreHttpClient(args.core_url, token_provider=lambda: requester, allow_local_http=True)
+        requester_adapter = CoreAuthorizedCorpusAdapter(requester_client, adapter.catalog)
+        expect_error(AuthorizationRejected, requester_adapter.trusted_context)
+        record('CORE-AI03-03', 'Requester can preview but cannot download originals or ingest raw Core files')
         context = adapter.trusted_context()
         profile = ProfileRegistry().get('service-desk', '0.3.0')
         index = build_authorized_index(source=adapter, context=context, profile=profile)
@@ -154,7 +162,7 @@ def main():
         record('CORE-AI03-01', 'Authenticated ingest, authorized search and current Core citation',
                metadataId=metadata['id'], sourceChecksum=metadata['checksum'], searchWithCoreVerificationMs=elapsed)
 
-        foreign_token = token('user4', settings['DEMO_PASSWORD'])
+        foreign_token = token('requester2', settings['DEMO_PASSWORD'])
         foreign_client = CoreHttpClient(args.core_url, token_provider=lambda: foreign_token, allow_local_http=True)
         expect_error(AuthorizationRejected, lambda: foreign_client.json('/workspaces/lab-a/metadata/'+metadata['id']))
         foreign_adapter = CoreAuthorizedCorpusAdapter(foreign_client, adapter.catalog)

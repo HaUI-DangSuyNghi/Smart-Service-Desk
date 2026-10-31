@@ -140,7 +140,7 @@ class WorkAlertsIntegrationTest {
             first.get(20, TimeUnit.SECONDS); second.get(20, TimeUnit.SECONDS);
         }
         assertEquals(2, jdbc.queryForObject("select count(*) from hpdi_alert_recipient where event_id=?", Integer.class, id));
-        var restarted = new AlertDelivery(jdbc, directory, mock(ActivityJournal.class));
+        var restarted = new AlertDelivery(jdbc, directory, mock(ActivityJournal.class), mock(vn.haui.dx.hpdi.human.internal.NotificationCenter.class));
         restarted.deliver("lab-a", id, recipients);
         try (var pool = new ClosingPool()) {
             Callable<Integer> read = () -> mvc.perform(post(BASE + "/" + id + "/read").with(as(subject, "lab-a", "coordinator"))).andReturn().getResponse().getStatus();

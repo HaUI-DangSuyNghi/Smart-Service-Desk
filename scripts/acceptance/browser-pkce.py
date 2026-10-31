@@ -57,7 +57,7 @@ def main():
     realm = args.identity_url + '/realms/dx-lab/protocol/openid-connect'
     origin, redirect = 'http://localhost:5173', 'http://localhost:5173/auth/callback'
     cases = []
-    for username, role in [('user1', 'requester'), ('user2', 'agent')]:
+    for username, role in [('requester1', 'requester'), ('agent1', 'agent')]:
         cookies = CookieJar()
         opener = build_opener(ProxyHandler({}), HTTPCookieProcessor(cookies), NoRedirect())
         verifier, state = secrets.token_urlsafe(48), secrets.token_urlsafe(24)

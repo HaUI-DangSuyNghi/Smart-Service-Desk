@@ -61,6 +61,25 @@ routes:
       type: roundrobin
       nodes:
         'platform:8080': 1
+  # WebSocket (STOMP) realtime: token kiểm ở frame CONNECT trong backend; giới hạn chỉ tính lúc bắt tay
+  - id: realtime
+    uri: /ws
+    enable_websocket: true
+    plugins:
+      limit-count:
+        count: 60
+        time_window: 60
+        rejected_code: 429
+        key: remote_addr
+        policy: local
+    upstream:
+      type: roundrobin
+      timeout:
+        connect: 5
+        send: 3600
+        read: 3600
+      nodes:
+        'platform:8080': 1
   - id: health
     uri: /health
     plugins:

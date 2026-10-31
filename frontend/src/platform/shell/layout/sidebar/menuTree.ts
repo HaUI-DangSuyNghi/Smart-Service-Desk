@@ -1,4 +1,14 @@
-import type { MenuItem } from "../../router/registry";
+import type { MenuItem, MenuTone } from "../../router/registry";
+
+export const TONE_CLASS: Record<MenuTone, string> = {
+  gray: "text-crm-tone-gray",
+  blue: "text-crm-tone-blue",
+  red: "text-crm-tone-red",
+  green: "text-crm-tone-green",
+  orange: "text-crm-tone-orange",
+  purple: "text-crm-tone-purple",
+  turquoise: "text-crm-tone-turquoise",
+};
 
 /**
  * Giữ mục người dùng được thấy. Nhóm chỉ giữ mục con được thấy; không còn con nào thì ẩn cả nhóm

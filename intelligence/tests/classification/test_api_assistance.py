@@ -163,7 +163,7 @@ def test_question_limit_and_unknown_context_never_call_provider(tmp_path):
 
 
 def test_authenticated_http_assistance_route(tmp_path):
-    with upstream("groq") as (base, _):
+    with upstream("groq") as (base, captured):
         advice = provider(tmp_path, "groq", base)
         server = ApiServer(
             ("127.0.0.1", 0), service=None, token="t" * 64, assistance=advice
@@ -175,7 +175,7 @@ def test_authenticated_http_assistance_route(tmp_path):
         )
         opener = urllib.request.build_opener(urllib.request.ProxyHandler({}))
         try:
-            for auth in [False, True]:
+            for auth in [False, True] * 5:
                 headers = {"Content-Type": "application/json"}
                 if auth:
                     headers["Authorization"] = "Bearer " + "t" * 64
@@ -189,6 +189,8 @@ def test_authenticated_http_assistance_route(tmp_path):
                     with pytest.raises(urllib.error.HTTPError) as error:
                         opener.open(req, timeout=3)
                     assert error.value.code == 403
+                    error.value.close()
+            assert len(captured) == 5
         finally:
             server.shutdown()
             server.server_close()

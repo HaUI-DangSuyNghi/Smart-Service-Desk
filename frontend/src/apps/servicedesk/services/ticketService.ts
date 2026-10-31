@@ -1,10 +1,5 @@
 import { apiClient, type Page } from "../../../platform/shared/api";
-import {
-  parseAssistance,
-  parseSuggestion,
-  type Assistance,
-  type Suggestion,
-} from "../../../platform/intelligence";
+import { parseSuggestion, type Suggestion } from "../../../platform/intelligence";
 import type {
   AssignmentSuggestion,
   Estimate,
@@ -32,6 +27,7 @@ export interface TicketStatistics {
   pending: number;
   reopened: number;
   closed: number;
+  cancelled: number;
   /** Quá hạn bắt đầu hoặc quá hạn xử lý; không cộng vào total. */
   overdue: number;
   intake: number;
@@ -87,6 +83,7 @@ export type TicketState =
   | "AWAITING_CONFIRMATION"
   | "REOPENED"
   | "CLOSED"
+  | "CANCELLED"
   | "UNCLASSIFIED";
 
 /** Phân loại đang hiệu lực (sau khi điều phối viên duyệt/sửa), không phải gợi ý AI. */
@@ -257,6 +254,13 @@ export interface ServiceDeskSettings {
   categoryGroups: Record<Category, string | null>;
   /** R2: ET mặc định (phút). */
   estimateDefaults: EstimateTable;
+  /** Hiện ô "Dữ liệu mẫu" điền nhanh form tạo ticket; cấu hình cũ chưa có là tắt. */
+  sampleData?: boolean;
+}
+
+/** Cờ giao diện ai đăng nhập cũng đọc được (không lộ phần cấu hình còn lại). */
+export interface ServiceDeskFeatures {
+  sampleData: boolean;
 }
 
 const ticketsPath = (workspace: string) =>
@@ -383,23 +387,49 @@ export const triageTicket = async (workspace: string, id: string): Promise<Sugge
   return parseSuggestion(data);
 };
 
-/** Hỏi trợ lý tri thức về ticket; 404 khi backend tắt tính năng. */
-export const askTicketAssistance = async (
+export interface TicketComment {
+  id: string;
+  /** subject người viết. */
+  author: string;
+  body: string;
+  createdAt: string;
+}
+
+/** Bình luận của ticket, cũ nhất trước; ai xem được ticket thì xem được bình luận. */
+export const listTicketComments = async (
   workspace: string,
   id: string,
-  question: string,
-  signal: AbortSignal,
-): Promise<Assistance> => {
-  const { data } = await apiClient.post<unknown>(
-    `${ticketPath(workspace, id)}/assistance`,
-    { question },
-    // Backend chờ AI tối đa ~12 giây, cộng thời gian truy xuất
-    { signal, timeout: 18000, headers: { "Cache-Control": "no-store" } },
-  );
-  return parseAssistance(data);
+  signal?: AbortSignal,
+): Promise<TicketComment[]> => {
+  const { data } = await apiClient.get<TicketComment[]>(`${ticketPath(workspace, id)}/comments`, {
+    signal,
+  });
+  return data;
+};
+
+/** Viết bình luận (tối đa 2000 ký tự); backend báo người gửi, người xử lý và người đã bình luận. */
+export const addTicketComment = async (
+  workspace: string,
+  id: string,
+  body: string,
+): Promise<TicketComment> => {
+  const { data } = await apiClient.post<TicketComment>(`${ticketPath(workspace, id)}/comments`, {
+    body,
+  });
+  return data;
 };
 
 /** GET cấu hình riêng của Service Desk (quản trị nền tảng). */
+export const getServiceDeskFeatures = async (
+  signal?: AbortSignal,
+): Promise<ServiceDeskFeatures> => {
+  const { data } = await apiClient.get<ServiceDeskFeatures>(
+    "/apps/servicedesk/v1/settings/features",
+    { signal },
+  );
+  return data;
+};
+
 export const getServiceDeskSettings = async (
   signal?: AbortSignal,
 ): Promise<ServiceDeskSettings> => {

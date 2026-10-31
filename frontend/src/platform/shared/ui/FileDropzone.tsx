@@ -13,13 +13,24 @@ interface Props {
   hint?: string;
   invalid?: boolean;
   disabled?: boolean;
+  /** Dạng hàng gọn cho form trong dialog. */
+  compact?: boolean;
 }
 
 /**
  * Ô chọn file kiểu Upload.Dragger của Ant Design: bấm để mở hộp chọn file hoặc kéo thả vào,
  * file đã chọn hiện ở dòng bên dưới kèm dung lượng và nút bỏ chọn. Mỗi lần một file.
  */
-export const FileDropzone = ({ id, value, onChange, accept, hint, invalid, disabled }: Props) => {
+export const FileDropzone = ({
+  id,
+  value,
+  onChange,
+  accept,
+  hint,
+  invalid,
+  disabled,
+  compact = false,
+}: Props) => {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
 
@@ -53,7 +64,8 @@ export const FileDropzone = ({ id, value, onChange, accept, hint, invalid, disab
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
         className={cn(
-          "flex cursor-pointer flex-col items-center gap-1 rounded-crm-md border border-dashed px-4 py-6 text-center",
+          "flex cursor-pointer items-center rounded-crm-md border border-dashed px-3",
+          compact ? "flex-row gap-3 py-2.5 text-left" : "flex-col gap-1 py-6 text-center",
           "transition-colors duration-150 focus-within:border-crm-accent",
           dragging
             ? "border-crm-accent bg-crm-accent-soft"
@@ -72,15 +84,25 @@ export const FileDropzone = ({ id, value, onChange, accept, hint, invalid, disab
           onChange={(event) => choose(event.target.files?.[0] ?? null)}
           className="sr-only"
         />
-        <IconCloudUpload size={32} stroke={1.6} className="text-crm-accent" />
-        <span className="text-crm-text">
-          {dragging ? "Thả file vào đây" : "Bấm hoặc kéo thả file vào đây"}
+        <IconCloudUpload
+          size={compact ? 24 : 32}
+          stroke={1.6}
+          className="shrink-0 text-crm-accent"
+        />
+        <span className={cn("flex min-w-0 flex-col gap-1", !compact && "items-center")}>
+          <span className="text-crm-text">
+            {dragging ? "Thả file vào đây" : "Bấm hoặc kéo thả file vào đây"}
+          </span>
+          {hint && (
+            <span className={cn("text-crm-text-3", compact ? "text-crm-xs" : "text-crm-sm")}>
+              {hint}
+            </span>
+          )}
         </span>
-        {hint && <span className="text-crm-sm text-crm-text-3">{hint}</span>}
       </label>
 
       {value && (
-        <div className="flex h-8 items-center gap-2 rounded-crm-sm px-2 transition-colors duration-100 hover:bg-crm-hover">
+        <div className="flex h-9 items-center gap-2 rounded-crm-sm px-2 transition-colors duration-100 hover:bg-crm-hover md:h-8">
           <IconFileText size={16} stroke={2} className="shrink-0 text-crm-text-3" />
           <span className="min-w-0 flex-1 truncate text-crm-text">{value.name}</span>
           <span className="shrink-0 text-crm-sm text-crm-text-3">{formatFileSize(value.size)}</span>
@@ -89,7 +111,7 @@ export const FileDropzone = ({ id, value, onChange, accept, hint, invalid, disab
             onClick={() => choose(null)}
             disabled={disabled}
             aria-label="Bỏ chọn file"
-            className="grid size-6 shrink-0 place-items-center rounded-crm-sm text-crm-text-3 hover:bg-crm-hover hover:text-crm-text"
+            className="grid size-9 shrink-0 place-items-center rounded-crm-sm text-crm-text-3 hover:bg-crm-hover hover:text-crm-text md:size-6"
           >
             <IconX size={14} stroke={2} />
           </button>

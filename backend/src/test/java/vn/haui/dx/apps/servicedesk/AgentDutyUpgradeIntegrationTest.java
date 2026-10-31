@@ -82,7 +82,7 @@ class AgentDutyUpgradeIntegrationTest {
 
     @Test void bootsFlowableAndServesDutyAfterUpgradingAppliedAi08WithoutChangingHistory() throws Exception {
         assertTrue(flyway.validateWithResult().validationSuccessful);
-        assertEquals("33", flyway.info().current().getVersion().toString());
+        assertEquals("38", flyway.info().current().getVersion().toString());
         assertEquals(0, jdbc.queryForObject("select count(*) from servicedesk_sla", Integer.class));
         assertEquals(checksums, jdbc.queryForList("select version,script,checksum from flyway_schema_history where version in ('11','12','13') order by installed_rank"));
         for (var snapshot : ai08.entrySet())
@@ -94,7 +94,7 @@ class AgentDutyUpgradeIntegrationTest {
         when(directory.members("lab-a")).thenReturn(List.of(new DirectoryMember(subject,subject,null,Set.of(WorkspaceRole.AGENT))));
         var actor = jwt().jwt(token -> token.subject(subject).claim("groups", List.of("/workspaces/lab-a/agent")));
         String duty = "/api/hpdi/v1/workspaces/lab-a/duty";
-        mvc.perform(get(duty).with(actor)).andExpect(status().isOk()).andExpect(jsonPath("$[0].onDuty").value(false));
+        mvc.perform(get(duty).with(actor)).andExpect(status().isOk()).andExpect(jsonPath("$[0].onDuty").value(true));
         mvc.perform(put(duty + "/me").with(actor).contentType("application/json").content("{\"onDuty\":true}"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.onDuty").value(true));
         assertEquals(1, jdbc.queryForObject("select count(*) from hpdi_agent_duty where workspace='lab-a' and subject=? and on_duty",Integer.class,subject));

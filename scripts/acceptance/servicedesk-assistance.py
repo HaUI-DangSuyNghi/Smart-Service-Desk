@@ -149,6 +149,8 @@ def main():
             ]
         )
         address = command(["docker", "port", container, "5432/tcp"]).stdout.strip()
+        for database in ("duty_upgrade", "background_assessment"):
+            command(["docker", "exec", container, "createdb", "-U", "workflow", database])
         port = int(address.rsplit(":", 1)[1])
 
         with ExitStack() as stack:
@@ -173,6 +175,7 @@ def main():
                 "FILE_TEST_DB_PASSWORD": password,
                 "WORKFLOW_TEST_JDBC_URL": f"jdbc:postgresql://127.0.0.1:{port}/workflow_approval",
                 "WORKFLOW_TEST_DB_PASSWORD": password,
+                "BACKGROUND_TEST_JDBC_URL": f"jdbc:postgresql://127.0.0.1:{port}/background_assessment",
                 "INTELLIGENCE_ASSISTANCE_BASE_URL": assistance_url,
                 "INTELLIGENCE_ASSISTANCE_TOKEN": assistance_token,
                 "INTELLIGENCE_TRIAGE_BASE_URL": triage_url,
@@ -182,14 +185,12 @@ def main():
             with (args.output / "java-local.log").open("w", encoding="utf-8") as log:
                 result = subprocess.run(
                     [
-                        args.maven,
-                        "-B",
-                        "-ntp",
-                        "-f",
-                        str(ROOT / "backend/pom.xml"),
-                        "-Dtest=" + args.tests,
-                        "-Dspring.test.context.cache.maxSize=2",
-                        "test",
+                        "powershell" if os.name == "nt" else "pwsh",
+                        "-File",
+                        str(ROOT / "scripts/test-fresh-admin.ps1"),
+                        "-Profile", "full",
+                        "-Maven", args.maven,
+                        "-Tests", args.tests,
                     ],
                     cwd=ROOT,
                     env=environment,
@@ -198,6 +199,14 @@ def main():
                 )
 
             if result.returncode:
+                for report in sorted((ROOT / "backend/target/surefire-reports").glob("TEST-*.xml")):
+                    suite = ET.parse(report).getroot()
+                    for case in suite.findall("testcase"):
+                        for kind in ("failure", "error", "skipped"):
+                            issue = case.find(kind)
+                            if issue is not None:
+                                print(json.dumps({"suite": suite.get("name"), "test": case.get("name"),
+                                                  "result": kind, "type": issue.get("type")}), flush=True)
                 raise RuntimeError("Java acceptance failed; inspect private local log")
 
         reports = ROOT / "backend/target/surefire-reports"

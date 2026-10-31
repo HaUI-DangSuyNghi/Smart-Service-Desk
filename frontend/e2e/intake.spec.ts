@@ -1,4 +1,5 @@
 import { expect, test, type Page } from "@playwright/test";
+import { mockTicketPage, ticketFixture } from "./ticketFixture";
 const id = "11111111-1111-4111-8111-111111111111";
 const path = `/servicedesk/workspaces/scope-a/tickets/${id}`;
 const session = async (page: Page) => {
@@ -36,8 +37,14 @@ const session = async (page: Page) => {
       },
     }),
   );
-  await page.route("**/api/apps/servicedesk/v1/workspaces/*/tickets/**", (route) =>
-    route.fulfill({ status: 404, json: { title: "Not Found" } }),
+  await mockTicketPage(page, id, "synthetic-enrichment-user");
+  await page.route("**/api/hpdi/v1/workspaces/*/permissions", (route) =>
+    route.fulfill({
+      json: [
+        { key: "task:assign", label: "Assign tasks" },
+        { key: "task:handle", label: "Handle tasks" },
+      ],
+    }),
   );
 };
 
@@ -62,7 +69,11 @@ test("reads saved final assessment across reloads without any inference POST", a
   await page.route("**/api/apps/servicedesk/**", (route) => {
     if (route.request().method() === "POST") commands++;
     const url = new URL(route.request().url());
+    if (url.pathname.endsWith(`/tickets/${id}`))
+      return route.fulfill({ json: ticketFixture(id, "synthetic-enrichment-user") });
     if (url.pathname.endsWith("/intake")) return route.fulfill({ json: intake });
+    if (url.pathname.endsWith("/estimate-default"))
+      return route.fulfill({ json: { minutes: 90, basis: "DEFAULT" } });
     if (url.pathname.endsWith("/context-revision"))
       return route.fulfill({
         json: {
@@ -75,7 +86,7 @@ test("reads saved final assessment across reloads without any inference POST", a
   });
   for (let index = 0; index < 2; index++) {
     await page.goto(path);
-    await expect(page.getByText("Đề xuất đã lưu, cần người kiểm tra")).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Gợi ý của AI", exact: false })).toBeVisible();
     await expect(page.getByRole("button", { name: "Chuyển sang duyệt thủ công" })).toHaveCount(0);
     await expect(page.getByRole("button", { name: "Đánh giá từ thông tin hiện tại" })).toHaveCount(
       0,
@@ -130,6 +141,19 @@ test("coordinator releases the current revision then reviews with updated CAS", 
           reviewTaskMayExist: released,
         },
       });
+    if (url.pathname.endsWith("/assignment-suggestion"))
+      return route.fulfill({
+        json: {
+          taskId: "synthetic-review-task",
+          group: "hardware",
+          estimateMinutes: 90,
+          recommended: null,
+          reason: "NO_ON_DUTY_AGENT",
+          candidates: [],
+        },
+      });
+    if (url.pathname.endsWith("/estimate-default"))
+      return route.fulfill({ json: { minutes: 90, basis: "DEFAULT" } });
     if (url.pathname.endsWith("/context-revision"))
       return route.fulfill({
         json: {
@@ -144,6 +168,8 @@ test("coordinator releases the current revision then reviews with updated CAS", 
           id,
           workspace: "scope-a",
           creator: "another-requester",
+          state: reviewed ? "ASSIGNED" : released ? "AWAITING_REVIEW" : "INTAKE",
+          taskId: released ? "synthetic-review-task" : null,
           title: "Synthetic intake",
           description: "Synthetic",
           createdAt: "2026-10-27T00:00:00Z",
@@ -158,10 +184,19 @@ test("coordinator releases the current revision then reviews with updated CAS", 
     return route.fulfill({ status: 404, json: { title: "Not Found" } });
   });
   await page.goto(path);
-  await page.getByLabel("Lý do quyết định").fill("Synthetic intake review");
-  await page.getByRole("button", { name: "Chuyển sang duyệt thủ công" }).click();
-  await expect(page.getByRole("button", { name: "Duyệt và chuyển xử lý" })).toBeVisible();
-  await page.getByRole("button", { name: "Duyệt và chuyển xử lý" }).click();
-  await expect(page.getByText("Điều phối viên đã duyệt", { exact: true })).toBeVisible();
+  await page.getByRole("button", { name: "Tiếp nhận", exact: true }).click();
+  await page
+    .getByRole("dialog")
+    .getByLabel("Lý do", { exact: true })
+    .fill("Synthetic intake review");
+  await page.getByRole("dialog").getByRole("button", { name: "Gửi", exact: true }).click();
+  await page.getByRole("button", { name: "Duyệt và giao việc", exact: true }).click();
+  const review = page.getByRole("dialog");
+  await review.locator('input[name="priority"][value="MEDIUM"]').check();
+  await review.getByRole("button", { name: "Người xử lý", exact: true }).click();
+  await page.getByRole("menuitem", { name: "Để chờ ca sau (chưa giao ai)", exact: true }).click();
+  await review.getByLabel("Lý do duyệt").fill("Synthetic review differs from AI");
+  await review.getByRole("button", { name: "Duyệt và giao việc", exact: true }).click();
+  await expect(review).toHaveCount(0);
   expect(released && reviewed).toBe(true);
 });

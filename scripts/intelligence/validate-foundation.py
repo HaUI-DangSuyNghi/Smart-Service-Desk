@@ -34,6 +34,8 @@ SCHEMA_FILENAMES = (
     "assistance-result.schema.json",
     "assistance-cloud-request.schema.json",
     "assistance-cloud-result.schema.json",
+    "advisory-assistance-request.schema.json",
+    "advisory-assistance-result.schema.json",
 )
 DRAFT_URI = "https://json-schema.org/draft/2020-12/schema"
 
@@ -297,7 +299,7 @@ def main():
     ensure((CONTRACT_DIR / "contract.md").is_file(), "Missing shared capability contract")
     ensure(
         {path.name for path in CONTRACT_DIR.glob("*.schema.json")} == set(SCHEMA_FILENAMES),
-        "Expected exactly eight shared capability schemas",
+        "Unexpected shared capability schema inventory",
     )
     domain_literals = (
         set(taxonomy["categories"])
@@ -314,6 +316,9 @@ def main():
         validators.append(Draft202012Validator(schema))
         if filename in {"assistance-request.schema.json", "assistance-cloud-request.schema.json"}:
             ensure("SERVER-INJECTED / TRUSTED ADAPTER CONTEXT" in schema["description"], "Trusted snapshot description missing")
+        elif filename == "advisory-assistance-request.schema.json":
+            ensure(set(schema["properties"]["context"]["properties"]) == {"title", "description"}, "Unexpected advisory context fields")
+            ensure(schema["properties"]["context"]["additionalProperties"] is False, "Advisory context must reject extra fields")
         elif filename.endswith("request.schema.json"):
             ensure("SERVER-INJECTED / TRUSTED ADAPTER CONTEXT" in schema["properties"]["context"]["description"], "Trusted context description missing")
     request_validator, response_validator, search_request_validator, search_response_validator = validators[:4]
@@ -378,7 +383,7 @@ def main():
     replacement["request"]["profile"] = replacement["expected"]["profile"] = "room-request"
     replacement["expected"]["runtime"].update(engine="illustrative-bm25", engineVersion="illustrative@0.2.0", profileVersion="room-request@0.1.0")
     search_check(replacement)
-    print("PASS 8 schemas, 5 categories, 16 priority cells, 12 annotated tickets, triage degraded, 5 knowledge digests and dataset digest")
+    print("PASS 10 schemas, 5 categories, 16 priority cells, 12 annotated tickets, triage degraded, 5 knowledge digests and dataset digest")
     print("PASS shared contract domain isolation, profile file/version pins and single policy matrix/fallback authority")
     print("PASS search SUCCESS/hit, empty SUCCESS, DEGRADED, topK boundaries, ranking scales and 12 retrieval-gold associations (no engine run)")
 

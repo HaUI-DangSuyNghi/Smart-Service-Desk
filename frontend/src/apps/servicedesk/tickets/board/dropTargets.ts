@@ -28,8 +28,8 @@ const NONE: DropTargets = {};
  * Cột nào nhận được thẻ này, theo quyền của người đang kéo (khóa cột → việc xảy ra):
  * - điều phối viên, siêu quản trị: Tiếp nhận → Chờ duyệt (tiếp nhận), Chờ duyệt → Đã giao
  *   (duyệt và giao việc); không nhảy cóc từ Tiếp nhận sang Đã giao;
- * - kỹ thuật viên giữ việc (quyền task:handle): Bắt đầu / Tiếp tục / Tạm dừng / Báo xong / Trả việc.
- * Siêu quản trị thuộc nhóm đầu: không kéo thẻ của kỹ thuật viên dù ticket đang gán cho họ.
+ * - người giữ việc có quyền task:handle (kể cả siêu quản trị): Bắt đầu / Tiếp tục / Tạm dừng / Báo xong / Trả việc.
+ * Không ai kéo được thẻ đang do người khác giữ.
  * Chỉ tác động vào trạng thái mình sửa được; còn lại không kéo được.
  */
 export const dropTargets = (ticket: TicketView, viewer: Viewer): DropTargets => {
@@ -47,8 +47,8 @@ export const dropTargets = (ticket: TicketView, viewer: Viewer): DropTargets => 
       : NONE;
   }
 
-  // Bắt đầu, tạm dừng, báo xong, trả việc là việc của kỹ thuật viên giữ ticket, không phải của điều phối
-  if (viewer.isPlatformAdmin || !viewer.canHandle || !ticketPermissions(ticket, viewer).canAct) {
+  // Bắt đầu, tạm dừng, báo xong, trả việc chỉ dành cho người giữ việc (siêu quản trị cũng vậy, khớp trang chi tiết)
+  if (!viewer.canHandle || !ticketPermissions(ticket, viewer).canAct) {
     return NONE;
   }
   switch (ticket.state) {

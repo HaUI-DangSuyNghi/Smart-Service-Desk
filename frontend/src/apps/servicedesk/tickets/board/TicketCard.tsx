@@ -3,13 +3,14 @@ import { useDraggable } from "@dnd-kit/core";
 import { IconAlertTriangle, IconRepeat, IconUser } from "@tabler/icons-react";
 import { cn } from "cn";
 import { personName } from "../../../../platform/human/workspace";
-import { PriorityTag, SlaIndicator } from "../../../../platform/process";
+import { AssigneeMenu, PriorityTag, SlaIndicator } from "../../../../platform/process";
 import { Avatar } from "../../../../platform/shared/ui/Avatar";
 import { Tag, type TagTone } from "../../../../platform/shared/ui/Tag";
 import { Tooltip } from "../../../../platform/shared/ui/Tooltip";
 import type { TicketView } from "../../services/ticketService";
 import { ticketCode } from "../ticketLabels";
 import { aiSuggestion, isStarted } from "../ticketRules";
+import { useRefreshTickets } from "../useTickets";
 import { CardMenu } from "./CardMenu";
 import type { BoardAction } from "./boardAccess";
 
@@ -49,6 +50,7 @@ interface ContentProps {
  * bay theo con trỏ khi kéo.
  */
 const CardContent = ({ ticket, names, actions, onAction }: ContentProps) => {
+  const refresh = useRefreshTickets();
   // Chưa duyệt thì hiện gợi ý AI để điều phối viên sắp xếp
   const suggestion = aiSuggestion(ticket.assessment);
   const priority = ticket.classification?.priority ?? suggestion?.priority;
@@ -99,7 +101,15 @@ const CardContent = ({ ticket, names, actions, onAction }: ContentProps) => {
             </Chip>
           )}
         </span>
-        {assignee ? (
+        {avatarAction === "reassign" && ticket.taskId ? (
+          // Giao lại: chọn người ngay trong dropdown, không mở dialog
+          <AssigneeMenu
+            taskId={ticket.taskId}
+            assignee={ticket.assignee ?? null}
+            name={assignee}
+            onAssigned={() => void refresh()}
+          />
+        ) : assignee ? (
           <Avatar
             name={assignee}
             hint={avatarAction ? avatarHint : undefined}

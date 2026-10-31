@@ -22,6 +22,7 @@ public class ServiceDeskProcess implements ProcessContribution {
     private final org.springframework.beans.factory.ObjectProvider<TicketSlaService> sla;
     private final org.springframework.beans.factory.ObjectProvider<TicketAlerts> alerts;
     private final org.springframework.beans.factory.ObjectProvider<TicketConfirmation> confirmation;
+    private final org.springframework.beans.factory.ObjectProvider<TicketNotices> notices;
     public ServiceDeskProcess(org.springframework.jdbc.core.JdbcTemplate jdbc,
             org.springframework.beans.factory.ObjectProvider<vn.haui.dx.hpdi.process.api.WorkExecution> execution,
             org.springframework.beans.factory.ObjectProvider<vn.haui.dx.apps.servicedesk.intake.IntakeAdmission> intake,
@@ -29,15 +30,38 @@ public class ServiceDeskProcess implements ProcessContribution {
             org.springframework.beans.factory.ObjectProvider<TicketAssignmentEligibility> eligibility,
             org.springframework.beans.factory.ObjectProvider<TicketSlaService> sla,
             org.springframework.beans.factory.ObjectProvider<TicketAlerts> alerts,
-            org.springframework.beans.factory.ObjectProvider<TicketConfirmation> confirmation) {
+            org.springframework.beans.factory.ObjectProvider<TicketConfirmation> confirmation,
+            org.springframework.beans.factory.ObjectProvider<TicketNotices> notices) {
         this.jdbc = jdbc; this.execution = execution; this.intake = intake; this.canonical = canonical; this.eligibility = eligibility; this.sla = sla;
         this.alerts = alerts;
         this.confirmation = confirmation;
+        this.notices = notices;
+    }
+
+    private TicketRealtime realtime;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    void setRealtime(TicketRealtime realtime) { this.realtime = realtime; }
+
+    // Mọi bước quy trình của ticket: màn hình đang mở tải lại (phát sau commit)
+    private void live(String workspace, String processId) {
+        if (realtime != null) realtime.changedByProcess(workspace, processId);
     }
 
     @Override public void afterComplete(String workspace, String key, String processId,
             vn.haui.dx.hpdi.process.api.WorkItem completed, String outcome, List<vn.haui.dx.hpdi.process.api.WorkItem> active) {
+        live(workspace, processId);
         confirmation.getObject().completed(workspace, key, processId, completed, outcome, active);
+        if (!reviewed(key)) return;
+        // Báo xong → người gửi xác nhận; người gửi xác nhận → người xử lý (tự đóng đã báo riêng khi hết hạn)
+        if ("handle".equals(completed.key())) notices.getObject().resolved(workspace, processId);
+        if ("confirm".equals(completed.key()) && !"AUTO".equals(confirmationDecision(workspace, processId, completed.id())))
+            notices.getObject().confirmed(workspace, processId, "accepted".equals(outcome));
+    }
+
+    private String confirmationDecision(String workspace, String processId, String generation) {
+        return jdbc.query("select decision from servicedesk_confirmation where workspace=? and process_instance_id=? and generation=?",
+            (row, index) -> row.getString(1), workspace, processId, generation).stream().findFirst().orElse(null);
     }
     @Override public String evaluateTimer(String workspace, String key, String processId, String businessKey,
             String owner, String generation, vn.haui.dx.hpdi.process.api.WorkItem active, java.time.Instant now) {
@@ -51,8 +75,13 @@ public class ServiceDeskProcess implements ProcessContribution {
 
     @Override public void afterExecution(String workspace, String processKey, String processId, String taskId,
             vn.haui.dx.hpdi.process.api.WorkExecution.Action action, String reason, java.time.Instant at) {
+        live(workspace, processId);
         if (reviewed(processKey)) sla.getObject().transition(workspace, processId, taskId, action, reason, at);
         if (reviewed(processKey)) alerts.getObject().execution(workspace, taskId, action, at);
+        if (reviewed(processKey) && action == vn.haui.dx.hpdi.process.api.WorkExecution.Action.START)
+            notices.getObject().started(workspace, processId);
+        if (reviewed(processKey) && action == vn.haui.dx.hpdi.process.api.WorkExecution.Action.PAUSE && "WAITING_REQUESTER".equals(reason))
+            notices.getObject().waitingRequester(workspace, processId);
     }
 
     @Override public void beforeAssign(String workspace, String processKey, String processId, String taskKey, String subject) {
@@ -72,6 +101,7 @@ public class ServiceDeskProcess implements ProcessContribution {
     }
     @Override public void afterRelease(String workspace, String processKey, String processId, String taskId,
             String reviewId, long workedMillis, String actor, String reason, String note) {
+        live(workspace, processId);
         intake.getObject().handover(workspace, processId, reviewId, actor, reason, note);
         jdbc.update("insert into servicedesk_work_release(workspace,ticket_id,task_id,review_task_id,released_by,reason,note,worked_millis)"
             + " select workspace,id,?,?,?,?,?,? from servicedesk_ticket where workspace=? and process_instance_id=?",
@@ -81,14 +111,18 @@ public class ServiceDeskProcess implements ProcessContribution {
         jdbc.update("update servicedesk_review r set assignee=null from servicedesk_ticket t where t.id=r.ticket_id and t.workspace=? and t.process_instance_id=?", workspace, processId);
         sla.getObject().released(workspace, taskId);
         alerts.getObject().released(workspace, taskId);
+        if (reviewed(processKey)) notices.getObject().released(workspace, processId);
     }
 
     @Override public void afterAssign(String workspace, String processKey, String processId, String taskKey, String subject) {
+        live(workspace, processId);
         if (!reviewed(processKey) || !"handle".equals(taskKey)) return;
         confirmation.getObject().received(workspace, processId, "ASSIGNED");
         jdbc.update("update servicedesk_review r set correction_incumbent=null from servicedesk_ticket t"
             + " where t.id=r.ticket_id and t.workspace=? and t.process_instance_id=?", workspace, processId);
         alerts.getObject().assigned(workspace, processId, subject);
+        // Người giữ trước (đọc trước khi ghi lần giao này) để báo giao lại; chưa có ai = lần giao đầu
+        notices.getObject().assigned(workspace, processId, subject, notices.getObject().lastAssignee(workspace, processId));
         var group = jdbc.queryForObject("select r.category from servicedesk_review r join servicedesk_ticket t on t.id=r.ticket_id"
             + " where t.workspace=? and t.process_instance_id=?", String.class, workspace, processId);
         String supportGroup = eligibility.getObject().groupOf(TicketReview.Category.valueOf(group));

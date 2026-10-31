@@ -96,7 +96,17 @@ def main():
         command = [args.maven, '-B', '-f', str(root / 'backend/pom.xml'), '-Dtest=' + tests, 'test']
         with (output / (mode + '.log')).open('w', encoding='utf-8') as log:
             completed = subprocess.run(command, env=environment, stdout=log, stderr=subprocess.STDOUT)
-        assert completed.returncode == 0, f'{mode} failed; inspect local {mode}.log'
+        if completed.returncode:
+            for test in tests.split(','):
+                report = root / 'backend/target/surefire-reports' / ('TEST-' + PACKAGE + test + '.xml')
+                if report.exists():
+                    for case in ET.parse(report).getroot().findall('testcase'):
+                        for kind in ('failure', 'error'):
+                            issue = case.find(kind)
+                            if issue is not None:
+                                print(json.dumps({'scenario': mode, 'test': case.get('name'),
+                                                  'result': kind, 'type': issue.get('type')}), flush=True)
+            raise AssertionError(f'{mode} failed; inspect local {mode}.log')
         count = 0
         for test in tests.split(','):
             report = root / 'backend/target/surefire-reports' / ('TEST-' + PACKAGE + test + '.xml')

@@ -24,6 +24,16 @@ public class AgentDutyService implements AgentDuty {
         this.schedules = schedules;
     }
 
+    private vn.haui.dx.hpdi.human.api.LiveUpdates live;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    void setLive(vn.haui.dx.hpdi.human.api.LiveUpdates live) { this.live = live; }
+
+    // Phát sau commit nên gọi ở đầu hàm cũng được: lỗi thì rollback, không phát
+    private void workChanged(String workspace) {
+        if (live != null) live.toChannel(workspace, vn.haui.dx.hpdi.human.api.LiveUpdates.WORK, "WORK_CHANGED", "work", null);
+    }
+
     @Transactional(readOnly=true, isolation=org.springframework.transaction.annotation.Isolation.REPEATABLE_READ)
     public List<Status> list(String workspace) {
         var actor = humans.currentActor(workspace);
@@ -39,13 +49,15 @@ public class AgentDutyService implements AgentDuty {
                 new Status(row.getString("subject"), row.getBoolean("on_duty"), row.getString("note"), row.getTimestamp("updated_at").toInstant())), workspace);
         return agents.stream().filter(agent -> actor.hasRole("coordinator") || actor.subject().equals(agent.subject()))
             .map(agent -> {
-                var manual=statuses.getOrDefault(agent.subject(), new Status(agent.subject(), false, null, null));
+                // Chưa từng bật/tắt thì coi là đang trực
+                var manual=statuses.getOrDefault(agent.subject(), new Status(agent.subject(), true, null, null));
                 return new Status(manual.subject(),manual.onDuty(),manual.note(),manual.updatedAt(),schedules.evaluate(workspace,agent.subject()).onDuty());
             }).toList();
     }
 
     @Transactional
     public Status set(String workspace, String subject, Change change) {
+        workChanged(workspace);
         var actor = humans.currentActor(workspace);
         String target = "me".equals(subject) ? actor.subject() : subject;
         if (!actor.subject().equals(target) || !actor.hasRole("agent"))
@@ -82,7 +94,8 @@ public class AgentDutyService implements AgentDuty {
 
     public boolean manualDuty(String workspace, String subject) {
         authorizeRead(workspace,subject);
-        return Boolean.TRUE.equals(jdbc.queryForObject("select exists(select 1 from hpdi_agent_duty where workspace=? and subject=? and on_duty)",
+        // Mặc định đang trực: chỉ nghỉ khi chính kỹ thuật viên đã tắt
+        return Boolean.TRUE.equals(jdbc.queryForObject("select not exists(select 1 from hpdi_agent_duty where workspace=? and subject=? and not on_duty)",
             Boolean.class,workspace,subject));
     }
 

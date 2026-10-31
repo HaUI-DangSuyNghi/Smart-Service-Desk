@@ -6,12 +6,22 @@ from pathlib import Path
 import re
 import secrets
 import subprocess
+import time
 from urllib.error import HTTPError
 from urllib.parse import urlencode, urlsplit
 from urllib.request import Request, urlopen
 from uuid import uuid4
 
 from hdpi.contracts.validator import ContractValidator
+
+def settled_ticket(read, *, background, timeout=60):
+    deadline = time.monotonic() + timeout
+    while True:
+        ticket = read()
+        if not background or ticket.get('assessment', {}).get('status') in ('READY', 'DEGRADED'):
+            return ticket
+        assert time.monotonic() < deadline, 'Background assessment did not settle before triage verification'
+        time.sleep(0.25)
 
 
 def http(method, url, *, token=None, payload=None, form=None, expected=200):
@@ -53,7 +63,7 @@ def main():
         parsed = urlsplit(url)
         if parsed.scheme != 'http' or parsed.hostname not in ('127.0.0.1', 'localhost') or parsed.username or parsed.password:
             parser.error('Only loopback disposable acceptance services are allowed')
-    settings = dict(line.split('=', 1) for line in args.env_file.read_text().splitlines()
+    settings = dict(line.split('=', 1) for line in args.env_file.read_text(encoding='utf-8-sig').splitlines()
                     if '=' in line and not line.startswith('#'))
     compose = ['docker', 'compose', '--env-file', str(args.env_file), '-p', args.project,
                '-f', 'compose.yaml', '-f', 'infra/compose/compose.triage.yaml',
@@ -61,6 +71,9 @@ def main():
     container = subprocess.check_output(compose + ['ps', '-q', 'intelligence'], text=True).strip()
     assert container, 'Disposable Python service must already be running'
     assert not subprocess.check_output(['docker', 'port', container], text=True).strip(), 'Python must not publish host ports'
+    config = json.loads(subprocess.check_output(compose + ['config', '--format', 'json'], text=True))
+    background_workspaces = {workspace.strip() for workspace in
+                             config['services']['platform']['environment']['SERVICE_DESK_BACKGROUND_WORKSPACES'].split(',')}
     validator = ContractValidator()
     cases = []
     user_id = None
@@ -79,7 +92,7 @@ def main():
         return subprocess.check_output(compose + ['exec', '-T', 'postgres', 'psql', '-U', 'core', '-d', 'core', '-Atc', query], text=True).strip()
 
     try:
-        identities = {f'user{number}': login(f'user{number}', settings['DEMO_PASSWORD']) for number in range(1, 8)}
+        identities = {name: login(name, settings['DEMO_PASSWORD']) for name in ('requester1', 'agent1', 'coordinator1', 'requester2', 'agent6', 'coordinator2', 'admin1')}
         admin = login('admin', settings['KC_ADMIN_PASSWORD'], admin=True)
         username = 'int01-' + uuid4().hex
         password = secrets.token_urlsafe(32)
@@ -92,14 +105,19 @@ def main():
         user_id = users[0]['id']
         other_requester = login(username, password)
         tickets = []
-        for workspace, roles, foreign in [('lab-a', ('user1', 'user2', 'user3'), 'user4'),
-                                           ('lab-b', ('user4', 'user5', 'user6'), 'user1')]:
+        for workspace, roles, foreign in [('lab-a', ('requester1', 'agent1', 'coordinator1'), 'requester2'),
+                                           ('lab-b', ('requester2', 'agent6', 'coordinator2'), 'requester1')]:
             title, description = 'Synthetic network support', 'Synthetic network request for integration acceptance'
             base = args.core_url + '/api/apps/servicedesk/v1/workspaces/' + workspace + '/tickets'
             owner = identities[roles[0]]
             ticket = http('POST', base, token=owner, expected=201, payload={
                 'clientRequestId': str(uuid4()), 'title': title, 'description': description})
             route = base + '/' + ticket['id']
+            created = ticket
+            ticket = settled_ticket(lambda: http('GET', route, token=owner),
+                                    background=workspace in background_workspaces)
+            for key in ('id', 'workspace', 'creator', 'clientRequestId', 'title', 'description', 'createdAt', 'process', 'state', 'taskId'):
+                assert ticket[key] == created[key], f'Background assessment changed ticket {key}'
             before = counts()
             for role, username in zip(('requester', 'agent', 'coordinator'), roles):
                 response = http('POST', route + '/triage', token=identities[username])
@@ -114,16 +132,16 @@ def main():
             foreign_workspace = 'lab-b' if workspace == 'lab-a' else 'lab-a'
             http('POST', route.replace('/' + workspace + '/', '/' + foreign_workspace + '/') + '/triage',
                  token=identities[foreign], expected=404)
-            http('POST', route + '/triage', token=identities['user7'], expected=403)
+            http('POST', route + '/triage', token=identities['admin1'], expected=403)
             http('POST', route + '/triage', token=owner, payload={}, expected=400)
             if workspace == 'lab-a':
                 http('POST', route + '/triage', token=other_requester, expected=404)
                 cases.append('requester-cannot-read-another-requester-ticket')
             assert before == counts(), 'Triage or denial changed persisted state'
-            assert http('GET', route, token=owner) == ticket
+            assert http('GET', route, token=owner) == ticket, 'Triage or denial changed the settled ticket'
             cases.append(workspace + ':authorization-isolation-and-no-state-mutation')
             tickets.append((route, ticket, owner))
-        http('POST', args.core_url + '/internal/intelligence/v1/triage', token=identities['user1'], payload={}, expected=404)
+        http('POST', args.core_url + '/internal/intelligence/v1/triage', token=identities['requester1'], payload={}, expected=404)
         cases.append('private-python-route-not-exposed-by-gateway')
         subprocess.run(compose + ['stop', 'intelligence'], check=True, stdout=subprocess.DEVNULL)
         stopped = True
@@ -131,13 +149,23 @@ def main():
         before = counts()
         problem = http('POST', route + '/triage', token=owner, expected=(503, 504))
         assert 'result' not in problem
-        assert before == counts() and http('GET', route, token=owner) == ticket
+        assert before == counts(), 'Triage outage changed persisted workflow or audit state'
+        assert http('GET', route, token=owner) == ticket, 'Triage outage changed the settled ticket'
+        http('PUT', args.core_url + '/api/hpdi/v1/workspaces/lab-a/duty/me',
+             token=identities['agent1'], payload={'onDuty': True})
+        http('POST', route + '/review', token=identities['requester1'], expected=403,
+             payload={'category': 'OTHER', 'priority': 'MEDIUM', 'assignee': None, 'reason': 'Synthetic outage review'})
+        http('POST', route + '/review', token=identities['coordinator1'],
+             payload={'category': 'OTHER', 'priority': 'MEDIUM', 'assignee': None, 'reason': 'Synthetic outage review'})
         progress = http('GET', route + '/progress', token=owner)
+        assert progress['currentTasks'][0]['key'] == 'handle'
         task_id = progress['currentTasks'][0]['id']
         task_route = (args.core_url + '/api/core/v1/workspaces/lab-a/instances/'
                       + ticket['process']['processInstanceId'] + '/tasks/' + task_id)
-        http('POST', task_route + '/claim', token=identities['user2'])
-        http('POST', task_route + '/complete', token=identities['user2'], expected=204,
+        http('POST', task_route + '/claim', token=identities['agent1'])
+        http('POST', args.core_url + '/api/hpdi/v1/workspaces/lab-a/tasks/' + task_id + '/start',
+             token=identities['agent1'])
+        http('POST', task_route + '/complete', token=identities['agent1'], expected=204,
              payload={'expectedTaskKey': 'handle', 'outcome': 'resolved'})
         cases.append('real-python-outage-and-manual-workflow-completion')
     finally:

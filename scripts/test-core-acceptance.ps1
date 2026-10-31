@@ -33,10 +33,11 @@ try {
     Run-Python -c 'import yaml, openapi_spec_validator, openapi_schema_validator'
     & "$PSScriptRoot/setup.ps1"
     Run-Docker build --target build -t dx-platform-build:0.1.0 -f backend/Dockerfile .
-    & "$PSScriptRoot/test-file.ps1"
+    & "$PSScriptRoot/test-fresh-admin.ps1" -Profile full -BuildImage dx-platform-build:0.1.0
     $results.postgresql = 'PASS'
     $stage = 'contracts'
     Run-Python scripts/test-core-contract.py
+    Run-Python scripts/acceptance/test-classification-contract.py
     Run-Python -m openapi_spec_validator contracts/openapi/core.yaml
     Run-Python -m openapi_spec_validator contracts/openapi/core-target.yaml
     Run-Python -m openapi_spec_validator contracts/openapi/servicedesk.yaml
@@ -72,7 +73,7 @@ try {
     Copy-Item -LiteralPath (Join-Path $evidence 'verify-http.json') -Destination (Join-Path $evidence 'restart-http.json')
     $results.restart = 'PASS'
     $stage = 'storageInventory'
-    Run-Docker compose -p $Project stop gateway platform keycloak
+    Run-Docker compose -p $Project stop frontend gateway platform keycloak
     $core = (Run-Docker compose -p $Project ps -aq platform).Trim()
     $database = (Run-Docker compose -p $Project ps -q postgres).Trim()
     $inventory = Run-Docker exec $database psql -U core -d core -Atc "select coalesce(json_agg(files),'[]'::json) from (select storage_key::text,byte_size,checksum from file_object order by storage_key) files"

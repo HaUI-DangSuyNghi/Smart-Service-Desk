@@ -55,7 +55,10 @@ public class TicketSlaConfiguration {
             targets.put(priority, new SlaPolicy.Target(target.startWithinMinutes(), target.resolveWithinMinutes(),
                 priority == SlaPolicy.Priority.CRITICAL));
         }
-        return new SlaPolicy("r5-settings-v" + settings.version(), new BusinessCalendar(zone, weekdays, windows, holidays),
+        // Ngày lễ trong Cấu hình (dùng chung với ca trực) cộng ngày lễ khai báo qua biến môi trường
+        var allHolidays = new java.util.HashSet<>(holidays);
+        settings.holidays().forEach(holiday -> allHolidays.add(holiday.date()));
+        return new SlaPolicy("r5-settings-v" + settings.version(), new BusinessCalendar(zone, weekdays, windows, allHolidays),
             targets, settings.escalateAfterRatio(), SlaPolicy.Priority.valueOf(settings.maxEscalatedPriority()),
             settings.waitingExternalCounts(), settings.warnRemainingRatio());
     }

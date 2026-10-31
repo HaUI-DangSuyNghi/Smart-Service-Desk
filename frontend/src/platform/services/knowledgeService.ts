@@ -56,8 +56,10 @@ export interface KnowledgeQuery {
 export interface NewKnowledge {
   file: File;
   title: string;
+  /** Tự soạn, tên đơn vị/tác giả hoặc đường dẫn tài liệu gốc. */
   source: string;
   version: string;
+  /** Form mới dùng PUBLIC hoặc INTERNAL; backend vẫn nhận nhãn giấy phép cũ. */
   usageRights: string;
 }
 
@@ -144,6 +146,13 @@ export const createKnowledge = async (
 
 // Trình duyệt thường không gán kiểu cho file .md; thiếu kiểu thì backend không xem trước được
 const withTextMediaType = (file: File): File => {
-  if (file.type || !file.name.toLowerCase().endsWith(".md")) return file;
-  return new File([file], file.name, { type: "text/markdown" });
+  const extension = file.name.toLowerCase().split(".").pop() ?? "";
+  const types: Record<string, string> = {
+    md: "text/markdown",
+    markdown: "text/markdown",
+    txt: "text/plain",
+    pdf: "application/pdf",
+    docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  };
+  return types[extension] ? new File([file], file.name, { type: types[extension] }) : file;
 };

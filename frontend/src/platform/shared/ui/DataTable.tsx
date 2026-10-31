@@ -7,6 +7,8 @@ export interface DataTableColumn<Row> {
   icon?: ComponentType<{ size?: number; stroke?: number; className?: string }>;
   /** Độ rộng cột, ví dụ "240px"; bỏ trống = tự giãn. */
   width?: string;
+  /** Co theo nội dung, không giãn để lấp khoảng trống của bảng (ví dụ cột thao tác). */
+  fit?: boolean;
   cell: (row: Row) => ReactNode;
 }
 
@@ -37,9 +39,10 @@ export const DataTable = <Row,>({ columns, rows, getRowKey, onRowClick }: Props<
           {columns.map((column, index) => (
             <th
               key={column.key}
-              style={columnWidth(column.width)}
+              style={column.fit ? undefined : columnWidth(column.width)}
               className={cn(
-                "h-8 w-(--column-width) border-r border-b border-crm-line px-2 text-left font-normal whitespace-nowrap text-crm-text-3",
+                "h-8 border-r border-b border-crm-line px-2 text-left font-normal whitespace-nowrap text-crm-text-3",
+                column.fit ? "w-px" : "w-(--column-width)",
                 index === 0 && cn(STICKY_CELL, STICKY_WIDTH),
               )}
             >
@@ -63,12 +66,20 @@ export const DataTable = <Row,>({ columns, rows, getRowKey, onRowClick }: Props<
                 key={column.key}
                 className={cn(
                   "h-8 border-r border-b border-crm-line-light px-2 text-crm-text",
-                  "transition-colors duration-100 group-hover:bg-crm-hover",
+                  // Hover là lớp phủ trên nền, không thay màu nền: cột dính vẫn giữ nền đặc,
+                  // không lộ các cột đang cuộn bên dưới (màu hover trong suốt)
+                  "group-hover:bg-[image:linear-gradient(var(--color-crm-hover),var(--color-crm-hover))]",
                   index === 0 && STICKY_CELL,
+                  column.fit && "w-px whitespace-nowrap",
                 )}
               >
                 {/* Cắt chữ ở thẻ div bọc trong: max-width trên td không chạy ổn định ở mọi trình duyệt */}
-                <div className={cn("max-w-[320px] truncate", index === 0 && STICKY_WIDTH)}>
+                <div
+                  className={cn(
+                    column.fit ? "w-max" : "max-w-[320px] truncate",
+                    index === 0 && STICKY_WIDTH,
+                  )}
+                >
                   {column.cell(row)}
                 </div>
               </td>

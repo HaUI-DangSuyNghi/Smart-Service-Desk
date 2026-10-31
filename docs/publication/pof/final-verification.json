@@ -1,0 +1,281 @@
+{
+  "observed_at": "2026-10-31T07:19:05.973947+00:00",
+  "release_sha": "ba82b2fc5eb36ea309563d2d7442db95b96a7608",
+  "main_base": "6b58123505e740c99472ade649d11aa538804e03",
+  "tools": {
+    "git": "2.45.1.windows.1",
+    "node": "24.14.0",
+    "npm": "11.9.0",
+    "java_build_and_proof_runtime": "Eclipse Adoptium 17.0.15 (Maven 3.9.9 digest-pinned tool image)",
+    "host_java": "Temurin 17.0.18+8",
+    "python_test_driver": "3.11.6; not project Python 3.12 install evidence",
+    "docker": "29.5.2",
+    "compose": "5.1.3"
+  },
+  "results": {
+    "frontend_clean_install": "PASS",
+    "frontend_source_build": "PASS",
+    "backend_clean_source_package": "PASS; -DskipTests explicit; warm Maven cache",
+    "released_postgres_reference_startup": "FAIL in isolated harness: unknown postgres user",
+    "unmodified_default_full_compose": "NOT TESTED",
+    "isolated_fallback_deployment": "PASS; explicit PostgreSQL 16.6 override",
+    "direct_backend_auth_workflow_rbac_smoke": "PASS",
+    "persistence_after_proof_backend_restart": "PASS; three tickets recovered",
+    "frontend_static_outside_source": "PASS HTTP 200; not browser E2E",
+    "apisix_browser_login_python_runtime_install": "NOT TESTED in this run"
+  },
+  "inventory": {
+    "release_sha": "ba82b2fc5eb36ea309563d2d7442db95b96a7608",
+    "source_input_checkout_hashes_verified": 15,
+    "source_input_hash_caveat": "8 Windows CRLF checkout hashes differ from Git blob hashes; canonical blob hashes recorded separately",
+    "npm_lock_records_verified": 602,
+    "npm_scope_counts": {
+      "dev": 458,
+      "production_or_peer": 144
+    },
+    "production_sbom_components_lock_matched": 119,
+    "java_cached_jar_hashes_and_declared_license_poms_verified": 160,
+    "java_scopes": {
+      "compile": 126,
+      "test": 30,
+      "runtime": 4
+    },
+    "python_pins_matched": 20,
+    "container_references_line_matched": 19,
+    "assets_hash_verified": 82,
+    "asset_status_counts": {
+      "PERMISSION_REPORTED_EVIDENCE_TO_ARCHIVE": 2,
+      "AUTHOR_AUTHORIZED_DISTRIBUTION": 2,
+      "TEAM_APPROVED_DISTRIBUTION": 78
+    }
+  },
+  "production_sbom_purl_version_reproduced": 119,
+  "python_upstream_license_matches": [
+    {
+      "name": "scikit-learn",
+      "version": "1.6.1",
+      "declared_license_matches": true
+    },
+    {
+      "name": "numpy",
+      "version": "2.2.6",
+      "declared_license_matches": true
+    },
+    {
+      "name": "scipy",
+      "version": "1.15.3",
+      "declared_license_matches": true
+    },
+    {
+      "name": "joblib",
+      "version": "1.4.2",
+      "declared_license_matches": true
+    },
+    {
+      "name": "threadpoolctl",
+      "version": "3.6.0",
+      "declared_license_matches": true
+    },
+    {
+      "name": "PyYAML",
+      "version": "6.0.2",
+      "declared_license_matches": true
+    },
+    {
+      "name": "jsonschema",
+      "version": "4.23.0",
+      "declared_license_matches": true
+    },
+    {
+      "name": "attrs",
+      "version": "24.2.0",
+      "declared_license_matches": true
+    },
+    {
+      "name": "jsonschema-specifications",
+      "version": "2023.12.1",
+      "declared_license_matches": true
+    },
+    {
+      "name": "referencing",
+      "version": "0.35.1",
+      "declared_license_matches": true
+    },
+    {
+      "name": "rpds-py",
+      "version": "0.20.0",
+      "declared_license_matches": true
+    },
+    {
+      "name": "pytest",
+      "version": "8.3.5",
+      "declared_license_matches": true
+    },
+    {
+      "name": "iniconfig",
+      "version": "2.0.0",
+      "declared_license_matches": true
+    },
+    {
+      "name": "packaging",
+      "version": "24.1",
+      "declared_license_matches": true
+    },
+    {
+      "name": "pluggy",
+      "version": "1.5.0",
+      "declared_license_matches": true
+    },
+    {
+      "name": "colorama",
+      "version": "0.4.6",
+      "declared_license_matches": true
+    },
+    {
+      "name": "build",
+      "version": "1.2.2.post1",
+      "declared_license_matches": true
+    },
+    {
+      "name": "pyproject-hooks",
+      "version": "1.2.0",
+      "declared_license_matches": true
+    },
+    {
+      "name": "setuptools",
+      "version": "75.1.0",
+      "declared_license_matches": true
+    },
+    {
+      "name": "wheel",
+      "version": "0.44.0",
+      "declared_license_matches": true
+    }
+  ],
+  "archives_and_license": {
+    "zip": {
+      "url": "https://api.github.com/repos/HaUI-DangSuyNghi/Smart-Service-Desk/zipball/v0.1.0",
+      "sha256": "9026018f2f9465a9c9b191608678d9c4b14ca7ed25822d725a6814868d632c80",
+      "git_archive_files_byte_matched": 1704,
+      "export_note": "git -c core.autocrlf=false archive; .gitattributes exports dx.cmd as CRLF"
+    },
+    "tar": {
+      "url": "https://api.github.com/repos/HaUI-DangSuyNghi/Smart-Service-Desk/tarball/v0.1.0",
+      "sha256": "2c0f597ba9f534bad6331f7d9c7f963e757aeb4e48732030e40f98139dbe82f7",
+      "git_archive_files_byte_matched": 1704,
+      "export_note": "git -c core.autocrlf=false archive; .gitattributes exports dx.cmd as CRLF"
+    },
+    "apache_license": {
+      "url": "https://www.apache.org/licenses/LICENSE-2.0.txt",
+      "matches_official_text": true,
+      "git_blob_sha256": "cfc7749b96f63bd31c3c42b5c471bf756814053e847c10f3eb003417bc523d30"
+    }
+  },
+  "canonical_git_blob_hashes": {
+    "release_sha": "ba82b2fc5eb36ea309563d2d7442db95b96a7608",
+    "byte_basis": "git show <release_sha>:<path>; independent of checkout line endings",
+    "source_sha256": {
+      "backend/Dockerfile": "79ad17e1fdad65e35aa6da0077cffc4191d08744af5805f42fbaf231016b7ea0",
+      "backend/pom.xml": "ed663b2de1652d873b14effb7722477766c69c5ee24a6030222815a18ac95b75",
+      "compose.yaml": "5fedb5a439d0f3498754fb37bbd1f29aaeb33de21a4f297338e2abb3d24b43b9",
+      "frontend/Dockerfile": "b1e9bf84bc64abc085579e36c7ba31d280690d7189b29a444bc239873e1aaaa6",
+      "frontend/package-lock.json": "b04ba3f193d21b8e9e34786456a40247bc70c0a7c6739fabea968bc139fc9bf0",
+      "frontend/package.json": "7276e85acee64a496f87f0720d3d2345df9d3412e555a647779a3cb4acadcd55",
+      "infra/apisix/Dockerfile": "832101b506c38df0fc4516bb44f9cf21cb5f9dbb354650b95b07061fee4dece0",
+      "infra/docker/ai07-qwen-full/Dockerfile": "eb027e3c9edaec6cfc95f16a4dd18a2397e7eb9dd0b8397fa46de0f58114b97e",
+      "intelligence/Dockerfile": "f8e7658b7cda222adb6d4cd64992bbfddc5e78625de8877579bc8a59c77df963",
+      "intelligence/Dockerfile.cloud": "932477b93ff2ca1e6d163936d90dcdd7fcf0793eb74713e466b52d65d243d0b3",
+      "intelligence/Dockerfile.e5": "26aeb9e61166dff9cbce0dab9a62868e5ff00c9d355837887f7f6aaaa9b67b89",
+      "intelligence/integrations/local_classification/Dockerfile": "59ebb2b23fca51a79e3db255c4e7abe7a1da4d955f5a1a4a3852db2f4bdd7eec",
+      "intelligence/integrations/local_classification/Dockerfile.qwen": "f9ddc1aa87fc5b6f6751a63c48c564c04b2d109571d8fc517360623a80963f86",
+      "intelligence/pyproject.toml": "47130fd74e8ce6204914d296d78a990b8166f30144b9884a6b742238d3ab4a57",
+      "intelligence/requirements.lock": "38474c7eb3764fa08a3aa516cf1d70af576d8b6811de9ef5fe991ea6b4a8a813"
+    }
+  },
+  "artifacts": {
+    "app.jar": "fa441fe457082ec0415efaae196fffcd2eb6ada0e84b6694d1138116caae4cc6",
+    "index.html": "90fbf0d324bf8d37f2a188d5d48de2294e1295427c6e61993c8f2078fbff8d50",
+    "smoke-local.py": "af6865222a51e7b40137890def7c88037f6301f02337514b77a9039531de8c12",
+    "smoke-recovery.py": "55486988041912c591601268d498a71769917e49cac25ea802272f706e3337bf",
+    "compose-fallback.yaml": "efe6bcb88a66e82af3e02bfcbe79426a84ed2888f3ab7b43c1c3fe4ace2e9532"
+  },
+  "historical_ci": {
+    "url": "https://github.com/HaUI-DangSuyNghi/Smart-Service-Desk/actions/runs/41172037297",
+    "head_sha": "0835c86375c1b2056bb59018294eeebc4ac2a16c",
+    "successful_jobs": 7,
+    "release_tree_equal": true
+  },
+  "issue_16": {
+    "state": "open",
+    "comments": 0,
+    "action": "not closed"
+  },
+  "contest_window": "CHUA XAC MINH; official organizer date source still required",
+  "production_sbom_licenses_and_dependency_edges_reproduced": true,
+  "release": {
+    "tag": "v0.1.0",
+    "tag_type": "lightweight",
+    "published_at": "2026-10-31T05:31:12Z",
+    "draft": false,
+    "prerelease": false
+  },
+  "isolated_fallback_configuration": {
+    "base": "v0.1.0:compose.yaml; only postgres/keycloak/platform services retained",
+    "new_project": "ssd-pof-v010-proof-20261031-fallback",
+    "replaced_top_level_volumes": {
+      "proof-db": {},
+      "proof-files": {}
+    },
+    "service_changes": {
+      "postgres": {
+        "replace_fields": {
+          "image": "postgres:16.6-bookworm@sha256:557fea37a744d5f4c8faab304b0a90858b53ab119735a88c131fd19dab802f36",
+          "volumes": [
+            "proof-db:/var/lib/postgresql/data",
+            "./init.sql:/docker-entrypoint-initdb.d/init.sql:ro"
+          ]
+        },
+        "remove_fields": []
+      },
+      "keycloak": {
+        "replace_fields": {
+          "environment": {
+            "KC_HOSTNAME": "http://localhost:38081"
+          },
+          "ports": [
+            "127.0.0.1:38081:8080"
+          ],
+          "volumes": [
+            "./realm.json:/opt/keycloak/data/import/dx-lab-realm.json:ro"
+          ]
+        },
+        "remove_fields": []
+      },
+      "platform": {
+        "replace_fields": {
+          "image": "maven:3.9.9-eclipse-temurin-17",
+          "environment": {
+            "JWT_ISSUER": "http://localhost:38081/realms/dx-lab"
+          },
+          "volumes": [
+            "./app.jar:/run-proof/app.jar:ro",
+            "proof-files:/var/lib/dx/files"
+          ],
+          "working_dir": "/run-proof",
+          "entrypoint": [
+            "sh",
+            "-c",
+            "chmod 700 /var/lib/dx/files && exec java -jar /run-proof/app.jar"
+          ],
+          "ports": [
+            "127.0.0.1:38080:8080"
+          ]
+        },
+        "remove_fields": [
+          "build"
+        ]
+      }
+    },
+    "realm_change": "setup.ps1 generated fresh realm; dx-web redirectUris http://localhost:35173/* and webOrigins http://localhost:35173 only; school/demo realm unchanged"
+  }
+}

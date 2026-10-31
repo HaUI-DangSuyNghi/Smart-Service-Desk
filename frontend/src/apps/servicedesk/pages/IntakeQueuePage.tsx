@@ -14,6 +14,7 @@ import { IntakeRowMenu, IntakeStatusCell, type IntakeAction } from "../tickets/I
 import { ReleaseIntakeDialog } from "../tickets/ReleaseIntakeDialog";
 import { createdAtColumn, creatorColumn, titleColumn } from "../tickets/ticketColumns";
 import { TICKETS_PAGE_SIZE, useTicketList, type TicketFilter } from "../tickets/useTickets";
+import { useTicketListRealtime } from "../tickets/useTicketRealtime";
 
 // Đang tiếp nhận + đang theo ticket gốc (tách ra để tiếp nhận độc lập)
 const INTAKE_FILTER: TicketFilter = { state: ["INTAKE", "FOLLOWING"], sort: "priority" };
@@ -22,6 +23,7 @@ const INTAKE_FILTER: TicketFilter = { state: ["INTAKE", "FOLLOWING"], sort: "pri
 const IntakeQueuePage = () => {
   const navigate = useNavigate();
   const { current } = useCurrentWorkspace();
+  useTicketListRealtime(current);
   const [page, setPage] = useState(0);
   const [acting, setActing] = useState<{ ticket: TicketView; action: IntakeAction } | null>(null);
   const tickets = useTicketList(page, INTAKE_FILTER);

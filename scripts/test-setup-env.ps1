@@ -59,7 +59,7 @@ foreach ($line in Get-Content (Join-Path $fresh '.env.example') -Encoding UTF8) 
 $bytes = [IO.File]::ReadAllBytes((Join-Path $fresh '.env'))
 Assert-Setup (-not ($bytes.Length -ge 3 -and $bytes[0] -eq 239 -and $bytes[1] -eq 187 -and $bytes[2] -eq 191)) 'Generated .env must be UTF-8 without BOM.'
 $realm = Get-Content (Join-Path $fresh '.local/dx-lab-realm.json') -Raw -Encoding UTF8 | ConvertFrom-Json
-Assert-Setup ((@($realm.users | Where-Object username -eq 'user1')[0]).credentials[0].value -ceq $values['DEMO_PASSWORD']) 'Realm password must match the generated environment.'
+Assert-Setup ((@($realm.users | Where-Object username -eq 'requester1')[0]).credentials[0].value -ceq $values['DEMO_PASSWORD']) 'Realm password must match the generated environment.'
 $freshHash = (Get-FileHash -Algorithm SHA256 (Join-Path $fresh '.env')).Hash
 Invoke-Fixture $fresh
 Assert-Setup ((Get-FileHash -Algorithm SHA256 (Join-Path $fresh '.env')).Hash -ceq $freshHash) 'Repeated setup must not rotate secrets or rewrite .env.'
@@ -84,7 +84,7 @@ foreach ($key in $previous.Keys) { Assert-Setup ($merged[$key] -ceq $previous[$k
 $updated = @(Get-Content (Join-Path $existing '.env') -Encoding UTF8)
 for ($index=0; $index -lt $original.Count; $index++) { Assert-Setup ($updated[$index] -ceq $original[$index]) 'Existing comments and UTF-8 lines must be retained.' }
 $existingRealm = Get-Content (Join-Path $existing '.local/dx-lab-realm.json') -Raw -Encoding UTF8 | ConvertFrom-Json
-Assert-Setup ((@($existingRealm.users | Where-Object username -eq 'user1')[0]).credentials[0].value -ceq $merged['DEMO_PASSWORD'].Trim('"')) 'Quoted credentials must be decoded correctly for realm configuration without changing .env.'
+Assert-Setup ((@($existingRealm.users | Where-Object username -eq 'requester1')[0]).credentials[0].value -ceq $merged['DEMO_PASSWORD'].Trim('"')) 'Quoted credentials must be decoded correctly for realm configuration without changing .env.'
 
 # A new template variable must be picked up without a hardcoded setup change.
 $templatePath = Join-Path $existing '.env.example'

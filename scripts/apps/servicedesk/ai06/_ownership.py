@@ -10,14 +10,15 @@ from email.parser import BytesParser
 from functools import lru_cache
 import json
 from pathlib import Path
+import re
 import subprocess
 import zipfile
 
 from _contracts import BASELINE_REVISION, DATA, ROOT, read_json
 
 
-APP_SCRIPTS = "scripts/apps/servicedesk/ai06/"
-APP_TESTS = "intelligence/tests/apps/servicedesk/generation/"
+APP_SCRIPTS = "scripts/apps/servicedesk/"
+APP_TESTS = "intelligence/tests/apps/servicedesk/"
 BYPASS_FLAGS = {
     "skip-approval",
     "bypass-egress",
@@ -56,6 +57,7 @@ def semantic_violations(source, *, generic=True):
 
     literals, categories = owned_literals()
     found = Counter()
+    parents = {child: parent for parent in ast.walk(tree) for child in ast.iter_child_nodes(parent)}
 
     for node in ast.walk(tree):
         if isinstance(node, (ast.Import, ast.ImportFrom)):
@@ -86,13 +88,13 @@ def semantic_violations(source, *, generic=True):
             folded = value.casefold().replace("\\", "/")
 
             if (
-                any(literal.casefold() in folded for literal in literals)
+                any(re.search(r"(?<![a-z0-9-])" + re.escape(literal.casefold()), folded) for literal in literals)
                 or value in categories
             ):
                 found[("APP_SEMANTIC_LITERAL", value)] += 1
 
             if (
-                folded == "apps"
+                (folded == "apps" and isinstance(parents.get(node), (ast.Call, ast.BinOp)))
                 or folded.startswith("apps.")
                 or any(
                     part in folded
@@ -217,7 +219,7 @@ def resource_violations(value):
         folded = value.casefold()
 
         if (
-            any(literal.casefold() in folded for literal in literals)
+            any(re.search(r"(?<![a-z0-9-])" + re.escape(literal.casefold()) + r"(?![a-z0-9-])", folded) for literal in literals)
             or value in categories
         ):
             failures.append("APP_RESOURCE_LITERAL")

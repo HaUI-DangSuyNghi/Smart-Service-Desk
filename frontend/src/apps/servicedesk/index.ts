@@ -1,9 +1,11 @@
-import { IconClipboardList, IconTicket } from "@tabler/icons-react";
+import { IconTicket } from "@tabler/icons-react";
 import { lazy } from "react";
 import { PERMISSIONS } from "../../platform/human/workspace";
 import type { AppRegistry } from "../../platform/shell/router/registry";
 import { TicketStatsWidget } from "./dashboard/TicketStatsWidget";
 import { ServiceDeskSettingsSection } from "./settings/ServiceDeskSettingsSection";
+import { TicketRequestAction } from "./tickets/TicketRequestAction";
+import { TicketInboxAction } from "./tickets/TicketInboxAction";
 
 // Trang lazy hiện skeleton của AppLayout trong lúc tải, không cần giữ thời gian tối thiểu
 const TicketListPage = lazy(() => import("./pages/TicketListPage"));
@@ -25,24 +27,14 @@ export const registerServiceDesk = (registry: AppRegistry) => {
         requiredPermissions: [PERMISSIONS.taskAssign],
       },
     ],
-    // Nhóm xổ ra trên sidebar
+    // Mục trên sidebar
     menu: [
+      // Một mục duy nhất, mở thẳng danh sách ticket (trang Tiếp nhận vẫn mở được qua đường dẫn)
       {
-        label: "Service Desk",
-        path: "/servicedesk",
+        label: "Smart Service Desk",
+        path: "/servicedesk/tickets",
         icon: IconTicket,
         tone: "orange",
-        // App chính: mở sẵn để thấy ngay các trang ticket
-        defaultOpen: true,
-        children: [
-          { label: "Ticket", path: "/servicedesk/tickets", icon: IconTicket },
-          {
-            label: "Tiếp nhận",
-            path: "/servicedesk/intake",
-            icon: IconClipboardList,
-            requiredPermissions: [PERMISSIONS.taskAssign],
-          },
-        ],
       },
     ],
     // businessKey của quy trình service-desk là id ticket
@@ -52,6 +44,17 @@ export const registerServiceDesk = (registry: AppRegistry) => {
         `/servicedesk/tickets/${encodeURIComponent(businessKey)}`,
       "service-desk-intake-reviewed": (businessKey) =>
         `/servicedesk/tickets/${encodeURIComponent(businessKey)}`,
+    },
+    // Trang Yêu cầu chung: người gửi Xác nhận (Chờ xác nhận) hoặc Bổ sung thông tin ngay trên dòng
+    requestActions: {
+      "service-desk": TicketRequestAction,
+      "service-desk-reviewed": TicketRequestAction,
+      "service-desk-intake-reviewed": TicketRequestAction,
+    },
+    inboxActions: {
+      "service-desk": TicketInboxAction,
+      "service-desk-reviewed": TicketInboxAction,
+      "service-desk-intake-reviewed": TicketInboxAction,
     },
     // Thống kê ticket hiện trên dashboard chung của điều phối viên
     dashboardWidgets: [

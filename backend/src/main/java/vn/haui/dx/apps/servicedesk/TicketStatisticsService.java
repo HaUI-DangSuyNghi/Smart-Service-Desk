@@ -15,13 +15,15 @@ class TicketStatisticsService {
     TicketStatisticsService(TicketRepository tickets, ProcessObservations processes, TicketSlaService sla) {
         this.tickets=tickets; this.processes=processes; this.sla=sla;
     }
-    enum Status { INTAKE, FOLLOWING, AWAITING_REVIEW, ASSIGNED, IN_PROGRESS, PENDING, REOPENED, AWAITING_CONFIRMATION, CLOSED, UNCLASSIFIED }
+    enum Status { INTAKE, FOLLOWING, AWAITING_REVIEW, ASSIGNED, IN_PROGRESS, PENDING, REOPENED, AWAITING_CONFIRMATION, CLOSED, CANCELLED, UNCLASSIFIED }
 
     static Status classify(String workspace, TicketRepository.ProcessLink ticket, ProcessSnapshot snapshot) {
         if (snapshot == null || !snapshot.historyPresent() || !workspace.equals(snapshot.workspace())
                 || !ticket.creator().equals(snapshot.owner()) || !ticket.id().toString().equals(snapshot.businessKey())
                 || !Set.of(ServiceDeskProcess.KEY, ServiceDeskProcess.REVIEWED_KEY, ServiceDeskProcess.INTAKE_KEY).contains(snapshot.processKey()))
             return Status.UNCLASSIFIED;
+        if (snapshot.endedAt() != null && snapshot.deleteReason() != null && snapshot.deleteReason().startsWith("REQUEST_CANCELLED:")) return Status.CANCELLED;
+        if (snapshot.endedAt() != null && snapshot.deleteReason() != null && snapshot.deleteReason().startsWith("REQUEST_CLOSED:")) return Status.CLOSED;
         if (snapshot.endedAt() != null)
             return snapshot.deleteReason() == null && "end".equals(snapshot.endActivityId()) && snapshot.tasks().isEmpty()
                 && !"ACTIVE".equals(ticket.canonicalState()) ? Status.CLOSED : Status.UNCLASSIFIED;
@@ -73,7 +75,7 @@ class TicketStatisticsService {
                 if (status == Status.CLOSED) completed++;
                 else if (status == Status.AWAITING_CONFIRMATION) confirming++;
                 else if (status == Status.UNCLASSIFIED) unclassified++;
-                else if (status != Status.INTAKE && status != Status.FOLLOWING) handling++;
+                else if (status != Status.INTAKE && status != Status.FOLLOWING && status != Status.CANCELLED) handling++;
                 if (Set.of(Status.ASSIGNED, Status.REOPENED, Status.IN_PROGRESS, Status.PENDING).contains(status)
                         && "handle".equals(s.tasks().get(0).key())) {
                     var state = slas.get(s.tasks().get(0).id());
@@ -87,6 +89,6 @@ class TicketStatisticsService {
             counts.getOrDefault(Status.AWAITING_REVIEW, 0L), counts.getOrDefault(Status.ASSIGNED, 0L),
             counts.getOrDefault(Status.IN_PROGRESS, 0L), counts.getOrDefault(Status.PENDING, 0L),
             counts.getOrDefault(Status.REOPENED, 0L), completed, overdue,
-            counts.getOrDefault(Status.INTAKE, 0L), counts.getOrDefault(Status.FOLLOWING, 0L));
+            counts.getOrDefault(Status.INTAKE, 0L), counts.getOrDefault(Status.FOLLOWING, 0L), counts.getOrDefault(Status.CANCELLED, 0L));
     }
 }

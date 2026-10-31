@@ -14,6 +14,19 @@ const ACTION_LABELS: Readonly<Record<BoardAction, string>> = {
   review: "Duyệt và giao việc",
   reassign: "Giao lại",
   correct: "Sửa phân loại / ưu tiên",
+  edit: "Sửa",
+  cancel: "Hủy",
+  close: "Đóng",
+};
+
+const ACTION_COLORS: Readonly<Record<BoardAction, string>> = {
+  intake: "text-crm-tone-blue",
+  review: "text-crm-tone-blue",
+  reassign: "text-crm-tone-orange",
+  correct: "text-crm-tone-blue",
+  edit: "text-crm-tone-blue",
+  cancel: "text-destructive",
+  close: "text-crm-tone-green",
 };
 
 interface Props {
@@ -38,7 +51,12 @@ export const CardMenu = ({ ticket, actions, onAction }: Props) => {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-auto min-w-44" onClick={stop}>
         {actions.map((action) => (
-          <DropdownMenuItem key={action} onSelect={() => onAction(ticket, action)}>
+          <DropdownMenuItem
+            key={action}
+            variant={action === "cancel" ? "destructive" : "default"}
+            className={ACTION_COLORS[action]}
+            onSelect={() => onAction(ticket, action)}
+          >
             {ACTION_LABELS[action]}
           </DropdownMenuItem>
         ))}

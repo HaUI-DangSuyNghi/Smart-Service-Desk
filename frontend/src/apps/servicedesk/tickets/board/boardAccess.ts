@@ -1,6 +1,7 @@
 import type { TicketView } from "../../services/ticketService";
 import { awaitsReview, isHandling } from "../ticketRules";
 import type { Viewer } from "../ticketPermissions";
+import { ownerRequestActions } from "../ownerRequestActions";
 
 export interface BoardAccess {
   /** Thấy Board và các thẻ (người gửi không có Board). */
@@ -16,13 +17,19 @@ export const boardAccess = (viewer: Viewer): BoardAccess => {
   return { canView, canOpen: canView, canEdit: viewer.canAssign || viewer.isPlatformAdmin };
 };
 
-export type BoardAction = "intake" | "review" | "reassign" | "correct";
+export type BoardAction =
+  "intake" | "review" | "reassign" | "correct" | "edit" | "cancel" | "close";
 
 /**
  * Mục sửa trên menu của thẻ. Không có "Nhận việc": việc do điều phối viên giao theo tải,
  * để kỹ thuật viên không nhặt việc dễ từ Board.
  */
 export const boardActions = (ticket: TicketView, viewer: Viewer): BoardAction[] => {
+  const ownerActions = ownerRequestActions(ticket, viewer.subject);
+  return [...ownerActions, ...coordinatorActions(ticket, viewer)];
+};
+
+const coordinatorActions = (ticket: TicketView, viewer: Viewer): BoardAction[] => {
   if (!boardAccess(viewer).canEdit || !ticket.state) return [];
   // Người tạo ticket không tự tiếp nhận, tự duyệt, tự sửa phân loại (backend trả 403)
   const independent = ticket.creator !== viewer.subject;

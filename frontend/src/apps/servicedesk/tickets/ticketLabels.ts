@@ -13,6 +13,8 @@ export const INTAKE_STATUS_LABELS: Readonly<Record<Intake["status"], string>> = 
   MANUAL_REQUIRED: "Cần điều phối viên xem xét",
   REVIEWED: "Điều phối viên đã duyệt",
   CANONICAL_FOLLOWER: "Đang theo dõi sự cố đã được liên kết",
+  CANCELLED: "Đã hủy",
+  CLOSED: "Đã đóng",
 };
 
 export const TICKET_STATE_LABELS: Readonly<Record<TicketState, string>> = {
@@ -25,6 +27,7 @@ export const TICKET_STATE_LABELS: Readonly<Record<TicketState, string>> = {
   AWAITING_CONFIRMATION: "Chờ xác nhận",
   REOPENED: "Mở lại",
   CLOSED: "Đã đóng",
+  CANCELLED: "Đã hủy",
   UNCLASSIFIED: "Không xác định",
 };
 
@@ -38,6 +41,7 @@ export const TICKET_STATE_TONES: Readonly<Record<TicketState, TagTone>> = {
   AWAITING_CONFIRMATION: "turquoise",
   REOPENED: "red",
   CLOSED: "green",
+  CANCELLED: "gray",
   UNCLASSIFIED: "gray",
 };
 

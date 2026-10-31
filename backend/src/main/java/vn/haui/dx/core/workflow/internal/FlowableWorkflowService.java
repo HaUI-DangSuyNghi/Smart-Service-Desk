@@ -475,7 +475,62 @@ public final class FlowableWorkflowService implements WorkflowService {
                 instant(task.getStartTime()), instant(task.getClaimTime()), instant(task.getEndTime()))).toList();
         return new ProcessHistory(processInstanceId, (String) scope.get("process_key"), (String) scope.get("business_key"),
             workspace, (String) scope.get("owner"), instant(process.getStartTime()), instant(process.getEndTime()),
-            currentTasks(processInstanceId), steps, startVariables((String) scope.get("process_key"), processInstanceId));
+            currentTasks(processInstanceId), steps, startVariables((String) scope.get("process_key"), processInstanceId),
+            process.getDeleteReason() != null && process.getDeleteReason().startsWith("REQUEST_CANCELLED:"));
+    }
+
+    @Override
+    public void changeRequest(String workspace, String processId, String cancellationReason,
+            java.util.function.Supplier<Map<String, Object>> operation) {
+        changeRequest(workspace, processId, cancellationReason, false, operation);
+    }
+
+    @Override
+    public void closeRequest(String workspace, String processId, String reason,
+            java.util.function.Supplier<Map<String, Object>> operation) {
+        if (reason == null) throw CoreException.validation("Closure reason required");
+        changeRequest(workspace, processId, reason, true, operation);
+    }
+
+    private void changeRequest(String workspace, String processId, String cancellationReason, boolean closing,
+            java.util.function.Supplier<Map<String, Object>> operation) {
+        var user = member(workspace);
+        transaction.executeWithoutResult(status -> {
+            text(processId, 100, "processInstanceId");
+            if (jdbc.queryForList("select id from process_scope where workspace=? and id=? for update nowait", workspace, processId).isEmpty())
+                throw CoreException.notFound("Process not found");
+            var scope = readable(user, workspace, processId);
+            if (closing && !user.sub().equals(scope.get("owner")))
+                throw CoreException.forbidden("Request owner required");
+            if (!user.sub().equals(scope.get("owner")) && !user.hasRole(workspace, WorkspaceRole.COORDINATOR))
+                throw CoreException.forbidden("Request owner or coordinator required");
+            var process = engine.getRuntimeService().createProcessInstanceQuery().processInstanceId(processId).singleResult();
+            if (process == null) throw CoreException.conflict("Request already ended");
+            if (!registry.supportsDefinition(process.getProcessDefinitionId()))
+                throw CoreException.conflict("Unsupported process definition version");
+            if (cancellationReason != null) text(cancellationReason, 1000, "reason");
+            var variables = operation.get();
+            var policy = registry.require((String) scope.get("process_key"));
+            if (variables == null || !policy.allowedStartVariables().containsAll(variables.keySet()))
+                throw CoreException.validation("Unsupported request variables");
+            variables.forEach((key, value) -> {
+                if (!(value instanceof String)) throw CoreException.validation("String request variable required");
+                text((String) value, MAX_VARIABLE, key);
+            });
+            if (cancellationReason == null) {
+                if (!variables.isEmpty()) engine.getRuntimeService().setVariables(processId, variables);
+            } else {
+                for (var task : engine.getTaskService().createTaskQuery().processInstanceId(processId).list()) {
+                    if (registry.executionTask((String) scope.get("process_key"), task.getTaskDefinitionKey())
+                            && executionState(task.getId()) == TaskExecution.State.IN_PROGRESS)
+                        closeWorkInterval(workspace, task, Instant.now().toEpochMilli());
+                }
+                engine.getRuntimeService().deleteProcessInstance(processId,
+                    (closing ? "REQUEST_CLOSED: " : "REQUEST_CANCELLED: ") + cancellationReason);
+            }
+            audit.record(cancellationReason == null ? "process.request.update" : closing ? "process.request.close" : "process.request.cancel",
+                "process", processId, workspace, Map.of("processKey", scope.get("process_key")));
+        });
     }
 
     /** Nội dung người tạo nhập lúc start; chỉ biến khởi tạo, không lộ biến nội bộ như outcome_*. */
@@ -523,7 +578,8 @@ public final class FlowableWorkflowService implements WorkflowService {
         var items = processes.stream().map(process -> new ProcessSummary(process.getId(),
             process.getProcessDefinitionKey(), process.getBusinessKey(), owners.get(process.getId()),
             instant(process.getStartTime()), instant(process.getEndTime()),
-            active.getOrDefault(process.getId(), List.of()))).toList();
+            active.getOrDefault(process.getId(), List.of()), process.getDeleteReason() != null
+                && process.getDeleteReason().startsWith("REQUEST_CANCELLED:"))).toList();
         return new Page<>(items, page.page(), page.size(), total);
     }
 

@@ -56,8 +56,8 @@ export const BOARD_COLUMNS: readonly BoardColumnDef[] = [
   },
   {
     key: "closed",
-    label: "Đã đóng",
-    states: ["CLOSED"],
+    label: "Đã kết thúc",
+    states: ["CLOSED", "CANCELLED"],
     tone: TICKET_STATE_TONES.CLOSED,
     collapsedByDefault: true,
   },
