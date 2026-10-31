@@ -22,18 +22,24 @@ export const DutyMenuItem = () => {
   if (!canHandle || !mine) return null;
 
   const handleToggle = () => {
-    setDuty.mutate(
-      !mine.onDuty,
-      {
-        onSuccess: (status) =>
-          toast.success(status.onDuty ? "Bạn đang trực" : "Bạn đã chuyển sang nghỉ", {
-            description: status.onDuty
-              ? "Bạn sẽ được đề xuất nhận việc mới."
-              : "Việc chưa bắt đầu của bạn sẽ được giao người khác.",
-          }),
-        onError: (error) => toastError("Không đổi được trạng thái trực.", error),
-      },
-    );
+    setDuty.mutate(!mine.onDuty, {
+      onSuccess: (status) =>
+        toast.success(
+          !status.onDuty
+            ? "Bạn đã chuyển sang nghỉ"
+            : status.effectiveDuty
+              ? "Bạn đang trực"
+              : "Đã bật trực",
+          {
+            description: !status.onDuty
+              ? "Việc chưa bắt đầu của bạn sẽ được giao người khác."
+              : status.effectiveDuty
+                ? "Bạn sẽ được đề xuất nhận việc mới."
+                : "Bạn tự online khi vào ca đã đăng ký.",
+          },
+        ),
+      onError: (error) => toastError("Không đổi được trạng thái trực.", error),
+    });
   };
 
   return (

@@ -24,6 +24,11 @@ public class TicketLabels {
         this.jdbc = jdbc; this.estimates = estimates;
     }
 
+    private TicketRealtime realtime;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    void setRealtime(TicketRealtime realtime) { this.realtime = realtime; }
+
     /** Ghi đè nhãn cũ (chạy lại, bổ sung thông tin thì nhãn theo kết quả mới nhất). */
     public void save(String workspace, UUID ticketId, String category, String priority, String impact, String urgency) {
         var knownCategory = parse(TicketReview.Category.class, category);
@@ -39,6 +44,7 @@ public class TicketLabels {
             ticketId, knownCategory == null ? null : knownCategory.name(), effective.name(), defaulted, impact, urgency,
             estimate == null ? null : estimate.minutes(), estimate == null ? null : estimate.basis(),
             estimate == null ? null : estimate.sampleSize());
+        if (realtime != null) realtime.changed(workspace, ticketId);
     }
 
     public Label read(UUID ticketId) {

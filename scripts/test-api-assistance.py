@@ -15,12 +15,12 @@ request, login, require = (HELPERS[name] for name in ("request", "login", "requi
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
-        "ticket", type=uuid.UUID, help="Existing synthetic fixture owned by user1"
+        "ticket", type=uuid.UUID, help="Existing synthetic fixture owned by requester1"
     )
     parser.add_argument("--expect-unavailable", action="store_true")
     parser.add_argument("--workspace", default="lab-a")
-    parser.add_argument("--username", default="user1")
-    parser.add_argument("--foreign-username", default="user4")
+    parser.add_argument("--username", default="requester1")
+    parser.add_argument("--foreign-username", default="requester2")
     parser.add_argument("--output", type=Path)
     args = parser.parse_args()
     config = dict(

@@ -7,9 +7,10 @@ import { EmptyState } from "@/platform/shared/ui/EmptyState";
 import { ErrorState } from "@/platform/shared/ui/ErrorState";
 import { Page, PageBody, PageHeader, PageToolbar } from "@/platform/shared/ui/page";
 import { Pagination } from "@/platform/shared/ui/Pagination";
+import { SelectField } from "@/platform/shared/ui/SelectField";
 import { TableSkeleton } from "@/platform/shared/ui/Skeleton";
-import { ViewTabs } from "@/platform/shared/ui/ViewTabs";
 import { toast, toastError } from "@/platform/shared/ui/toast";
+import { processLink } from "../common/processLinks";
 import { AssignTaskDialog } from "../tasks/AssignTaskDialog";
 import { CompleteTaskDialog } from "../tasks/CompleteTaskDialog";
 import { claimErrorMessage } from "../tasks/taskErrors";
@@ -88,15 +89,18 @@ const InboxPage = () => {
       <PageHeader title="Công việc" icon={IconInbox} />
       <PageToolbar
         start={
-          <ViewTabs
-            label="Loại việc"
-            tabs={scopes.map((item) => ({
-              key: item,
-              label: SCOPE_LABELS[item],
-              count: views[item].data?.total,
-            }))}
+          <SelectField
+            aria-label="Loại việc"
+            options={scopes.map((item) => {
+              const total = views[item].data?.total;
+              return {
+                value: item,
+                label:
+                  total === undefined ? SCOPE_LABELS[item] : `${SCOPE_LABELS[item]} (${total})`,
+              };
+            })}
             value={scope}
-            onChange={handleScopeChange}
+            onValueChange={(value) => handleScopeChange(value as InboxScope)}
           />
         }
         end={
@@ -131,7 +135,13 @@ const InboxPage = () => {
             onClaim={handleClaim}
             onComplete={setCompleting}
             onAssign={setAssigning}
-            onOpen={(task) => navigate(`/processes/${task.processInstanceId}`)}
+            // Như link mã: mở trang chi tiết của app; quy trình không có trang riêng mới mở tiến độ chung
+            onOpen={(task) =>
+              navigate(
+                processLink(task.processKey, task.businessKey) ??
+                  `/processes/${task.processInstanceId}`,
+              )
+            }
           />
         )}
       </PageBody>

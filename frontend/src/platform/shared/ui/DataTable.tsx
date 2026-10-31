@@ -63,7 +63,9 @@ export const DataTable = <Row,>({ columns, rows, getRowKey, onRowClick }: Props<
                 key={column.key}
                 className={cn(
                   "h-8 border-r border-b border-crm-line-light px-2 text-crm-text",
-                  "transition-colors duration-100 group-hover:bg-crm-hover",
+                  // Hover là lớp phủ trên nền, không thay màu nền: cột dính vẫn giữ nền đặc,
+                  // không lộ các cột đang cuộn bên dưới (màu hover trong suốt)
+                  "group-hover:bg-[image:linear-gradient(var(--color-crm-hover),var(--color-crm-hover))]",
                   index === 0 && STICKY_CELL,
                 )}
               >

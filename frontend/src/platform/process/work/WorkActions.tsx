@@ -1,5 +1,6 @@
 import { useState, type MouseEvent } from "react";
 import { IconDots } from "@tabler/icons-react";
+import { cn } from "cn";
 import { useActor } from "@/platform/human/workspace";
 import type { QueueItem } from "@/platform/services";
 import { Button } from "@/platform/shared/ui/button";
@@ -23,6 +24,8 @@ interface Props {
   compact?: boolean;
   /** Việc nên làm ngay (đầu hàng, chưa có việc đang làm): nút Bắt đầu nổi bật. */
   suggested?: boolean;
+  /** Chiếm hết hàng: nút chính bên trái, menu ⋯ sát phải (trang chi tiết). */
+  spread?: boolean;
   /** Gọi sau mỗi thao tác để nơi nhúng (trang của app) tải lại dữ liệu của mình. */
   onChanged?: () => void;
 }
@@ -36,7 +39,13 @@ const stopPropagation = (event: MouseEvent) => event.stopPropagation();
  * Thao tác R6 của người đang giữ việc: Bắt đầu / Báo xong / Tiếp tục là nút chính,
  * Tạm dừng, Xin sửa ước tính, Trả việc nằm trong menu. Người khác không thấy gì.
  */
-export const WorkActions = ({ item, compact = false, suggested = false, onChanged }: Props) => {
+export const WorkActions = ({
+  item,
+  compact = false,
+  suggested = false,
+  spread = false,
+  onChanged,
+}: Props) => {
   const { actor } = useActor();
   const start = useStartWork();
   const resume = useResumeWork();
@@ -76,7 +85,10 @@ export const WorkActions = ({ item, compact = false, suggested = false, onChange
   }[item.workState];
 
   return (
-    <div className="flex items-center gap-1" onClick={stopPropagation}>
+    <div
+      className={cn("flex items-center gap-1", spread && "w-full justify-between")}
+      onClick={stopPropagation}
+    >
       <Button
         size={size}
         variant={suggested && item.workState === "NOT_STARTED" ? "default" : "outline"}

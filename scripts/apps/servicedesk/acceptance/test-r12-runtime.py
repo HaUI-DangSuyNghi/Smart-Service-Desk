@@ -33,7 +33,7 @@ def main():
                 "http://localhost:8081/realms/dx-lab/protocol/openid-connect/token", data=form.encode()), timeout=30) as response:
             return json.load(response)["access_token"]
 
-    requester, agent, coordinator, foreign = (token(name) for name in ("user1", "user2", "user3", "user5"))
+    requester, agent, coordinator, foreign = (token(name) for name in ("requester1", "agent1", "coordinator1", "agent6"))
     payload = agent.split(".")[1]
     agent_id = json.loads(base64.urlsafe_b64decode(payload + "=" * (-len(payload) % 4)))["sub"]
     tickets = "/api/apps/servicedesk/v1/workspaces/lab-a/tickets"

@@ -47,6 +47,23 @@ paths:
         '403': {$ref: 'core.yaml#/components/responses/Forbidden'}
         '404': {$ref: 'core.yaml#/components/responses/NotFound'}
         '409': {$ref: 'core.yaml#/components/responses/Conflict'}
+  /settings/features:
+    get:
+      operationId: getServiceDeskFeatures
+      description: Any authenticated user. Only UI feature flags derived from the settings document.
+      responses:
+        '200':
+          description: Cờ giao diện hiện hành
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: false
+                required: [sampleData]
+                properties:
+                  sampleData: {type: boolean, description: Show the sample-data picker in the create-ticket form.}
+        '401':
+          $ref: core.yaml#/components/responses/Unauthorized
   /settings:
     get:
       operationId: getServiceDeskSettings
@@ -584,6 +601,42 @@ paths:
         '401': {$ref: 'core.yaml#/components/responses/Unauthorized'}
         '403': {$ref: 'core.yaml#/components/responses/Forbidden'}
         '404': {$ref: 'core.yaml#/components/responses/NotFound'}
+  /workspaces/{workspace}/tickets/{id}/comments:
+    parameters:
+      - {$ref: 'core.yaml#/components/parameters/Workspace'}
+      - {$ref: '#/components/parameters/TicketId'}
+    get:
+      operationId: listTicketComments
+      description: Same visibility as GET ticket (requester only own tickets); oldest first.
+      responses:
+        '200':
+          description: All comments of the ticket.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: {$ref: '#/components/schemas/TicketComment'}
+        '401': {$ref: 'core.yaml#/components/responses/Unauthorized'}
+        '403': {$ref: 'core.yaml#/components/responses/Forbidden'}
+        '404': {$ref: 'core.yaml#/components/responses/NotFound'}
+    post:
+      operationId: addTicketComment
+      description: Anyone who can read the ticket may comment. Notifies requester, last assignee and earlier commenters (author excluded), in app and by email. Append only.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: {$ref: '#/components/schemas/NewTicketComment'}
+      responses:
+        '201':
+          description: Stored comment.
+          content:
+            application/json:
+              schema: {$ref: '#/components/schemas/TicketComment'}
+        '400': {$ref: 'core.yaml#/components/responses/BadRequest'}
+        '401': {$ref: 'core.yaml#/components/responses/Unauthorized'}
+        '403': {$ref: 'core.yaml#/components/responses/Forbidden'}
+        '404': {$ref: 'core.yaml#/components/responses/NotFound'}
 components:
   securitySchemes:
     bearer: {type: http, scheme: bearer, bearerFormat: JWT}
@@ -622,6 +675,9 @@ components:
       - categoryGroups
       - estimateDefaults
       properties:
+        sampleData:
+          type: boolean
+          description: Optional; absent means false. Shows the sample-data picker in the create-ticket form.
         version:
           type: integer
           minimum: 0
@@ -1148,6 +1204,21 @@ components:
         by: {type: string}
         reason: {type: string, minLength: 1, maxLength: 1000}
         at: {type: string, format: date-time}
+    TicketComment:
+      type: object
+      additionalProperties: false
+      required: [id, author, body, createdAt]
+      properties:
+        id: {type: string, format: uuid}
+        author: {type: string, description: Subject of the author.}
+        body: {type: string, minLength: 1, maxLength: 2000}
+        createdAt: {type: string, format: date-time}
+    NewTicketComment:
+      type: object
+      additionalProperties: false
+      required: [body]
+      properties:
+        body: {type: string, minLength: 1, maxLength: 2000, description: Trimmed; nonblank; only tab/CR/LF control characters permitted.}
     NewTicket:
       type: object
       additionalProperties: false

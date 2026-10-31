@@ -19,7 +19,7 @@ import { Page, PageBody, PageHeader, PageToolbar } from "@/platform/shared/ui/pa
 import { TableSkeleton } from "@/platform/shared/ui/Skeleton";
 import { Tag, type TagTone } from "@/platform/shared/ui/Tag";
 import { toast, toastError } from "@/platform/shared/ui/toast";
-import { ViewTabs } from "@/platform/shared/ui/ViewTabs";
+import { SelectField } from "@/platform/shared/ui/SelectField";
 import { useDecideEstimate, useEstimateRequests } from "./useWork";
 import { workErrorMessage } from "./workErrors";
 import { formatMinutes } from "./workLabels";
@@ -41,6 +41,10 @@ const STATUS_TONES: Record<EstimateRequestStatus, TagTone> = {
 
 type View = "PENDING" | "ALL";
 
+/** "Chờ duyệt (3)"; chưa tải xong thì chỉ có nhãn. */
+const withCount = (label: string, count: number | undefined) =>
+  count === undefined ? label : `${label} (${count})`;
+
 /** Yêu cầu sửa thời gian ước tính của kỹ thuật viên (R2); điều phối viên đồng ý hoặc từ chối. */
 const EstimateRequestsPage = () => {
   const navigate = useNavigate();
@@ -61,7 +65,8 @@ const EstimateRequestsPage = () => {
           toast.success(approved ? "Đã đồng ý ước tính mới" : "Đã từ chối", {
             description: request.label,
           }),
-        onError: (error) => toastError(workErrorMessage(error, "Không gửi được quyết định."), error),
+        onError: (error) =>
+          toastError(workErrorMessage(error, "Không gửi được quyết định."), error),
       },
     );
   };
@@ -149,14 +154,14 @@ const EstimateRequestsPage = () => {
       <PageHeader title="Yêu cầu sửa ước tính" icon={IconHourglass} />
       <PageToolbar
         start={
-          <ViewTabs
-            label="Lọc yêu cầu"
-            tabs={[
-              { key: "PENDING", label: "Chờ quyết", count: pending.data?.total },
-              { key: "ALL", label: "Tất cả", count: all.data?.total },
+          <SelectField
+            aria-label="Lọc yêu cầu"
+            options={[
+              { value: "PENDING", label: withCount("Chờ duyệt", pending.data?.total) },
+              { value: "ALL", label: withCount("Tất cả", all.data?.total) },
             ]}
             value={view}
-            onChange={setView}
+            onValueChange={(value) => setView(value as View)}
           />
         }
       />

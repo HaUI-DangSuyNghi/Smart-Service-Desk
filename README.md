@@ -1,41 +1,57 @@
-# Smart Service Desk
+# DX-Lab HaUI: DX-OS platform
 
-## v0.1.0 release preparation
+## Proposed public submission (2026-10-28)
 
-The existing repository is public. Preserve its real Git history; do not create a
-replacement repository or follow older history-filtering/publication proposals.
-**Not released. Authorized team-owned work is licensed under Apache-2.0; see
-root LICENSE. Supplied documents, photo, fixtures and third-party content are
-not automatically covered. Asset rights still block release.** See `LICENSING.md`
-and `RELEASE_NOTES_v0.1.0.md`.
+**HOLD: source license approval and publication authorization are pending.**
+Apache-2.0 is intended, not currently granted. Do not make the existing private
+repository public: historical reference/data rights need review. See
+[evaluation readiness](docs/publication/EVALUATION_READINESS.md),
+[history options](docs/publication/HISTORY_OPTIONS.md),
+[dependency/license summary](docs/publication/DEPENDENCIES.md) and
+[release plan](docs/publication/RELEASE_PLAN.md).
 
-Release baseline: the merged develop source, including Core / H-P-D-I,
-Service Desk, Room Request and existing Knowledge/Intelligence integrations.
-No unreviewed local changes or OCR experiments are included. Supported startup
-baseline is no-AI/manual workflow; Qwen/GPU and external-provider operation are
-optional integrations, not requirements or certified runtime modes for v0.1.0.
-Existing merged code is retained. Do not claim all AI modes have passed.
+Source layout: headless `backend/.../core` supplies identity, workflow, data and
+audit; `hpdi` capabilities serve Service Desk/Room Request applications; reusable
+Python `intelligence/src/hdpi` and the React platform complete the three tiers.
+Contracts/OpenAPI are under `contracts/`; architecture/startup details follow.
 
-### Minimal clean-source startup
+Public source candidate excludes pending-rights fixtures and references. Its
+fixture-dependent tests, corpus evaluation and demo data are NOT release-certified.
+Photo is replaced by a native CSS gradient in the candidate only. Historical
+acceptance reports are not proof of current demo health. See BUILD_VALIDATION.md
+under docs/publication for this preparation's actual build results.
 
-Use Docker Desktop/Linux containers with Compose v2. In a fresh clone only:
+For an authorized clean-machine review use Java 17/Maven 3.9.9, Node >=22.12,
+Python 3.12 and Docker/Compose as documented below. Build source with
+`mvn -f backend/pom.xml verify`, `npm ci --prefix frontend` then
+`npm run build --prefix frontend`, and
+`python -m pip wheel --no-deps ./intelligence -w <outside-source-wheel-directory>`.
+Run `scripts/setup.ps1` to generate local-only secrets, then `scripts/start.ps1`
+on a new isolated installation; `-Intelligence` enables the triage overlay.
+Do not use reset flags or these startup commands against an existing shared demo.
+For outside-source invocation, first `Set-Location <clone-path>` inside a fresh
+PowerShell process; built jar/wheel/static artifacts should then be tested from a
+separate directory with explicit configuration. This run path is a verification
+requirement, not a claim that it has passed.
 
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup.ps1
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start.ps1 -NoAi
-```
+API schemas: `contracts/openapi/`; browser http://localhost:5173, gateway
+http://localhost:9080, Keycloak http://localhost:8081 on the local development
+stack. Demo users (named by role: `requester1`, `agent1`, `coordinator1`, `admin1`...) use locally generated `DEMO_PASSWORD` in ignored
+`.env`; never commit/share a live password or replace the source gate with hosted
+demo access. Issue tracker availability requires owner verification.
 
-Setup generates private `.env`/realm configuration. Never share them or run setup,
-realm resets or destructive volume commands against an existing demo installation.
-Default browser 5173, Keycloak 8081 and gateway 9080. Demo usernames use the locally
-generated DEMO_PASSWORD; no live password or API key is distributed.
+Post-merge integration: see [BE-POSTMERGE-01](docs/BE_POSTMERGE01.md) for the
+isolated Java/Python demo, FE proxy, acceptance evidence and release blockers.
+The default startup assembles Core, HPDI and applications; enable the private Python runtime with the documented overlays.
+Strict boundary recovery BND-00 through BND-07 is implemented; see
+[ownership and gates](docs/architecture/BOUNDARY_DEBT.md) and
+[runtime configuration](docs/architecture/STRICT_BOUNDARY_OPERATIONS.md).
+Production security G9 remains FAIL; release remains BLOCKED.
 
-The Dockerfiles build from source. Native toolchain: Java 17/Maven 3.9.9,
-Node >=22.12 and Python >=3.12,<3.13. Core CI runs isolated PostgreSQL, real E2E,
-restart/restore and contract checks. CI evidence must match the final source SHA;
-optional full image-security scanning is not covered by a green functional job.
-An unusable local image cache is an environment failure, not permission to reset
-existing databases. Resolve image/runtime problems before the first installation.
+AI06 continuation adds synthetic DEV evaluation and disabled Service Desk
+assistance through HPDI, Core freshness checks and a browser-tested panel.
+See [AI06 implementation status](intelligence/docs/task/AI06/AI06_COMPLETION_STATUS.md)
+for reproduction commands, measured evidence and remaining model/review gates.
 
 <p align="center">
   <img src="https://img.shields.io/badge/Java-17-blue.svg" alt="Java 17" />
@@ -136,9 +152,12 @@ Lần đầu chạy `.\dx` (lệnh nào cũng được), dự án tự được 
 | --- | --- |
 | `.\dx up model` | Phân loại bằng Qwen local (GPU) + bộ luật |
 | `.\dx up model ask` | Như trên, thêm Hỏi AI qua API |
+| `.\dx up remote` | Qwen trên máy GPU riêng qua Cloudflare Access (không cần GPU ở máy này), xem [docs/remote-model.md](docs/remote-model.md) |
 | `.\dx up api` | Phân loại và Hỏi AI đều qua API (không cần GPU) |
 | `.\dx restart` | Dừng rồi khởi động lại |
 | `.\dx ps`, `.\dx logs [service]` | Trạng thái container, xem log |
+| `.\dx realm` | Import lại realm Keycloak (`start.ps1 -Reset`) |
+| `.\dx schedule` | Tạo lịch trực mẫu tuần này + tuần sau (người trực cả tuần, người trực vài buổi) |
 | `.\dx qwen` | Khởi động lại Qwen khi thẻ AI báo "AI tạm không khả dụng" |
 | `.\dx smoke`, `.\dx check` | Kiểm thử nhanh, kiểm cấu hình Compose và CSDL |
 | `.\dx help` | Xem mọi lệnh |
@@ -235,8 +254,8 @@ nội bộ; chế độ phát triển `local-dev` không cần người khác c�
 
 #### Bước 4 — Đăng nhập và thử hỏi đáp
 
-Mở `http://localhost:5173`. Đăng nhập `user1` để tạo ticket trong `lab-a`, hoặc
-`user3` để xem gợi ý phân loại với vai trò điều phối viên. Mật khẩu nằm ở
+Mở `http://localhost:5173`. Đăng nhập `requester1` để tạo ticket trong `lab-a`, hoặc
+`coordinator1` để xem gợi ý phân loại với vai trò điều phối viên. Mật khẩu nằm ở
 **`DEMO_PASSWORD` trong `.env`**; các file JSON trong `.local` là cấu hình tự sinh.
 Xem đầy đủ vai trò tại [Tài khoản mẫu & Phân quyền](#-tài-khoản-mẫu--phân-quyền).
 
@@ -254,9 +273,32 @@ Container healthy xác nhận dịch vụ đã khởi động, chưa xác nhận
 
 #### Existing Keycloak realms
 
-Keycloak imports only into a missing realm. Migrate required clients/groups/roles
-through the Admin API or console, preserving user IDs. Do not reset a shared realm
-or remove shared volumes: changed user subjects can orphan existing tickets.
+Keycloak chỉ import `dx-lab` **lần đầu**, khi realm chưa tồn tại. Máy đã chạy từ bản cũ sẽ giữ realm cũ và **không nhận** thay đổi mới trong `infra/keycloak/realm-template.json` (client `dx-web`, tài khoản, nhóm mới). Dấu hiệu: trang Keycloak báo *"Client not found"*, hoặc đăng nhập `requester1` báo sai mật khẩu.
+
+Khởi động kèm xóa và import lại realm bằng một lệnh:
+
+```powershell
+.\dx realm
+```
+
+Stack đang chạy sẵn thì chỉ cần chạy riêng bước reset:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/reset-keycloak-realm.ps1
+```
+
+Cần chạy `-Reset` khi template có client, nhóm hoặc thuộc tính mới (ví dụ client `dx-directory` cho danh bạ và tên hiển thị workspace). `scripts/setup.ps1` tự bổ sung biến còn thiếu (như `DIRECTORY_CLIENT_SECRET`) vào `.env` mà không đổi mật khẩu đã có.
+
+#### Quyền (`dx-permissions`)
+
+Quyền nhỏ khai báo là role của client `dx-permissions` trong `infra/keycloak/realm-template.json`: **tên tiếng Anh** dạng `đối-tượng:hành-động` (`request:create`), **mô tả tiếng Việt** ("Tạo yêu cầu") hiện trong Keycloak. Mỗi nhóm `/workspaces/{ws}/{vai trò}` được gán sẵn bộ quyền mặc định.
+
+Máy mới chỉ cần `scripts/start.ps1`: Keycloak import realm từ template nên có sẵn đủ quyền, nhóm và tài khoản quản trị. Máy đang có realm cũ (tạo trước khi có quyền) chạy **một lần** `scripts/start.ps1 -Reset` để import lại; sau đó quyền được lưu trong database của Keycloak, các lần sau chạy `scripts/start.ps1` như thường. Đổi quyền của một nhóm: Keycloak → realm `dx-lab` → **Groups** → nhóm → **Role mapping** → **Assign role** → lọc theo client → tích chọn quyền.
+
+Script sẽ: sinh lại `.local/dx-lab-realm.json` từ template → xóa realm `dx-lab` → khởi động lại Keycloak để import → kiểm tra log có dòng `Realm 'dx-lab' imported` → khởi động lại backend để nạp khóa ký mới.
+
+> [!WARNING]
+> Chỉ xóa realm `dx-lab`; realm `master` và dữ liệu PostgreSQL của core giữ nguyên. Tuy vậy user được tạo lại với **ID (`sub`) mới**, nên ticket/quy trình tạo bằng tài khoản cũ trên máy đó sẽ không còn ai xem được. Chỉ dùng cho môi trường local/demo.
 
 ### 2. Kiểm tra trạng thái dịch vụ
 
@@ -277,20 +319,60 @@ docker compose ps
 
 ---
 
+## 🔔 Thông báo & email
+
+Mỗi lần đổi trạng thái (tạo ticket, cần bổ sung thông tin, giao việc, bắt đầu, chờ người gửi, trả việc, báo xong, xác nhận/mở lại, tự đóng, sửa ước tính, ca trực) và mỗi cảnh báo (quá hạn, khẩn cấp...) đều vào **chuông thông báo** ở đầu sidebar của người liên quan; các bước cần người nhận hành động gửi thêm **email**. Người tự làm thao tác không nhận thông báo của chính mình.
+
+Email gửi qua SMTP, cấu hình trong `.env` (không commit):
+
+```dotenv
+MAIL_HOST=smtp.gmail.com
+MAIL_PORT=587
+MAIL_USERNAME=dia-chi-gmail-gui@gmail.com
+MAIL_PASSWORD=mat-khau-ung-dung-16-ky-tu
+MAIL_FROM_NAME=Smart Desk App
+APP_BASE_URL=http://localhost:5173
+```
+
+Gmail cần bật xác minh 2 bước rồi tạo **mật khẩu ứng dụng**. `MAIL_HOST` trống thì chỉ có thông báo trong app. Địa chỉ nhận lấy từ email của tài khoản trong Keycloak (tài khoản demo dùng `@example.com` nên không nhận được; muốn thử thì đổi email của một tài khoản trong trang quản trị Keycloak ở máy mình, không sửa vào `realm-template.json`).
+
+### Realtime (WebSocket)
+
+Thông báo mới, đổi trạng thái ticket, bình luận, hàng đợi và ca trực hiện **ngay** trên màn hình đang mở, không cần F5.
+
+- Đường đi: trình duyệt → `/ws` (Vite / nginx) → APISIX (route `realtime`, `enable_websocket`) → `platform:8080/ws`. Giao thức STOMP; token gửi trong frame `CONNECT`, không đặt trên URL.
+- Server chỉ báo "có thay đổi" (`{type, workspace, resource, id}`), FE tải lại qua REST nên quyền xem vẫn do API quyết định. Sự kiện chỉ phát sau khi transaction commit.
+- Kênh: `/user/queue/events` (riêng mỗi người), `/topic/workspaces/{ws}/tickets` và `/work` (agent, coordinator), `/topic/workspaces/{ws}/tickets/{id}` (ai xem được ticket). Hợp đồng: [`contracts/realtime/asyncapi.yaml`](contracts/realtime/asyncapi.yaml).
+- Mất kết nối thì FE tự nối lại (1 → 30 giây) và polling 30 giây chạy dự phòng; đang nối thì polling giãn ra 5 phút.
+- Kiểm tra: DevTools → Network → lọc **WS** → `/ws` → tab Messages thấy `CONNECTED`, `SUBSCRIBE`, `MESSAGE`.
+- Tắt: `REALTIME_ENABLED=false` trong `.env`. Origin được phép: `APP_BASE_URL`, `localhost:5173`, cộng thêm `REALTIME_ALLOWED_ORIGINS` (phân tách dấu phẩy).
+
+---
+
 ## 🔑 Tài khoản mẫu & Phân quyền
 
 Mật khẩu của tất cả tài khoản mẫu được sinh ngẫu nhiên tại biến `DEMO_PASSWORD` trong file `.env`. Mật khẩu tài khoản admin Keycloak được lưu tại `KC_ADMIN_PASSWORD`. Không có mật khẩu tĩnh lưu trong mã nguồn.
 
-| Tài khoản | Phân quyền (Keycloak Group) | Không gian làm việc (Workspace) |
-| --- | --- | --- |
-| `user1` | `/workspaces/lab-a/requester` | `lab-a` (Người gửi yêu cầu) |
-| `user2` | `/workspaces/lab-a/agent` | `lab-a` (Chuyên viên giải quyết) |
-| `user3` | `/workspaces/lab-a/coordinator` | `lab-a` (Điều phối viên) |
-| `user4` | `/workspaces/lab-b/requester` | `lab-b` (Người gửi yêu cầu) |
-| `user5` | `/workspaces/lab-b/agent` | `lab-b` (Chuyên viên giải quyết) |
-| `user6` | `/workspaces/lab-b/coordinator` | `lab-b` (Điều phối viên) |
-| `user7` | Realm role `platform-admin` | Quản trị hệ thống (Toàn cục, không thuộc workspace) |
-| `superadmin` | Cả 3 vai trò ở `lab-a`, `lab-b` + `platform-admin` | Tài khoản thử nghiệm đầy đủ quyền; vẫn tuân thủ quy tắc tách quyền (không tự xử lý ticket mình tạo) |
+| Tài khoản | Phân quyền (Keycloak Group) | Không gian làm việc (Workspace) | Chuyên môn (`/support-groups/{ws}/...`) |
+| --- | --- | --- | --- |
+| `requester1` | `/workspaces/lab-a/requester` | `lab-a` (Người gửi yêu cầu) | |
+| `agent1` | `/workspaces/lab-a/agent` | `lab-a` (Chuyên viên giải quyết) | hardware, network |
+| `agent2` | `/workspaces/lab-a/agent` | `lab-a` (Chuyên viên giải quyết) | hardware |
+| `agent3` | `/workspaces/lab-a/agent` | `lab-a` (Chuyên viên giải quyết) | software, sysadmin |
+| `agent4` | `/workspaces/lab-a/agent` | `lab-a` (Chuyên viên giải quyết) | network, sysadmin |
+| `agent5` | `/workspaces/lab-a/agent` | `lab-a` (Chuyên viên giải quyết) | hardware, software |
+| `coordinator1` | `/workspaces/lab-a/coordinator` | `lab-a` (Điều phối viên) | |
+| `requester2` | `/workspaces/lab-b/requester` | `lab-b` (Người gửi yêu cầu) | |
+| `agent6` | `/workspaces/lab-b/agent` | `lab-b` (Chuyên viên giải quyết) | hardware, software |
+| `agent7` | `/workspaces/lab-b/agent` | `lab-b` (Chuyên viên giải quyết) | network, sysadmin |
+| `agent8` | `/workspaces/lab-b/agent` | `lab-b` (Chuyên viên giải quyết) | network, software |
+| `coordinator2` | `/workspaces/lab-b/coordinator` | `lab-b` (Điều phối viên) | |
+| `admin1` | Realm role `platform-admin` | Quản trị hệ thống (Toàn cục, không thuộc workspace) | |
+| `superadmin` | Cả 3 vai trò ở `lab-a`, `lab-b` + `platform-admin` | Tài khoản thử nghiệm đầy đủ quyền; vẫn tuân thủ quy tắc tách quyền (không tự xử lý ticket mình tạo) | Mọi tổ ở `lab-a`, `lab-b` |
+
+Loại ticket → tổ: Phần cứng → `hardware`, Mạng → `network`, Phần mềm → `software`, Tài khoản → `sysadmin`; loại Khác không có tổ, điều phối viên chọn trong mọi kỹ thuật viên.
+
+**Ca trực:** kỹ thuật viên đăng ký ô (ngày × ca Sáng/Chiều trong Cài đặt) ở trang **Ca trực**, trước giờ bắt đầu ca đầu tiên của ngày đó (mặc định 07:00). Trong ca đã đăng ký thì tự online, ngoài ca tự nghỉ; tắt trực là nghỉ đột xuất. Điều phối viên xem họ tên mọi người theo từng ô, đăng ký hộ (tới hết ca) và duyệt. Người làm **Hành chính** (kỹ thuật viên tự chọn *Hình thức* trên trang Ca trực) không cần đăng ký: tự trực mọi ca T2–T6, nghỉ ngày lễ. Ngày lễ Việt Nam, cho đăng ký T7/CN/ngày lễ và bắt buộc duyệt nằm ở **Cài đặt → Ca trực và ngày lễ**; ngày lễ dùng chung cho hạn SLA và hiện ghi chú trên lịch (ngày ghi "dự kiến" cần kiểm tra theo thông báo chính thức hằng năm). Theo ca mà chưa đăng ký thì không được đề xuất nhận việc: chạy `.\dx schedule` để có lịch mẫu (agent1, agent3, agent6 làm hành chính).
 
 > [!TIP]
 > Existing realm: migrate through the Admin API/console; preserve user IDs and shared data.

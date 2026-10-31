@@ -20,6 +20,7 @@ import { StatusBlock } from "../tickets/detail/StatusBlock";
 import { ticketCode } from "../tickets/ticketLabels";
 import { TicketSummary } from "../tickets/TicketSummary";
 import { useTicket, useIntelligenceStatus, useRetryTicketAssessment } from "../tickets/useTickets";
+import { useTicketDetailRealtime } from "../tickets/useTicketRealtime";
 import { EnrichmentDialog } from "../tickets/EnrichmentDialog";
 import { useContextRevision } from "../tickets/useContextRevision";
 import { useIntake } from "../tickets/useIntake";
@@ -73,6 +74,7 @@ const TicketDetailPage = () => {
 
 const TicketDetail = ({ workspace, ticketId }: { workspace: string; ticketId: string }) => {
   const ticket = useTicket(workspace, ticketId);
+  useTicketDetailRealtime(workspace, ticketId);
   const aiStatus = useIntelligenceStatus(workspace);
   const retryAssessment = useRetryTicketAssessment(workspace, ticketId);
   const { actor } = useActor();
@@ -156,7 +158,6 @@ const TicketDetail = ({ workspace, ticketId }: { workspace: string; ticketId: st
             )}
             <DetailTabs
               workspace={workspace}
-              assistanceMode={aiStatus.data?.assistanceMode}
               ticket={ticket.data}
               isRequesterView={isRequesterView}
             />

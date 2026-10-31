@@ -26,17 +26,29 @@ public class EstimateRequests {
     private final PermissionGuard permissions;
     private final ActivityJournal journal;
     private final EstimateRequestLifecycle lifecycle;
+    private final org.springframework.beans.factory.ObjectProvider<Notifications> notifications;
 
     public EstimateRequests(JdbcTemplate jdbc, WorkExecution execution, WorkScheduling scheduling,
             List<WorkEstimate> estimates, HumanContext humans, PermissionGuard permissions, ActivityJournal journal,
-            EstimateRequestLifecycle lifecycle) {
+            EstimateRequestLifecycle lifecycle, org.springframework.beans.factory.ObjectProvider<Notifications> notifications) {
         this.jdbc = jdbc; this.execution = execution; this.scheduling = scheduling;
         this.estimates = List.copyOf(estimates); this.humans = humans; this.permissions = permissions; this.journal = journal;
-        this.lifecycle = lifecycle;
+        this.lifecycle = lifecycle; this.notifications = notifications;
+    }
+
+    private vn.haui.dx.hpdi.human.api.LiveUpdates live;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    void setLive(vn.haui.dx.hpdi.human.api.LiveUpdates live) { this.live = live; }
+
+    // Phát sau commit nên gọi ở đầu hàm cũng được: lỗi thì rollback, không phát
+    private void workChanged(String workspace) {
+        if (live != null) live.toChannel(workspace, vn.haui.dx.hpdi.human.api.LiveUpdates.WORK, "WORK_CHANGED", "work", null);
     }
 
     @Transactional
     public Request create(String workspace, String taskId, Integer proposedMinutes, String reason) {
+        workChanged(workspace);
         if (proposedMinutes == null || proposedMinutes < 1 || proposedMinutes > 10080
                 || reason == null || reason.isBlank() || reason.length() > 1000)
             throw CapabilityException.validation("Valid proposedMinutes and reason required");
@@ -57,6 +69,10 @@ public class EstimateRequests {
                 + " values(?,?,?,?,?,?,?,?,?,?,?)", id, workspace, task.processInstanceId(), taskId, snapshot.generation(),
                 task.businessKey(), snapshot.label(), actor.subject(), snapshot.minutes(), proposedMinutes, reason);
             journal.record(workspace, new BusinessActivity("estimate.request", "process.task", taskId, Map.of("requestId", id.toString())));
+            // Điều phối viên duyệt ở trang Sửa ước tính (chỉ trong app)
+            notifications.getObject().notify(new Notifications.Notice(workspace, "ESTIMATE_REQUESTED", Notifications.Severity.INFO,
+                "Yêu cầu sửa ước tính: " + snapshot.minutes() + " → " + proposedMinutes + " phút", snapshot.label(), "/estimate-requests",
+                task.processKey(), task.businessKey(), actor.subject(), Set.of(), true, false));
             return null;
         });
         if (!active) throw CapabilityException.conflict("Active work required");
@@ -82,6 +98,7 @@ public class EstimateRequests {
 
     @Transactional
     public Request decide(String workspace, UUID id, Boolean approved, String note) {
+        workChanged(workspace);
         if (approved == null || (note != null && note.length() > 1000)) throw CapabilityException.validation("Invalid estimate decision");
         var actor = humans.currentMember(workspace);
         if (!actor.hasRole("coordinator")) throw CapabilityException.forbidden("Coordinator required");
@@ -103,6 +120,10 @@ public class EstimateRequests {
                 approved ? "APPROVED" : "REJECTED", actor.subject(), note, workspace, id);
             journal.record(workspace, new BusinessActivity("estimate.decision", "process.task", task.id(),
                 Map.of("requestId", id.toString(), "decisionKey", approved ? "APPROVED" : "REJECTED")));
+            // Người xin biết kết quả; link về trang chi tiết của app (FE tra theo processKey + businessKey)
+            notifications.getObject().notify(new Notifications.Notice(workspace, approved ? "ESTIMATE_APPROVED" : "ESTIMATE_REJECTED",
+                Notifications.Severity.INFO, (approved ? "Đã duyệt" : "Từ chối") + " sửa ước tính " + request.proposedMinutes() + " phút",
+                request.label(), null, task.processKey(), request.businessKey(), actor.subject(), Set.of(request.requestedBy()), false, false));
             return null;
         });
         if (!active) throw CapabilityException.conflict("Estimate request no longer references active work");

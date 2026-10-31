@@ -1,0 +1,96 @@
+asyncapi: 3.0.0
+info:
+  title: Smart Service Desk realtime
+  version: 0.1.0
+  description: |
+    STOMP 1.2 over WebSocket at `/ws` (same origin; Vite/nginx → APISIX → platform).
+    Server → client only: every event means "something changed", clients refetch through REST,
+    so authorization stays with the REST APIs. Events are published only after the business
+    transaction commits; duplicates within one transaction are merged. Delivery is best effort:
+    after reconnecting, clients refetch everything they display.
+
+    CONNECT must carry `Authorization: Bearer <access token>` as a STOMP header (never in the URL).
+    Missing or invalid token → ERROR frame and close. At most 5 connections per user.
+    When the token expires the server closes the WebSocket with code 4001; clients reconnect with a fresh token.
+    Heartbeat 10s/10s. Frames above 16 KiB are rejected. SEND frames are rejected.
+    SUBSCRIBE to a destination the user may not read is dropped silently (connection stays open).
+servers:
+  local:
+    host: localhost:5173
+    pathname: /ws
+    protocol: ws
+    description: Through the frontend proxy; `REALTIME_ENABLED=false` disables the endpoint.
+channels:
+  userEvents:
+    address: /user/queue/events
+    description: Private queue of the authenticated subject, across all of their workspaces.
+    messages:
+      notification: {$ref: '#/components/messages/Notification'}
+      ticketChanged: {$ref: '#/components/messages/TicketChanged'}
+  work:
+    address: /topic/workspaces/{workspace}/work
+    description: Queue, inbox, duty, shift slots and estimate requests of the workspace. Agent or coordinator.
+    parameters:
+      workspace: {$ref: '#/components/parameters/Workspace'}
+    messages:
+      workChanged: {$ref: '#/components/messages/WorkChanged'}
+  tickets:
+    address: /topic/workspaces/{workspace}/tickets
+    description: Any ticket of the workspace changed (list, board, intake queue). Agent or coordinator.
+    parameters:
+      workspace: {$ref: '#/components/parameters/Workspace'}
+    messages:
+      ticketChanged: {$ref: '#/components/messages/TicketChanged'}
+  ticket:
+    address: /topic/workspaces/{workspace}/tickets/{ticketId}
+    description: One ticket. Same visibility as `GET /tickets/{id}` (a requester only their own tickets).
+    parameters:
+      workspace: {$ref: '#/components/parameters/Workspace'}
+      ticketId:
+        description: Ticket UUID.
+    messages:
+      ticketChanged: {$ref: '#/components/messages/TicketChanged'}
+      ticketCommented: {$ref: '#/components/messages/TicketCommented'}
+operations:
+  receiveUserEvents:
+    action: receive
+    channel: {$ref: '#/channels/userEvents'}
+  receiveWork:
+    action: receive
+    channel: {$ref: '#/channels/work'}
+  receiveTickets:
+    action: receive
+    channel: {$ref: '#/channels/tickets'}
+  receiveTicket:
+    action: receive
+    channel: {$ref: '#/channels/ticket'}
+components:
+  parameters:
+    Workspace:
+      description: Workspace key, `[a-z0-9-]{1,50}`.
+  messages:
+    Notification:
+      summary: A notification for this user was stored (refetch the bell).
+      payload: {$ref: '#/components/schemas/RealtimeEvent'}
+      examples:
+        - payload: {type: NOTIFICATION, workspace: lab-a, resource: notification, id: 6f1c2b8e-1d2f-4f5a-9b1e-2a6c7d8e9f00, at: '2026-10-31T08:00:00Z'}
+    TicketChanged:
+      summary: Status, assignment, classification, AI result or requester information changed.
+      payload: {$ref: '#/components/schemas/RealtimeEvent'}
+    TicketCommented:
+      summary: A comment was added to the ticket.
+      payload: {$ref: '#/components/schemas/RealtimeEvent'}
+    WorkChanged:
+      summary: Work items, duty or estimate requests of the workspace changed.
+      payload: {$ref: '#/components/schemas/RealtimeEvent'}
+  schemas:
+    RealtimeEvent:
+      type: object
+      additionalProperties: false
+      required: [type, workspace, resource, id, at]
+      properties:
+        type: {type: string, enum: [NOTIFICATION, TICKET_CHANGED, TICKET_COMMENTED, WORK_CHANGED]}
+        workspace: {type: string}
+        resource: {type: string, enum: [notification, ticket, work]}
+        id: {type: [string, 'null'], description: Resource id; null for workspace-wide work changes.}
+        at: {type: string, format: date-time}

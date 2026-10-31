@@ -80,6 +80,12 @@ public class WorkPolicyReader implements WorkPolicy, ExecutionLimits {
             alerts.path("warnRemainingRatio").asDouble(), alerts.path("pendingRemindDays").asInt(),
             alerts.path("reopenUnclaimedMinutes").asInt(), root.path("closing").path("autoCloseAfterDays").asInt(),
             estimate.path("minSamples").asInt(), estimate.path("windowMonths").asInt(),
-            estimate.path("outlierMinMinutes").asInt(), estimate.path("outlierMaxMinutes").asInt());
+            estimate.path("outlierMinMinutes").asInt(), estimate.path("outlierMaxMinutes").asInt(),
+            // Bản lưu trước V39 chưa có nhóm schedule: mặc định tắt cả hai
+            root.path("schedule").path("weekendRegistration").asBoolean(false),
+            root.path("schedule").path("approvalRequired").asBoolean(false),
+            StreamSupport.stream(root.path("schedule").path("holidays").spliterator(), false)
+                .map(day -> new Holiday(java.time.LocalDate.parse(day.path("date").asText()), day.path("name").asText()))
+                .toList());
     }
 }

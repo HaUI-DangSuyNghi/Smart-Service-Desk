@@ -50,6 +50,11 @@ public class TicketReviewService implements WorkProjection {
     }
     @Override public String processKey() { return ServiceDeskProcess.REVIEWED_KEY; }
 
+    private TicketRealtime realtime;
+
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    void setRealtime(TicketRealtime realtime) { this.realtime = realtime; }
+
     @Transactional
     public TicketReview.View review(String workspace, UUID id, TicketReview.Decision decision) {
         var actor = humans.currentActor(workspace);
@@ -57,6 +62,8 @@ public class TicketReviewService implements WorkProjection {
         permissions.require(workspace, Permissions.TASK_ASSIGN);
         permissions.require(workspace, Permissions.TASK_HANDLE);
         if (decision == null || !validator.validate(decision).isEmpty()) throw CapabilityException.validation("Invalid review decision");
+        // Phát sau commit; duyệt lỗi thì rollback, không phát
+        if (realtime != null) realtime.changed(workspace, id);
         var locked = jdbc.queryForList("select id from servicedesk_ticket where workspace=? and id=? for update", workspace, id);
         if (locked.isEmpty()) throw CapabilityException.notFound("Ticket not found");
         var ticket = tickets.find(workspace, id, null).orElseThrow();

@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -42,7 +43,7 @@ const CompleteTaskForm = ({ task, onDone }: FormProps) => {
   const complete = useCompleteTask();
   const outcomes = labels.outcomes(task.processKey, task.key);
   const taskName = labels.taskName(task.processKey, task.key, task.name);
-  // Bước chỉ có một kết quả (ví dụ "Đã xử lý") thì chọn sẵn
+  // Bước chỉ có một kết quả (ví dụ "Đã xử lý"): gửi ngầm, không cần chọn
   const onlyOutcome = outcomes.length === 1 ? outcomes[0]?.key : undefined;
 
   const form = useForm<FormValues>({
@@ -51,6 +52,11 @@ const CompleteTaskForm = ({ task, onDone }: FormProps) => {
   });
   const comment = useWatch({ control: form.control, name: "comment" });
   const { errors } = form.formState;
+
+  // Danh mục tải xong sau khi mở form: điền kết quả duy nhất vào ô đang ẩn
+  useEffect(() => {
+    if (onlyOutcome && !form.getValues("outcome")) form.setValue("outcome", onlyOutcome);
+  }, [onlyOutcome, form]);
 
   const handleSubmit = form.handleSubmit(({ outcome, comment }) => {
     complete.mutate(
@@ -75,9 +81,7 @@ const CompleteTaskForm = ({ task, onDone }: FormProps) => {
       <DialogHeader>
         {/* Tiêu đề theo đúng việc của bước (Duyệt yêu cầu, Bàn giao thiết bị...) */}
         <DialogTitle>{taskName}</DialogTitle>
-        <DialogDescription>
-          {labels.processName(task.processKey)} · chọn kết quả của bước này.
-        </DialogDescription>
+        <DialogDescription>{labels.processName(task.processKey)}</DialogDescription>
       </DialogHeader>
 
       <form
@@ -86,27 +90,30 @@ const CompleteTaskForm = ({ task, onDone }: FormProps) => {
         onKeyDown={submitOnEnter}
         className="flex flex-col gap-3"
       >
-        <fieldset className="flex flex-col gap-1.5">
-          <legend className="mb-1 text-crm-sm text-crm-text-2">Kết quả</legend>
-          {catalog.isPending && <TextSkeleton lines={2} label="Đang tải kết quả" />}
-          {!catalog.isPending && outcomes.length === 0 && (
-            <p className="text-crm-sm text-crm-danger">
-              Không tải được danh sách kết quả của bước.
-            </p>
-          )}
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-            {outcomes.map((option) => (
-              <ChoiceCard key={option.key} value={option.key} {...form.register("outcome")}>
-                {option.label}
-              </ChoiceCard>
-            ))}
-          </div>
-          {errors.outcome && (
-            <p className="text-crm-sm text-crm-danger">{errors.outcome.message}</p>
-          )}
-        </fieldset>
+        {/* Chỉ một kết quả thì không hiện phần chọn */}
+        {!onlyOutcome && (
+          <fieldset className="flex flex-col gap-1.5">
+            <legend className="mb-1 text-crm-sm text-crm-text-2">Kết quả</legend>
+            {catalog.isPending && <TextSkeleton lines={2} label="Đang tải kết quả" />}
+            {!catalog.isPending && outcomes.length === 0 && (
+              <p className="text-crm-sm text-crm-danger">
+                Không tải được danh sách kết quả của bước.
+              </p>
+            )}
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {outcomes.map((option) => (
+                <ChoiceCard key={option.key} value={option.key} {...form.register("outcome")}>
+                  {option.label}
+                </ChoiceCard>
+              ))}
+            </div>
+            {errors.outcome && (
+              <p className="text-crm-sm text-crm-danger">{errors.outcome.message}</p>
+            )}
+          </fieldset>
+        )}
 
-        <FormField id="comment" label="Ghi chú (không bắt buộc)" error={errors.comment?.message}>
+        <FormField id="comment" label="Ghi chú" error={errors.comment?.message}>
           <Textarea id="comment" maxLength={MAX_COMMENT} {...form.register("comment")} />
           <span className="self-end text-crm-xs text-crm-text-3 tabular-nums">
             {comment.length}/{MAX_COMMENT}

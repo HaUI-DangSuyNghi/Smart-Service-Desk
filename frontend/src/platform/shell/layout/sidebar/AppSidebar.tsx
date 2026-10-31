@@ -1,6 +1,6 @@
 import {
-  IconBell,
   IconBook,
+  IconCalendarTime,
   IconCalendarUser,
   IconChartBar,
   IconHistory,
@@ -11,11 +11,11 @@ import {
   IconLayoutSidebarLeftCollapse,
   IconLayoutSidebarLeftExpand,
   IconSend,
-  IconUsers,
 } from "@tabler/icons-react";
 import { cn } from "cn";
 import { hasAnyRole, PERMISSIONS, useActor, usePermissions } from "@/platform/human/workspace";
-import { AlertBadge, InboxBadge } from "@/platform/process";
+import { NotificationBell } from "@/platform/human/notifications";
+import { InboxBadge } from "@/platform/process";
 import { useIsMobile } from "@/platform/shared/lib/useMediaQuery";
 import type { MenuItem } from "../../router/registry";
 import { visibleMenu } from "./menuTree";
@@ -54,26 +54,20 @@ const PLATFORM_MENU: readonly MenuItem[] = [
     badge: InboxBadge,
     requiredPermissions: [PERMISSIONS.taskHandle],
   },
-  {
-    label: "Cảnh báo",
-    path: "/alerts",
-    icon: IconBell,
-    tone: "orange",
-    badge: AlertBadge,
-    requiredPermissions: [PERMISSIONS.taskHandle],
-  },
-  // Việc của điều phối viên (R2, R3)
+  // Cảnh báo nằm trong chuông thông báo ở đầu sidebar (trang /alerts vẫn mở được)
+  // Ca trực (R3), sửa ước tính (R2); nhóm hiện khi người dùng thấy ít nhất một mục con
   {
     label: "Điều phối",
     path: "/coordination",
     icon: IconCalendarUser,
     tone: "turquoise",
     children: [
+      // Kỹ thuật viên đăng ký ca của mình; điều phối viên xem lịch cả workspace, đăng ký hộ, duyệt
       {
         label: "Ca trực",
         path: "/duty",
-        icon: IconCalendarUser,
-        requiredPermissions: [PERMISSIONS.taskAssign],
+        icon: IconCalendarTime,
+        requiredPermissions: [PERMISSIONS.taskHandle, PERMISSIONS.taskAssign],
       },
       {
         label: "Sửa ước tính",
@@ -98,24 +92,11 @@ const PLATFORM_MENU: readonly MenuItem[] = [
     requiredPermissions: [PERMISSIONS.documentView],
   },
   {
-    label: "Quản trị",
-    path: "/administration",
-    icon: IconUsers,
+    label: "Nhật ký",
+    path: "/audit",
+    icon: IconHistory,
     tone: "purple",
-    children: [
-      {
-        label: "Thành viên",
-        path: "/members",
-        icon: IconUsers,
-        requiredPermissions: [PERMISSIONS.memberView],
-      },
-      {
-        label: "Nhật ký",
-        path: "/audit",
-        icon: IconHistory,
-        requiredPermissions: [PERMISSIONS.auditView],
-      },
-    ],
+    requiredPermissions: [PERMISSIONS.auditView],
   },
 ];
 
@@ -164,6 +145,7 @@ export const AppSidebar = ({ appMenu }: Props) => {
       {/* Hàng đầu: workspace bên trái, nút thu gọn bên phải */}
       <div className={cn("flex items-center gap-1", collapsed ? "flex-col" : "justify-between")}>
         <WorkspaceSwitcher collapsed={collapsed} />
+        <NotificationBell collapsed={collapsed} />
         {!isMobile && (
           <button
             type="button"

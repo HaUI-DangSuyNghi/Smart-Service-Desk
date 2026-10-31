@@ -10,8 +10,8 @@ $qwenContainer = "$project-ai07-qwen-1"
 $webUrl = 'http://localhost:5173'
 $tick = [string][char]0x221A
 # AI bat buoc: chi co Qwen local hoac API (khong chay chi bo luat / tat AI qua dx)
-$aiModes = [ordered]@{ model = 'Model'; api = 'Api'; ask = 'AskApi' }
-$aiSavedModes = @('model', 'api')
+$aiModes = [ordered]@{ model = 'Model'; remote = 'Remote'; api = 'Api'; ask = 'AskApi' }
+$aiSavedModes = @('model', 'remote', 'api')
 
 function Show-Help {
     Write-Host @'
@@ -21,13 +21,14 @@ Smart Service Desk
   dx launch             Guided start: checks -> AI mode -> start -> open web
   dx doctor             Check Docker, disk, GPU, .env, ports, containers
   dx env                Create / update .env from .env.example
-  dx up [mode]          Start; mode: model | model ask | api
+  dx up [mode]          Start; mode: model | remote | model ask | remote ask | api
   dx down               Stop all containers, keep data
   dx restart [mode]     down + up
   dx ps                 Container status
   dx logs [service]     Follow logs (default: platform keycloak gateway)
   dx qwen               Restart Qwen when AI is unavailable
   dx realm              Re-import the Keycloak realm from template
+  dx schedule           Seed demo duty shifts (this week + next week)
   dx smoke              Smoke test the running stack
   dx check              Validate Compose config and database
   dx open               Open http://localhost:5173
@@ -95,7 +96,7 @@ function Invoke-Up([string[]]$Options) {
         if (-not $aiModes.Contains($item)) { Write-Host "Unknown option '$item'. See: dx help"; $script:ok = $false; return }
         $switches[$aiModes[$item]] = $true
     }
-    if ($Options -contains 'ask' -and -not ($Options -contains 'model')) { Write-Host "'ask' goes with model: dx up model ask"; $script:ok = $false; return }
+    if ($Options -contains 'ask' -and -not ($Options -contains 'model' -or $Options -contains 'remote')) { Write-Host "'ask' goes with model or remote: dx up model ask"; $script:ok = $false; return }
     $settings = Read-Settings
     # Chua co che do AI hop le (may moi, hoac da luu bo luat / tat): tu chon theo may
     if ($switches.Count -eq 0 -and $settings['AI_MODE'] -notin $aiSavedModes) {
@@ -121,6 +122,7 @@ function Select-AiMode($settings) {
         if ($hasKey) { return @('model', 'ask') }
         return @('model')
     }
+    if (Test-Path -LiteralPath '.local/gpu-worker/classification-token') { return @('remote') }
     if ($hasKey) { return @('api') }
     return @()
 }
@@ -134,6 +136,7 @@ function Invoke-Down {
 }
 
 function Invoke-Qwen {
+    if ((Read-Settings)['AI_MODE'] -eq 'remote') { Write-Host 'Qwen runs on the GPU server: restart the worker there (see docs/remote-model.md).'; return }
     Invoke-Docker restart $qwenContainer | Out-Null
     if ($LASTEXITCODE -ne 0) { Write-Host "Container $qwenContainer not found. Run: dx up model"; $script:ok = $false; return }
     Write-Host 'Reloading the model on the GPU (about 1 minute)...'
@@ -230,6 +233,11 @@ function Invoke-Doctor([switch]$PreFlight) {
         if ($hasKey) { Report OK "API key set for '$($settings['AI_API_PROVIDER'])' (not shown)" }
         else { Report FAIL 'API mode but AI_API_PROVIDER / AI_API_MODEL / key is missing' 'Fill them in .env, then: dx up' }
     }
+    if ($mode -eq 'remote') {
+        $missing = @(@('classification-token', 'worker.env', 'cf-access-client-id', 'cf-access-client-secret') | Where-Object { -not (Test-Path -LiteralPath ".local/gpu-worker/$_") })
+        if ($missing.Count -gt 0) { Report FAIL "GPU server mode but .local/gpu-worker is missing: $($missing -join ', ')" 'Copy them from the GPU machine; see docs/remote-model.md' }
+        else { Report OK 'GPU server credentials present in .local/gpu-worker (not shown)' }
+    }
     $gpuFree = Get-GpuFreeMiB
     if ($mode -eq 'model') {
         if ($null -eq $gpuFree) { Report FAIL 'Qwen mode but no NVIDIA GPU found' 'Install the NVIDIA driver, or switch: dx up api' }
@@ -313,6 +321,7 @@ function Invoke-Dx([string]$Name, [string[]]$Options = @()) {
                 & docker compose -p $project logs -f --tail 100 @services
             }
             'realm' { & "$PSScriptRoot/start.ps1" -Reset }
+            'schedule' { & "$PSScriptRoot/seed-schedule-demo.ps1" }
             'qwen' { Invoke-Qwen }
             'smoke' { & "$PSScriptRoot/smoke.ps1" }
             'check' { Invoke-Check }
@@ -411,6 +420,7 @@ function Get-AiModeOptions {
     if ($settings['AI_MODE'] -in $aiSavedModes) { $options += , @(@("Saved ($($settings['AI_MODE']))", 'Use the current setting'), @()) }
     $options += , @(@('Qwen local', 'GPU + rules'), @('model'))
     $options += , @(@('Qwen local + Ask AI', 'GPU + API key in .env'), @('model', 'ask'))
+    $options += , @(@('Qwen GPU server', 'Separate GPU machine, files in .local/gpu-worker'), @('remote'))
     $options += , @(@('API only', 'Gemini / OpenAI / Groq, no GPU'), @('api'))
     return $options
 }
@@ -461,7 +471,7 @@ function Start-Project {
     Write-Host "  Web app    $webUrl"
     Write-Host '  API        http://localhost:9080'
     Write-Host '  Keycloak   http://localhost:8081'
-    Write-Host '  Accounts   user1 requester, user2 agent, user3 coordinator (lab-a), superadmin all roles'
+    Write-Host '  Accounts   requester1, agent1, coordinator1 (lab-a), superadmin all roles'
     Write-Host '  Password   DEMO_PASSWORD in .env'
     if (Confirm-Choice 'Open the web app now?' 'Yes' 'No') { Start-Process $webUrl }
 }

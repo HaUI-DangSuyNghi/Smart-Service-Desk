@@ -1,4 +1,4 @@
-"""Local DEV acceptance: creates synthetic tickets and a new workspace for demo user4.
+"""Local DEV acceptance: creates synthetic tickets and a new workspace for demo requester2.
 
 Uses actual Keycloak, worker, rules and model. Never resets the realm or deletes data.
 """
@@ -77,8 +77,8 @@ def main():
                 else response.headers.get("Location", "").rsplit("/", 1)[-1]
             )
 
-    user = login("user4", config["DEMO_PASSWORD"])
-    foreign = login("user1", config["DEMO_PASSWORD"])
+    user = login("requester2", config["DEMO_PASSWORD"])
+    foreign = login("requester1", config["DEMO_PASSWORD"])
 
     def create(workspace, token):
         base = "/workspaces/" + workspace + "/tickets"
@@ -166,9 +166,9 @@ def main():
     admin(
         "POST", "/groups/" + requester + "/role-mappings/clients/" + permissions, [role]
     )
-    actor = admin("GET", "/users?username=user4&exact=true")[0]["id"]
+    actor = admin("GET", "/users?username=requester2&exact=true")[0]["id"]
     admin("PUT", "/users/" + actor + "/groups/" + requester)
-    user = login("user4", config["DEMO_PASSWORD"])
+    user = login("requester2", config["DEMO_PASSWORD"])
     path_new, ticket_new = create(workspace, user)
     wait(path_new, user)
     print(

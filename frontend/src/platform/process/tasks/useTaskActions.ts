@@ -46,7 +46,8 @@ export const useCompleteTask = () => {
 };
 
 export interface AssignTaskInput {
-  task: WorkItem;
+  /** Chỉ cần mã việc: menu giao lại trên thẻ không có sẵn cả WorkItem. */
+  task: Pick<WorkItem, "id">;
   /** Subject người được giao. */
   assignee: string;
 }

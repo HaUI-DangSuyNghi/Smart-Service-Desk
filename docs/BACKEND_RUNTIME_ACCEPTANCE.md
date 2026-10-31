@@ -212,7 +212,7 @@ The integration overlay instead reserves Keycloak 18081 and Gateway 19080.
 Backend and Python are internal services, not direct browser endpoints.
 
 Use `docs/BACKEND_API_INTEGRATION_CONTRACT.md` as current API/permission contract.
-The realm template defines synthetic user1-user7, superadmin and workspace group mappings;
+The realm template defines synthetic role-named accounts (requester1-2, agent1-8, coordinator1-2, admin1), superadmin and workspace group mappings;
 use the current template/contract to select requester, agent and coordinator.
 They were NOT imported or logged in during this run. No passwords are recorded.
 Create business tickets/room requests through their application APIs, never

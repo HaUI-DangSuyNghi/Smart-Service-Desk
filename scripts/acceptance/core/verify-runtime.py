@@ -35,7 +35,7 @@ if args.mode == "seed":
     with urllib.request.urlopen(request, timeout=30) as response:
         assert response.status == 201
 tokens, subjects, responses = {}, {}, []
-for username in ["user1", "user2", "user3", "user4", "user5", "user6", "user7"]:
+for username in ["requester1", "agent1", "coordinator1", "requester2", "agent6", "coordinator2", "admin1"]:
     data = urllib.parse.urlencode(dict(grant_type="password", client_id="room-loan-probe", username=username, password=password)).encode()
     with urllib.request.urlopen(args.identity_url + "/realms/dx-lab/protocol/openid-connect/token", data, timeout=30) as response:
         tokens[username] = json.load(response)["access_token"]
@@ -81,11 +81,11 @@ def upload(expected, name="room-loan.txt", media="text/plain"):
     boundary = uuid.uuid4().hex
     payload = (f"--{boundary}\r\nContent-Disposition: form-data; name=\"file\"; filename=\"{name}\"\r\n"
                f"Content-Type: {media}\r\n\r\nSynthetic room loan; CC0-1.0.\r\n--{boundary}--\r\n").encode()
-    return call("POST", base + "/files", "user2", expected, raw=payload,
+    return call("POST", base + "/files", "agent1", expected, raw=payload,
                 headers={"Content-Type": "multipart/form-data; boundary=" + boundary})[0]
 
 
-def start(user="user1"):
+def start(user="requester1"):
     return call("POST", base + "/processes/equipment-approval/instances", user, 201,
                 dict(businessKey="room-loan:" + uuid.uuid4().hex, variables={"title": "Shared classroom projector loan"}))[0]
 
@@ -93,41 +93,41 @@ def start(user="user1"):
 if args.mode == "seed":
     call("GET", "/me", None, 401, headers={"X-User-Id": "admin", "X-Roles": "coordinator", "X-Workspace": "lab-a"})
     call("GET", "/me", None, 401, headers={"Authorization": "Bearer not-a-jwt"})
-    call("GET", base + "/metadata", "user5", 403)
-    call("GET", base + "/metadata", "user7", 403)
-    call("GET", base + "/audit", "user2", 403)
-    call("GET", base + "/audit", "user6", 403)
-    call("GET", base + "/audit", "user7", 403)
-    for reserved in [{"workspace": "lab-b"}, {"initiator": subjects["user3"]}, {"outcome_approve": "approved"}, {"title": {"expression": "evil"}}]:
-        call("POST", base + "/processes/equipment-approval/instances", "user1", 400,
+    call("GET", base + "/metadata", "agent6", 403)
+    call("GET", base + "/metadata", "admin1", 403)
+    call("GET", base + "/audit", "agent1", 403)
+    call("GET", base + "/audit", "coordinator2", 403)
+    call("GET", base + "/audit", "admin1", 403)
+    for reserved in [{"workspace": "lab-b"}, {"initiator": subjects["coordinator1"]}, {"outcome_approve": "approved"}, {"title": {"expression": "evil"}}]:
+        call("POST", base + "/processes/equipment-approval/instances", "requester1", 400,
              dict(businessKey=uuid.uuid4().hex, variables=reserved))
     upload(400, name="../escape.txt")
     upload(415, name="fake.png", media="image/png")
     file = upload(201)
     metadata_input = dict(title="Room loan evidence", source="app:room-loan; synthetic", version="1", usageRights="CC0-1.0", fileId=file["id"])
-    call("POST", base + "/metadata", "user3", 404, metadata_input)
-    call("POST", base + "/metadata", "user2", 400, dict(metadata_input, owner=subjects["user3"]))
-    call("POST", base + "/metadata", "user2", 404, dict(metadata_input, fileId=str(uuid.uuid4())))
-    metadata, _ = call("POST", base + "/metadata", "user2", 201, metadata_input)
+    call("POST", base + "/metadata", "coordinator1", 404, metadata_input)
+    call("POST", base + "/metadata", "agent1", 400, dict(metadata_input, owner=subjects["coordinator1"]))
+    call("POST", base + "/metadata", "agent1", 404, dict(metadata_input, fileId=str(uuid.uuid4())))
+    metadata, _ = call("POST", base + "/metadata", "agent1", 201, metadata_input)
     for kind, identifier in [("metadata", metadata["id"]), ("files", file["id"])]:
-        call("GET", f"/workspaces/lab-b/{kind}/{identifier}", "user5", 404)
-        call("GET", f"{base}/{kind}/{identifier}", "user7", 403)
-    own = start("user3")
+        call("GET", f"/workspaces/lab-b/{kind}/{identifier}", "agent6", 404)
+        call("GET", f"{base}/{kind}/{identifier}", "admin1", 403)
+    own = start("coordinator1")
     own_path = base + "/instances/" + own["id"]
-    own_tasks, _ = call("GET", own_path + "/tasks", "user3", 200)
-    call("POST", own_path + "/tasks/" + own_tasks[0]["id"] + "/claim", "user3", 403)
+    own_tasks, _ = call("GET", own_path + "/tasks", "coordinator1", 200)
+    call("POST", own_path + "/tasks/" + own_tasks[0]["id"] + "/claim", "coordinator1", 403)
     process = start()
     process_path = base + "/instances/" + process["id"]
-    tasks, _ = call("GET", process_path + "/tasks", "user1", 200)
+    tasks, _ = call("GET", process_path + "/tasks", "requester1", 200)
     task_path = process_path + "/tasks/" + tasks[0]["id"]
-    call("POST", own_path + "/tasks/" + tasks[0]["id"] + "/claim", "user3", 404)
-    call("POST", task_path + "/claim", "user6", 403)
-    call("POST", task_path + "/claim", "user2", 403)
-    call("POST", task_path + "/complete", "user3", 403, dict(expectedTaskKey="approve", outcome="approved"))
-    call("POST", task_path + "/claim", "user3", 200)
-    call("POST", task_path + "/complete", "user3", 400, dict(expectedTaskKey="approve", outcome="forged"))
-    call("POST", task_path + "/complete", "user3", 204, dict(expectedTaskKey="approve", outcome="approved", comment="Room-loan client; no Core changes"))
-    tasks, _ = call("GET", process_path + "/tasks", "user1", 200)
+    call("POST", own_path + "/tasks/" + tasks[0]["id"] + "/claim", "coordinator1", 404)
+    call("POST", task_path + "/claim", "coordinator2", 403)
+    call("POST", task_path + "/claim", "agent1", 403)
+    call("POST", task_path + "/complete", "coordinator1", 403, dict(expectedTaskKey="approve", outcome="approved"))
+    call("POST", task_path + "/claim", "coordinator1", 200)
+    call("POST", task_path + "/complete", "coordinator1", 400, dict(expectedTaskKey="approve", outcome="forged"))
+    call("POST", task_path + "/complete", "coordinator1", 204, dict(expectedTaskKey="approve", outcome="approved", comment="Room-loan client; no Core changes"))
+    tasks, _ = call("GET", process_path + "/tasks", "requester1", 200)
     assert len(tasks) == 1 and tasks[0]["key"] == "handover"
     state = dict(subjects=subjects, file=file, metadata=metadata, process=process, pendingTask=tasks[0])
     args.state.parent.mkdir(parents=True, exist_ok=True)
@@ -138,26 +138,26 @@ else:
     if args.mode == "upload-disabled":
         upload(403)
     else:
-        call("GET", base + "/metadata/" + state["metadata"]["id"], "user1", 200)
-        metadata, _ = call("GET", base + "/metadata/" + state["metadata"]["id"], "user2", 200)
+        call("GET", base + "/metadata/" + state["metadata"]["id"], "requester1", 200)
+        metadata, _ = call("GET", base + "/metadata/" + state["metadata"]["id"], "agent1", 200)
         assert metadata == state["metadata"], "Metadata/provenance changed"
-        call("GET", base + "/files/" + state["file"]["id"], "user1", 200)
-        file, _ = call("GET", base + "/files/" + state["file"]["id"], "user2", 200)
+        call("GET", base + "/files/" + state["file"]["id"], "requester1", 200)
+        file, _ = call("GET", base + "/files/" + state["file"]["id"], "agent1", 200)
         assert file == state["file"], "File description changed"
-        call("GET", base + "/files/" + file["id"] + "/content", "user1", 403)
-        content, headers = call("GET", base + "/files/" + file["id"] + "/content", "user2", 200)
+        call("GET", base + "/files/" + file["id"] + "/content", "requester1", 403)
+        content, headers = call("GET", base + "/files/" + file["id"] + "/content", "agent1", 200)
         assert hashlib.sha256(content).hexdigest() == file["checksum"]
         assert headers["X-Content-Type-Options"] == "nosniff" and headers["Content-Disposition"].startswith("attachment;")
         process_path = base + "/instances/" + state["process"]["id"]
-        tasks, _ = call("GET", process_path + "/tasks", "user1", 200)
+        tasks, _ = call("GET", process_path + "/tasks", "requester1", 200)
         assert len(tasks) == 1 and tasks[0]["id"] == state["pendingTask"]["id"] and tasks[0]["key"] == "handover"
-        history, _ = call("GET", process_path + "/history", "user1", 200)
+        history, _ = call("GET", process_path + "/history", "requester1", 200)
         assert not history["ended"] and history["steps"][0]["outcome"] == "approved"
         if args.mode == "resume":
             task_path = process_path + "/tasks/" + tasks[0]["id"]
-            call("POST", task_path + "/claim", "user2", 200)
-            call("POST", task_path + "/complete", "user2", 204, dict(expectedTaskKey="handover", outcome="delivered"))
-            history, _ = call("GET", process_path + "/history", "user1", 200)
+            call("POST", task_path + "/claim", "agent1", 200)
+            call("POST", task_path + "/complete", "agent1", 204, dict(expectedTaskKey="handover", outcome="delivered"))
+            history, _ = call("GET", process_path + "/history", "requester1", 200)
             assert history["ended"] and len(history["steps"]) == 2
 
 args.state.with_name(args.mode + "-http.json").write_text(json.dumps(responses, indent=2))

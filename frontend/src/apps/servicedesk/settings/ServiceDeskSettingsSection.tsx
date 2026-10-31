@@ -1,4 +1,4 @@
-import { IconClockHour4, IconUsersGroup } from "@tabler/icons-react";
+import { IconClockHour4, IconDatabase, IconUsersGroup } from "@tabler/icons-react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -47,6 +47,7 @@ const schema = z.object({
     ACCOUNT: row,
     OTHER: row,
   }),
+  sampleData: z.boolean(),
 });
 
 type FormInput = z.input<typeof schema>;
@@ -65,6 +66,7 @@ const SettingsForm = ({ settings }: { settings: ServiceDeskSettings }) => {
         ACCOUNT: settings.categoryGroups.ACCOUNT ?? "",
         OTHER: null,
       },
+      sampleData: settings.sampleData ?? false,
     },
   });
   const { errors } = form.formState;
@@ -170,6 +172,17 @@ const SettingsForm = ({ settings }: { settings: ServiceDeskSettings }) => {
         {errors.estimateDefaults && (
           <p className="text-crm-sm text-crm-danger">Ô đỏ chưa hợp lệ: số nguyên từ 1 phút.</p>
         )}
+      </FieldGroup>
+
+      <FieldGroup title="Dữ liệu mẫu" icon={IconDatabase}>
+        <label className="flex items-center gap-2 text-crm-text">
+          <input
+            type="checkbox"
+            className="size-4 accent-crm-accent"
+            {...form.register("sampleData")}
+          />
+          Hiện ô chọn bộ dữ liệu mẫu ở form tạo ticket
+        </label>
       </FieldGroup>
 
       <div className="flex justify-end">

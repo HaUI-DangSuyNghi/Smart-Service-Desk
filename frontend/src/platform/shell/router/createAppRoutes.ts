@@ -6,7 +6,7 @@ import { DashboardPage } from "@/platform/data/dashboard";
 import { KnowledgeDetailPage, KnowledgeListPage } from "@/platform/data/knowledge";
 import { CALLBACK_PATH, CallbackPage, RequireAuth } from "@/platform/human/auth";
 import { DutyPage } from "@/platform/human/duty";
-import MembersPage from "@/platform/human/members/MembersPage";
+import { NotificationsPage } from "@/platform/human/notifications";
 import ProfilePage from "@/platform/human/profile/ProfilePage";
 import { PERMISSIONS, PermissionGate, RoleGate } from "@/platform/human/workspace";
 import {
@@ -52,7 +52,6 @@ const PLATFORM_ROUTES: readonly AppRoute[] = [
   { path: "dashboard", component: DashboardPage, requiredPermissions: [PERMISSIONS.dashboardView] },
   { path: "audit", component: AuditPage, requiredPermissions: [PERMISSIONS.auditView] },
   { path: "profile", component: ProfilePage },
-  { path: "members", component: MembersPage, requiredPermissions: [PERMISSIONS.memberView] },
   { path: "inbox", component: InboxPage, requiredPermissions: [PERMISSIONS.taskHandle] },
   { path: "requests", component: MyRequestsPage, requiredPermissions: [PERMISSIONS.requestCreate] },
   // Ai xem được tiến độ do backend quyết định theo từng quy trình (người tạo, người đã xử lý...)
@@ -74,7 +73,14 @@ const PLATFORM_ROUTES: readonly AppRoute[] = [
   },
   // Cảnh báo, ca trực, sửa ước tính (plan nghiệp vụ R2–R8); việc theo hàng đợi xem ở từng app
   { path: "alerts", component: AlertsPage, requiredPermissions: [PERMISSIONS.taskHandle] },
-  { path: "duty", component: DutyPage, requiredPermissions: [PERMISSIONS.taskAssign] },
+  // Thông báo của mọi vai trò (chuông ở sidebar mở "Xem tất cả")
+  { path: "notifications", component: NotificationsPage },
+  // Kỹ thuật viên đăng ký ca của mình; điều phối viên xem tất cả, đăng ký hộ, duyệt
+  {
+    path: "duty",
+    component: DutyPage,
+    requiredPermissions: [PERMISSIONS.taskHandle, PERMISSIONS.taskAssign],
+  },
   {
     path: "estimate-requests",
     component: EstimateRequestsPage,

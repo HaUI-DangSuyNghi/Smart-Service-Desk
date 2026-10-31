@@ -83,9 +83,9 @@ try:
             if client['clientId'] in ('dx-directory', 'dx-assessment-worker'):
                 client['secret'] = password
         for user in realm['users']:
-            if user['username'] in ('user1', 'user2', 'user3'):
+            if user['username'] in ('requester1', 'agent1', 'coordinator1'):
                 user['credentials'] = [{'type': 'password', 'value': password, 'temporary': False}]
-            if user['username'] == 'user2':
+            if user['username'] == 'agent1':
                 user['groups'].append('/support-groups/lab-a/hardware')
             if user['username'] == 'service-account-dx-assessment-worker':
                 user['groups'].append('/workspaces/lab-a/workflow-timer')
@@ -118,33 +118,33 @@ try:
         wait(backend + '/actuator/health')
         tokens = {user: request(keycloak + '/realms/dx-lab/protocol/openid-connect/token', 'POST',
                   {'grant_type': 'password', 'client_id': 'core-probe', 'username': user, 'password': password}, form=True)['access_token']
-                  for user in ('user1', 'user2', 'user3')}
-        agent = json.loads(base64.urlsafe_b64decode(tokens['user2'].split('.')[1] + '=='))['sub']
+                  for user in ('requester1', 'agent1', 'coordinator1')}
+        agent = json.loads(base64.urlsafe_b64decode(tokens['agent1'].split('.')[1] + '=='))['sub']
         base = '/api/apps/servicedesk/v1/workspaces/lab-a/tickets'
         hpdi = '/api/hpdi/v1/workspaces/lab-a'
 
-        def call(path, actor='user3', method='GET', data=None):
+        def call(path, actor='coordinator1', method='GET', data=None):
             return request(backend + path, method, data, tokens[actor])
 
-        call(hpdi + '/duty/me', 'user2', 'PUT', {'onDuty': True})
+        call(hpdi + '/duty/me', 'agent1', 'PUT', {'onDuty': True})
 
         def waiting():
-            ticket = call(base, 'user1', 'POST', {'clientRequestId': str(uuid.uuid4()), 'title': 'R11 runtime', 'description': 'Synthetic runtime probe'})
+            ticket = call(base, 'requester1', 'POST', {'clientRequestId': str(uuid.uuid4()), 'title': 'R11 runtime', 'description': 'Synthetic runtime probe'})
             path = base + '/' + ticket['id']
             reviewed = call(path + '/review', method='POST', data={'category': 'HARDWARE', 'priority': 'HIGH', 'assignee': agent, 'reason': 'R11 acceptance'})
             task = hpdi + '/tasks/' + reviewed['taskId']
-            call(task + '/start', 'user2', 'POST')
-            call(task + '/complete', 'user2', 'POST', {'expectedTaskKey': 'handle', 'outcome': 'resolved'})
-            return call(path, 'user1')
+            call(task + '/start', 'agent1', 'POST')
+            call(task + '/complete', 'agent1', 'POST', {'expectedTaskKey': 'handle', 'outcome': 'resolved'})
+            return call(path, 'requester1')
 
         pending, accepted, reopened, legacy_overdue = waiting(), waiting(), waiting(), waiting()
         parse = datetime.datetime.fromisoformat
         check('deadline is exactly 72 continuous hours', parse(pending['confirmDeadlineAt'].replace('Z', '+00:00')) - parse(pending['confirmStartedAt'].replace('Z', '+00:00')) == datetime.timedelta(hours=72))
         for ticket, outcome in ((accepted, 'accepted'), (reopened, 'rework')):
-            call(hpdi + '/tasks/' + ticket['confirmGeneration'] + '/complete', 'user1', 'POST', {'expectedTaskKey': 'confirm', 'outcome': outcome})
-        check('requester provenance is persisted', call(base + '/' + accepted['id'], 'user1')['closedBy'] == 'REQUESTER')
+            call(hpdi + '/tasks/' + ticket['confirmGeneration'] + '/complete', 'requester1', 'POST', {'expectedTaskKey': 'confirm', 'outcome': outcome})
+        check('requester provenance is persisted', call(base + '/' + accepted['id'], 'requester1')['closedBy'] == 'REQUESTER')
         try:
-            call(hpdi + '/tasks/' + pending['confirmGeneration'] + '/complete', 'user2', 'POST', {'expectedTaskKey': 'confirm', 'outcome': 'accepted'})
+            call(hpdi + '/tasks/' + pending['confirmGeneration'] + '/complete', 'agent1', 'POST', {'expectedTaskKey': 'confirm', 'outcome': 'accepted'})
             raise AssertionError('Agent completed Requester task')
         except urllib.error.HTTPError as failure:
             check('real JWT Agent cannot confirm', failure.code == 403)
@@ -156,7 +156,7 @@ try:
         wait(backend + '/actuator/health')
         until = time.monotonic() + 60
         while time.monotonic() < until:
-            restored = call(base + '/' + pending['id'], 'user1')
+            restored = call(base + '/' + pending['id'], 'requester1')
             if restored.get('confirmGeneration'):
                 break
             time.sleep(1)
@@ -171,16 +171,16 @@ try:
         wait(backend + '/actuator/health')
         until = time.monotonic() + 60
         while time.monotonic() < until:
-            closed = call(base + '/' + pending['id'], 'user1')
+            closed = call(base + '/' + pending['id'], 'requester1')
             if closed.get('closedBy') == 'AUTO':
                 break
             time.sleep(1)
         check('real scheduled worker closes due generation with signed service identity', closed.get('closedBy') == 'AUTO' and closed['state'] == 'CLOSED')
         check('auto-close preserves process and resolved SLA', closed['process'] == pending['process'] and closed['sla'] == pending['sla'] and closed['workedMinutes'] == pending['workedMinutes'])
-        held = call(base + '/' + legacy_overdue['id'], 'user1')
+        held = call(base + '/' + legacy_overdue['id'], 'requester1')
         check('overdue legacy generation stays active on manual rollout hold', held.get('closedBy') is None and held['confirmationHistory'][0].get('rolloutHold') is True and held['confirmDeadlineAt'] == legacy_overdue['confirmDeadlineAt'])
-        check('accepted generation remains REQUESTER' , call(base + '/' + accepted['id'], 'user1')['closedBy'] == 'REQUESTER')
-        again = call(base + '/' + reopened['id'], 'user1')
+        check('accepted generation remains REQUESTER' , call(base + '/' + accepted['id'], 'requester1')['closedBy'] == 'REQUESTER')
+        again = call(base + '/' + reopened['id'], 'requester1')
         check('rework before deadline is never auto-closed', again['closedBy'] is None and again['state'] == 'REOPENED' and again['reopenCount'] == 1 and again['process'] == reopened['process'])
         until = time.monotonic() + 60
         while time.monotonic() < until:
@@ -190,11 +190,11 @@ try:
                 break
             time.sleep(1)
         check('both persistent reopen events reach Coordinator exactly once', len(events) == 2 and len({event['type'] for event in events}) == 2)
-        check('old Agent does not receive reopen events', not any(event['type'] in ('REOPENED', 'REOPEN_UNCLAIMED') for event in call(hpdi + '/alerts', 'user2')['items']))
+        check('old Agent does not receive reopen events', not any(event['type'] in ('REOPENED', 'REOPEN_UNCLAIMED') for event in call(hpdi + '/alerts', 'agent1')['items']))
         docker('restart', backend_name)
         backend = 'http://' + docker('port', backend_name, '8080/tcp')
         wait(backend + '/actuator/health')
-        check('restart after commit preserves AUTO provenance', call(base + '/' + pending['id'], 'user1')['closedAt'] == closed['closedAt'])
+        check('restart after commit preserves AUTO provenance', call(base + '/' + pending['id'], 'requester1')['closedAt'] == closed['closedAt'])
         count = docker('exec', database, 'psql', '-U', 'workflow', '-d', 'core', '-Atc',
                        "select count(*) from audit_event where action='task.timer.complete' and resource='" + str(uuid.UUID(pending['confirmGeneration'])) + "'")
         check('restart and retries do not duplicate completion audit', count == '1')

@@ -23,7 +23,7 @@ const FAQS = [
   },
   {
     q: "Làm sao để dùng thử?",
-    a: "Chạy scripts/setup.ps1 rồi scripts/start.ps1 để dựng toàn bộ stack bằng Docker Compose, sau đó đăng nhập bằng tài khoản demo user1–user7. Mật khẩu được sinh tự động vào biến DEMO_PASSWORD trong file .env.",
+    a: "Chạy scripts/setup.ps1 rồi scripts/start.ps1 để dựng toàn bộ stack bằng Docker Compose, sau đó đăng nhập bằng tài khoản demo đặt theo vai trò (requester1, agent1, coordinator1, superadmin...). Mật khẩu được sinh tự động vào biến DEMO_PASSWORD trong file .env.",
   },
 ];
 

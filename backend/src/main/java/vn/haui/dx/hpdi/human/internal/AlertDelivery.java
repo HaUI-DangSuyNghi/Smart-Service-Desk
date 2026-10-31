@@ -12,8 +12,9 @@ public class AlertDelivery {
     private final JdbcTemplate jdbc;
     private final WorkspaceDirectory directory;
     private final ActivityJournal audit;
-    public AlertDelivery(JdbcTemplate jdbc, WorkspaceDirectory directory, ActivityJournal audit) {
-        this.jdbc = jdbc; this.directory = directory; this.audit = audit;
+    private final NotificationCenter notifications;
+    public AlertDelivery(JdbcTemplate jdbc, WorkspaceDirectory directory, ActivityJournal audit, NotificationCenter notifications) {
+        this.jdbc = jdbc; this.directory = directory; this.audit = audit; this.notifications = notifications;
     }
     public Set<String> recipients(String workspace, boolean coordinators, String agent) {
         directory.refresh(workspace);
@@ -34,9 +35,15 @@ public class AlertDelivery {
         if (rows.isEmpty() || recipients.isEmpty()) return;
         var event = rows.get(0);
         var current = recipients(workspace, (Boolean) event.get("coordinators"), Boolean.TRUE.equals(event.get("agent_suppressed")) ? null : (String) event.get("agent"));
+        var delivered = new HashSet<String>();
         for (String subject : recipients) {
-            if (current.contains(subject)) jdbc.update("insert into hpdi_alert_recipient(workspace,event_id,subject) values(?,?,?) on conflict do nothing", workspace, id, subject);
+            if (current.contains(subject)) {
+                jdbc.update("insert into hpdi_alert_recipient(workspace,event_id,subject) values(?,?,?) on conflict do nothing", workspace, id, subject);
+                delivered.add(subject);
+            }
         }
+        // Chuông thông báo chứa cả cảnh báo (cảnh báo nghiêm trọng gửi thêm email)
+        notifications.mirrorAlert(workspace, event, delivered);
         jdbc.update("update hpdi_alert_event set delivered_at=current_timestamp where workspace=? and id=?", workspace, id);
         audit.recordSystem(workspace, new BusinessActivity("human.alert.delivered", "human.alert", id.toString(), Map.of()));
     }

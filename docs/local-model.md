@@ -192,7 +192,7 @@ Runtime không tạo hay giả mạo external processing grant.
 
 Kiểm tra auto scope bằng `python scripts/test-auto-workspaces.py --output
 .local/auto-workspaces-proof.json` trên máy DEV. Phép thử đăng nhập thật, tạo
-ticket ở `lab-b`, tạo thêm workspace thử cho user4 sau startup, xác nhận cả hai
+ticket ở `lab-b`, tạo thêm workspace thử cho requester2 sau startup, xác nhận cả hai
 chạy model + rules và tài khoản khác bị từ chối. Nó cũng kiểm tra thu hồi/khôi
 phục quyền worker và retry; không reset realm hoặc xóa dữ liệu. Workspace và
 ticket synthetic được giữ lại để kiểm tra, không dùng trên dữ liệu thật.
@@ -279,9 +279,9 @@ Kiểm tra tại máy phát triển ngày 2026-10-29 với dữ liệu thử:
 | Python classification / API Q&A / workspace bootstrap | 113/113 đạt, gồm cả ba vendor với upstream giả lập và kiểm tra IAM bootstrap |
 | Frontend | TypeScript/lint/build đạt; 30/30 test AI/ticket liên quan đạt; lần kiểm toàn bộ suite trước thay đổi hỏi đáp có 149 đạt, 2 lỗi board/dropTargets tái hiện nguyên trạng trên develop |
 | Gemini/OpenAI/Groq | Cấu hình cả ba hợp lệ; API container healthy không cần GPU; chưa kiểm inference thật bằng key của vendor |
-| API hỏi đáp xuyên suốt qua HTTPS upstream giả lập | Đăng nhập user1, hỏi trên ticket thật, UI hiển thị câu trả lời; không trích dẫn giả, không đổi phân loại; key bị từ chối trả 503; Qwen + rules cùng hoạt động |
+| API hỏi đáp xuyên suốt qua HTTPS upstream giả lập | Đăng nhập requester1, hỏi trên ticket thật, UI hiển thị câu trả lời; không trích dẫn giả, không đổi phân loại; key bị từ chối trả 503; Qwen + rules cùng hoạt động |
 | Auto workspace qua Keycloak/Qwen thật | lab-b và workspace tạo sau startup đều trả hybrid HARDWARE/HIGH; giữ cách ly người dùng, tôn trọng thu hồi quyền worker, retry đạt sau khôi phục quyền |
-| Hỏi đáp API trong auto scope | user4 hỏi trên ticket lab-b qua HTTPS upstream giả lập; không đổi phân loại, từ chối user1 khác workspace; chưa gọi API vendor thật |
+| Hỏi đáp API trong auto scope | requester2 hỏi trên ticket lab-b qua HTTPS upstream giả lập; không đổi phân loại, từ chối requester1 khác workspace; chưa gọi API vendor thật |
 
 Các script tái kiểm tra: `scripts/apps/servicedesk/acceptance/test-local-model.py` và
 `scripts/test-local-model-ui.mjs`; Q&A dùng `scripts/test-api-assistance.py <UUID-ticket-thu>`

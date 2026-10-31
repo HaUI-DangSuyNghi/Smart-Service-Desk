@@ -1,18 +1,19 @@
-import { IconSparkles } from "@tabler/icons-react";
-import type {
-  AssignmentCandidate,
-  AssignmentSuggestion,
-  ExcludedReason,
-} from "@/platform/services";
-import { ChoiceCard } from "@/platform/shared/ui/ChoiceCard";
+import { IconCheck, IconChevronDown, IconSparkles } from "@tabler/icons-react";
+import { cn } from "cn";
+import type { AssignmentSuggestion } from "@/platform/services";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/platform/shared/ui/dropdown-menu";
 import { ErrorState } from "@/platform/shared/ui/ErrorState";
 import { TextSkeleton } from "@/platform/shared/ui/Skeleton";
-import { formatMinutes, suggestionReasonText, WAIT_FOR_SHIFT } from "./workLabels";
+import { CandidateLine } from "./CandidateLine";
+import { WAIT_FOR_SHIFT } from "./workLabels";
 
-const EXCLUDED_LABELS: Record<ExcludedReason, string> = {
-  OFF_DUTY: "đang nghỉ",
-  IS_REQUESTER: "người tạo yêu cầu",
-};
+const WAIT_LABEL = "Để chờ ca sau (chưa giao ai)";
 
 interface Props {
   /**
@@ -25,46 +26,10 @@ interface Props {
   onChange: (value: string) => void;
   /** ET đang chọn trong form, để cảnh báo khi dài hơn thời gian ca còn lại. */
   estimateMinutes: number;
-  name: string;
 }
 
-const CandidateLine = ({
-  candidate,
-  estimateMinutes,
-}: {
-  candidate: AssignmentCandidate;
-  estimateMinutes: number;
-}) => {
-  const overShift =
-    candidate.shiftRemainingMinutes != null && estimateMinutes > candidate.shiftRemainingMinutes;
-  return (
-    <span className="flex flex-col gap-0.5">
-      <span className="flex flex-wrap items-center gap-x-2">
-        <span className="font-medium">{candidate.displayName}</span>
-        {candidate.recommended && (
-          <span className="inline-flex items-center gap-0.5 text-crm-sm text-crm-accent">
-            <IconSparkles size={12} stroke={2} />
-            đề xuất
-          </span>
-        )}
-        {candidate.excludedReason && (
-          <span className="text-crm-sm text-crm-text-3">
-            {EXCLUDED_LABELS[candidate.excludedReason]}
-          </span>
-        )}
-      </span>
-      <span className="text-crm-sm text-crm-text-3">
-        Tải {formatMinutes(candidate.loadMinutes)} · hôm nay {candidate.assignedToday} việc
-        {overShift && (
-          <span className="text-crm-tone-orange"> · ước tính dài hơn ca còn lại</span>
-        )}
-      </span>
-    </span>
-  );
-};
-
 /**
- * Đề xuất người xử lý theo tải và ca trực (R2, R3): người được đề xuất đánh dấu,
+ * Dropdown chọn người xử lý theo tải và ca trực (R2, R3): người được đề xuất đánh dấu,
  * người bị loại (nghỉ, là người tạo yêu cầu) vẫn hiện kèm lý do nhưng không chọn được.
  */
 export const AssignmentSuggestionPanel = ({
@@ -72,39 +37,59 @@ export const AssignmentSuggestionPanel = ({
   value,
   onChange,
   estimateMinutes,
-  name,
 }: Props) => {
   if (suggestion.error) {
     return <ErrorState error={suggestion.error} fallback="Không tải được đề xuất người xử lý." />;
   }
   if (suggestion.isPending || !suggestion.data) {
-    return <TextSkeleton lines={3} label="Đang tính đề xuất" />;
+    return <TextSkeleton lines={1} label="Đang tính đề xuất" />;
   }
 
   const { candidates } = suggestion.data;
+  const selected = candidates.find((candidate) => candidate.subject === value);
+  const label = value === WAIT_FOR_SHIFT ? WAIT_LABEL : selected?.displayName;
+
   return (
-    <div className="flex flex-col gap-1.5">
-      <p className="text-crm-sm text-crm-text-3">{suggestionReasonText(suggestion.data)}</p>
-      {candidates.map((candidate) => (
-        <ChoiceCard
-          key={candidate.subject}
-          name={name}
-          value={candidate.subject}
-          checked={value === candidate.subject}
-          disabled={Boolean(candidate.excludedReason)}
-          onChange={() => onChange(candidate.subject)}
-        >
-          <CandidateLine candidate={candidate} estimateMinutes={estimateMinutes} />
-        </ChoiceCard>
-      ))}
-      <ChoiceCard
-        name={name}
-        value={WAIT_FOR_SHIFT}
-        checked={value === WAIT_FOR_SHIFT}
-        onChange={() => onChange(WAIT_FOR_SHIFT)}
+    <DropdownMenu>
+      <DropdownMenuTrigger
+        aria-label="Người xử lý"
+        className={cn(
+          "flex h-9 w-full min-w-0 items-center gap-2 rounded-crm-sm border border-crm-line bg-crm-surface px-2 text-left outline-none sm:h-8",
+          "transition-colors duration-100 hover:bg-crm-hover focus-visible:border-crm-focus data-[state=open]:bg-crm-hover",
+        )}
       >
-        <span className="text-crm-text-2">Để chờ ca sau (chưa giao ai)</span>
-      </ChoiceCard>
-    </div>
+        <span className={cn("flex-1 truncate", !label && "text-crm-text-3")}>
+          {label ?? "Chọn người xử lý"}
+        </span>
+        {selected?.recommended && (
+          <span className="inline-flex shrink-0 items-center gap-0.5 text-crm-sm text-crm-accent">
+            <IconSparkles size={12} stroke={2} />
+            đề xuất
+          </span>
+        )}
+        <IconChevronDown size={14} stroke={2} className="shrink-0 text-crm-text-3" />
+      </DropdownMenuTrigger>
+
+      <DropdownMenuContent
+        align="start"
+        className="max-h-80 w-(--radix-dropdown-menu-trigger-width) overflow-y-auto"
+      >
+        {candidates.map((candidate) => (
+          <DropdownMenuItem
+            key={candidate.subject}
+            disabled={Boolean(candidate.excludedReason)}
+            onSelect={() => onChange(candidate.subject)}
+          >
+            <CandidateLine candidate={candidate} estimateMinutes={estimateMinutes} />
+            {candidate.subject === value && <IconCheck size={14} stroke={2} />}
+          </DropdownMenuItem>
+        ))}
+        {candidates.length > 0 && <DropdownMenuSeparator />}
+        <DropdownMenuItem onSelect={() => onChange(WAIT_FOR_SHIFT)}>
+          <span className="flex-1 text-crm-text-2">{WAIT_LABEL}</span>
+          {value === WAIT_FOR_SHIFT && <IconCheck size={14} stroke={2} />}
+        </DropdownMenuItem>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 };

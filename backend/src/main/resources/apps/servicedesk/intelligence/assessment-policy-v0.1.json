@@ -113,6 +113,7 @@
     "imminentWindowMinutes": 15,
     "imminentLevel": "U4",
     "wholeRoomLevel": "I3",
+    "deviceIdentifierPattern": "(?<![\\p{L}\\p{N}])(?:máy(?: tính)?|thiết bị|computer|PC)\\s+(?:số\\s+|số hiệu\\s+|#\\s*)?[A-Z]?[0-9]{1,5}(?![\\p{L}\\p{N}])",
     "quantityPattern": "(?<![\\p{L}\\p{N}.,+\\-])(?<count>[0-9]{1,4}|một|hai|ba|bốn|năm|sáu|bảy|tám|chín|mười|one|two|three)\\s+(?<unit>máy tính|máy|thiết bị|người dùng|người|sinh viên|phòng|devices?|computers?|PCs?|users?|rooms?)(?![\\p{L}\\p{N}])",
     "failurePattern": "không\\s+(?:thể\\s+)?(?:truy cập|kết nối|đăng nhập|hoạt động|khởi động|in được|lên nguồn|hiển thị)(?:\\s+được)?|mất\\s+(?:mạng|kết nối|Internet|điện|Wi[ -]?Fi)|(?:bị\\s+)?(?:hỏng|lỗi)|ngừng hoạt động|cannot\\s+(?:access|connect|log in|work|start)|(?:are|is)\\s+(?:down|broken|affected)",
     "wholeRoomPattern": "(?<![\\p{L}\\p{N}])(?:(?:cả|toàn(?: bộ)?|tất cả)\\s+(?:các\\s+)?(?:(?:máy|thiết bị)\\s+(?:trong|của)\\s+)?phòng(?:\\s+[A-Z]?[0-9]{2,5})?|(?:the\\s+)?(?:whole|entire)\\s+room)(?![\\p{L}\\p{N}])",

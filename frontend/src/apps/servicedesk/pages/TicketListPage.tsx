@@ -28,6 +28,7 @@ import { TicketBoard } from "../tickets/board/TicketBoard";
 import { useBoardView, type ListMode } from "../tickets/board/useBoardView";
 import { CreateTicketDialog } from "../tickets/CreateTicketDialog";
 import { ReleaseIntakeDialog } from "../tickets/ReleaseIntakeDialog";
+import { RequesterTicketAction } from "../tickets/RequesterTicketAction";
 import { ReviewDialog } from "../tickets/ReviewDialog";
 import { createdAtColumn, titleColumn, workflowColumns } from "../tickets/ticketColumns";
 import { TICKET_STATE_LABELS } from "../tickets/ticketLabels";
@@ -39,6 +40,7 @@ import {
   useTicketList,
   type TicketFilter,
 } from "../tickets/useTickets";
+import { useTicketListRealtime } from "../tickets/useTicketRealtime";
 
 type View = "all" | "intake" | "review" | "overdue" | "mine";
 
@@ -73,9 +75,11 @@ const PRIORITY_OPTIONS = PRIORITIES.map((priority) => ({
   label: PRIORITY_LABELS[priority],
 }));
 
-// Người yêu cầu chỉ thấy ticket của mình nên không cần chọn nhóm
-const viewsFor = (canCoordinate: boolean, canHandle: boolean): View[] => {
-  if (canCoordinate) return ["all", "intake", "review", "overdue", "mine"];
+// Người yêu cầu chỉ thấy ticket của mình nên không cần chọn nhóm.
+// Board đã có cột Tiếp nhận, Chờ duyệt nên không cần hai nhóm này
+const viewsFor = (canCoordinate: boolean, canHandle: boolean, isBoard: boolean): View[] => {
+  if (canCoordinate)
+    return isBoard ? ["all", "overdue", "mine"] : ["all", "intake", "review", "overdue", "mine"];
   if (canHandle) return ["all", "mine"];
   return [];
 };
@@ -85,6 +89,7 @@ const TicketListPage = () => {
   const navigate = useNavigate();
   const refresh = useRefreshTickets();
   const { current } = useCurrentWorkspace();
+  useTicketListRealtime(current);
   const { can } = usePermissions();
   const { actor } = useActor();
   const me = useMe();
@@ -99,7 +104,7 @@ const TicketListPage = () => {
   const [mode, setMode] = useBoardView(canBoard);
   const isBoard = mode === "board";
   const canCoordinate = viewer.canAssign || viewer.isPlatformAdmin;
-  const views = viewsFor(canCoordinate, viewer.canHandle);
+  const views = viewsFor(canCoordinate, viewer.canHandle, isBoard);
   const [selectedView, setView] = useState<View>("all");
   const view = views.includes(selectedView) ? selectedView : "all";
   const [state, setState] = useState("");
@@ -186,6 +191,23 @@ const TicketListPage = () => {
           </Button>
         );
       },
+    });
+  }
+  // Người gửi: Chờ xác nhận thì Xác nhận, trước đó thì Bổ sung thông tin (ticket của mình, chưa đóng)
+  if (!canCoordinate && !viewer.canHandle) {
+    columns.push({
+      key: "action",
+      header: "Thao tác",
+      width: "150px",
+      cell: (ticket) =>
+        ticket.creator === viewer.subject && ticket.state && ticket.state !== "CLOSED" ? (
+          <RequesterTicketAction
+            workspace={ticket.workspace}
+            ticketId={ticket.id}
+            taskId={ticket.taskId}
+            awaitingConfirmation={ticket.state === "AWAITING_CONFIRMATION"}
+          />
+        ) : null,
     });
   }
   const personOptions = (duty.data ?? []).map((status) => {

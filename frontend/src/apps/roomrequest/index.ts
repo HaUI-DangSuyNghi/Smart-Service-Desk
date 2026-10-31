@@ -19,13 +19,8 @@ export const registerRoomRequest = (registry: AppRegistry) => {
     ],
     // Nhóm xổ ra như Service Desk; thêm trang thì thêm mục con
     menu: [
-      {
-        label: "Đặt phòng",
-        path: "/roomrequest-app",
-        icon: IconDoor,
-        tone: "turquoise",
-        children: [{ label: "Yêu cầu đặt phòng", path: "/roomrequest", icon: IconDoor }],
-      },
+      // Một mục duy nhất, mở thẳng danh sách yêu cầu đặt phòng
+      { label: "Đặt phòng", path: "/roomrequest", icon: IconDoor, tone: "turquoise" },
     ],
     // businessKey của quy trình room-request là id yêu cầu
     processLinks: {

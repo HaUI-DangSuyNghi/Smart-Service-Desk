@@ -6,7 +6,6 @@ import {
   KeyboardSensor,
   PointerSensor,
   TouchSensor,
-  pointerWithin,
   useSensor,
   useSensors,
   type Announcements,
@@ -35,6 +34,7 @@ import { ReviewDialog } from "../ReviewDialog";
 import { useRefreshTickets, type TicketFilter } from "../useTickets";
 import { boardActions, type BoardAction } from "./boardAccess";
 import { BoardColumn, type DropState } from "./BoardColumn";
+import { halfColumnOverlap } from "./boardCollision";
 import { BOARD_COLUMNS, columnOf } from "./boardColumns";
 import { dropRejection, dropTargets, type DropAction } from "./dropTargets";
 import { TicketCardOverlay } from "./TicketCard";
@@ -160,11 +160,6 @@ export const TicketBoard = ({ filter, viewer }: Props) => {
     else toast.info(dropRejection(ticket, viewer));
   };
 
-  // Lọc theo trạng thái thì chỉ hiện cột có trạng thái đó
-  const visibleColumns = BOARD_COLUMNS.filter(
-    (column) => !filter.state?.length || column.states.some((s) => filter.state?.includes(s)),
-  );
-
   const targets = active ? dropTargets(active, viewer) : null;
   const dropStateOf = (columnKey: string): DropState => {
     if (!active || !targets) return "idle";
@@ -176,7 +171,7 @@ export const TicketBoard = ({ filter, viewer }: Props) => {
   return (
     <DndContext
       sensors={sensors}
-      collisionDetection={pointerWithin}
+      collisionDetection={halfColumnOverlap}
       accessibility={{
         announcements: ANNOUNCEMENTS,
         screenReaderInstructions: {
@@ -189,7 +184,8 @@ export const TicketBoard = ({ filter, viewer }: Props) => {
       onDragCancel={() => setActive(null)}
     >
       <div className="flex h-full items-start gap-2 overflow-x-auto p-3">
-        {visibleColumns.map((column) => (
+        {/* Lọc theo trạng thái vẫn hiện đủ cột để kéo thẻ sang bước kế (Tiếp nhận → Chờ duyệt) */}
+        {BOARD_COLUMNS.map((column) => (
           <BoardColumn
             key={column.key}
             column={column}

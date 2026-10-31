@@ -64,9 +64,9 @@ const ReleaseForm = ({ item, onDone }: FormProps) => {
   return (
     <>
       <DialogHeader>
-        <DialogTitle>Trả việc: {item.label}</DialogTitle>
-        <DialogDescription>
-          Việc quay về hàng chờ duyệt để điều phối viên giao lại; thời gian đã làm được giữ.
+        <DialogTitle>Trả việc</DialogTitle>
+        <DialogDescription className="truncate font-medium text-crm-text">
+          {item.label}
         </DialogDescription>
       </DialogHeader>
 
@@ -74,8 +74,11 @@ const ReleaseForm = ({ item, onDone }: FormProps) => {
         id="release-work"
         onSubmit={handleSubmit}
         onKeyDown={submitOnEnter}
-        className="flex flex-col gap-3"
+        className="flex flex-col gap-4"
       >
+        <p className="leading-relaxed text-crm-text-2">
+          Việc quay về hàng chờ duyệt để điều phối viên giao lại; thời gian đã làm được giữ.
+        </p>
         <fieldset className="flex flex-col gap-1.5">
           <legend className="mb-1 text-crm-sm text-crm-text-2">Lý do</legend>
           {REASONS.map((reason) => (

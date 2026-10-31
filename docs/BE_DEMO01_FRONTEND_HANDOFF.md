@@ -99,13 +99,13 @@ Tat ca mat khau nguoi dung duoc sinh tu dong vao file `.env` (bien `DEMO_PASSWOR
 
 | Username | Ho va Ten | Workspace | Vai tro (Role) | Chuc nang phu hop khi Demo |
 | --- | --- | --- | --- | --- |
-| `user1` | Nguyễn Văn An | `lab-a` | `requester` | Tao Ticket, xem tien do, xac nhan hoan thanh |
-| `user2` | Trần Thị Bình | `lab-a` | `agent` | Nhan ticket (claim), xu ly ticket (complete handle) |
-| `user3` | Lê Minh Châu | `lab-a` | `coordinator` | Xem toan bo ticket cua workspace, xem bao cao thong ke |
-| `user4` | Phạm Quốc Dũng | `lab-b` | `requester` | Thu nghiem co lap giua cac workspace (cross-workspace) |
-| `user5` | Hoàng Thu Hà | `lab-b` | `agent` | Agent thuoc workspace khac |
-| `user6` | Vũ Đức Khánh | `lab-b` | `coordinator` | Coordinator thuoc workspace khac |
-| `user7` | Đỗ Thanh Long | *(none)* | `platform-admin` | Quan tri he thong (khong co quyen xem du lieu nghiep vu) |
+| `requester1` | Người Yêu Cầu 1 | `lab-a` | `requester` | Tao Ticket, xem tien do, xac nhan hoan thanh |
+| `agent1` | Kĩ Thuật Viên 1 | `lab-a` | `agent` | Nhan ticket (claim), xu ly ticket (complete handle) |
+| `coordinator1` | Người Điều Phối 1 | `lab-a` | `coordinator` | Xem toan bo ticket cua workspace, xem bao cao thong ke |
+| `requester2` | Người Yêu Cầu 2 | `lab-b` | `requester` | Thu nghiem co lap giua cac workspace (cross-workspace) |
+| `agent6` | Kĩ Thuật Viên 6 | `lab-b` | `agent` | Agent thuoc workspace khac |
+| `coordinator2` | Người Điều Phối 2 | `lab-b` | `coordinator` | Coordinator thuoc workspace khac |
+| `admin1` | Đỗ Thanh Long | *(none)* | `platform-admin` | Quan tri he thong (khong co quyen xem du lieu nghiep vu) |
 
 ---
 
@@ -130,7 +130,7 @@ Accept: application/json
   ```json
   {
     "sub": "2c67b2d5-...",
-    "username": "user1",
+    "username": "requester1",
     "memberships": [
       {
         "workspace": "lab-a",
@@ -439,31 +439,31 @@ Bang ma loi `code`:
 Khi trinh dien truoc Hoi dong giam khao HaUI, FE nen thuc hien theo chuoi kich ban sau de the hien day du ca 3 tang va chuoi H-P-D-I:
 
 1. **Buoc 1 (H - Human)**:
-   - Dang nhap bang tai khoan `user1` (Requester) qua Keycloak OIDC PKCE.
+   - Dang nhap bang tai khoan `requester1` (Requester) qua Keycloak OIDC PKCE.
    - Goi `/api/core/v1/me` de hien thi thong tin nguoi dung va role `requester` tai `lab-a`.
 2. **Buoc 2 (D - Data & P - Process)**:
-   - `user1` tao mot Ticket yeu cau ho tro moi: "May in phong Lab A loi ket noi".
+   - `requester1` tao mot Ticket yeu cau ho tro moi: "May in phong Lab A loi ket noi".
    - Backend luu Ticket vao PostgreSQL dong thoi khoi tao mot Flowable Process Instance (`service-desk`).
    - FE hien thi Ticket trong danh sach va xem duoc trang thai `awaitingHandling`.
 3. **Buoc 3 (I - Intelligence)**:
    - Nhan nut "Phan tich / AI Triage".
    - Backend goi sang Python Intelligence runtime that, phan loai thanh cong danh muc `HARDWARE`, do uu tien `HIGH`, kem bang chung trich xuat tu tieu de va luat phu hop.
 4. **Buoc 4 (P - Process & H - Human)**:
-   - Dang xuat, dang nhap bang `user2` (Agent).
-   - `user2` vao trang "Viec cho nhan" (Candidate Inbox: `GET /tasks?scope=candidate`).
-   - `user2` thay task cua ticket tren va bam nut "Nhan viec" (Claim Task).
+   - Dang xuat, dang nhap bang `agent1` (Agent).
+   - `agent1` vao trang "Viec cho nhan" (Candidate Inbox: `GET /tasks?scope=candidate`).
+   - `agent1` thay task cua ticket tren va bam nut "Nhan viec" (Claim Task).
    - Sau khi claim, task chuyen sang "Viec cua toi" (Assigned Inbox).
-   - `user2` mo chi tiet ticket, nhap ket qua "Da cau hinh lai mang" va bam "Hoan thanh" (`outcome: "resolved"`).
+   - `agent1` mo chi tiet ticket, nhap ket qua "Da cau hinh lai mang" va bam "Hoan thanh" (`outcome: "resolved"`).
 5. **Buoc 5 (P - Process Completion)**:
-   - Dang nhap lai bang `user1` (Requester).
-   - `user1` vao chi tiet ticket, thay tien do da sang buoc `Confirm resolution`.
-   - `user1` chon outcome `"accepted"` de xac nhan hai long. Ticket ket thuc thanh cong.
+   - Dang nhap lai bang `requester1` (Requester).
+   - `requester1` vao chi tiet ticket, thay tien do da sang buoc `Confirm resolution`.
+   - `requester1` chon outcome `"accepted"` de xac nhan hai long. Ticket ket thuc thanh cong.
 6. **Buoc 6 (D - Data Dashboard)**:
-   - Dang nhap bang `user3` (Coordinator).
+   - Dang nhap bang `coordinator1` (Coordinator).
    - Xem dashboard thong ke (`/statistics`): so luong ticket completed tang len 1, awaitingHandling giam xuong 0.
 7. **Buoc 7 (Minh chung doc lap & kien truc)**:
    - Mo Audit log (`/api/core/v1/workspaces/lab-a/audit`) de chung minh moi buoc deu duoc T1 ghi nhat ky.
-   - Thu lay tai khoan `user4` (thuoc `lab-b`) de truy cap ticket cua `lab-a` -> Chung minh he thong chan **403/404 Cross-workspace** tuyet doi.
+   - Thu lay tai khoan `requester2` (thuoc `lab-b`) de truy cap ticket cua `lab-a` -> Chung minh he thong chan **403/404 Cross-workspace** tuyet doi.
 
 ---
 

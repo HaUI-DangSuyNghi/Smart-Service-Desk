@@ -68,6 +68,11 @@ public class BackgroundTicketAssessment {
     @org.springframework.beans.factory.annotation.Autowired(required=false)
     void setLabels(vn.haui.dx.apps.servicedesk.TicketLabels labels) { this.labels=labels; }
 
+    private vn.haui.dx.apps.servicedesk.TicketRealtime realtime;
+
+    @org.springframework.beans.factory.annotation.Autowired(required=false)
+    void setRealtime(vn.haui.dx.apps.servicedesk.TicketRealtime realtime) { this.realtime=realtime; }
+
     @Transactional(propagation=Propagation.MANDATORY)
     public void enqueue(Ticket ticket) {
         boolean unsupported = model != null && model.getObject().enabled() && !model.getObject().supports(ticket.workspace());
@@ -217,6 +222,7 @@ public class BackgroundTicketAssessment {
         else if (labels!=null && count==1 && "DEGRADED".equals(state) && !"USE_FINAL_CONTEXT_ASSESSMENT".equals(error))
             labels.save(job.ticket().workspace(), job.ticket().id(), null, null, null, null);
         if (count==1 && result!=null) alerts.getObject().advisory(job.ticket(), "legacy-v1", result.priority());
+        if (count==1 && realtime!=null) realtime.changed(job.ticket().workspace(), job.ticket().id());
         return count==1;
     }
 

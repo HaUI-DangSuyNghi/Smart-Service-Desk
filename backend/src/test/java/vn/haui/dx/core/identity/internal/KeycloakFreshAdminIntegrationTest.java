@@ -148,7 +148,7 @@ class KeycloakFreshAdminIntegrationTest {
     }
 
     @Test void realRequesterAgentCoordinatorAndServiceAccountCannotImpersonateAdmin() throws Exception {
-        for (String username : new String[]{"user1", "user2", "user3"}) {
+        for (String username : new String[]{"requester1", "agent1", "coordinator1"}) {
             useJwt(token(realm, "core-probe", "username=" + username + "&password=" + encode(password) + "&grant_type=password"));
             assertDenied();
         }

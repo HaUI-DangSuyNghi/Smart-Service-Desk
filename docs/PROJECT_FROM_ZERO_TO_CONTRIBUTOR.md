@@ -162,7 +162,7 @@ Hãy hình dung kịch bản đi máy bay:
     ```json
     {
       "sub": "38a5b28a-86a3-4a11-82df-6b83f08a95d1",
-      "preferred_username": "user2",
+      "preferred_username": "agent1",
       "iss": "http://localhost:8081/realms/dx-lab",
       "aud": "dx-core",
       "exp": 1729000000,
@@ -180,7 +180,7 @@ Hệ thống sử dụng mật mã học bất đối xứng:
 3. Backend Core (Resource Server) khi nhận được token từ Client gửi lên trong header `Authorization: Bearer <token>`:
    - Backend Core **KHÔNG CẦN** gọi về Keycloak để hỏi "Token này có hợp lệ không?" cho từng request (tránh nghẽn mạng).
    - Backend Core chỉ tải Public Key từ JWKS của Keycloak một lần và cache lại.
-   - Core dùng Public Key này để tự giải mã toán học và kiểm tra chữ ký. Nếu một hacker sửa `preferred_username` từ `user2` thành `admin`, chữ ký điện tử sẽ bị sai lệch ngay lập tức và Spring Security lập tức từ chối với mã lỗi `401 Unauthorized`.
+   - Core dùng Public Key này để tự giải mã toán học và kiểm tra chữ ký. Nếu một hacker sửa `preferred_username` từ `agent1` thành `admin`, chữ ký điện tử sẽ bị sai lệch ngay lập tức và Spring Security lập tức từ chối với mã lỗi `401 Unauthorized`.
 
 ### 2.4 Cổng kết nối API (API Gateway) & Reverse Proxy
 - **Forward Proxy (Proxy xuôi):** Đứng trước các máy client trong công ty để kiểm soát việc nhân viên truy cập ra Internet.
@@ -824,13 +824,13 @@ Codebase có sẵn bộ test tự động tại `backend/src/test/`:
 
 ### 9.2 Kịch bản kiểm thử khói tự động (`scripts/smoke.ps1`)
 Kịch bản PowerShell `scripts/smoke.ps1` thực thi hơn 80 bước kiểm tra thực tế xuyên qua toàn bộ hạ tầng:
-1. Đăng nhập Keycloak lấy Token thật cho `user1` đến `user7`.
+1. Đăng nhập Keycloak lấy Token thật cho `requester1` đến `admin1`.
 2. Kiểm tra direct backend port (chứng minh backend từ chối truy cập không token với 401).
 3. Tải lên file PDF thật qua Gateway 9080.
 4. Thử tải file vượt quá 5MB và kiểm tra mã lỗi trả về đúng `413 Payload Too Large`.
-5. Bắt đầu quy trình `equipment-approval` với `user1` (`requester`).
-6. `user2` (`agent`) xem inbox kiểm tra nhiệm vụ.
-7. `user3` (`coordinator`) thực hiện claim và duyệt đơn.
+5. Bắt đầu quy trình `equipment-approval` với `requester1` (`requester`).
+6. `agent1` (`agent`) xem inbox kiểm tra nhiệm vụ.
+7. `coordinator1` (`coordinator`) thực hiện claim và duyệt đơn.
 8. Thử nghiệm Race condition: Gửi đồng thời 2 request duyệt cùng lúc, xác minh đúng một request nhận `204 No Content` và một request nhận `409 Conflict`.
 9. Kiểm tra bảng `audit_event` bảo đảm đầy đủ các hành động tương ứng.
 
@@ -1096,17 +1096,17 @@ Dưới đây là tập hợp các câu hỏi chuyên sâu mà hội đồng ph�
 
 ### 14.2 Lab 2: Tương tác với quy trình nghiệp vụ BPMN
 - **Nhiệm vụ:**
-  1. Lấy JWT Token của `user1` (vai trò `requester` trong `lab-a`).
+  1. Lấy JWT Token của `requester1` (vai trò `requester` trong `lab-a`).
   2. Khởi tạo một tiến trình `document-review` với `businessKey = "DOC-TEST-001"`.
-  3. Lấy token của `user3` (vai trò `coordinator` trong `lab-a`).
+  3. Lấy token của `coordinator1` (vai trò `coordinator` trong `lab-a`).
   4. Gọi API `/workspaces/lab-a/tasks?scope=candidate` để tìm task vừa tạo.
-  5. Dùng token `user3` để claim task và hoàn thành task với `outcome = "approved"`.
+  5. Dùng token `coordinator1` để claim task và hoàn thành task với `outcome = "approved"`.
   6. Kiểm tra API lịch sử `/workspaces/lab-a/instances/{id}/history` để thấy `ended = true`.
-- **Tiêu chí PASS:** Lịch sử trả về bước duyệt có actor chính là `user3` và thời gian kết thúc không null.
+- **Tiêu chí PASS:** Lịch sử trả về bước duyệt có actor chính là `coordinator1` và thời gian kết thúc không null.
 
 ### 14.3 Lab 3: Thao tác tải lên tệp tin và tạo siêu dữ liệu
 - **Nhiệm vụ:**
-  1. Dùng token của `user2` (`agent`) tải lên một file ảnh `sample.png` dung lượng < 1MB qua endpoint `/api/core/v1/workspaces/lab-a/files`.
+  1. Dùng token của `agent1` (`agent`) tải lên một file ảnh `sample.png` dung lượng < 1MB qua endpoint `/api/core/v1/workspaces/lab-a/files`.
   2. Lấy `id` của file vừa tải lên.
   3. Gọi `POST /api/core/v1/workspaces/lab-a/metadata` để tạo một bản ghi metadata liên kết với `file_id` đó.
   4. Gọi `GET /api/core/v1/workspaces/lab-a/files/{fileId}/content` để tải lại file về và kiểm tra tính toàn vẹn dung lượng.
