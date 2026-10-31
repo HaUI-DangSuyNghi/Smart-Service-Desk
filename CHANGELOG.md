@@ -38,5 +38,6 @@ The released tag/source archives are preserved; subsequent documentation is Unre
   fast-uri 3.1.8 remains MODERATE and is not waived. This is not full-stack certification.
 - Record the team leader's distribution approval for the reviewed fixtures in
   an exact-path, exact-hash release manifest; do not alter payload bytes or
-  evaluation/ingestion approval states. External document/photo permission terms
-  still need confirmation. No unreviewed OCR/local work is included.
+  evaluation/ingestion approval states. Post-release PR #74 records asset-specific
+  author permissions and reported HaUI permissions; school written evidence still
+  needs archiving. No unreviewed OCR/local work is included.

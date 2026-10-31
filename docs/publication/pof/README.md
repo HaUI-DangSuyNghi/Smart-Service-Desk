@@ -78,8 +78,28 @@ Run this short stdlib-only check from the repo root to verify recorded source in
 py -3 -c "import hashlib,json,pathlib; root=pathlib.Path('.'); inputs=json.loads((root/'docs/publication/pof/source-inputs.json').read_text()); assert all(hashlib.sha256((root/path).read_bytes()).hexdigest()==digest for path,digest in inputs['source_sha256'].items()); print('PASS: released source-input hashes')"
 ```
 
-Four document/photo permissions remain unresolved in [LICENSING](../../../LICENSING.md).
-The [asset manifest](../release-distribution-status.csv) distinguishes team
-approval from absent external permission terms. Publication is not rights clearance.
+[LICENSING](../../../LICENSING.md) now records PR #74's four asset-specific
+confirmations. The [asset manifest](../release-distribution-status.csv) distinguishes
+two direct author permissions from two reported HaUI permissions whose school
+evidence still needs archiving. Publication is not independent rights clearance.
 One MODERATE fast-uri 3.1.8 finding remains; this is not a clean security audit,
 full image scan, or legal compatibility certificate.
+
+## Final verification and portable source hashes
+
+[Final verification](FINAL_VERIFICATION.md), [observations](final-verification.json)
+and [sanitized log](final-verification.txt) record the actual source-build, smoke,
+archive and provenance checks. `source-inputs.json` retains its original Windows
+checkout byte hashes: eight text files use CRLF and differ from Git blobs. The
+short checker above is a checkout-byte check, not a portable archive hash check.
+The observations additionally contain canonical hashes under
+`canonical_git_blob_hashes.source_sha256`, reproducible on any OS:
+
+```powershell
+py -3 -c "import hashlib,json,pathlib,subprocess; x=json.loads(pathlib.Path('docs/publication/pof/final-verification.json').read_text())['canonical_git_blob_hashes']; assert all(hashlib.sha256(subprocess.check_output(['git','show',x['release_sha']+':'+p])).hexdigest()==h for p,h in x['source_sha256'].items()); print('PASS: canonical released Git blob hashes')"
+```
+
+The 602-entry lock inventory has 458 dev and 144 production-or-peer records; its
+51 optional records are all within dev. These flags do not imply 144 installed
+production SBOM components (119 were reproduced), nor complete optional bundled
+subgraphs. No dependency, lockfile or notice has been changed by this verification.
