@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { Link } from "react-router";
 import { IconChevronRight, IconInbox } from "@tabler/icons-react";
-import { cn } from "cn";
 import { processLink, useInbox, useProcessLabels } from "@/platform/process";
 import { formatRelativeTime } from "@/platform/shared/lib/format";
+import { Button } from "@/platform/shared/ui/button";
 import { HomePanel, HomePanelContent } from "./HomePanel";
 
 export const HomeWorkPanel = () => {
@@ -26,20 +26,17 @@ export const HomeWorkPanel = () => {
           className="flex gap-1 border-b border-crm-line-light px-3 py-2"
         >
           {(["ASSIGNED", "CANDIDATE"] as const).map((value) => (
-            <button
+            <Button
               key={value}
               type="button"
               aria-pressed={scope === value}
               onClick={() => setScope(value)}
-              className={cn(
-                "min-h-9 rounded-crm-sm px-2.5 text-crm-sm outline-none transition-colors duration-100 focus-visible:ring-2 focus-visible:ring-crm-focus md:min-h-7",
-                scope === value
-                  ? "bg-crm-hover font-medium text-crm-text"
-                  : "text-crm-text-2 hover:bg-crm-hover",
-              )}
+              variant={scope === value ? "info" : "ghost"}
+              size="sm"
+              className="min-h-9 md:min-h-7"
             >
               {value === "ASSIGNED" ? "Được giao cho tôi" : "Có thể nhận"}
-            </button>
+            </Button>
           ))}
         </div>
       }
@@ -63,7 +60,7 @@ export const HomeWorkPanel = () => {
             }
             className="flex min-w-0 items-center gap-3 px-4 py-3 outline-none transition-colors duration-100 hover:bg-crm-hover focus-visible:bg-crm-accent-soft focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-crm-focus"
           >
-            <div className="flex size-8 shrink-0 items-center justify-center rounded-crm-sm bg-crm-subtle text-crm-text-2">
+            <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-crm-tone-blue-soft text-crm-tone-blue">
               <IconInbox size={16} />
             </div>
             <div className="min-w-0 flex-1">

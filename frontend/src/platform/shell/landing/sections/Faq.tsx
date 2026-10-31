@@ -6,24 +6,24 @@ import { Reveal } from "../Reveal";
 
 const FAQS = [
   {
-    q: "Smart Service Desk làm gì?",
-    a: "Smart Service Desk số hoá việc hỗ trợ CNTT trong trường: người dùng tạo ticket, kỹ thuật viên nhận và xử lý theo quy trình BPMN, người yêu cầu xác nhận khi xong. Toàn bộ lịch sử được ghi lại, AI gợi ý phân loại để xử lý nhanh hơn.",
+    q: "Tôi có thể dùng Smart Service Desk để làm gì?",
+    a: "Bạn có thể gửi ticket hỗ trợ CNTT, yêu cầu đặt phòng, theo dõi tiến độ và tra cứu tài liệu nội bộ. Với ticket, điều phối viên tiếp nhận, duyệt và giao việc; kỹ thuật viên xử lý rồi người gửi xác nhận kết quả.",
   },
   {
-    q: "DX-OS 3 tầng nghĩa là gì?",
-    a: "Tầng 1 Open-Core là các dịch vụ lõi chạy ngầm (Keycloak, APISIX, Flowable, PostgreSQL). Tầng 2 H-P-D-I là năng lực số dùng chung: con người, quy trình, dữ liệu, trí tuệ. Tầng 3 là ứng dụng nghiệp vụ — Smart Service Desk là một ứng dụng như vậy, và ứng dụng khác cũng cắm vào được mà không sửa nền tảng.",
+    q: "Có thể sửa hoặc hủy yêu cầu đã gửi không?",
+    a: "Chủ yêu cầu có thể sửa hoặc hủy khi trạng thái hiện tại còn cho phép. Yêu cầu đặt phòng chỉ được sửa hoặc hủy trước khi duyệt. Với ticket đã duyệt, người gửi có thể đóng khi không còn nhu cầu xử lý. Các thao tác hủy và đóng đều có bước xác nhận và lưu lý do.",
   },
   {
-    q: "Gợi ý của AI có đáng tin không?",
-    a: "Mỗi gợi ý kèm luật đã khớp, đoạn văn bản làm căn cứ và cờ cần xem lại — không phải hộp đen. Gợi ý không bao giờ tự áp dụng vào ticket. Khi dịch vụ AI ngừng, hệ thống trả trạng thái DEGRADED và ticket vẫn xử lý thủ công bình thường.",
+    q: "Có bắt buộc phải bật AI không?",
+    a: "Không. Hệ thống có chế độ không dùng AI để phân loại và xử lý thủ công. Khi AI được bật, gợi ý hỗ trợ điều phối viên xem xét loại sự cố và ưu tiên; kết quả duyệt và phân công vẫn do người có quyền quyết định.",
   },
   {
-    q: "Dữ liệu giữa các đơn vị có tách biệt không?",
-    a: "Có. Mỗi đơn vị là một workspace, vai trò gắn theo từng workspace. Backend kiểm quyền cho mọi request; người ngoài workspace không thấy ticket, tài liệu hay số liệu của workspace đó.",
+    q: "Vì sao mỗi tài khoản thấy màn hình và thao tác khác nhau?",
+    a: "Quyền được cấp theo vai trò và workspace. Người yêu cầu chủ yếu theo dõi yêu cầu của mình; kỹ thuật viên xử lý việc được giao; điều phối viên tiếp nhận, duyệt, giao việc và theo dõi số liệu trong phạm vi được cấp.",
   },
   {
-    q: "Làm sao để dùng thử?",
-    a: "Chạy scripts/setup.ps1 rồi scripts/start.ps1 để dựng toàn bộ stack bằng Docker Compose, sau đó đăng nhập bằng tài khoản demo đặt theo vai trò (requester1, agent1, coordinator1, superadmin...). Mật khẩu được sinh tự động vào biến DEMO_PASSWORD trong file .env.",
+    q: "Làm thế nào để bắt đầu sử dụng?",
+    a: "Chọn Vào ứng dụng, đăng nhập bằng tài khoản được quản trị viên cấp và chọn workspace của bạn. Trang chủ có lối tắt tới yêu cầu, công việc và kho tri thức theo quyền hiện có. Mục Tài liệu hướng dẫn riêng cho từng vai trò.",
   },
 ];
 
@@ -77,20 +77,20 @@ export const Faq = () => {
           as="h2"
           className="mb-8 text-center text-[clamp(28px,4vw,52px)] font-extrabold tracking-tight text-(--landing-text)"
         >
-          Câu hỏi Thường gặp
+          Câu hỏi thường gặp
         </Reveal>
         <Reveal delay={80} className="mb-12 flex flex-wrap items-center justify-center gap-6">
           <div className="text-right">
             <p className="text-[17px] font-bold text-(--landing-text)">Còn thắc mắc?</p>
             <p className="text-base text-(--landing-text-dim)">
-              Xem thêm tài liệu kỹ thuật của dự án
+              Bắt đầu với hướng dẫn theo vai trò của bạn
             </p>
           </div>
           <Link
             to={APP_HOME}
             className="rounded-lg bg-(--landing-accent) px-7 py-3 text-base font-bold text-white transition-opacity hover:opacity-90"
           >
-            Dùng thử demo
+            Vào ứng dụng
           </Link>
         </Reveal>
 

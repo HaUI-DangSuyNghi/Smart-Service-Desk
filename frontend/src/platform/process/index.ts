@@ -3,6 +3,7 @@ export {
   configureInboxActions,
   type InboxActionProps,
   type InboxActionResolver,
+  type InboxLabelLoader,
 } from "./common/inboxActions";
 export {
   configureProcessLinks,

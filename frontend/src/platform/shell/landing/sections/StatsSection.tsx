@@ -4,25 +4,25 @@ import { Reveal } from "../Reveal";
 const FEATURES = [
   {
     icon: CheckCircle2,
-    title: "Kiểm thử với hạ tầng thật",
-    desc: "Nghiệm thu chạy qua Keycloak, APISIX và PostgreSQL thật, gồm cả các ca lỗi, tranh chấp và khôi phục dữ liệu.",
+    title: "Nhìn được việc còn chờ",
+    desc: "Theo dõi yêu cầu mới, đang xử lý, chờ xác nhận và quá hạn để biết khâu nào cần được quan tâm.",
   },
   {
     icon: Eye,
-    title: "Truy vết từng yêu cầu",
-    desc: "Mỗi request mang X-Request-Id xuyên qua gateway, backend và nhật ký audit — dễ tra soát khi có sự cố.",
+    title: "Đọc lại diễn biến xử lý",
+    desc: "Tiến độ và lịch sử thay đổi cho biết ai đã thực hiện, vào thời điểm nào và vì sao yêu cầu thay đổi.",
   },
   {
     icon: TrendingUp,
-    title: "Mở rộng không phá vỡ",
-    desc: "Ranh giới ba tầng được kiểm tự động mỗi lần build; thêm ứng dụng mới không phải sửa nền tảng.",
+    title: "Cập nhật tới người liên quan",
+    desc: "Các thay đổi công việc được cập nhật qua thông báo; những trạng thái quan trọng có thể được gửi qua email khi đã cấu hình.",
   },
 ];
 
 const STATS = [
   ["3", "tầng kiến trúc DX-OS"],
   ["4", "năng lực H-P-D-I"],
-  ["2", "workspace cô lập dữ liệu"],
+  ["2", "ứng dụng: hỗ trợ CNTT và đặt phòng"],
   ["3", "vai trò nghiệp vụ"],
 ];
 
@@ -31,14 +31,20 @@ export const StatsSection = () => {
     <section className="bg-(--landing-bg-soft) px-6 py-16 lg:px-8">
       <Reveal className="mx-auto max-w-360 overflow-hidden rounded-[28px] border border-(--landing-border) bg-white p-8 sm:p-12">
         <div className="grid items-center gap-12 lg:grid-cols-2">
-          <div className="flex aspect-4/3 items-center justify-center rounded-2xl border border-(--landing-border) bg-linear-to-br from-(--landing-accent-soft) to-(--landing-lime-soft)">
-            <span className="text-xs font-semibold tracking-wide text-(--landing-text-dim) uppercase">
-              Ảnh minh hoạ Dashboard
-            </span>
+          <div className="min-w-0 overflow-hidden rounded-2xl border border-(--landing-border)">
+            <img
+              src="/dashboard.png"
+              alt="Dashboard tổng hợp số liệu yêu cầu, tiến độ xử lý và thống kê ticket"
+              width={1912}
+              height={868}
+              loading="lazy"
+              decoding="async"
+              className="block h-auto w-full"
+            />
           </div>
           <div>
             <h3 className="mb-8 text-[clamp(34px,4vw,50px)] leading-[1.07] font-extrabold tracking-tight text-(--landing-text)">
-              Nền tảng vững chắc, đã kiểm chứng
+              Nắm tiến độ, chủ động điều phối
             </h3>
             <div className="flex flex-col gap-7">
               {FEATURES.map((f) => (

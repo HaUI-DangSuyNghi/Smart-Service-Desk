@@ -15,71 +15,80 @@ import { Reveal } from "../Reveal";
 
 const SERVICES = [
   {
-    title: "Ticket & Quy trình BPMN",
-    desc: "Mỗi ticket chạy theo một quy trình BPMN trên Flowable: kỹ thuật viên xử lý, người yêu cầu xác nhận hoặc yêu cầu làm lại. Trạng thái và lịch sử luôn lấy từ engine, không có cột trạng thái tự chế.",
-    linkLabel: "Khám phá quy trình",
-    tone: "from-[#1b330f] to-[#112009]",
+    title: "Yêu cầu có người phụ trách",
+    image: "/process.png",
+    imageAlt: "Bảng ticket theo các bước tiếp nhận, chờ duyệt, đã giao và đang làm",
+    imageWidth: 1917,
+    imageHeight: 867,
+    desc: "Tập trung ticket CNTT và yêu cầu đặt phòng vào cùng một nơi. Mỗi yêu cầu có trạng thái, người tham gia và tiến độ để người gửi biết việc của mình đang được xử lý đến đâu.",
+    linkLabel: "Xem vai trò xử lý",
     features: [
       {
         icon: GitBranch,
-        title: "Lịch sử từ engine",
-        desc: "Timeline hiện từng bước: ai làm, lúc nào, kết quả và ghi chú — đọc trực tiếp từ Flowable.",
+        title: "Tiếp nhận, duyệt và giao việc",
+        desc: "Điều phối viên kiểm tra thông tin và phân công; kỹ thuật viên xem công việc theo danh sách hoặc theo ngày.",
       },
       {
         icon: Hand,
-        title: "Nhận việc không trùng",
-        desc: "Hai người cùng nhận một việc thì người sau bị từ chối, tránh xử lý chồng chéo.",
+        title: "Cập nhật ngay trong quá trình xử lý",
+        desc: "Bắt đầu, tạm dừng, tiếp tục hoặc báo xong. Thông báo trong ứng dụng và email giúp các bên theo dõi những thay đổi quan trọng.",
       },
       {
         icon: RefreshCw,
-        title: "Xác nhận hoặc làm lại",
-        desc: "Người yêu cầu là người quyết định ticket đã xong; chưa đạt thì quay lại bước xử lý.",
+        title: "Người gửi theo dõi kết quả",
+        desc: "Sửa hoặc hủy khi yêu cầu còn được phép thay đổi. Với ticket đã báo xong, người gửi có thể xác nhận hoặc yêu cầu xử lý lại.",
       },
     ],
   },
   {
-    title: "AI Triage có giải thích",
-    desc: "Dịch vụ Intelligence đọc tiêu đề và mô tả, đề xuất nhóm, mức ưu tiên và nhóm xử lý theo bộ luật có phiên bản. Gợi ý luôn kèm lý do — và chỉ là gợi ý, con người quyết định.",
-    linkLabel: "Khám phá AI Triage",
-    tone: "from-[#273211] to-[#181f0a]",
+    title: "AI hỗ trợ bước phân loại",
+    image: "/filter.png",
+    imageAlt: "Giao diện phân loại và lọc thông tin ticket hỗ trợ CNTT",
+    imageWidth: 1916,
+    imageHeight: 870,
+    desc: "Khi được bật và cấu hình, AI phân tích nội dung ticket để gợi ý loại sự cố, mức ưu tiên và hướng xử lý. Điều phối viên xem lại đề xuất trước khi duyệt và giao việc.",
+    linkLabel: "Xem vai trò điều phối",
     features: [
       {
         icon: Brain,
-        title: "Gợi ý kèm bằng chứng",
-        desc: "Mỗi đề xuất có danh sách luật khớp, đoạn văn bản làm căn cứ và cờ cần xem lại.",
+        title: "Có lý do để đối chiếu",
+        desc: "Xem đề xuất cùng phần giải thích, thông tin làm căn cứ và dấu hiệu cần xem lại ngay trong chi tiết ticket.",
       },
       {
         icon: ListChecks,
-        title: "Không tự áp dụng",
-        desc: "Kết quả AI không bao giờ tự thay đổi ticket; người xử lý luôn là người chốt.",
+        title: "Duyệt trước khi giao",
+        desc: "Điều phối viên có thể điều chỉnh phân loại, ưu tiên và người xử lý theo tình huống thực tế.",
       },
       {
         icon: ShieldCheck,
-        title: "Vẫn chạy khi AI ngừng",
-        desc: "AI chậm hoặc ngừng thì phản hồi ở chế độ DEGRADED, ticket vẫn tạo và xử lý thủ công bình thường.",
+        title: "Chọn cách vận hành phù hợp",
+        desc: "Có thể triển khai với AI trên máy riêng, dịch vụ API hoặc tắt AI để tiếp nhận và phân loại thủ công.",
       },
     ],
   },
   {
-    title: "Dữ liệu & Tri thức",
-    desc: "Dữ liệu và tài liệu tri thức được lưu ở Core Data kèm nguồn gốc, phiên bản, giấy phép và checksum. Thống kê đọc trực tiếp từ quy trình, đúng phạm vi quyền của từng người.",
-    linkLabel: "Khám phá dữ liệu",
-    tone: "from-[#11271c] to-[#0b1912]",
+    title: "Tri thức và số liệu trong tầm tay",
+    image: "/chatRAG.png",
+    imageAlt: "Giao diện hỏi đáp tài liệu nội bộ trên Smart Service Desk",
+    imageWidth: 1918,
+    imageHeight: 866,
+    desc: "Tra cứu tài liệu nội bộ, xem lịch sử yêu cầu và theo dõi tình hình xử lý trên Dashboard. Thông tin hiển thị theo quyền của người dùng trong workspace.",
+    linkLabel: "Xem phạm vi truy cập",
     features: [
       {
         icon: BookOpen,
-        title: "Knowledge Hub",
-        desc: "Tài liệu hướng dẫn có nguồn và phiên bản rõ ràng, chỉ người trong workspace mới đọc được.",
+        title: "Kho tri thức nội bộ",
+        desc: "Tập hợp tài liệu hướng dẫn, tìm kiếm và hỏi đáp tài liệu khi tính năng AI tương ứng được cấu hình.",
       },
       {
         icon: ScrollText,
-        title: "Audit cùng transaction",
-        desc: "Mọi thao tác ghi đều có bản ghi audit; thao tác lỗi thì audit cũng được hoàn tác.",
+        title: "Lịch sử để tra cứu",
+        desc: "Theo dõi các bước xử lý, người thực hiện và lý do thay đổi; nhật ký hỗ trợ đối chiếu khi cần.",
       },
       {
         icon: LifeBuoy,
-        title: "Thống kê theo quyền",
-        desc: "Người yêu cầu thấy số liệu của mình, kỹ thuật viên và điều phối viên thấy cả workspace.",
+        title: "Dashboard theo khoảng ngày",
+        desc: "Người có quyền xem được số yêu cầu mới, đang xử lý, đã xong, chờ nhận và quá hạn trong khoảng thời gian đã chọn.",
       },
     ],
   },
@@ -186,11 +195,11 @@ export const ServicesShowcase = () => {
     <section id="services" className="border-t border-(--landing-border) bg-white pt-20">
       <Reveal className="mx-auto mb-14 grid max-w-360 items-end gap-12 px-6 lg:grid-cols-[3fr_2fr] lg:px-14">
         <h2 className="text-[clamp(32px,4.5vw,62px)] leading-[1.07] font-extrabold tracking-tight text-(--landing-text)">
-          Từ Yêu cầu đến Hoàn tất — Có Căn cứ ở Mọi Bước
+          Mọi việc cần cho một yêu cầu hỗ trợ
         </h2>
         <p className="text-[17px] leading-relaxed text-(--landing-text-dim)">
-          Smart Service Desk biến yêu cầu hỗ trợ rời rạc thành quy trình có trạng thái, người xử lý
-          và lịch sử rõ ràng — AI giúp phân loại nhanh hơn, con người giữ quyền quyết định.
+          Từ gửi yêu cầu đến phân công, xử lý và xác nhận kết quả. Công việc, tri thức và thông báo
+          được kết nối để các bên cùng theo dõi tiến độ.
         </p>
       </Reveal>
 
@@ -220,7 +229,7 @@ export const ServicesShowcase = () => {
                     {String(i + 1).padStart(2, "0")}
                   </span>
                   <span className="text-xs font-semibold tracking-[0.08em] text-(--landing-text-dim) uppercase">
-                    Năng lực cốt lõi
+                    Tính năng chính
                   </span>
                 </div>
 
@@ -262,11 +271,17 @@ export const ServicesShowcase = () => {
                   </div>
 
                   <div
-                    className={`aspect-4/3 overflow-hidden rounded-[20px] border border-(--landing-border) bg-linear-to-br shadow-[0_1px_3px_rgba(0,0,0,0.08),0_4px_16px_rgba(0,0,0,0.06)] ${service.tone} flex items-center justify-center`}
+                    className="min-w-0 overflow-hidden rounded-[20px] border border-(--landing-border) shadow-[0_1px_3px_rgba(0,0,0,0.08),0_4px_16px_rgba(0,0,0,0.06)]"
                   >
-                    <span className="text-xs font-semibold tracking-wide text-white/50 uppercase">
-                      {service.title}
-                    </span>
+                    <img
+                      src={service.image}
+                      alt={service.imageAlt}
+                      width={service.imageWidth}
+                      height={service.imageHeight}
+                      loading="lazy"
+                      decoding="async"
+                      className="block h-auto w-full"
+                    />
                   </div>
                 </div>
               </div>

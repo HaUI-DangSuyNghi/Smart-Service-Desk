@@ -5,14 +5,14 @@ import { Reveal } from "../Reveal";
 // Mỗi hàng là một tầng, từ trên xuống: ứng dụng → H-P-D-I → Open-Core
 const FLOW_ROWS = [
   [
-    ["apps.servicedesk", "Ticket, quy trình hỗ trợ, thống kê"],
-    ["apps.roomrequest", "Ứng dụng thứ hai, chứng minh dùng lại"],
+    ["apps.servicedesk", "Tiếp nhận, duyệt, giao và xử lý ticket"],
+    ["apps.roomrequest", "Gửi, duyệt và theo dõi yêu cầu đặt phòng"],
   ],
   [
     ["hpdi.human", "Người dùng, workspace, vai trò"],
-    ["hpdi.process", "Hộp việc, nhận việc, timeline"],
+    ["hpdi.process", "Công việc, lịch, tiến độ và thao tác yêu cầu"],
     ["hpdi.data", "Tri thức, metadata, thống kê"],
-    ["hpdi.intelligence", "AI triage có giải thích"],
+    ["hpdi.intelligence", "Phân loại và hỏi đáp có AI hỗ trợ"],
   ],
   [
     ["core.identity", "Keycloak, JWT, quyền theo workspace"],
@@ -52,11 +52,12 @@ export const Architecture = () => {
             Kiến trúc
           </div>
           <h2 className="mb-3.5 text-[clamp(34px,4vw,50px)] leading-tight font-extrabold tracking-tight text-(--landing-text)">
-            Gọi xuống, không gọi ngược
+            Hai ứng dụng, một nền tảng dùng chung
           </h2>
           <p className="text-xl leading-relaxed text-(--landing-text-dim)">
-            Modular monolith: một tiến trình Spring Boot, ba tầng là ba package riêng. Ứng dụng chỉ
-            dùng H-P-D-I, H-P-D-I chỉ dùng Open-Core — ranh giới được kiểm tự động mỗi lần build.
+            Service Desk và Đặt phòng cùng sử dụng năng lực con người, quy trình, dữ liệu và AI của
+            DX-OS. Nghiệp vụ được tách khỏi các dịch vụ lõi để có thể bổ sung ứng dụng mà vẫn dùng
+            chung đăng nhập, công việc và lịch sử xử lý.
           </p>
         </Reveal>
 

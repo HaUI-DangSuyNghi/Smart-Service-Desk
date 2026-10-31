@@ -1,5 +1,6 @@
 import { apiClient } from "../../../platform/shared/api";
 import { parseSuggestion, type Suggestion } from "../../../platform/intelligence";
+import { listRequests, type ProcessSummary, type RequestScope } from "../../../platform/services";
 
 /** Quy trình gắn với yêu cầu đặt phòng (khớp RoomProcessView). */
 export interface RoomProcess {
@@ -40,6 +41,39 @@ export const getRoomRequest = async (
     { signal },
   );
   return data;
+};
+
+export type RoomRequestRow = ProcessSummary & { room: string };
+
+/** Filter after traversing all pages so other apps cannot hide room bookings. */
+export const listRoomRequests = async (
+  workspace: string,
+  scope: RequestScope,
+  signal?: AbortSignal,
+): Promise<RoomRequestRow[]> => {
+  const first = await listRequests(workspace, scope, { page: 0, size: 100 }, signal);
+  const summaries = [...first.items];
+  const size = first.size > 0 ? first.size : 100;
+  for (let page = 1; page * size < first.total; page += 1) {
+    const next = await listRequests(workspace, scope, { page, size }, signal);
+    summaries.push(...next.items);
+  }
+  const rooms = [
+    ...new Map(
+      summaries.filter((item) => item.processKey === "room-request").map((item) => [item.id, item]),
+    ).values(),
+  ];
+  const result: RoomRequestRow[] = [];
+  for (let offset = 0; offset < rooms.length; offset += 10) {
+    const batch = await Promise.all(
+      rooms.slice(offset, offset + 10).map(async (item) => ({
+        ...item,
+        room: (await getRoomRequest(workspace, item.businessKey, signal)).room,
+      })),
+    );
+    result.push(...batch);
+  }
+  return result;
 };
 
 /** Gợi ý của AI theo profile room-request; không gửi body (có body là 400). */

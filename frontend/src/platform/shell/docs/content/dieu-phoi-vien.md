@@ -2,6 +2,8 @@
 
 Mở **Smart Service Desk**. Trong chế độ bảng dữ liệu, các nhóm hỗ trợ theo dõi gồm **Tất cả**, **Tiếp nhận**, **Chờ duyệt**, **Quá hạn** và **Giao cho tôi**, tùy quyền.
 
+Ở **Công việc → Lịch**, chọn ngày để xem một bảng các yêu cầu/công việc đang mở phát sinh trong ngày đó tại workspace. Bảng có nội dung ticket, bước công việc, trạng thái, người xử lý và nút **Tiếp nhận / Duyệt và giao việc / Giao lại**. Tìm theo nội dung hoặc mã yêu cầu, lọc theo bước công việc. Kỹ thuật viên dùng cùng bố cục nhưng chỉ thấy việc được giao cho mình và các thao tác xử lý tương ứng.
+
 Sử dụng từ khóa, trạng thái và mức ưu tiên để thu hẹp danh sách. Ở **Giao cho tôi**, người có quyền điều phối có thể chọn nhân sự để xem hàng đợi và tải xử lý của họ.
 
 Ưu tiên kiểm tra các sự cố khẩn cấp, cảnh báo chưa nhận xử lý, công việc quá hạn và ticket đang thiếu thông tin.

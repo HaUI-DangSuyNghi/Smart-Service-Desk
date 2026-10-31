@@ -71,7 +71,9 @@ export const CreateRoomRequestDialog = () => {
       <DialogContent className="sm:max-w-100">
         <DialogHeader>
           <DialogTitle>Đặt phòng</DialogTitle>
-          <DialogDescription>Điều phối viên sẽ duyệt; theo dõi ở mục Yêu cầu.</DialogDescription>
+          <DialogDescription>
+            Điều phối viên sẽ duyệt; theo dõi trong danh sách Đặt phòng.
+          </DialogDescription>
         </DialogHeader>
 
         <form
