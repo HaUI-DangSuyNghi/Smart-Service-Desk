@@ -180,17 +180,17 @@ def main():
         started = True
         compose('up', '-d', 'postgres', 'keycloak', 'intelligence', 'platform', 'gateway')
         base = backend_ready()
-        requester, coordinator = login('user1'), login('user3')
+        requester, coordinator = login('requester1'), login('coordinator1')
         prefix = '/api/apps/servicedesk/v1/workspaces/lab-a/tickets'
 
         def create(title='wifi', description='m\u1ed9t m\u00e1y kh\u00f4ng v\u00e0o m\u1ea1ng, c\u00f3 th\u1ec3 ch\u1edd'):
-            response = http('POST', base + prefix, token=login('user1'), body={
+            response = http('POST', base + prefix, token=login('requester1'), body={
                 'clientRequestId': str(uuid4()), 'title': title, 'description': description}, expected=201)
             assert response['assessment']['status'] == 'PENDING'
             return response
 
         def read(ticket, token=None):
-            return http('GET', base + prefix + '/' + ticket['id'], token=token or login('user3'))
+            return http('GET', base + prefix + '/' + ticket['id'], token=token or login('coordinator1'))
 
         def state(ticket, wanted):
             return wait(lambda: read(ticket), lambda result: result['assessment']['status'] == wanted)
@@ -231,7 +231,7 @@ def main():
         assert insufficient_ready['impact'] is None and insufficient_ready['urgency'] is None
         passed('insufficient evidence preserves needsReview; literal ABSTAIN not in rules contract')
         http('GET', base + prefix.replace('lab-a', 'lab-b') + '/' + ticket['id'], token=requester, expected=403)
-        http('GET', base + prefix + '/' + ticket['id'], token=login('user4'), expected=403)
+        http('GET', base + prefix + '/' + ticket['id'], token=login('requester2'), expected=403)
         passed('workspace isolation with real Keycloak requester tokens')
         compose('stop', 'intelligence')
         unavailable = create()

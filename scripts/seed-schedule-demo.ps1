@@ -1,5 +1,5 @@
 # Tao lich truc mau (tuan nay + tuan sau) cho tai khoan demo: nguoi lam hanh chinh, nguoi truc ca tuan va vai buoi.
-# Chay lai khong trung. Can stack dang chay ban backend moi (dx up) va realm co user8-user13 (dx realm).
+# Chay lai khong trung. Can stack dang chay ban backend moi (dx up) va realm co agent1-agent8 (dx realm).
 $ErrorActionPreference = 'Stop'
 Set-Location (Split-Path $PSScriptRoot -Parent)
 . "$PSScriptRoot/docker-native.ps1"

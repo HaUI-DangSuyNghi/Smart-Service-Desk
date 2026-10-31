@@ -13,7 +13,7 @@ def run(root, mode):
     settings = dict(line.split("=", 1) for line in (Path(root) / ".env").read_text(encoding="utf-8").splitlines()
                     if line and not line.startswith("#") and "=" in line)
     tokens = {}
-    for role, username in (("requester", "user1"), ("agent", "user2"), ("coordinator", "user3")):
+    for role, username in (("requester", "requester1"), ("agent", "agent1"), ("coordinator", "coordinator1")):
         body = urllib.parse.urlencode({"client_id": "core-probe", "grant_type": "password", "username": username,
                                        "password": settings["DEMO_PASSWORD"]}).encode()
         request = urllib.request.Request("http://localhost:8081/realms/dx-lab/protocol/openid-connect/token", data=body)

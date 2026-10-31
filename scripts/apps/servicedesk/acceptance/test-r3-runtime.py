@@ -62,7 +62,7 @@ def main():
     def call(method, path, bearer, body=None, expected=200):
         return request(arguments.base + path, method, bearer, body, expected)
 
-    requester, agent, coordinator, foreign = (token(name) for name in ("user1", "user2", "user3", "user5"))
+    requester, agent, coordinator, foreign = (token(name) for name in ("requester1", "agent1", "coordinator1", "agent6"))
     agent_id = subject(agent)
     work = "/api/hpdi/v1/workspaces/lab-a"
     tickets = "/api/apps/servicedesk/v1/workspaces/lab-a/tickets"

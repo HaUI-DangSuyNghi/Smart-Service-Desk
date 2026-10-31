@@ -55,10 +55,10 @@ try:
             if client['clientId'] == 'dx-directory':
                 client['secret'] = password
         for user in realm['users']:
-            if user['username'] in ('user1', 'user2', 'user3'):
+            if user['username'] in ('requester1', 'agent1', 'coordinator1'):
                 user['credentials'] = [{'type': 'password', 'value': password, 'temporary': False}]
-            # Template đã có sẵn tổ cho user2; chỉ thêm khi thiếu để không trùng nhóm
-            if user['username'] == 'user2' and '/support-groups/lab-a/hardware' not in user['groups']:
+            # Template đã có sẵn tổ cho agent1; chỉ thêm khi thiếu để không trùng nhóm
+            if user['username'] == 'agent1' and '/support-groups/lab-a/hardware' not in user['groups']:
                 user['groups'].append('/support-groups/lab-a/hardware')
         seed = Path(temporary) / 'realm.json'
         seed.write_text(json.dumps(realm), encoding='utf-8')
@@ -83,15 +83,15 @@ try:
         wait(backend + '/actuator/health')
         tokens = {user: request(keycloak + '/realms/dx-lab/protocol/openid-connect/token', 'POST',
             {'grant_type': 'password', 'client_id': 'core-probe', 'username': user, 'password': password}, form=True)['access_token']
-            for user in ('user1', 'user2', 'user3')}
-        subject = json.loads(base64.urlsafe_b64decode(tokens['user2'].split('.')[1] + '=='))['sub']
-        def call(path, actor='user3', method='GET', data=None):
+            for user in ('requester1', 'agent1', 'coordinator1')}
+        subject = json.loads(base64.urlsafe_b64decode(tokens['agent1'].split('.')[1] + '=='))['sub']
+        def call(path, actor='coordinator1', method='GET', data=None):
             return request(backend + path, method, data, tokens[actor])
         base = '/api/apps/servicedesk/v1/workspaces/lab-a/tickets'
-        ticket = call(base, 'user1', 'POST', {'clientRequestId': str(uuid.uuid4()), 'title': 'Real R2 smoke', 'description': 'Synthetic request'})
+        ticket = call(base, 'requester1', 'POST', {'clientRequestId': str(uuid.uuid4()), 'title': 'Real R2 smoke', 'description': 'Synthetic request'})
         preview = base + '/' + ticket['id'] + '/assignment-suggestion?category=HARDWARE&priority=HIGH'
         check('off-duty yields no recommendation', call(preview)['recommended'] is None)
-        call('/api/hpdi/v1/workspaces/lab-a/duty/me', 'user2', 'PUT', {'onDuty': True})
+        call('/api/hpdi/v1/workspaces/lab-a/duty/me', 'agent1', 'PUT', {'onDuty': True})
         def snapshot():
             return docker('exec', database, 'psql', '-U', 'workflow', '-d', 'core', '-Atc',
                 'select (select count(*) from audit_event),(select count(*) from servicedesk_assignment_event),(select count(*) from servicedesk_assignment_cursor),(select count(*) from act_ru_task),(select count(*) from act_ru_variable)')

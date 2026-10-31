@@ -22,7 +22,7 @@ def main():
     settings = dict(line.split('=', 1) for line in Path('.env').read_text().splitlines()
                     if '=' in line and not line.startswith('#'))
     tokens = {}
-    for user in ('user1', 'user2', 'user3', 'user4'):
+    for user in ('requester1', 'agent1', 'coordinator1', 'requester2'):
         raw = urlencode({'grant_type': 'password', 'client_id': 'core-probe', 'username': user,
                          'password': settings['DEMO_PASSWORD']}).encode()
         with urlopen(args.identity + '/realms/dx-lab/protocol/openid-connect/token', raw, timeout=30) as response:
@@ -57,49 +57,49 @@ def main():
     boundary = 'proof-' + uuid4().hex
     multipart = (f'--{boundary}\r\nContent-Disposition: form-data; name="file"; filename="room-guide.md"\r\n'
                  'Content-Type: text/markdown\r\n\r\n').encode() + content + f'\r\n--{boundary}--\r\n'.encode()
-    file = call('POST', '/api/core/v1/workspaces/lab-a/files', 'user2', 201, raw=multipart,
+    file = call('POST', '/api/core/v1/workspaces/lab-a/files', 'agent1', 201, raw=multipart,
                 content_type='multipart/form-data; boundary=' + boundary)
-    metadata = call('POST', '/api/core/v1/workspaces/lab-a/metadata', 'user2', 201,
+    metadata = call('POST', '/api/core/v1/workspaces/lab-a/metadata', 'agent1', 201,
                     {'title': 'Synthetic room guide', 'source': 'src:room-proof:' + uuid4().hex, 'version': 'proof-v1',
                      'usageRights': 'CC0', 'fileId': file['id']})
     # Xem tài liệu cần quyền document:view (kỹ thuật viên, điều phối viên); người yêu cầu bị chặn
-    knowledge = call('GET', '/api/hpdi/v1/workspaces/lab-a/knowledge/' + metadata['id'], 'user2', 200, contract='hpdi')
+    knowledge = call('GET', '/api/hpdi/v1/workspaces/lab-a/knowledge/' + metadata['id'], 'agent1', 200, contract='hpdi')
     assert knowledge['text'] == content.decode('utf-8')
     assert knowledge['metadataId'] == metadata['id']
     assert knowledge['version'] == 'proof-v1'
     assert 'content' not in knowledge and 'checksum' not in knowledge
-    original = call('GET', '/api/core/v1/workspaces/lab-a/files/' + file['id'], 'user2', 200)
+    original = call('GET', '/api/core/v1/workspaces/lab-a/files/' + file['id'], 'agent1', 200)
     assert original['checksum'] == sha256(content).hexdigest()
-    requester_preview = call('GET', '/api/hpdi/v1/workspaces/lab-a/knowledge/' + metadata['id'], 'user1', 200, contract='hpdi')
+    requester_preview = call('GET', '/api/hpdi/v1/workspaces/lab-a/knowledge/' + metadata['id'], 'requester1', 200, contract='hpdi')
     assert requester_preview == knowledge
     passed.append('authorized-knowledge-exact-provenance')
 
-    actor = call('GET', '/api/hpdi/v1/workspaces/lab-a/actor', 'user1', 200, contract='hpdi')
+    actor = call('GET', '/api/hpdi/v1/workspaces/lab-a/actor', 'requester1', 200, contract='hpdi')
     assert actor['workspace'] == 'lab-a' and 'requester' in actor['roles']
     base = '/api/apps/roomrequest/v1/workspaces/lab-a/requests'
-    room = call('POST', base, 'user1', 201, {'room': 'A-101', 'knowledgeId': metadata['id']}, contract='room')
+    room = call('POST', base, 'requester1', 201, {'room': 'A-101', 'knowledgeId': metadata['id']}, contract='room')
     assert room['creator'] == actor['subject'] and room['process']['processKey'] == 'room-request'
     passed.append('trusted-human-and-app-persistence')
 
-    suggestion = call('POST', base + '/' + room['id'] + '/suggestion', 'user1', 200, contract='room')
+    suggestion = call('POST', base + '/' + room['id'] + '/suggestion', 'requester1', 200, contract='room')
     assert suggestion['status'] == 'SUCCESS' and suggestion['runtime']['profileVersion'] == 'room-request@0.3.0'
     assert suggestion['result'] == {'category': 'BOOKING', 'priority': 'NORMAL', 'suggestedGroup': 'FACILITIES'}
     assert suggestion['evidence'] and not suggestion['needsReview']
     passed.append('real-java-private-python-triage')
 
-    timeline = call('GET', base + '/' + room['id'] + '/progress', 'user1', 200, contract='room')
+    timeline = call('GET', base + '/' + room['id'] + '/progress', 'requester1', 200, contract='room')
     task = timeline['currentTasks'][0]
-    inbox = call('GET', '/api/hpdi/v1/workspaces/lab-a/inbox', 'user3', 200, contract='hpdi')
+    inbox = call('GET', '/api/hpdi/v1/workspaces/lab-a/inbox', 'coordinator1', 200, contract='hpdi')
     assert any(item['id'] == task['id'] and item['businessKey'] == room['id'] for item in inbox['items'])
     path = '/api/hpdi/v1/workspaces/lab-a/tasks/' + task['id']
-    call('POST', path + '/claim', 'user3', 200, contract='hpdi')
-    call('POST', path + '/complete', 'user3', 204, {'expectedTaskKey': 'approve', 'outcome': 'approved'})
-    ended = call('GET', base + '/' + room['id'] + '/progress', 'user1', 200, contract='room')
+    call('POST', path + '/claim', 'coordinator1', 200, contract='hpdi')
+    call('POST', path + '/complete', 'coordinator1', 204, {'expectedTaskKey': 'approve', 'outcome': 'approved'})
+    ended = call('GET', base + '/' + room['id'] + '/progress', 'requester1', 200, contract='room')
     assert ended['ended'] and not ended['currentTasks']
     passed.append('shared-inbox-claim-complete-timeline')
 
     call('POST', base + '/' + room['id'] + '/suggestion', None, 401, contract='room')
-    call('POST', base + '/' + room['id'] + '/suggestion', 'user4', 403, contract='room')
+    call('POST', base + '/' + room['id'] + '/suggestion', 'requester2', 403, contract='room')
     passed.append('authentication-and-cross-workspace-denial')
     args.output.parent.mkdir(parents=True, exist_ok=True)
     for name, records in captures.items():

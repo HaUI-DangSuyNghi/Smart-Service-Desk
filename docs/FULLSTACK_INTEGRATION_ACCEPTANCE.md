@@ -251,8 +251,8 @@ Live Gateway: `http://localhost:19080`; health: `/health`; API prefix: `/api`.
 Live Keycloak authority: `http://localhost:18081/realms/dx-lab`.
 Browser client: dx-web, Authorization Code + PKCE; API audience: dx-core.
 
-Synthetic accounts: user1/requester, user2/agent, user3/coordinator in lab-a;
-user4/requester, user5/agent, user6/coordinator in lab-b. User7 is platform-admin
+Synthetic accounts: requester1/requester, agent1/agent, coordinator1/coordinator in lab-a;
+requester2/requester, agent6/agent, coordinator2/coordinator in lab-b. User7 is platform-admin
 without workspace membership. Password values are not included in this report;
 the authorized local owner can retrieve the task-only DEMO_PASSWORD from the
 protected secrets.env. Never publish the credential files with the evidence.

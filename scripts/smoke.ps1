@@ -85,13 +85,13 @@ function Call($method, $path, $token, $body, $expected) {
     }
 }
 try {
-    # user1..user7: xem bảng tài khoản demo trong README
-    $requesterA = Token 'user1'
-    $agentA = Token 'user2'
-    $coordinatorA = Token 'user3'
-    $agentB = Token 'user5'
-    $coordinatorB = Token 'user6'
-    $platformAdmin = Token 'user7'
+    # Tài khoản demo đặt theo vai trò: xem bảng trong README
+    $requesterA = Token 'requester1'
+    $agentA = Token 'agent1'
+    $coordinatorA = Token 'coordinator1'
+    $agentB = Token 'agent6'
+    $coordinatorB = Token 'coordinator2'
+    $platformAdmin = Token 'admin1'
     if ($ComposeProject) {
         Direct '/me' '' 401
         Direct '/me' $requesterA 200
@@ -101,7 +101,7 @@ try {
     if ($unauthenticated.code -ne 'UNAUTHENTICATED' -or !$unauthenticated.requestId) { throw '401 body must carry code and requestId' }
     Call GET '/me' 'invalid' $null 401 | Out-Null
     $me = Call GET '/me' $requesterA $null 200
-    if ($me.username -ne 'user1' -or $me.platformAdmin -or @($me.memberships).Count -ne 1 -or
+    if ($me.username -ne 'requester1' -or $me.platformAdmin -or @($me.memberships).Count -ne 1 -or
         $me.memberships[0].workspace -ne 'lab-a' -or $me.memberships[0].role -ne 'requester') { throw 'Unexpected /me memberships' }
     $adminMe = Call GET '/me' $platformAdmin $null 200
     # Request ID: giữ X-Request-ID hợp lệ từ client/gateway, thay thế giá trị không hợp lệ
@@ -122,7 +122,7 @@ try {
     if ($denied.code -ne 'FORBIDDEN') { throw '403 body must carry code FORBIDDEN' }
     Call POST '/workspaces/lab-a/metadata' $agentB $data 403 | Out-Null
     Call POST '/workspaces/lab-a/metadata' $agentA @{title='invalid'} 400 | Out-Null
-    Call POST '/workspaces/lab-a/metadata' $agentA ($data + @{owner='user1'}) 400 | Out-Null
+    Call POST '/workspaces/lab-a/metadata' $agentA ($data + @{owner='requester1'}) 400 | Out-Null
     $record = Call POST '/workspaces/lab-a/metadata' $agentA $data 201
     Call POST '/workspaces/lab-a/metadata' $coordinatorA $data 201 | Out-Null
     Call GET "/workspaces/lab-a/metadata/$($record.id)" $requesterA $null 200 | Out-Null

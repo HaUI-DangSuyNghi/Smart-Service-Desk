@@ -65,8 +65,8 @@ does not prove this host repaired; no runtime-setting workaround accepted.
 ## Accounts and API authority
 
 Password is locally generated DEMO_PASSWORD, shared privately at demo, not fixed
-public credentials. `infra/keycloak/realm-template.json`: user1 lab-a requester,
-user2 agent, user3 coordinator; user4/5/6 corresponding lab-b roles; user7
+public credentials. `infra/keycloak/realm-template.json`: requester1 lab-a requester,
+agent1 agent, coordinator1 coordinator; requester2/5/6 corresponding lab-b roles; admin1
 platform-admin with no workspace group. Do not use superadmin as normal actor.
 
 Current contracts: `contracts/openapi/core.yaml`, `contracts/hpdi/openapi.yaml`,
@@ -82,14 +82,14 @@ Discover fresh IDs from progress/inbox; use each current request schema.
 
 | Step | Expected UI/API acceptance |
 | --- | --- |
-| Login user1 | Real Keycloak authorization-code/PKCE redirect/callback, workspace selection; Core GET /me 200. No stubs. |
+| Login requester1 | Real Keycloak authorization-code/PKCE redirect/callback, workspace selection; Core GET /me 200. No stubs. |
 | Create | Lab-a synthetic title/description, unique clientRequestId; Service Desk POST /workspaces/lab-a/tickets 201, persisted IDs/review state. Refresh does not duplicate. |
 | Intelligence | Supported advisory UI/route shows actual engine/profile/result and review requirement. Do not claim disabled models work. |
-| Review user3 | Current review/classification visible; approve independently with required category/priority/group/fields. Requester cannot approve. |
-| Assign user3 | Implemented assignment/review action selects eligible user2; persisted assignee/current task agrees. No R7 admission/queue-promise claim. |
-| Handle user2 | Inbox agrees with progress; HPDI /workspaces/lab-a/tasks/{id}/start where required produces IN_PROGRESS. |
-| Complete user2 | Supported resolve/complete with required resolution/outcome creates requester confirmation, not automatic closure. Core task base /workspaces/lab-a/instances/{id}/tasks/{taskId}. |
-| Confirm user1 | Accept current confirmation; process ends/no active tasks; history records lifecycle. Wrong actor fails; replay conflicts. |
+| Review coordinator1 | Current review/classification visible; approve independently with required category/priority/group/fields. Requester cannot approve. |
+| Assign coordinator1 | Implemented assignment/review action selects eligible agent1; persisted assignee/current task agrees. No R7 admission/queue-promise claim. |
+| Handle agent1 | Inbox agrees with progress; HPDI /workspaces/lab-a/tasks/{id}/start where required produces IN_PROGRESS. |
+| Complete agent1 | Supported resolve/complete with required resolution/outcome creates requester confirmation, not automatic closure. Core task base /workspaces/lab-a/instances/{id}/tasks/{taskId}. |
+| Confirm requester1 | Accept current confirmation; process ends/no active tasks; history records lifecycle. Wrong actor fails; replay conflicts. |
 | Statistics | Service Desk GET /workspaces/lab-a/tickets/statistics and UI agree under same visibility/filters. Do not sum legacy aliases into V2 partitions. |
 
 If UI action absent, record limitation; direct API success is not browser E2E.

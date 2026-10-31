@@ -36,7 +36,7 @@ requirement, not a claim that it has passed.
 
 API schemas: `contracts/openapi/`; browser http://localhost:5173, gateway
 http://localhost:9080, Keycloak http://localhost:8081 on the local development
-stack. Demo users `user1`-`user7` use locally generated `DEMO_PASSWORD` in ignored
+stack. Demo users (named by role: `requester1`, `agent1`, `coordinator1`, `admin1`...) use locally generated `DEMO_PASSWORD` in ignored
 `.env`; never commit/share a live password or replace the source gate with hosted
 demo access. Issue tracker availability requires owner verification.
 
@@ -152,6 +152,7 @@ Lần đầu chạy `.\dx` (lệnh nào cũng được), dự án tự được 
 | --- | --- |
 | `.\dx up model` | Phân loại bằng Qwen local (GPU) + bộ luật |
 | `.\dx up model ask` | Như trên, thêm Hỏi AI qua API |
+| `.\dx up remote` | Qwen trên máy GPU riêng qua Cloudflare Access (không cần GPU ở máy này), xem [docs/remote-model.md](docs/remote-model.md) |
 | `.\dx up api` | Phân loại và Hỏi AI đều qua API (không cần GPU) |
 | `.\dx restart` | Dừng rồi khởi động lại |
 | `.\dx ps`, `.\dx logs [service]` | Trạng thái container, xem log |
@@ -253,8 +254,8 @@ nội bộ; chế độ phát triển `local-dev` không cần người khác c�
 
 #### Bước 4 — Đăng nhập và thử hỏi đáp
 
-Mở `http://localhost:5173`. Đăng nhập `user1` để tạo ticket trong `lab-a`, hoặc
-`user3` để xem gợi ý phân loại với vai trò điều phối viên. Mật khẩu nằm ở
+Mở `http://localhost:5173`. Đăng nhập `requester1` để tạo ticket trong `lab-a`, hoặc
+`coordinator1` để xem gợi ý phân loại với vai trò điều phối viên. Mật khẩu nằm ở
 **`DEMO_PASSWORD` trong `.env`**; các file JSON trong `.local` là cấu hình tự sinh.
 Xem đầy đủ vai trò tại [Tài khoản mẫu & Phân quyền](#-tài-khoản-mẫu--phân-quyền).
 
@@ -272,7 +273,7 @@ Container healthy xác nhận dịch vụ đã khởi động, chưa xác nhận
 
 #### Làm mới realm Keycloak (`-Reset`)
 
-Keycloak chỉ import `dx-lab` **lần đầu**, khi realm chưa tồn tại. Máy đã chạy từ bản cũ sẽ giữ realm cũ và **không nhận** thay đổi mới trong `infra/keycloak/realm-template.json` (client `dx-web`, tài khoản, nhóm mới). Dấu hiệu: trang Keycloak báo *"Client not found"*, hoặc đăng nhập `user1` báo sai mật khẩu.
+Keycloak chỉ import `dx-lab` **lần đầu**, khi realm chưa tồn tại. Máy đã chạy từ bản cũ sẽ giữ realm cũ và **không nhận** thay đổi mới trong `infra/keycloak/realm-template.json` (client `dx-web`, tài khoản, nhóm mới). Dấu hiệu: trang Keycloak báo *"Client not found"*, hoặc đăng nhập `requester1` báo sai mật khẩu.
 
 Khởi động kèm xóa và import lại realm bằng một lệnh:
 
@@ -333,7 +334,7 @@ MAIL_FROM_NAME=Smart Desk App
 APP_BASE_URL=http://localhost:5173
 ```
 
-Gmail cần bật xác minh 2 bước rồi tạo **mật khẩu ứng dụng**. `MAIL_HOST` trống thì chỉ có thông báo trong app. Địa chỉ nhận lấy từ email của tài khoản trong Keycloak (tài khoản demo dùng `@example.com` nên không nhận được; `superadmin` dùng email thật để thử).
+Gmail cần bật xác minh 2 bước rồi tạo **mật khẩu ứng dụng**. `MAIL_HOST` trống thì chỉ có thông báo trong app. Địa chỉ nhận lấy từ email của tài khoản trong Keycloak (tài khoản demo dùng `@example.com` nên không nhận được; muốn thử thì đổi email của một tài khoản trong trang quản trị Keycloak ở máy mình, không sửa vào `realm-template.json`).
 
 ### Realtime (WebSocket)
 
@@ -354,24 +355,24 @@ Mật khẩu của tất cả tài khoản mẫu được sinh ngẫu nhiên t�
 
 | Tài khoản | Phân quyền (Keycloak Group) | Không gian làm việc (Workspace) | Chuyên môn (`/support-groups/{ws}/...`) |
 | --- | --- | --- | --- |
-| `user1` | `/workspaces/lab-a/requester` | `lab-a` (Người gửi yêu cầu) | |
-| `user2` | `/workspaces/lab-a/agent` | `lab-a` (Chuyên viên giải quyết) | hardware, network |
-| `user8` | `/workspaces/lab-a/agent` | `lab-a` (Chuyên viên giải quyết) | hardware |
-| `user9` | `/workspaces/lab-a/agent` | `lab-a` (Chuyên viên giải quyết) | software, sysadmin |
-| `user10` | `/workspaces/lab-a/agent` | `lab-a` (Chuyên viên giải quyết) | network, sysadmin |
-| `user11` | `/workspaces/lab-a/agent` | `lab-a` (Chuyên viên giải quyết) | hardware, software |
-| `user3` | `/workspaces/lab-a/coordinator` | `lab-a` (Điều phối viên) | |
-| `user4` | `/workspaces/lab-b/requester` | `lab-b` (Người gửi yêu cầu) | |
-| `user5` | `/workspaces/lab-b/agent` | `lab-b` (Chuyên viên giải quyết) | hardware, software |
-| `user12` | `/workspaces/lab-b/agent` | `lab-b` (Chuyên viên giải quyết) | network, sysadmin |
-| `user13` | `/workspaces/lab-b/agent` | `lab-b` (Chuyên viên giải quyết) | network, software |
-| `user6` | `/workspaces/lab-b/coordinator` | `lab-b` (Điều phối viên) | |
-| `user7` | Realm role `platform-admin` | Quản trị hệ thống (Toàn cục, không thuộc workspace) | |
+| `requester1` | `/workspaces/lab-a/requester` | `lab-a` (Người gửi yêu cầu) | |
+| `agent1` | `/workspaces/lab-a/agent` | `lab-a` (Chuyên viên giải quyết) | hardware, network |
+| `agent2` | `/workspaces/lab-a/agent` | `lab-a` (Chuyên viên giải quyết) | hardware |
+| `agent3` | `/workspaces/lab-a/agent` | `lab-a` (Chuyên viên giải quyết) | software, sysadmin |
+| `agent4` | `/workspaces/lab-a/agent` | `lab-a` (Chuyên viên giải quyết) | network, sysadmin |
+| `agent5` | `/workspaces/lab-a/agent` | `lab-a` (Chuyên viên giải quyết) | hardware, software |
+| `coordinator1` | `/workspaces/lab-a/coordinator` | `lab-a` (Điều phối viên) | |
+| `requester2` | `/workspaces/lab-b/requester` | `lab-b` (Người gửi yêu cầu) | |
+| `agent6` | `/workspaces/lab-b/agent` | `lab-b` (Chuyên viên giải quyết) | hardware, software |
+| `agent7` | `/workspaces/lab-b/agent` | `lab-b` (Chuyên viên giải quyết) | network, sysadmin |
+| `agent8` | `/workspaces/lab-b/agent` | `lab-b` (Chuyên viên giải quyết) | network, software |
+| `coordinator2` | `/workspaces/lab-b/coordinator` | `lab-b` (Điều phối viên) | |
+| `admin1` | Realm role `platform-admin` | Quản trị hệ thống (Toàn cục, không thuộc workspace) | |
 | `superadmin` | Cả 3 vai trò ở `lab-a`, `lab-b` + `platform-admin` | Tài khoản thử nghiệm đầy đủ quyền; vẫn tuân thủ quy tắc tách quyền (không tự xử lý ticket mình tạo) | Mọi tổ ở `lab-a`, `lab-b` |
 
 Loại ticket → tổ: Phần cứng → `hardware`, Mạng → `network`, Phần mềm → `software`, Tài khoản → `sysadmin`; loại Khác không có tổ, điều phối viên chọn trong mọi kỹ thuật viên.
 
-**Ca trực:** kỹ thuật viên đăng ký ô (ngày × ca Sáng/Chiều trong Cài đặt) ở trang **Ca trực**, trước giờ bắt đầu ca đầu tiên của ngày đó (mặc định 07:00). Trong ca đã đăng ký thì tự online, ngoài ca tự nghỉ; tắt trực là nghỉ đột xuất. Điều phối viên xem họ tên mọi người theo từng ô, đăng ký hộ (tới hết ca) và duyệt. Người làm **Hành chính** (kỹ thuật viên tự chọn *Hình thức* trên trang Ca trực) không cần đăng ký: tự trực mọi ca T2–T6, nghỉ ngày lễ. Ngày lễ Việt Nam, cho đăng ký T7/CN/ngày lễ và bắt buộc duyệt nằm ở **Cài đặt → Ca trực và ngày lễ**; ngày lễ dùng chung cho hạn SLA và hiện ghi chú trên lịch (ngày ghi "dự kiến" cần kiểm tra theo thông báo chính thức hằng năm). Theo ca mà chưa đăng ký thì không được đề xuất nhận việc: chạy `.\dx schedule` để có lịch mẫu (user2, user9, user5 làm hành chính).
+**Ca trực:** kỹ thuật viên đăng ký ô (ngày × ca Sáng/Chiều trong Cài đặt) ở trang **Ca trực**, trước giờ bắt đầu ca đầu tiên của ngày đó (mặc định 07:00). Trong ca đã đăng ký thì tự online, ngoài ca tự nghỉ; tắt trực là nghỉ đột xuất. Điều phối viên xem họ tên mọi người theo từng ô, đăng ký hộ (tới hết ca) và duyệt. Người làm **Hành chính** (kỹ thuật viên tự chọn *Hình thức* trên trang Ca trực) không cần đăng ký: tự trực mọi ca T2–T6, nghỉ ngày lễ. Ngày lễ Việt Nam, cho đăng ký T7/CN/ngày lễ và bắt buộc duyệt nằm ở **Cài đặt → Ca trực và ngày lễ**; ngày lễ dùng chung cho hạn SLA và hiện ghi chú trên lịch (ngày ghi "dự kiến" cần kiểm tra theo thông báo chính thức hằng năm). Theo ca mà chưa đăng ký thì không được đề xuất nhận việc: chạy `.\dx schedule` để có lịch mẫu (agent1, agent3, agent6 làm hành chính).
 
 > [!TIP]
 > **Mở rộng workspace:** Để thêm workspace hoặc role mới, chỉ cần tạo nhóm `/workspaces/<workspace>/<role>` trên giao diện Keycloak, không cần sửa đổi mã nguồn Core. Keycloak chỉ import cấu hình lần đầu khi realm chưa tồn tại; muốn nhận thay đổi mới trong template thì chạy `scripts/start.ps1 -Reset`, không xóa volume dùng chung.

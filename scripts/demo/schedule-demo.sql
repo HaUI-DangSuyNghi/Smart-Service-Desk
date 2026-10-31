@@ -2,7 +2,7 @@
 -- Nguoi lam hanh chinh (tu truc moi ca T2-T6, tru ngay le) va nguoi dang ky theo ca (ca tuan / vai buoi).
 -- Chay lai khong trung. Gio ca lay tu cau hinh hpdi_work_settings (ca 1 = Sang, ca 2 = Chieu).
 
--- Hanh chinh: user2 Tran Thi Binh, user9 Dang Thu Dung (lab-a), user5 Hoang Thu Ha (lab-b)
+-- Hanh chinh: agent1, agent3 (lab-a), agent6 (lab-b)
 INSERT INTO hpdi_agent_work_mode (workspace, subject, mode, updated_by) VALUES
     ('lab-a', 'b5a318c4-d38c-4acd-ab78-cc3bd7f1efc1', 'OFFICE', 'system:demo'),
     ('lab-a', '427e1cc6-51c7-4f73-a56c-14fd40b82bb4', 'OFFICE', 'system:demo'),
@@ -18,13 +18,13 @@ WHERE s.registered_by = 'system:demo' AND m.mode = 'OFFICE'
 WITH plan(workspace, subject, pattern) AS (VALUES
     -- lab-a
     ('lab-a', 'de5017eb-1a0d-4667-aa63-f7d09f1ace16', 'full'),        -- superadmin
-    ('lab-a', '7f523c46-f90f-4fc7-927e-443d627d1ae5', 'mwf-morning'), -- user8  Pham Van Cuong: sang T2, T4, T6
-    ('lab-a', 'ce77856b-d2dc-4ae3-a4ec-4f25d06f435b', 'tue-thu'),     -- user10 Ngo Minh Duc: ca ngay T3, T5
-    ('lab-a', 'f1f09793-a768-499b-a8ca-60a11e67d13f', 'afternoons'),  -- user11 Bui Lan Huong: chieu T2-T5
+    ('lab-a', '7f523c46-f90f-4fc7-927e-443d627d1ae5', 'mwf-morning'), -- agent2: sang T2, T4, T6
+    ('lab-a', 'ce77856b-d2dc-4ae3-a4ec-4f25d06f435b', 'tue-thu'),     -- agent4: ca ngay T3, T5
+    ('lab-a', 'f1f09793-a768-499b-a8ca-60a11e67d13f', 'afternoons'),  -- agent5: chieu T2-T5
     -- lab-b
     ('lab-b', 'de5017eb-1a0d-4667-aa63-f7d09f1ace16', 'full'),        -- superadmin
-    ('lab-b', 'a4954a1a-7d9c-4e77-8806-669b060860fe', 'mwf-morning'), -- user12 Ly Quang Hai: sang T2, T4, T6
-    ('lab-b', '4150f73c-7ef4-47fc-b010-5d133d83b959', 'tue-thu')      -- user13 Vo Ngoc Lan: ca ngay T3, T5
+    ('lab-b', 'a4954a1a-7d9c-4e77-8806-669b060860fe', 'mwf-morning'), -- agent7: sang T2, T4, T6
+    ('lab-b', '4150f73c-7ef4-47fc-b010-5d133d83b959', 'tue-thu')      -- agent8: ca ngay T3, T5
 ),
 days AS (
     SELECT d::date AS day

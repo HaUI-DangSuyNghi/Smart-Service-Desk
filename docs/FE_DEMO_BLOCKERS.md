@@ -7,7 +7,7 @@ Scope: wire existing APIs, not new backend features or altered business rules.
 
 ## What already works: do not rebuild or weaken permissions
 
-- Real Keycloak authorization-code/PKCE S256 login works for user1/2/3/4.
+- Real Keycloak authorization-code/PKCE S256 login works for requester1/2/3/4.
 - Ticket list/detail/timeline, agent handle completion, requester confirmation on
   the ticket timeline, dashboard, triage result and AI-outage message work in browser.
 - CORRECTION to the earlier recovery note: requester confirmation is NOT missing.
@@ -39,7 +39,7 @@ Missing: TicketListPage has no create action; generic request dialog cannot star
 Service Desk (catalog canStart=false by design). Do not change that catalog flag or
 use generic process start: app creation atomically creates ticket/process/audit.
 
-- Actor: current workspace requester/agent/coordinator; demo user1/lab-a. Backend
+- Actor: current workspace requester/agent/coordinator; demo requester1/lab-a. Backend
   app creation checks these roles; do not confuse it with generic process-start
   permission. Seeded accounts also carry request:create for the generic request UI.
 - Before: authenticated workspace member; no client-supplied creator/owner/role.
@@ -73,7 +73,7 @@ reason review form. Existing IntakePanel handles different, optional intake stat
 do not enable intake/R7 flags just to obtain a form. Generic approved outcome alone
 does not replace the app review decision and must not bypass its validation.
 
-- Actor: independent current coordinator, task:assign AND task:handle; demo user3.
+- Actor: independent current coordinator, task:assign AND task:handle; demo coordinator1.
 - Before: active review, Ticket.state=AWAITING_REVIEW or rework review; current actor
   is not creator. Re-fetch state on conflict rather than replaying an old review.
 - Endpoint: `POST /api/apps/servicedesk/v1/workspaces/{workspace}/tickets/{id}/review`.
@@ -84,11 +84,11 @@ does not replace the app review decision and must not bypass its validation.
   expectedIntakeVersion are for enrolled intake only, not this default demo flow.
 
 ```json
-{"category":"HARDWARE","priority":"HIGH","assignee":"<user2 subject>","reason":"Independent coordinator decision"}
+{"category":"HARDWARE","priority":"HIGH","assignee":"<agent1 subject>","reason":"Independent coordinator decision"}
 ```
 
 Do not send username, group, arbitrary SLA or AI-authority fields. Tested subject:
-`b5a318c4-d38c-4acd-ab78-cc3bd7f1efc1` (local seeded user2, not a production constant).
+`b5a318c4-d38c-4acd-ab78-cc3bd7f1efc1` (local seeded agent1, not a production constant).
 Non-null assignee must be independent current agent, eligible support-group member
 and on duty. Category groups: HARDWARE hardware, NETWORK network, SOFTWARE software,
 ACCOUNT sysadmin; OTHER manual. Read fresh candidates; never infer eligibility from
@@ -109,7 +109,7 @@ does not reserve/assign; null recommendation is not permission to invent an agen
 
 Errors: 400 invalid decision/group eligibility, 401 login, 403 non-coordinator/
 self-review, 404 hidden/missing ticket, 409 stale/non-review/off-duty conflict.
-Observed default seed rejected user2 with 400 `Current support group agent membership
+Observed default seed rejected agent1 with 400 `Current support group agent membership
 required`; fixed only in disposable Keycloak seed, not by bypassing eligibility.
 OpenAPI's older prose says no duty/SLA; live source enforces eligibility/duty and
 returns SLA data. Implement actual schema/observed behavior; do not rely on that sentence.
@@ -117,7 +117,7 @@ returns SLA data. Implement actual schema/observed behavior; do not rely on that
 Write scope: app ticket detail/review panel, ticketService and hooks. Extend Ticket
 types with live state/taskId/assignee/workState/estimate/classification/confirmation
 fields actually consumed. Existing service interface only declares identity/content.
-Acceptance: coordinator form -> assigned handle in user2 inbox; user1/user2 review
+Acceptance: coordinator form -> assigned handle in agent1 inbox; requester1/agent1 review
 denied; invalid agent visible as error; state conflict refreshes, no duplicate review.
 
 ## FE-P0-03: agent explicitly starts assigned work
@@ -125,7 +125,7 @@ denied; invalid agent visible as error; state conflict refreshes, no duplicate r
 Missing: generic inbox/timeline offers claim/complete/assign but no START action.
 Current handle completion UI already passes once START was performed via API.
 
-- Actor: current independent assignee with task:handle; demo user2.
+- Actor: current independent assignee with task:handle; demo agent1.
 - Before: active supported handle, server workState=NOT_STARTED; backend enforces
   candidate membership/active-work limits. Do not equate assigned with in progress.
 - Endpoint: `POST /api/hpdi/v1/workspaces/{workspace}/tasks/{taskId}/start`, no body.
@@ -142,7 +142,7 @@ complete 204 -> requester confirmation. Wrong actor and stale START must fail sa
 
 ## Seed prerequisite: duty control, not a fourth blocker on this preserved demo
 
-No FE duty endpoint wiring located. Current user2 is already persisted on duty;
+No FE duty endpoint wiring located. Current agent1 is already persisted on duty;
 retain it. Fresh environments require own-agent
 `PUT /api/hpdi/v1/workspaces/{workspace}/duty/me` with `{"onDuty":true}`.
 Optional note <=500; 200 DutyStatus `{subject,onDuty,note,updatedAt,effectiveDuty}`.
@@ -170,8 +170,8 @@ ticket timeline, using confirmGeneration/current task ID. Confirm -> CLOSED,
 closedBy=REQUESTER, process ended. Other actor 403; replay/stale task 409 observed.
 Rework outcome exists but is not necessary for this minimal happy-path delivery.
 
-After three blockers are wired: run real browser user1 create -> user3 review/assign
--> user2 START/complete -> user1 timeline confirm -> user3 statistics, with no
+After three blockers are wired: run real browser requester1 create -> coordinator1 review/assign
+-> agent1 START/complete -> requester1 timeline confirm -> coordinator1 statistics, with no
 API substitutions/mocks. Keep observed triage success/outage UI, and rerun restart
 and RBAC checks. Browser E2E remains NOT READY until that exact FE candidate passes.
 Do not replace scoped cache invalidation with optimistic workflow authority.
