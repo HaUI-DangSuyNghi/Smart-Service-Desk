@@ -9,13 +9,19 @@ The grant covers authorized original team-owned source, contracts, schemas,
 scripts, infrastructure and technical documentation, not others' ownership.
 Keep existing third-party licenses, attribution and required notices unchanged.
 
-## Final submission approval
+## Final submission approval and published status
 
 In the 2026-10-31 FINAL SUBMISSION instruction, the team leader additionally
 confirmed the team's distribution rights for the reviewed asset scope. This
 owner/maintainer statement is the recorded basis, not an independently verified
 permission receipt from HaUI or an external copyright holder. No external owner,
 license identifier, permission letter or attribution condition is invented.
+
+v0.1.0 was published on 2026-10-31 at commit
+`ba82b2fc5eb36ea309563d2d7442db95b96a7608`. Publication is a verified release event,
+not additional evidence of an external owner's permission. The four entries below
+remain open evidence items; the PoF update neither fabricates approval nor changes
+the tag, historical assets, rights manifest or third-party notices.
 
 The release manifest `docs/publication/release-distribution-status.csv` enumerates
 all 82 exact paths and SHA-256 values. Its statuses distinguish:
@@ -26,9 +32,9 @@ all 82 exact paths and SHA-256 values. Its statuses distinguish:
 - `EXTERNAL_TERMS_CONFIRMATION_REQUIRED`: the four supplied document/photo
   files below. The team leader asserts distribution rights, but the applicable
   external permission terms/owner attribution are not supplied in this record.
-  Do not mark them as externally licensed or declare RELEASE GO until resolved.
+  Do not mark them as externally licensed or treat the published release as permission evidence.
 
-| External content | Still needed before public release |
+| External content | Still needed in the distribution record |
 | --- | --- |
 | `docs/references/De_thi_PMNM_HaUI_2026_BAN_CHINH_THUC.pdf` | Applicable owner/issuer redistribution permission and conditions |
 | `docs/references/Ke_hoach_DX_Lab_14_ngay_3_nguoi.pdf` | Identify original ownership and redistribution basis/conditions |
@@ -58,7 +64,9 @@ A blanket project NOTICE is not a substitute for required upstream notices.
 
 The existing repository/history is retained. Tip deletion or filtering a release
 attachment would not remove older public copies. No asset was removed or history
-rewritten. Resolve the four external entries' permission conditions for this
-public distribution, including the retained historical copies, before publishing.
+rewritten. Record the four external entries' actual permission conditions for the published
+distribution, including retained historical copies. If a file is original team-owned
+work, identify that fact specifically; otherwise record the actual external owner,
+permission scope and required attribution without relabeling the content Apache-2.0.
 Older pending-source-grant statements in governance documents are historical;
 this document and the dated release manifest record the current scoped decision.
