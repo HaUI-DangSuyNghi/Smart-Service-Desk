@@ -23,10 +23,12 @@ public class KnowledgeController {
         return knowledge.search(workspace, q, PageRequest.of(page, size));
     }
     @GetMapping("/{id}")
-    public AuthorizedKnowledge resolve(@PathVariable String workspace, @PathVariable UUID id) {
+    public Preview resolve(@PathVariable String workspace, @PathVariable UUID id) {
         permissions.require(workspace, Permissions.DOCUMENT_VIEW);
-        return knowledge.resolve(workspace, id);
+        var source = knowledge.resolve(workspace, id);
+        return new Preview(source.metadataId(), source.title(), source.version(), source.mediaType(), source.text());
     }
+    public record Preview(UUID metadataId, String title, String version, String mediaType, String text) {}
     @GetMapping("/{id}/record")
     public KnowledgeRecord record(@PathVariable String workspace, @PathVariable UUID id) {
         permissions.require(workspace, Permissions.DOCUMENT_VIEW);

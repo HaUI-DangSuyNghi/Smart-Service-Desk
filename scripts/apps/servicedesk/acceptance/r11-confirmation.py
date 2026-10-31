@@ -13,7 +13,7 @@ import urllib.request
 import uuid
 from pathlib import Path
 
-root = Path(__file__).resolve().parents[2]
+root = Path(__file__).resolve().parents[4]
 jar = root / 'backend/target/dx-platform-0.1.0-SNAPSHOT.jar'
 suffix = uuid.uuid4().hex[:10]
 network = 'r11-probe-' + suffix

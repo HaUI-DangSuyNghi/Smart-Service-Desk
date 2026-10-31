@@ -52,7 +52,7 @@ class CoreKnowledgeCatalogTest {
         var query=org.mockito.ArgumentCaptor.forClass(MetadataQuery.class);
         verify(metadata).search(eq("lab-a"),query.capture(),any());
         assertEquals("wi",query.getValue().q());
-        assertEquals(java.util.Set.of("text/plain","text/markdown"),query.getValue().fileMediaTypes());
+        assertEquals(vn.haui.dx.hpdi.data.internal.KnowledgeTextExtractor.MEDIA_TYPES,query.getValue().fileMediaTypes());
         assertEquals(1,page.total());
         assertEquals("Demo Agent",page.items().get(0).ownerName());
         verifyNoInteractions(files);

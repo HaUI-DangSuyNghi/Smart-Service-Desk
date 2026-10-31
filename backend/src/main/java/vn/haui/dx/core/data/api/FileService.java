@@ -10,7 +10,7 @@ import java.util.UUID;
  */
 public interface FileService {
     long MAX_SIZE_BYTES = 5L * 1024 * 1024;
-    Set<String> ALLOWED_MEDIA_TYPES = Set.of("application/pdf", "text/plain", "text/markdown", "image/png", "image/jpeg");
+    Set<String> ALLOWED_MEDIA_TYPES = Set.of("application/pdf", "text/plain", "text/markdown", "image/png", "image/jpeg", "application/vnd.openxmlformats-officedocument.wordprocessingml.document");
 
     /** Lưu và tính SHA-256. Quá 5 MiB → PAYLOAD_TOO_LARGE; sai loại/đuôi/magic bytes → UNSUPPORTED_MEDIA_TYPE. */
     StoredFile store(String workspace, String originalName, String mediaType, InputStream content);

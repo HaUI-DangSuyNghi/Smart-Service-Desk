@@ -82,6 +82,13 @@ class CoreAuthorizationRegressionTest {
         verifyNoInteractions(files);
     }
 
+    @Test void previewPermissionDoesNotGrantOriginalFileDownload() throws Exception {
+        grant("document:view");
+        mvc.perform(get("/api/core/v1/workspaces/lab-a/files/00000000-0000-0000-0000-000000000001/content"))
+            .andExpect(status().isForbidden());
+        verifyNoInteractions(files);
+    }
+
     @Test void candidateCannotListOrClaimThroughCoreAfterPermissionRevoked() throws Exception {
         mvc.perform(get("/api/core/v1/workspaces/lab-a/tasks?scope=candidate")).andExpect(status().isForbidden());
         mvc.perform(post("/api/core/v1/workspaces/lab-a/instances/p/tasks/t/claim")).andExpect(status().isForbidden());

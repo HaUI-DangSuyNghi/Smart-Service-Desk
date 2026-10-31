@@ -58,6 +58,7 @@ describe("createAppRoutes", () => {
       "processes/:id",
       "knowledge",
       "knowledge/:id",
+      "knowledge-chat",
       "alerts",
       "notifications",
       "duty",

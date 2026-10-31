@@ -13,7 +13,7 @@ assert acceptance == production.rstrip() + "\nnginx_config:\n  worker_processes:
 environment = os.environ.copy()
 environment.update({key: secrets.token_hex(32) for key in (
     "POSTGRES_PASSWORD", "KC_ADMIN_PASSWORD", "DIRECTORY_CLIENT_SECRET",
-    "INTELLIGENCE_TRIAGE_TOKEN",
+    "INTELLIGENCE_TRIAGE_TOKEN", "BACKGROUND_CLIENT_SECRET",
 )})
 environment.update(INT01_PROJECT="int01-config-check", INT01_SOURCE_SHA="config-check",
                    INT01_KEYCLOAK_PORT="18081", INT01_GATEWAY_PORT="19080")

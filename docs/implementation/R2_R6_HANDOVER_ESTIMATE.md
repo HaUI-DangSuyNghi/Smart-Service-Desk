@@ -185,7 +185,7 @@ XML-derived test counts and runtime checks. The verification matrix is:
 | Second-domain / Room Request | Same runner with `-Profile second-domain` |
 | R2/R6 + upgrade | Full profile, `-Test 'TicketIntegrationTest#r2*+r6*,ServiceDeskMigrationIntegrationTest,AgentDutyUpgradeIntegrationTest,IntakeWorkflowIntegrationTest#handover*'` |
 | SLA / Alerts | Full profile, `-Test 'TicketIntegrationTest#sla*,WorkAlertsIntegrationTest,SlaPolicyTest'` |
-| Real Flowable + signed JWT + restarts | `python scripts/acceptance/sla-engine.py --handover --alerts` and again with `--intake` |
+| Real Flowable + signed JWT + restarts | `python scripts/apps/servicedesk/acceptance/sla-engine.py --handover --alerts` and again with `--intake` |
 | Contract | `scripts/test-servicedesk-execution-contract.py` with real full-suite response evidence, `--estimate-evidence .local/r2-r6-runtime.json --baseline origin/develop` |
 | Tier boundaries | `python scripts/check-tier-boundaries.py` and `python scripts/test-tier-boundaries.py` |
 

@@ -8,6 +8,7 @@ export const PERMISSIONS = {
   taskHandle: "task:handle",
   taskAssign: "task:assign",
   documentView: "document:view",
+  documentDownload: "document:download",
   documentUpload: "document:upload",
   memberView: "member:view",
   auditView: "audit:view",

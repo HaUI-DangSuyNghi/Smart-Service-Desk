@@ -327,7 +327,7 @@ paths:
       - {$ref: '#/components/parameters/FileId'}
     get:
       operationId: downloadFile
-      description: Tải nội dung; luôn Content-Disposition attachment và nosniff. (P0)
+      description: Requires document:download and file access policy. Always attachment and nosniff. Requesters have preview permission only.
       responses:
         '200':
           description: Nội dung file

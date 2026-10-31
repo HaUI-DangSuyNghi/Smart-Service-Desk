@@ -317,7 +317,7 @@ Baseline commands: git cat-file -t, git fetch origin develop, git worktree add -
 
 Fresh tests: `./scripts/test-fresh-admin.ps1 -BuildImage dx-platform-build:0.1.0 -Profile full -PackagedProof`; same runner `-Profile core-only` and `-Profile second-domain` without PackagedProof. Generated test data only in audit-owned isolated services.
 
-Installed Python `C:/Users/admin/AppData/Local/Programs/Python/Python311/python.exe` ran `scripts/check-tier-boundaries.py`, `scripts/test-tier-boundaries.py`, `scripts/test-core-contract.py`, `scripts/test-r12-statistics-contract.py`; `scripts/test-settings-contract.py <actual-responses.json> --baseline ef047a3^1` for Full captures and applicable profile evidence. No dependency install succeeded or was needed.
+Installed Python `C:/Users/admin/AppData/Local/Programs/Python/Python311/python.exe` ran `scripts/check-tier-boundaries.py`, `scripts/test-tier-boundaries.py`, `scripts/test-core-contract.py`, `scripts/test-r12-statistics-contract.py`; `scripts/apps/servicedesk/acceptance/test-settings-contract.py <actual-responses.json> --baseline ef047a3^1` for Full captures and applicable profile evidence. No dependency install succeeded or was needed.
 
 | Evidence | Retained location in audit worktree |
 | --- | --- |

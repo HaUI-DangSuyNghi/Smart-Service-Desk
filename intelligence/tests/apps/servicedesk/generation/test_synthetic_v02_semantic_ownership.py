@@ -29,6 +29,18 @@ def test_app_import_literal_and_resource_mutations_in_new_shared_code_are_reject
     assert audit_delta("intelligence/tests/generation/new_probe.py", source)
 
 
+@pytest.mark.parametrize("prefix", ["scripts/apps/servicedesk/ai07/", "scripts/apps/servicedesk/ai08/", "intelligence/tests/apps/servicedesk/"])
+def test_all_application_tools_keep_app_ownership_and_reject_private_imports(prefix):
+    assert not audit_delta(prefix + "probe.py", "profile = 'service-desk'\n")
+    assert audit_delta(prefix + "probe.py", "from hdpi._resources import policy\n")
+    assert audit_delta(prefix + "probe.py", "from core.identity import Directory\n")
+
+def test_project_metadata_and_denial_lists_are_not_application_resource_loads():
+    assert not semantic_violations("repo = 'https://api.github.com/repos/example/Smart-Service-Desk'\n")
+    assert not semantic_violations("denied = ('apps', 'torch')\n")
+    assert semantic_violations("path = Path('apps')\n")
+    assert semantic_violations("profile = 'service-desk-policy'\n")
+
 def test_delta_gate_preserves_existing_debt_without_permitting_new_dependencies():
     old = "profile = 'service-desk'\n"
     assert not audit_delta("scripts/intelligence/legacy.py", old, old)

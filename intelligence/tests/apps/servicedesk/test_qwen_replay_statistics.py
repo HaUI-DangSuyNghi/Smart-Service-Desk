@@ -12,7 +12,7 @@ import pytest
 )
 def test_fixed_five_class_macro_includes_every_attempt(predictions, expected):
     path = (
-        Path(__file__).resolve().parents[3]
+        Path(__file__).resolve().parents[4]
         / "scripts/apps/servicedesk/ai07/replay-qwen-checkpoint.py"
     )
     spec = importlib.util.spec_from_file_location("qwen_replay_statistics", path)

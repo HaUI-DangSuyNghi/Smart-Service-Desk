@@ -12,6 +12,7 @@ const ticket = (overrides: Partial<TicketView>): TicketView =>
     creator: "requester",
     taskId: "task",
     state: "IN_PROGRESS",
+    workState: "ASSIGNED",
     assignee: "agent-a",
     ...overrides,
   }) as TicketView;
@@ -110,6 +111,14 @@ describe("dropTargets", () => {
       expect(dropTargets(ticket({ state }), agentA)).toEqual({});
     }
     expect(dropTargets(ticket({ taskId: null }), agentA)).toEqual({});
+  });
+});
+
+describe("reopened review", () => {
+  it("requires reassignment before a reopened ticket can be handled", () => {
+    const reopened = ticket({ state: "REOPENED", workState: null });
+    expect(dropTargets(reopened, agentA)).toEqual({});
+    expect(dropTargets(reopened, coordinator)).toEqual({ assigned: "review" });
   });
 });
 

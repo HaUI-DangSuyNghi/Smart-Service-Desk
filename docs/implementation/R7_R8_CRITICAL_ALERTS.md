@@ -213,7 +213,7 @@ isolation, domain/membership revocation, actual signed user/service JWT, worker
 retry/recreation, audit rollback and Room Request reuse. Auto-queue-specific
 timeout/review/off-duty races remain **unimplemented and BLOCKED**, not passed.
 
-`scripts/acceptance/sla-engine.py --alerts` (and `--alerts --intake`) runs isolated
+`scripts/apps/servicedesk/acceptance/sla-engine.py --alerts` (and `--alerts --intake`) runs isolated
 PostgreSQL/Flowable/Keycloak plus signed JWT and actual workers. Build the current
 jar to `.local/r7-r8-runtime.jar` first. This extends the existing R5 probe only
 under a flag, retains its old checks and adds recipient/read/restart/403/CRITICAL

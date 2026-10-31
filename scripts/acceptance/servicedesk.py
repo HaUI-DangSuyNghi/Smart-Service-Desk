@@ -17,14 +17,14 @@ for username in ("user1", "user2", "user3", "user4", "user7"):
         tokens[username] = json.load(response)["access_token"]
 
 
-def call(method, path, user, expected, body=None, core=False):
+def call(method, path, user, expected, body=None, core=False, hpdi=False):
     headers = {"X-Request-ID": str(uuid.uuid4())}
     if user:
         headers["Authorization"] = "Bearer " + tokens[user]
     payload = None if body is None else json.dumps(body).encode()
     if payload is not None:
         headers["Content-Type"] = "application/json"
-    prefix = "/api/core/v1" if core else "/api/apps/servicedesk/v1"
+    prefix = "/api/core/v1" if core else "/api/hpdi/v1" if hpdi else "/api/apps/servicedesk/v1"
     request = urllib.request.Request("http://localhost:9080" + prefix + path, payload, headers, method=method)
     try:
         response = urllib.request.urlopen(request, timeout=30)
@@ -39,7 +39,7 @@ def call(method, path, user, expected, body=None, core=False):
         if response.status >= 400:
             assert response.headers.get_content_type() == "application/problem+json"
             assert result["status"] == response.status and result["requestId"] == headers["X-Request-ID"]
-        if not core and raw:
+        if not core and not hpdi and raw:
             responses.append(dict(method=method, path=path, status=response.status, bodyJson=raw))
         print(f"PASS {method} {prefix}{path} -> {response.status}")
         return result
@@ -48,9 +48,17 @@ def call(method, path, user, expected, body=None, core=False):
 def statistics(marker, user, handling, confirming, completed, workspace="lab-a", **filters):
     path = "/workspaces/" + workspace + "/tickets/statistics?" + urllib.parse.urlencode(dict(q=marker, **filters))
     result = call("GET", path, user, 200)
-    assert result == dict(workspace=workspace, visibility="own" if user in ("user1", "user4") else "workspace",
+    expected = dict(workspace=workspace, visibility="own" if user in ("user1", "user4") else "workspace",
                           total=handling + confirming + completed, awaitingHandling=handling,
-                          awaitingConfirmation=confirming, completed=completed, unclassified=0), result
+                          awaitingConfirmation=confirming, completed=completed, unclassified=0)
+    assert {key: result[key] for key in expected} == expected, result
+    partition = ("intake", "following", "awaitingReview", "assigned", "inProgress", "pending",
+                 "reopened", "awaitingConfirmation", "closed", "unclassified")
+    assert set(result) == set(expected) | set(partition) | {"overdue"}, result
+    assert all(type(result[key]) is int and result[key] >= 0 for key in (*partition, "overdue")), result
+    assert sum(result[key] for key in partition) == result["total"], result
+    assert result["closed"] == completed and result["overdue"] <= handling, result
+    assert sum(result[key] for key in ("awaitingReview", "assigned", "inProgress", "pending", "reopened")) == handling, result
     listed = call("GET", path.replace("/statistics?", "?"), user, 200)
     assert listed["total"] == result["total"]
 
@@ -66,7 +74,9 @@ if len(sys.argv) > 2:
         for ticket in tickets:
             owner = next(username for username, subject in subjects.items() if subject == ticket["creator"])
             path = "/workspaces/" + ticket["workspace"] + "/tickets/" + ticket["id"]
-            assert call("GET", path, owner, 200) == ticket
+            restored = call("GET", path, owner, 200)
+            stable = ("id", "workspace", "creator", "clientRequestId", "title", "description", "createdAt", "process")
+            assert {key: restored[key] for key in stable} == {key: ticket[key] for key in stable}
             progress = call("GET", path + "/progress", owner, 200)
             assert progress["id"] == ticket["process"]["processInstanceId"]
             assert progress["steps"] and (progress["ended"] or progress["currentTasks"])
@@ -97,7 +107,7 @@ try:
     call("POST", base, "user1", 400, dict(payload, title=" "))
     ticket = call("POST", base, "user1", 201, payload)
     assert ticket["creator"] == subjects["user1"]
-    assert ticket["process"]["businessKey"] == ticket["id"] and ticket["process"]["processKey"] == "service-desk"
+    assert ticket["process"]["businessKey"] == ticket["id"] and ticket["process"]["processKey"] == "service-desk-reviewed"
     path = base + "/" + ticket["id"]
     call("POST", base, "user1", 409, dict(payload, title="Changed duplicate"))
     call("GET", path, "user1", 200)
@@ -119,9 +129,14 @@ try:
     statistics(marker, "user1", 0, 0, 0, to=ticket["createdAt"])
     call("GET", base + "?size=101", "user1", 400)
     call("GET", base + "/not-a-uuid", "user1", 400)
-    call("GET", path + "/progress", "user2", 404)
+    call("GET", path + "/progress", "user2", 200)
+    call("GET", base + "/" + other["id"] + "/progress", "user1", 404)
     instance = "/workspaces/lab-a/instances/" + ticket["process"]["processInstanceId"]
+    call("PUT", "/workspaces/lab-a/duty/me", "user2", 200, {"onDuty": True}, hpdi=True)
+    decision = dict(category="OTHER", priority="MEDIUM", assignee=None, reason="Synthetic acceptance review")
+    call("POST", path + "/review", "user1", 403, decision)
     for outcome in ("rework", "accepted"):
+        call("POST", path + "/review", "user3", 200, decision)
         statistics(marker, "user1", 1, 0, 0)
         progress = call("GET", path + "/progress", "user1", 200)
         task = progress["currentTasks"][0]
@@ -132,6 +147,7 @@ try:
         call("POST", task_path + "/claim", "user1", 403, core=True)
         call("POST", task_path + "/claim", "user2", 200, core=True)
         statistics(marker, "user1", 1, 0, 0)
+        call("POST", "/workspaces/lab-a/tasks/" + task["id"] + "/start", "user2", 200, hpdi=True)
         call("POST", task_path + "/complete", "user1", 403,
              dict(expectedTaskKey="handle", outcome="resolved"), core=True)
         call("POST", task_path + "/complete", "user2", 204,
@@ -146,8 +162,8 @@ try:
         call("POST", confirm_path, "user1", 204, dict(expectedTaskKey="confirm", outcome=outcome), core=True)
         call("POST", confirm_path, "user1", 409, dict(expectedTaskKey="confirm", outcome=outcome), core=True)
     progress = call("GET", path + "/progress", "user1", 200)
-    assert progress["ended"] and len(progress["steps"]) == 4 and not progress["currentTasks"]
-    assert [step["assignee"] for step in progress["steps"]] == [subjects["user2"], subjects["user1"]] * 2
+    assert progress["ended"] and len(progress["steps"]) == 6 and not progress["currentTasks"]
+    assert [step["assignee"] for step in progress["steps"]] == [subjects["user3"], subjects["user2"], subjects["user1"]] * 2
     statistics(marker, "user1", 0, 0, 1)
     race = dict(payload, clientRequestId=str(uuid.uuid4()), title=marker + " race")
     with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:

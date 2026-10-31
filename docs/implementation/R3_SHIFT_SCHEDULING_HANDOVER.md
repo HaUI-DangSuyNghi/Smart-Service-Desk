@@ -274,7 +274,7 @@ unavailable); the unchanged tests pass on the installed Python 3.12.12.
 
 ### Real Runtime And Concurrency Evidence
 
-- `scripts/test-r3-runtime.py --postgres r3-accept-pg --backend r3-accept-backend --evidence .local/r3-real-runtime-final.json`
+- `scripts/apps/servicedesk/acceptance/test-r3-runtime.py --postgres r3-accept-pg --backend r3-accept-backend --evidence .local/r3-real-runtime-final.json`
   runs against an isolated packaged JAR, PostgreSQL 16.6, actual Flowable schema
   7.1.0.2 and Keycloak 26.0.7. `.env` supplies demo/admin credentials; directory and
   background clients use their actual configured service accounts. No MockMvc

@@ -26,6 +26,8 @@ try {
     if (-not $ready) { throw 'Database readiness timed out' }
     docker exec $database createdb -U workflow workflow_approval
     if ($LASTEXITCODE -ne 0) { throw 'Cannot create isolated workflow regression database' }
+    docker exec $database createdb -U workflow duty_upgrade
+    if ($LASTEXITCODE -ne 0) { throw 'Cannot create isolated upgrade regression database' }
     $mavenOptions = @()
     if ($MavenProfile) { $mavenOptions += "-P$MavenProfile" }
     docker run --rm --network $network --mount "type=bind,source=$root,target=/workspace" -w /workspace/backend -e FILE_TEST_JDBC_URL=jdbc:postgresql://database:5432/file_storage -e "FILE_TEST_DB_PASSWORD=$password" -e WORKFLOW_TEST_JDBC_URL=jdbc:postgresql://database:5432/workflow_approval -e "WORKFLOW_TEST_DB_PASSWORD=$password" $BuildImage mvn -B -o clean verify "-Dtest=$Tests" @mavenOptions

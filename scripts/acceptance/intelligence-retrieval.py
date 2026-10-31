@@ -110,7 +110,7 @@ def main():
         password = secrets.token_urlsafe(24)
         http('POST', admin_api+'/users', token=admin, expected=201, content_type='application/json', body=json.dumps({
             'username': marker, 'enabled': True, 'emailVerified': True, 'email': marker+'@example.invalid',
-            'firstName': 'Acceptance', 'lastName': 'AI03', 'groups': ['/workspaces/lab-a/requester'],
+            'firstName': 'Acceptance', 'lastName': 'AI03', 'groups': ['/workspaces/lab-a/agent'],
             'credentials': [{'type': 'password', 'value': password, 'temporary': False}]}).encode())
         users = http('GET', admin_api+'/users?'+urlencode({'username': marker, 'exact': 'true'}), token=admin)
         if len(users) != 1:
@@ -135,6 +135,14 @@ def main():
 
         metadata, raw = seed('# Tài khoản\n\nHướng dẫn đăng nhập và mật khẩu.', 'acceptance-v1')
         adapter = CoreAuthorizedCorpusAdapter(client, CoreCorpusCatalog('lab-a', marker+'-v1', (metadata['id'],)))
+        requester = token('user1', settings['DEMO_PASSWORD'])
+        preview = http('GET', args.core_url+'/api/hpdi/v1/workspaces/lab-a/knowledge/'+metadata['id'], token=requester)
+        assert preview['metadataId'] == metadata['id'] and preview['text'] == raw.decode('utf-8')
+        http('GET', args.core_url+'/api/core/v1/workspaces/lab-a/files/'+metadata['fileId']+'/content', token=requester, expected=403)
+        requester_client = CoreHttpClient(args.core_url, token_provider=lambda: requester, allow_local_http=True)
+        requester_adapter = CoreAuthorizedCorpusAdapter(requester_client, adapter.catalog)
+        expect_error(AuthorizationRejected, requester_adapter.trusted_context)
+        record('CORE-AI03-03', 'Requester can preview but cannot download originals or ingest raw Core files')
         context = adapter.trusted_context()
         profile = ProfileRegistry().get('service-desk', '0.3.0')
         index = build_authorized_index(source=adapter, context=context, profile=profile)

@@ -9,7 +9,7 @@ import pytest
 @pytest.fixture
 def provisioner():
     script = (
-        Path(__file__).resolve().parents[3]
+        Path(__file__).resolve().parents[4]
         / "scripts/apps/servicedesk/ai07/prepare-qwen-base.py"
     )
     spec = importlib.util.spec_from_file_location("qwen_base_provisioner", script)

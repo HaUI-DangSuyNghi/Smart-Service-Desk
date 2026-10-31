@@ -22,9 +22,7 @@ import { Input } from "@/platform/shared/ui/input";
 import { useCreateKnowledge } from "./useKnowledge";
 
 const MAX_FILE_BYTES = 5 * 1024 * 1024;
-// Knowledge Hub chỉ nhận văn bản (backend chỉ liệt kê text/plain, text/markdown):
-// cần đọc được nội dung để xem trước và để AI trích dẫn
-const ACCEPTED_EXTENSIONS = [".txt", ".md", ".markdown"];
+const ACCEPTED_EXTENSIONS = [".txt", ".md", ".markdown", ".pdf", ".docx"];
 const ACCEPTED_FILES = ACCEPTED_EXTENSIONS.join(",");
 
 const hasAcceptedExtension = (file: File) =>
@@ -39,7 +37,10 @@ const schema = z.object({
   file: z
     .custom<File | null>()
     .refine((file) => file instanceof File, "Chọn một file")
-    .refine((file) => !file || hasAcceptedExtension(file), "Chỉ nhận file .txt hoặc .md")
+    .refine(
+      (file) => !file || hasAcceptedExtension(file),
+      "Chỉ nhận .txt, .md, PDF có chữ hoặc Word .docx",
+    )
     .refine((file) => !file || file.size <= MAX_FILE_BYTES, "File tối đa 5 MB"),
   title: z.string().trim().min(1, "Nhập tiêu đề").max(200, "Tối đa 200 ký tự"),
   source: z.string().trim().min(1, "Nhập nguồn tài liệu").max(1000, "Tối đa 1000 ký tự"),
