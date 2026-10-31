@@ -7,10 +7,10 @@ import { APP_HOME, DOCUMENTATION_URL, repoFile } from "./links";
 import { Wordmark } from "./Wordmark";
 
 const PRODUCT_ITEMS = [
-  { label: "Ticket & quy trình", href: "#services" },
-  { label: "AI Triage có giải thích", href: "#services" },
-  { label: "Dữ liệu & tri thức", href: "#services" },
-  { label: "Phân quyền theo workspace", href: "#roles" },
+  { label: "Ticket, công việc & đặt phòng", href: "#services" },
+  { label: "AI hỗ trợ phân loại", href: "#services" },
+  { label: "Kho tri thức & Dashboard", href: "#services" },
+  { label: "Vai trò & quyền truy cập", href: "#roles" },
 ];
 
 const RESOURCE_ITEMS = [
@@ -104,7 +104,8 @@ export const LandingHeader = () => {
                       Smart Service Desk
                     </h3>
                     <p className="text-[13px] leading-relaxed text-(--landing-text-dim)">
-                      Hỗ trợ CNTT cho đơn vị đại học, chạy trên nền tảng DX-OS Open-Core
+                      Gửi yêu cầu, điều phối công việc và theo dõi hỗ trợ CNTT trong cùng một hệ
+                      thống.
                     </p>
                   </div>
                   <div className="p-3">

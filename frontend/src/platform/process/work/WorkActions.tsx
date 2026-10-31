@@ -54,7 +54,6 @@ export const WorkActions = ({
   if (!actor || item.assignee !== actor.subject) return null;
 
   const isBusy = start.isPending || resume.isPending;
-  const size = compact ? "xs" : "sm";
   const closeDialog = () => {
     setDialog(null);
     onChanged?.();
@@ -90,7 +89,7 @@ export const WorkActions = ({
       onClick={stopPropagation}
     >
       <Button
-        size={size}
+        size="sm"
         variant={item.workState === "IN_PROGRESS" ? "success" : suggested ? "default" : "info"}
         className={compact ? "flex-1" : undefined}
         disabled={isBusy}
@@ -103,10 +102,10 @@ export const WorkActions = ({
         <DropdownMenuTrigger asChild>
           {/* Vùng bấm ≥ 36px trên điện thoại (rules/07), thu về cỡ Twenty từ md */}
           <Button
-            size={compact ? "icon-xs" : "icon-sm"}
-            variant="ghost"
+            size="icon-sm"
+            variant="outline"
             aria-label="Thao tác khác"
-            className={compact ? "size-9 md:size-6" : "size-9 md:size-7"}
+            className="size-9 md:size-7"
           >
             <IconDots size={16} stroke={2} />
           </Button>

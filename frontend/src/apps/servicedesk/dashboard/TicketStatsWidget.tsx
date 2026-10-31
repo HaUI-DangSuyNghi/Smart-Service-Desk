@@ -44,18 +44,21 @@ export const TicketStatsWidget = ({ from, to }: DashboardWidgetProps) => {
         <StatTile
           label="Chờ xử lý"
           icon={IconTool}
+          tone="orange"
           value={String(data.awaitingHandling)}
           hint="kỹ thuật viên chưa xong"
         />
         <StatTile
           label="Chờ xác nhận"
           icon={IconMessageCheck}
+          tone="purple"
           value={String(data.awaitingConfirmation)}
           hint="chờ người yêu cầu xác nhận"
         />
         <StatTile
           label="Đã xong"
           icon={IconCircleCheck}
+          tone="green"
           value={String(data.completed)}
           hint="người yêu cầu đã chấp nhận"
         />
@@ -65,30 +68,35 @@ export const TicketStatsWidget = ({ from, to }: DashboardWidgetProps) => {
         <StatTile
           label="Chờ duyệt"
           icon={IconClipboardCheck}
+          tone="orange"
           value={String(data.awaitingReview)}
           hint="chờ điều phối viên giao"
         />
         <StatTile
           label="Đang làm"
           icon={IconPlayerPlay}
+          tone="turquoise"
           value={String(data.inProgress)}
           hint="kỹ thuật viên đang xử lý"
         />
         <StatTile
           label="Đang chờ"
           icon={IconPlayerPause}
+          tone="orange"
           value={String(data.pending)}
           hint="chờ linh kiện, người dùng..."
         />
         <StatTile
           label="Mở lại"
           icon={IconRotate}
+          tone="purple"
           value={String(data.reopened)}
           hint="người yêu cầu báo chưa xong"
         />
         <StatTile
           label="Quá hạn"
           icon={IconClockExclamation}
+          tone="red"
           value={String(data.overdue)}
           hint="quá hạn bắt đầu hoặc xử lý"
         />

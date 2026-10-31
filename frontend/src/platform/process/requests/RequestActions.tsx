@@ -293,6 +293,7 @@ export const RequestActions = ({
   actions?: readonly RequestAction[];
 }) => {
   const [mode, setMode] = useState<RequestAction | "view" | null>(null);
+  if (actions?.length === 0) return null;
   let triggers: ReactNode;
   if (actions)
     triggers = actions.map((action) => {
@@ -301,7 +302,8 @@ export const RequestActions = ({
         <Button
           key={action}
           variant={ACTION_VARIANTS[action]}
-          size={compact ? "xs" : "sm"}
+          size="sm"
+          className={compact ? "w-full" : undefined}
           onClick={() => setMode(action)}
         >
           <Icon size={14} />
@@ -313,7 +315,8 @@ export const RequestActions = ({
     triggers = (
       <Button
         variant="outline"
-        size={compact ? "xs" : "sm"}
+        size="sm"
+        className={compact ? "w-full" : undefined}
         aria-label="Quản lý yêu cầu"
         onClick={() => setMode("view")}
       >
@@ -323,7 +326,7 @@ export const RequestActions = ({
     );
   return (
     <span
-      className={compact ? "inline-flex w-max items-center gap-2" : "inline-flex flex-wrap gap-2"}
+      className={compact ? "contents" : "inline-flex flex-wrap gap-2"}
       onClick={(event) => event.stopPropagation()}
       onKeyDown={(event) => event.stopPropagation()}
     >

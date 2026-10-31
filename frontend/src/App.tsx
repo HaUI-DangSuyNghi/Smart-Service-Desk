@@ -25,7 +25,7 @@ configureHttpAuth(httpAuth);
 configureProcessLinks(registry.processLink);
 // Trang Yêu cầu chung hiện thêm nút thao tác do app đăng ký (ví dụ người gửi xác nhận kết quả)
 configureRequestActions(registry.requestAction);
-configureInboxActions(registry.inboxAction);
+configureInboxActions(registry.inboxAction, registry.inboxLabel);
 // Dashboard chung (Tầng 2) hiện thêm khối số liệu do các app đăng ký
 configureDashboardWidgets(registry.dashboardWidgets());
 

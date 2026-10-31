@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { IconChartBar } from "@tabler/icons-react";
 import { Button } from "@/platform/shared/ui/button";
 
 const DAY_LABEL = new Intl.DateTimeFormat("vi-VN", { day: "2-digit", month: "2-digit" });
@@ -26,10 +27,15 @@ export const DailyChart = ({ daily }: Props) => {
   const last = daily.at(-1);
 
   return (
-    <section className="flex flex-col gap-3 rounded-crm-md border border-crm-line p-3">
+    <section className="flex min-w-0 flex-col gap-4 rounded-2xl border border-crm-tone-blue/15 bg-crm-surface p-4">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="font-medium">Yêu cầu mới theo ngày</h2>
-        <Button variant="ghost" size="xs" onClick={() => setShowTable(!showTable)}>
+        <h2 className="flex items-center gap-2 font-semibold">
+          <span className="flex size-8 shrink-0 items-center justify-center rounded-xl bg-crm-tone-blue-soft text-crm-tone-blue">
+            <IconChartBar size={17} />
+          </span>
+          Yêu cầu mới theo ngày
+        </h2>
+        <Button variant="info" size="sm" onClick={() => setShowTable(!showTable)}>
           {showTable ? "Xem biểu đồ" : "Xem bảng"}
         </Button>
       </div>
@@ -74,7 +80,7 @@ export const DailyChart = ({ daily }: Props) => {
                   className="group relative flex h-full min-w-0 flex-1 items-end outline-none"
                 >
                   <div
-                    className="w-full rounded-t-crm-sm bg-crm-accent transition-opacity duration-100 group-hover:opacity-80 group-focus:opacity-80"
+                    className="w-full rounded-t-crm-sm bg-linear-to-t from-crm-tone-blue to-crm-accent/65 transition-opacity duration-100 group-hover:opacity-80 group-focus:opacity-80"
                     style={{
                       height: `${(day.started / max) * 100}%`,
                       minHeight: day.started > 0 ? 2 : 0,

@@ -88,9 +88,13 @@ for (const width of [360, 1440]) {
     await expect(page.getByRole("dialog")).toContainText("Máy tính không lên nguồn");
     await page.keyboard.press("Escape");
     await page.getByRole("button", { name: "Lịch", exact: true }).click();
-    await expect(page.getByRole("heading", { name: "Lịch điều phối", exact: true })).toBeVisible();
+    await expect(
+      page.getByRole("region", { name: "Công việc trong ngày", exact: true }),
+    ).toBeVisible();
     await expect(page).toHaveURL(/view=calendar/);
     await page.reload();
-    await expect(page.getByRole("heading", { name: "Lịch điều phối", exact: true })).toBeVisible();
+    await expect(
+      page.getByRole("region", { name: "Công việc trong ngày", exact: true }),
+    ).toBeVisible();
   });
 }

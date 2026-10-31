@@ -34,8 +34,7 @@ interface Props {
   onOpen: (task: WorkItem) => void;
 }
 
-// Nút thao tác rộng bằng nhau (cả cột) cho các dòng thẳng hàng, không co theo chữ
-const ACTION_BUTTON = "w-full";
+const ACTION_BUTTON = "min-h-9 w-full md:min-h-7";
 
 // Nút trong dòng: chặn cú bấm lan lên dòng (dòng cũng bấm được để mở trang tiến độ)
 const stop = (action: () => void) => (event: MouseEvent) => {
@@ -61,7 +60,8 @@ export const InboxTable = ({
     if (scope === "CANDIDATE") {
       return (
         <Button
-          size="xs"
+          size="sm"
+          variant="info"
           className={ACTION_BUTTON}
           disabled={claimingId === task.id}
           onClick={() => onClaim(task)}
@@ -73,8 +73,8 @@ export const InboxTable = ({
     if (scope === "ALL") {
       const fallback = (
         <Button
-          size="xs"
-          variant="outline"
+          size="sm"
+          variant="info"
           className={ACTION_BUTTON}
           onClick={stop(() => onAssign(task))}
         >
@@ -84,7 +84,12 @@ export const InboxTable = ({
       return fallback;
     }
     return (
-      <Button size="xs" className={ACTION_BUTTON} onClick={stop(() => onComplete(task))}>
+      <Button
+        size="sm"
+        variant="info"
+        className={ACTION_BUTTON}
+        onClick={stop(() => onComplete(task))}
+      >
         Xử lý
       </Button>
     );

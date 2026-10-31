@@ -20,6 +20,7 @@ import {
 } from "../../../platform/process";
 import type { Priority } from "../../../platform/services";
 import { Button } from "../../../platform/shared/ui/button";
+import { useTablePageSize } from "../../../platform/shared/lib/useTablePageSize";
 import { DataTable, type DataTableColumn } from "../../../platform/shared/ui/DataTable";
 import { EmptyState } from "../../../platform/shared/ui/EmptyState";
 import { ErrorState } from "../../../platform/shared/ui/ErrorState";
@@ -27,6 +28,7 @@ import { Page, PageBody, PageHeader, PageToolbar } from "../../../platform/share
 import { Pagination } from "../../../platform/shared/ui/Pagination";
 import { SelectField } from "../../../platform/shared/ui/SelectField";
 import { TableSkeleton } from "../../../platform/shared/ui/Skeleton";
+import { TableActions } from "../../../platform/shared/ui/TableActions";
 import { ViewTabs } from "../../../platform/shared/ui/ViewTabs";
 import type { TicketState, TicketView } from "../services/ticketService";
 import { boardAccess } from "../tickets/board/boardAccess";
@@ -40,12 +42,7 @@ import { createdAtColumn, titleColumn, workflowColumns } from "../tickets/ticket
 import { TICKET_STATE_LABELS } from "../tickets/ticketLabels";
 import type { Viewer } from "../tickets/ticketPermissions";
 import { awaitsReview, PRIORITIES } from "../tickets/ticketRules";
-import {
-  TICKETS_PAGE_SIZE,
-  useRefreshTickets,
-  useTicketList,
-  type TicketFilter,
-} from "../tickets/useTickets";
+import { useRefreshTickets, useTicketList, type TicketFilter } from "../tickets/useTickets";
 import { useTicketListRealtime } from "../tickets/useTicketRealtime";
 
 type View = "all" | "intake" | "review" | "overdue" | "mine";
@@ -117,7 +114,10 @@ const TicketListPage = () => {
   const [priority, setPriority] = useState("");
   const [search, setSearch] = useState("");
   const query = useDeferredValue(search.trim());
-  const [page, setPage] = useState(0);
+  const { pageSize, tableRef } = useTablePageSize();
+  const [pagination, setPagination] = useState({ page: 0, size: pageSize });
+  const page = pagination.size === pageSize ? pagination.page : 0;
+  const setPage = (value: number) => setPagination({ page: value, size: pageSize });
   const [reviewing, setReviewing] = useState<TicketView | null>(null);
   const [releasing, setReleasing] = useState<TicketView | null>(null);
 
@@ -136,7 +136,7 @@ const TicketListPage = () => {
     ...(priority ? { priority: [priority as Priority] } : {}),
   };
   // Board tự tải từng cột; bảng mới cần danh sách này
-  const tickets = useTicketList(page, filter, { enabled: !isBoard });
+  const tickets = useTicketList(page, filter, { enabled: !isBoard, size: pageSize });
   const items = tickets.data?.items ?? [];
   const names = usePeopleNames([
     ...items.flatMap((ticket) => [ticket.creator, ticket.assignee]),
@@ -183,8 +183,8 @@ const TicketListPage = () => {
         if (!intake && !awaitsReview(ticket)) return null;
         return (
           <Button
-            size="xs"
-            variant={intake ? "info" : "default"}
+            size="sm"
+            variant={intake ? "warning" : "success"}
             onClick={(event) => {
               // Không mở trang chi tiết khi bấm nút trong dòng
               event.stopPropagation();
@@ -204,16 +204,21 @@ const TicketListPage = () => {
     key: "action",
     header: "Thao tác",
     fit: true,
-    cell: (ticket) => (
-      <div className="inline-flex w-max items-center gap-2">
-        {workAction?.cell(ticket)}
-        <RequestActions
-          processId={ticket.process.processInstanceId}
-          compact
-          actions={ownerRequestActions(ticket, viewer.subject)}
-        />
-      </div>
-    ),
+    cell: (ticket) => {
+      const actions = ownerRequestActions(ticket, viewer.subject);
+      return (
+        <TableActions>
+          {workAction?.cell(ticket)}
+          {actions.length > 0 && (
+            <RequestActions
+              processId={ticket.process.processInstanceId}
+              compact
+              actions={actions}
+            />
+          )}
+        </TableActions>
+      );
+    },
   });
   const personOptions = (duty.data ?? []).map((status) => {
     const name = personName(names, status.subject);
@@ -299,28 +304,30 @@ const TicketListPage = () => {
         }
       />
       <PageBody>
-        {current === null && <EmptyState icon={IconTicket} title="Chưa thuộc workspace nào" />}
-        {current !== null && isBoard && <TicketBoard filter={filter} viewer={viewer} />}
-        {current !== null && !isBoard && tickets.isPending && (
-          <TableSkeleton columns={columns.length} label="Đang tải ticket" />
-        )}
-        {!isBoard && tickets.error && <ErrorState error={tickets.error} />}
-        {!isBoard && tickets.data && items.length === 0 && (
-          <EmptyState
-            icon={IconTicket}
-            title="Không có ticket nào"
-            description="Ticket bạn được xem trong workspace, khớp bộ lọc, sẽ hiện ở đây."
-            action={can(PERMISSIONS.requestCreate) && <CreateTicketDialog />}
-          />
-        )}
-        {!isBoard && items.length > 0 && (
-          <DataTable
-            columns={columns}
-            rows={items}
-            getRowKey={(ticket) => ticket.id}
-            onRowClick={(ticket) => navigate(`/servicedesk/tickets/${ticket.id}`)}
-          />
-        )}
+        <div ref={tableRef} className="h-full min-h-0">
+          {current === null && <EmptyState icon={IconTicket} title="Chưa thuộc workspace nào" />}
+          {current !== null && isBoard && <TicketBoard filter={filter} viewer={viewer} />}
+          {current !== null && !isBoard && tickets.isPending && (
+            <TableSkeleton columns={columns.length} label="Đang tải ticket" />
+          )}
+          {!isBoard && tickets.error && <ErrorState error={tickets.error} />}
+          {!isBoard && tickets.data && items.length === 0 && (
+            <EmptyState
+              icon={IconTicket}
+              title="Không có ticket nào"
+              description="Ticket bạn được xem trong workspace, khớp bộ lọc, sẽ hiện ở đây."
+              action={can(PERMISSIONS.requestCreate) && <CreateTicketDialog />}
+            />
+          )}
+          {!isBoard && items.length > 0 && (
+            <DataTable
+              columns={columns}
+              rows={items}
+              getRowKey={(ticket) => ticket.id}
+              onRowClick={(ticket) => navigate(`/servicedesk/tickets/${ticket.id}`)}
+            />
+          )}
+        </div>
       </PageBody>
       {!isBoard && tickets.data && tickets.data.total > 0 && (
         <div className="flex shrink-0 justify-center border-t border-crm-line px-3 py-1.5 text-crm-text-2">
@@ -328,7 +335,7 @@ const TicketListPage = () => {
             editable
             page={page}
             total={tickets.data.total}
-            pageSize={TICKETS_PAGE_SIZE}
+            pageSize={pageSize}
             onPageChange={setPage}
           />
         </div>
