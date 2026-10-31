@@ -1,0 +1,21 @@
+name,version,marker,declared_license,metadata_source,verification_scope
+scikit-learn,1.6.1,,License :: OSI Approved :: BSD License,https://pypi.org/pypi/scikit-learn/1.6.1/json,DECLARED_METADATA_NOT_WHEEL_BUNDLE_AUDIT
+numpy,2.2.6,,License :: OSI Approved :: BSD License,https://pypi.org/pypi/numpy/2.2.6/json,DECLARED_METADATA_NOT_WHEEL_BUNDLE_AUDIT
+scipy,1.15.3,,License :: OSI Approved :: BSD License,https://pypi.org/pypi/scipy/1.15.3/json,DECLARED_METADATA_NOT_WHEEL_BUNDLE_AUDIT
+joblib,1.4.2,,License :: OSI Approved :: BSD License,https://pypi.org/pypi/joblib/1.4.2/json,DECLARED_METADATA_NOT_WHEEL_BUNDLE_AUDIT
+threadpoolctl,3.6.0,,License :: OSI Approved :: BSD License,https://pypi.org/pypi/threadpoolctl/3.6.0/json,DECLARED_METADATA_NOT_WHEEL_BUNDLE_AUDIT
+PyYAML,6.0.2,,License :: OSI Approved :: MIT License,https://pypi.org/pypi/PyYAML/6.0.2/json,DECLARED_METADATA_NOT_WHEEL_BUNDLE_AUDIT
+jsonschema,4.23.0,,License :: OSI Approved :: MIT License,https://pypi.org/pypi/jsonschema/4.23.0/json,DECLARED_METADATA_NOT_WHEEL_BUNDLE_AUDIT
+attrs,24.2.0,,License :: OSI Approved :: MIT License,https://pypi.org/pypi/attrs/24.2.0/json,DECLARED_METADATA_NOT_WHEEL_BUNDLE_AUDIT
+jsonschema-specifications,2023.12.1,,License :: OSI Approved :: MIT License,https://pypi.org/pypi/jsonschema-specifications/2023.12.1/json,DECLARED_METADATA_NOT_WHEEL_BUNDLE_AUDIT
+referencing,0.35.1,,License :: OSI Approved :: MIT License,https://pypi.org/pypi/referencing/0.35.1/json,DECLARED_METADATA_NOT_WHEEL_BUNDLE_AUDIT
+rpds-py,0.20.0,,License :: OSI Approved :: MIT License,https://pypi.org/pypi/rpds-py/0.20.0/json,DECLARED_METADATA_NOT_WHEEL_BUNDLE_AUDIT
+pytest,8.3.5,,License :: OSI Approved :: MIT License,https://pypi.org/pypi/pytest/8.3.5/json,DECLARED_METADATA_NOT_WHEEL_BUNDLE_AUDIT
+iniconfig,2.0.0,,License :: OSI Approved :: MIT License,https://pypi.org/pypi/iniconfig/2.0.0/json,DECLARED_METADATA_NOT_WHEEL_BUNDLE_AUDIT
+packaging,24.1,,License :: OSI Approved :: Apache Software License; License :: OSI Approved :: BSD License,https://pypi.org/pypi/packaging/24.1/json,DECLARED_METADATA_NOT_WHEEL_BUNDLE_AUDIT
+pluggy,1.5.0,,License :: OSI Approved :: MIT License,https://pypi.org/pypi/pluggy/1.5.0/json,DECLARED_METADATA_NOT_WHEEL_BUNDLE_AUDIT
+colorama,0.4.6,sys_platform == 'win32',License :: OSI Approved :: BSD License,https://pypi.org/pypi/colorama/0.4.6/json,DECLARED_METADATA_NOT_WHEEL_BUNDLE_AUDIT
+build,1.2.2.post1,,License :: OSI Approved :: MIT License,https://pypi.org/pypi/build/1.2.2.post1/json,DECLARED_METADATA_NOT_WHEEL_BUNDLE_AUDIT
+pyproject-hooks,1.2.0,,License :: OSI Approved :: MIT License,https://pypi.org/pypi/pyproject-hooks/1.2.0/json,DECLARED_METADATA_NOT_WHEEL_BUNDLE_AUDIT
+setuptools,75.1.0,,License :: OSI Approved :: MIT License,https://pypi.org/pypi/setuptools/75.1.0/json,DECLARED_METADATA_NOT_WHEEL_BUNDLE_AUDIT
+wheel,0.44.0,,License :: OSI Approved :: MIT License,https://pypi.org/pypi/wheel/0.44.0/json,DECLARED_METADATA_NOT_WHEEL_BUNDLE_AUDIT

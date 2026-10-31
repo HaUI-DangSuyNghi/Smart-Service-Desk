@@ -1,0 +1,158 @@
+PoF verification 2026-10-31; frozen SHA ba82b2fc5eb36ea309563d2d7442db95b96a7608
+Tools: Git 2.45.1.windows.1; Node 24.14.0; npm 11.9.0; Maven 3.9.9; build/runtime Java 17.0.15; Python driver 3.11.6; Docker 29.5.2; Compose 5.1.3
+Sanitized evidence: selected build output; complete smoke PASS lines. Not full raw logs.
+
+COMMAND/OUTPUT frontend-install.log
+added 555 packages in 18s
+
+COMMAND/OUTPUT frontend-build.log
+> smart-service-desk-frontend@0.1.0 build
+> tsc -b && vite build
+✓ built in 2.89s
+
+COMMAND/OUTPUT backend-build.log
+[INFO] Compiling 307 source files with javac [debug parameters release 17] to target/classes
+[INFO] Compiling 116 source files with javac [debug parameters release 17] to target/test-classes
+[INFO] Tests are skipped.
+[INFO] BUILD SUCCESS
+[INFO] Total time:  02:58 min
+[INFO] Finished at: 2026-10-31T06:57:56Z
+
+Released PostgreSQL reference: isolated startup exited 1
+find: 'postgres' is not the name of a known user
+
+Fallback PostgreSQL 16.6: dedicated new project reached healthy
+Frontend static service outside source: HTTP 200
+
+smoke-direct.log
+PASS GET /api/core/v1/me -> 200
+PASS GET /api/core/v1/me -> 200
+PASS GET /api/core/v1/me -> 200
+PASS GET /api/core/v1/me -> 200
+PASS GET /api/core/v1/me -> 200
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-a/tickets/statistics?q=ticket-e2e-<synthetic-id> -> 200
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-a/tickets?q=ticket-e2e-<synthetic-id> -> 200
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-b/tickets/statistics?q=ticket-e2e-<synthetic-id> -> 200
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-b/tickets?q=ticket-e2e-<synthetic-id> -> 200
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-a/tickets/statistics -> 401
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-a/tickets/statistics -> 403
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-a/tickets/statistics -> 403
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-a/tickets?from=not-a-date -> 400
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-a/tickets?from=2026-01-02T00%3A00%3A00Z&to=2026-01-01T00%3A00%3A00Z -> 400
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-a/tickets/statistics?from=not-a-date -> 400
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-a/tickets/statistics?from=2026-01-02T00%3A00%3A00Z&to=2026-01-01T00%3A00%3A00Z -> 400
+PASS POST /api/apps/servicedesk/v1/workspaces/lab-a/tickets -> 401
+PASS POST /api/apps/servicedesk/v1/workspaces/lab-a/tickets -> 403
+PASS POST /api/apps/servicedesk/v1/workspaces/lab-a/tickets -> 403
+PASS POST /api/apps/servicedesk/v1/workspaces/lab-a/tickets -> 400
+PASS POST /api/apps/servicedesk/v1/workspaces/lab-a/tickets -> 400
+PASS POST /api/apps/servicedesk/v1/workspaces/lab-a/tickets -> 201
+PASS POST /api/apps/servicedesk/v1/workspaces/lab-a/tickets -> 409
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-a/tickets/<synthetic-id> -> 200
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-a/tickets/<synthetic-id> -> 401
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-a/tickets/<synthetic-id> -> 403
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-b/tickets/<synthetic-id> -> 404
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-a/tickets/<synthetic-id> -> 404
+PASS POST /api/apps/servicedesk/v1/workspaces/lab-a/tickets -> 201
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-a/tickets/<synthetic-id> -> 404
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-a/tickets?q=ticket-e2e-<synthetic-id>&size=1 -> 200
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-a/tickets?q=ticket-e2e-<synthetic-id>&size=1 -> 200
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-a/tickets/statistics?q=ticket-e2e-<synthetic-id> -> 200
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-a/tickets?q=ticket-e2e-<synthetic-id> -> 200
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-a/tickets/statistics?q=ticket-e2e-<synthetic-id> -> 200
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-a/tickets?q=ticket-e2e-<synthetic-id> -> 200
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-a/tickets/statistics?q=ticket-e2e-<synthetic-id> -> 200
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-a/tickets?q=ticket-e2e-<synthetic-id> -> 200
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-b/tickets/statistics?q=ticket-e2e-<synthetic-id> -> 200
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-b/tickets?q=ticket-e2e-<synthetic-id> -> 200
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-a/tickets/statistics?q=ticket-e2e-<synthetic-id>&from=2026-10-31T07%3A03%3A58.240923Z -> 200
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-a/tickets?q=ticket-e2e-<synthetic-id>&from=2026-10-31T07%3A03%3A58.240923Z -> 200
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-a/tickets/statistics?q=ticket-e2e-<synthetic-id>&to=2026-10-31T07%3A03%3A58.240923Z -> 200
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-a/tickets?q=ticket-e2e-<synthetic-id>&to=2026-10-31T07%3A03%3A58.240923Z -> 200
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-a/tickets?size=101 -> 400
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-a/tickets/not-a-uuid -> 400
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-a/tickets/<synthetic-id>/progress -> 200
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-a/tickets/<synthetic-id>/progress -> 404
+PASS PUT /api/hpdi/v1/workspaces/lab-a/duty/me -> 200
+PASS POST /api/apps/servicedesk/v1/workspaces/lab-a/tickets/<synthetic-id>/review -> 403
+PASS POST /api/apps/servicedesk/v1/workspaces/lab-a/tickets/<synthetic-id>/review -> 200
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-a/tickets/statistics?q=ticket-e2e-<synthetic-id> -> 200
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-a/tickets?q=ticket-e2e-<synthetic-id> -> 200
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-a/tickets/<synthetic-id>/progress -> 200
+PASS GET /api/core/v1/workspaces/lab-a/tasks?scope=candidate -> 200
+PASS POST /api/core/v1/workspaces/lab-a/instances/<synthetic-id>/tasks/<synthetic-id>/claim -> 403
+PASS POST /api/core/v1/workspaces/lab-a/instances/<synthetic-id>/tasks/<synthetic-id>/claim -> 200
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-a/tickets/statistics?q=ticket-e2e-<synthetic-id> -> 200
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-a/tickets?q=ticket-e2e-<synthetic-id> -> 200
+PASS POST /api/hpdi/v1/workspaces/lab-a/tasks/<synthetic-id>/start -> 200
+PASS POST /api/core/v1/workspaces/lab-a/instances/<synthetic-id>/tasks/<synthetic-id>/complete -> 403
+PASS POST /api/core/v1/workspaces/lab-a/instances/<synthetic-id>/tasks/<synthetic-id>/complete -> 204
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-a/tickets/statistics?q=ticket-e2e-<synthetic-id> -> 200
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-a/tickets?q=ticket-e2e-<synthetic-id> -> 200
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-a/tickets/statistics?q=ticket-e2e-<synthetic-id> -> 200
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-a/tickets?q=ticket-e2e-<synthetic-id> -> 200
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-a/tickets/<synthetic-id>/progress -> 200
+PASS POST /api/core/v1/workspaces/lab-a/instances/<synthetic-id>/tasks/<synthetic-id>/complete -> 403
+PASS POST /api/core/v1/workspaces/lab-a/instances/<synthetic-id>/tasks/<synthetic-id>/complete -> 204
+PASS POST /api/core/v1/workspaces/lab-a/instances/<synthetic-id>/tasks/<synthetic-id>/complete -> 409
+PASS POST /api/apps/servicedesk/v1/workspaces/lab-a/tickets/<synthetic-id>/review -> 200
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-a/tickets/statistics?q=ticket-e2e-<synthetic-id> -> 200
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-a/tickets?q=ticket-e2e-<synthetic-id> -> 200
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-a/tickets/<synthetic-id>/progress -> 200
+PASS GET /api/core/v1/workspaces/lab-a/tasks?scope=candidate -> 200
+PASS POST /api/core/v1/workspaces/lab-a/instances/<synthetic-id>/tasks/<synthetic-id>/claim -> 403
+PASS POST /api/core/v1/workspaces/lab-a/instances/<synthetic-id>/tasks/<synthetic-id>/claim -> 200
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-a/tickets/statistics?q=ticket-e2e-<synthetic-id> -> 200
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-a/tickets?q=ticket-e2e-<synthetic-id> -> 200
+PASS POST /api/hpdi/v1/workspaces/lab-a/tasks/<synthetic-id>/start -> 200
+PASS POST /api/core/v1/workspaces/lab-a/instances/<synthetic-id>/tasks/<synthetic-id>/complete -> 403
+PASS POST /api/core/v1/workspaces/lab-a/instances/<synthetic-id>/tasks/<synthetic-id>/complete -> 204
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-a/tickets/statistics?q=ticket-e2e-<synthetic-id> -> 200
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-a/tickets?q=ticket-e2e-<synthetic-id> -> 200
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-a/tickets/statistics?q=ticket-e2e-<synthetic-id> -> 200
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-a/tickets?q=ticket-e2e-<synthetic-id> -> 200
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-a/tickets/<synthetic-id>/progress -> 200
+PASS POST /api/core/v1/workspaces/lab-a/instances/<synthetic-id>/tasks/<synthetic-id>/complete -> 403
+PASS POST /api/core/v1/workspaces/lab-a/instances/<synthetic-id>/tasks/<synthetic-id>/complete -> 204
+PASS POST /api/core/v1/workspaces/lab-a/instances/<synthetic-id>/tasks/<synthetic-id>/complete -> 409
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-a/tickets/<synthetic-id>/progress -> 200
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-a/tickets/statistics?q=ticket-e2e-<synthetic-id> -> 200
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-a/tickets?q=ticket-e2e-<synthetic-id> -> 200
+PASS POST /api/apps/servicedesk/v1/workspaces/lab-a/tickets -> 201
+PASS POST /api/apps/servicedesk/v1/workspaces/lab-a/tickets -> 409
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-a/tickets/statistics?q=ticket-e2e-<synthetic-id> -> 200
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-a/tickets?q=ticket-e2e-<synthetic-id> -> 200
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-a/tickets/statistics?q=ticket-e2e-<synthetic-id> -> 200
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-a/tickets?q=ticket-e2e-<synthetic-id> -> 200
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-a/tickets/statistics?q=ticket-e2e-<synthetic-id> -> 200
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-a/tickets?q=ticket-e2e-<synthetic-id> -> 200
+PASS GET /api/core/v1/workspaces/lab-a/audit?action=servicedesk.ticket.create&size=100 -> 200
+PASS real Keycloak -> direct source-built backend -> Ticket -> Flowable -> Audit, rework, confirmation and concurrent duplicate
+
+smoke-recovery.log
+PASS GET /api/core/v1/me -> 200
+PASS GET /api/core/v1/me -> 200
+PASS GET /api/core/v1/me -> 200
+PASS GET /api/core/v1/me -> 200
+PASS GET /api/core/v1/me -> 200
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-a/tickets/<synthetic-id> -> 200
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-a/tickets/<synthetic-id>/progress -> 200
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-a/tickets/<synthetic-id> -> 200
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-a/tickets/<synthetic-id>/progress -> 200
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-a/tickets/<synthetic-id> -> 200
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-a/tickets/<synthetic-id>/progress -> 200
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-a/tickets/statistics?q=ticket-e2e-<synthetic-id> -> 200
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-a/tickets?q=ticket-e2e-<synthetic-id> -> 200
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-a/tickets/statistics?q=ticket-e2e-<synthetic-id> -> 200
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-a/tickets?q=ticket-e2e-<synthetic-id> -> 200
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-a/tickets/statistics?q=ticket-e2e-<synthetic-id> -> 200
+PASS GET /api/apps/servicedesk/v1/workspaces/lab-a/tickets?q=ticket-e2e-<synthetic-id> -> 200
+PASS 3 recovered tickets retain content, ownership, process reference and readable engine progress
+
+PASS all 82 asset hashes unchanged; all 15 recorded checkout hashes matched
+PASS canonical source Git blob hashes additionally recorded
+PASS production SBOM 119 purl/version components reproduced
+PASS 160 cached Java JAR hashes and license-source POM declarations matched
+PASS 20 Python upstream declared license records matched
+PASS source tracked files unchanged; previous running containers remain running
+Proof services stopped; no volumes removed; no demo reset
