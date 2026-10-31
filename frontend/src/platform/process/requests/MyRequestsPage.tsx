@@ -32,6 +32,7 @@ import { BusinessKeyLink } from "../common/BusinessKeyLink";
 import { processLink } from "../common/processLinks";
 import { requestAction } from "../common/requestActions";
 import { REQUESTS_PAGE_SIZE, useRequests } from "./useMyRequests";
+import { RequestActions } from "./RequestActions";
 
 const SCOPE_LABELS: Record<RequestScope, string> = { mine: "Của tôi", all: "Tất cả yêu cầu" };
 
@@ -67,7 +68,13 @@ const requestColumns = (
       icon: IconStatusChange,
       width: "130px",
       cell: (request) =>
-        request.endedAt ? <Tag tone="green">Đã kết thúc</Tag> : <Tag tone="blue">Đang chạy</Tag>,
+        request.cancelled ? (
+          <Tag tone="gray">Đã hủy</Tag>
+        ) : request.endedAt ? (
+          <Tag tone="green">Đã kết thúc</Tag>
+        ) : (
+          <Tag tone="blue">Đang chạy</Tag>
+        ),
     },
   ];
   // Danh sách "Của tôi" toàn là mình tạo, không cần cột người tạo
@@ -102,24 +109,27 @@ const requestColumns = (
       ),
     },
   );
-  // Nút do app đăng ký theo quy trình (ví dụ người gửi xác nhận kết quả); yêu cầu đã kết thúc thì không có
-  if (showActions) {
-    columns.push({
-      key: "action",
-      header: "Thao tác",
-      width: "150px",
-      cell: (request) => {
-        const Action = request.endedAt ? null : requestAction(request.processKey);
-        return Action ? (
-          <Action
-            processKey={request.processKey}
-            businessKey={request.businessKey}
-            activeTaskKeys={request.activeTaskKeys}
-          />
-        ) : null;
-      },
-    });
-  }
+  // Quản lý/lịch sử dùng chung luôn có; thao tác riêng của app chỉ cho danh sách của mình.
+  columns.push({
+    key: "action",
+    header: "Thao tác",
+    fit: true,
+    cell: (request) => {
+      const Action = showActions && !request.endedAt ? requestAction(request.processKey) : null;
+      return (
+        <div className="inline-flex w-max items-center gap-1">
+          <RequestActions processId={request.id} compact />
+          {Action ? (
+            <Action
+              processKey={request.processKey}
+              businessKey={request.businessKey}
+              activeTaskKeys={request.activeTaskKeys}
+            />
+          ) : null}
+        </div>
+      );
+    },
+  });
   return columns;
 };
 
@@ -144,10 +154,7 @@ const MyRequestsPage = () => {
   const requests = views[scope];
   const items = requests.data?.items ?? [];
   const names = usePeopleNames(scope === "all" ? items.map((request) => request.initiator) : []);
-  // Thao tác của người gửi: chỉ ở "Của tôi", và chỉ khi có yêu cầu đang chạy mà app có đăng ký nút
-  const hasActions =
-    scope === "mine" &&
-    items.some((request) => !request.endedAt && requestAction(request.processKey) !== null);
+  const hasActions = scope === "mine";
 
   const handleScopeChange = (next: RequestScope) => {
     setScope(next);

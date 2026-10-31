@@ -71,6 +71,7 @@ export interface ProcessStep {
 }
 
 export interface ProcessTimeline {
+  cancelled?: boolean;
   id: string;
   processKey: string;
   businessKey: string;
@@ -94,6 +95,7 @@ export interface ProcessHandle {
 
 /** Một yêu cầu tôi đã tạo. */
 export interface ProcessSummary {
+  cancelled?: boolean;
   id: string;
   processKey: string;
   businessKey: string;

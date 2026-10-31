@@ -457,7 +457,7 @@ paths:
           type: array
           items:
             type: string
-            enum: [AWAITING_REVIEW, ASSIGNED, IN_PROGRESS, PENDING, AWAITING_CONFIRMATION, REOPENED, INTAKE, FOLLOWING, CLOSED, UNCLASSIFIED]
+            enum: [AWAITING_REVIEW, ASSIGNED, IN_PROGRESS, PENDING, AWAITING_CONFIRMATION, REOPENED, INTAKE, FOLLOWING, CLOSED, CANCELLED, UNCLASSIFIED]
       - name: priority
         in: query
         style: form
@@ -1188,6 +1188,7 @@ components:
         overdue: {type: integer, format: int64, minimum: 0, description: "Cross-cutting current unresolved handle SLA breach; excludes resolved work and historical breaches. Uses snapshotted policy and paused business clock; strict deadline comparison."}
         intake: {type: integer, format: int64, minimum: 0, description: "Active intake task, including rework admission."}
         following: {type: integer, format: int64, minimum: 0, description: "Active canonical follower, not yet closed."}
+        cancelled: {type: integer, format: int64, minimum: 0, description: Explicitly cancelled; excluded from completed and handling}
     Correction:
       type: object
       additionalProperties: false
@@ -1271,6 +1272,7 @@ components:
           - INTAKE
           - FOLLOWING
           - CLOSED
+          - CANCELLED
           - UNCLASSIFIED
         taskId:
           type: string
@@ -1424,6 +1426,7 @@ components:
       type: object
       required: [id, processKey, businessKey, workspace, initiator, startedAt, currentTasks, steps]
       properties:
+        cancelled: {type: boolean}
         closedAt: {type: string, format: date-time, nullable: true}
         closedBy: {type: string, nullable: true, enum: [REQUESTER, AUTO, null]}
         handleResolvedAt: {type: string, format: date-time}

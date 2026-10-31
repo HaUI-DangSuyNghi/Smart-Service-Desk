@@ -4,7 +4,11 @@ import { registerRoomRequest } from "./apps/roomrequest";
 import { registerServiceDesk } from "./apps/servicedesk";
 import { configureDashboardWidgets } from "./platform/data/dashboard";
 import { AuthProvider, httpAuth } from "./platform/human/auth";
-import { configureProcessLinks, configureRequestActions } from "./platform/process";
+import {
+  configureProcessLinks,
+  configureRequestActions,
+  configureInboxActions,
+} from "./platform/process";
 import { configureHttpAuth, queryClient } from "./platform/shared/api";
 import { createAppRoutes } from "./platform/shell/router/createAppRoutes";
 import { createAppRegistry } from "./platform/shell/router/registry";
@@ -21,6 +25,7 @@ configureHttpAuth(httpAuth);
 configureProcessLinks(registry.processLink);
 // Trang Yêu cầu chung hiện thêm nút thao tác do app đăng ký (ví dụ người gửi xác nhận kết quả)
 configureRequestActions(registry.requestAction);
+configureInboxActions(registry.inboxAction);
 // Dashboard chung (Tầng 2) hiện thêm khối số liệu do các app đăng ký
 configureDashboardWidgets(registry.dashboardWidgets());
 

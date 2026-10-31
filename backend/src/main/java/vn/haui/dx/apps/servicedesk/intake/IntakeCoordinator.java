@@ -136,7 +136,8 @@ public class IntakeCoordinator {
             Plan plan = guard.evaluate(workspace, id, session -> {
                 if (session.shadow()) throw CapabilityException.forbidden("Shadow cannot release intake");
                 var ready = readiness.evaluate(session.snapshot(), extractor.extract(session.snapshot()),
-                        (int) Math.min(session.snapshot().contextRevision(), readiness.maxRounds()));
+                        (int) session.snapshot().sources().stream().filter(source -> source.slot()!=null)
+                            .map(vn.haui.dx.apps.servicedesk.intelligence.context.ContextSnapshot.Source::revision).distinct().count());
                 if (ready.overall() == ContextReadinessView.State.MANUAL_REVIEW_REQUIRED) {
                     return new Plan(ready, null, null, null, "MANUAL_REQUIRED", "SAFETY_OR_MANUAL_POLICY", null);
                 } else if (ready.overall() == ContextReadinessView.State.ENRICHMENT_REQUIRED) {

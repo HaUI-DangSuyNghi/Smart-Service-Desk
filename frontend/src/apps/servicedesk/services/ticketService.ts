@@ -27,6 +27,7 @@ export interface TicketStatistics {
   pending: number;
   reopened: number;
   closed: number;
+  cancelled: number;
   /** Quá hạn bắt đầu hoặc quá hạn xử lý; không cộng vào total. */
   overdue: number;
   intake: number;
@@ -82,6 +83,7 @@ export type TicketState =
   | "AWAITING_CONFIRMATION"
   | "REOPENED"
   | "CLOSED"
+  | "CANCELLED"
   | "UNCLASSIFIED";
 
 /** Phân loại đang hiệu lực (sau khi điều phối viên duyệt/sửa), không phải gợi ý AI. */

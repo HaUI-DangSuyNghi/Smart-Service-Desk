@@ -91,7 +91,7 @@ export const WorkActions = ({
     >
       <Button
         size={size}
-        variant={suggested && item.workState === "NOT_STARTED" ? "default" : "outline"}
+        variant={item.workState === "IN_PROGRESS" ? "success" : suggested ? "default" : "info"}
         className={compact ? "flex-1" : undefined}
         disabled={isBusy}
         onClick={primary.onClick}
@@ -113,12 +113,16 @@ export const WorkActions = ({
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           {item.workState === "IN_PROGRESS" && (
-            <DropdownMenuItem onSelect={() => setDialog("pause")}>Tạm dừng</DropdownMenuItem>
+            <DropdownMenuItem className="text-crm-tone-orange" onSelect={() => setDialog("pause")}>
+              Tạm dừng
+            </DropdownMenuItem>
           )}
-          <DropdownMenuItem onSelect={() => setDialog("estimate")}>
+          <DropdownMenuItem className="text-crm-tone-blue" onSelect={() => setDialog("estimate")}>
             Xin sửa ước tính
           </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => setDialog("release")}>Trả việc</DropdownMenuItem>
+          <DropdownMenuItem variant="destructive" onSelect={() => setDialog("release")}>
+            Trả việc
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 

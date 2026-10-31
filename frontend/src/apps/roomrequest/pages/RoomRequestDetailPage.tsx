@@ -2,7 +2,7 @@ import { useParams } from "react-router";
 import { IconDoor } from "@tabler/icons-react";
 import { useCurrentWorkspace } from "../../../platform/human/workspace";
 import { SuggestionCard } from "../../../platform/intelligence";
-import { ProcessTimeline, useTimeline } from "../../../platform/process";
+import { ProcessTimeline, RequestActions, useTimeline } from "../../../platform/process";
 import { ErrorState } from "../../../platform/shared/ui/ErrorState";
 import { FieldRow } from "../../../platform/shared/ui/FieldRow";
 import { Page, PageBody, PageHeader } from "../../../platform/shared/ui/page";
@@ -42,6 +42,9 @@ const RoomRequestDetailPage = () => {
                 <FieldRow label="Phòng">{request.data.room}</FieldRow>
               </dl>
               <RoomProgress processInstanceId={request.data.process.processInstanceId} />
+              <div className="border-t border-crm-line px-4 py-3">
+                <RequestActions processId={request.data.process.processInstanceId} />
+              </div>
             </div>
             <aside className="min-w-0 border-t border-crm-line lg:border-t-0 lg:border-l">
               {/* key: đổi yêu cầu thì bỏ gợi ý cũ */}

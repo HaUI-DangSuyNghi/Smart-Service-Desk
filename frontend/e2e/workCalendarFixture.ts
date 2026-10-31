@@ -54,7 +54,7 @@ export const calendarTasks = () => [
 
 export const mockWorkCalendar = async (
   page: Page,
-  permissions = ["task:handle", "task:assign"],
+  permissions = ["task:handle"],
 ) => {
   const calls = await mockHome(page, permissions);
   await page.clock.setFixedTime(new Date("2026-10-31T03:00:00Z"));

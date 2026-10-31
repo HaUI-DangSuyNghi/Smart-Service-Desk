@@ -11,7 +11,13 @@ import {
   usePeopleNames,
   usePermissions,
 } from "../../../platform/human/workspace";
-import { formatMinutes, PRIORITY_LABELS, useQueue, WorkActions } from "../../../platform/process";
+import {
+  formatMinutes,
+  PRIORITY_LABELS,
+  useQueue,
+  WorkActions,
+  RequestActions,
+} from "../../../platform/process";
 import type { Priority } from "../../../platform/services";
 import { Button } from "../../../platform/shared/ui/button";
 import { DataTable, type DataTableColumn } from "../../../platform/shared/ui/DataTable";
@@ -28,7 +34,7 @@ import { TicketBoard } from "../tickets/board/TicketBoard";
 import { useBoardView, type ListMode } from "../tickets/board/useBoardView";
 import { CreateTicketDialog } from "../tickets/CreateTicketDialog";
 import { ReleaseIntakeDialog } from "../tickets/ReleaseIntakeDialog";
-import { RequesterTicketAction } from "../tickets/RequesterTicketAction";
+import { ownerRequestActions } from "../tickets/ownerRequestActions";
 import { ReviewDialog } from "../tickets/ReviewDialog";
 import { createdAtColumn, titleColumn, workflowColumns } from "../tickets/ticketColumns";
 import { TICKET_STATE_LABELS } from "../tickets/ticketLabels";
@@ -178,8 +184,7 @@ const TicketListPage = () => {
         return (
           <Button
             size="xs"
-            variant={intake ? "outline" : "default"}
-            className="w-full"
+            variant={intake ? "info" : "default"}
             onClick={(event) => {
               // Không mở trang chi tiết khi bấm nút trong dòng
               event.stopPropagation();
@@ -193,23 +198,23 @@ const TicketListPage = () => {
       },
     });
   }
-  // Người gửi: Chờ xác nhận thì Xác nhận, trước đó thì Bổ sung thông tin (ticket của mình, chưa đóng)
-  if (!canCoordinate && !viewer.canHandle) {
-    columns.push({
-      key: "action",
-      header: "Thao tác",
-      width: "150px",
-      cell: (ticket) =>
-        ticket.creator === viewer.subject && ticket.state && ticket.state !== "CLOSED" ? (
-          <RequesterTicketAction
-            workspace={ticket.workspace}
-            ticketId={ticket.id}
-            taskId={ticket.taskId}
-            awaitingConfirmation={ticket.state === "AWAITING_CONFIRMATION"}
-          />
-        ) : null,
-    });
-  }
+  const actionIndex = columns.findIndex((column) => column.key === "action");
+  const workAction = actionIndex >= 0 ? columns.splice(actionIndex, 1)[0] : undefined;
+  columns.push({
+    key: "action",
+    header: "Thao tác",
+    fit: true,
+    cell: (ticket) => (
+      <div className="inline-flex w-max items-center gap-2">
+        {workAction?.cell(ticket)}
+        <RequestActions
+          processId={ticket.process.processInstanceId}
+          compact
+          actions={ownerRequestActions(ticket, viewer.subject)}
+        />
+      </div>
+    ),
+  });
   const personOptions = (duty.data ?? []).map((status) => {
     const name = personName(names, status.subject);
     return { value: status.subject, label: status.effectiveDuty ? name : `${name} (nghỉ)` };

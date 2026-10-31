@@ -101,6 +101,11 @@ public class TicketService {
             .orElseThrow(() -> CapabilityException.notFound("Ticket not found"));
     }
 
+    public void requireNotCancelled(String workspace,UUID id) {
+        if (workflow.timeline(workspace,get(workspace,id).process().processInstanceId()).ended())
+            throw CapabilityException.conflict("Ticket has ended");
+    }
+
     @Transactional(readOnly = true, isolation = Isolation.REPEATABLE_READ)
     public Page<Ticket> search(String workspace, String query, Instant from, Instant to, PageRequest page) {
         var user = member(workspace);

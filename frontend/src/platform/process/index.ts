@@ -1,5 +1,10 @@
 // Khối P (Process): công việc, tiến độ, tạo yêu cầu – dùng chung cho mọi processKey
 export {
+  configureInboxActions,
+  type InboxActionProps,
+  type InboxActionResolver,
+} from "./common/inboxActions";
+export {
   configureProcessLinks,
   processLink,
   type ProcessLinkResolver,
@@ -14,6 +19,7 @@ export { useProcessLabels } from "./catalog/useProcessCatalog";
 /** Danh sách công việc và yêu cầu cá nhân dùng trên trang chủ. */
 export { useInbox } from "./inbox/useInbox";
 export { useRequests } from "./requests/useMyRequests";
+export { RequestActions } from "./requests/RequestActions";
 export { StartProcessDialog } from "./start/StartProcessDialog";
 export { outcomeTone } from "./common/display";
 export { InboxBadge } from "./inbox/InboxBadge";

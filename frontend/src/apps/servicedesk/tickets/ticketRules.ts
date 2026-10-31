@@ -78,6 +78,8 @@ const PAST_INTAKE: ReadonlySet<Intake["status"]> = new Set([
   "REVIEW_RELEASED",
   "REVIEWED",
   "CANONICAL_FOLLOWER",
+  "CLOSED",
+  "CANCELLED",
 ]);
 
 /** Còn tiếp nhận thủ công (chuyển sang Chờ duyệt) được. */

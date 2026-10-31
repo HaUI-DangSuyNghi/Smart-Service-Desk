@@ -38,6 +38,7 @@ import { halfColumnOverlap } from "./boardCollision";
 import { BOARD_COLUMNS, columnOf } from "./boardColumns";
 import { dropRejection, dropTargets, type DropAction } from "./dropTargets";
 import { TicketCardOverlay } from "./TicketCard";
+import { RequestActionDialog } from "../../../../platform/process/requests/RequestActions";
 
 /** Giao lại: lấy việc đang mở của ticket từ tiến độ rồi mở dialog giao việc của khối P. */
 const ReassignDialog = ({ ticket, onClose }: { ticket: TicketView; onClose: () => void }) => {
@@ -207,6 +208,14 @@ export const TicketBoard = ({ filter, viewer }: Props) => {
         onClose={closeEditing}
       />
       <ReviewDialog ticket={open("review")} onClose={closeEditing} />
+      {editing && ["edit", "cancel", "close"].includes(editing.action) && (
+        <RequestActionDialog
+          key={`${editing.ticket.id}/${editing.action}`}
+          processId={editing.ticket.process.processInstanceId}
+          initialAction={editing.action as "edit" | "cancel" | "close"}
+          onClose={closeEditing}
+        />
+      )}
       <CorrectClassificationDialog ticket={open("correct")} onClose={closeEditing} />
       {editing?.action === "reassign" && (
         <ReassignDialog key={editing.ticket.id} ticket={editing.ticket} onClose={closeEditing} />
