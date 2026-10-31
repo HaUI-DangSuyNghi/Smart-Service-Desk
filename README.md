@@ -19,6 +19,8 @@ Tiếp nhận sự cố, điều phối kỹ thuật viên, quản lý đặt ph
 
 </div>
 
+![Smart Service Desk - Hỗ trợ CNTT tập trung, theo dõi đến khi hoàn tất](frontend/public/readme-banner.png)
+
 ## Giới thiệu
 
 Một máy tính không lên nguồn, đường truyền gặp sự cố hay một yêu cầu đặt phòng đều cần được tiếp nhận đúng nơi và theo dõi đến khi có kết quả. Khi thông tin nằm rải rác trong tin nhắn và bảng tính, người gửi khó biết yêu cầu đang ở đâu, còn người điều phối khó nắm được ai đang xử lý việc gì.
@@ -39,7 +41,25 @@ Dự án tổ chức theo kiến trúc **Core → Human / Process / Data / Intel
 
 ## Giao diện
 
-Trải nghiệm trực tiếp tại [haui.smartdeskapp.me](https://haui.smartdeskapp.me/).
+Các ảnh dưới đây minh họa giao diện và dữ liệu mẫu. Bố cục có thể khác giữa các phiên bản.
+
+### Tổng quan hoạt động
+
+Dashboard tập hợp số liệu yêu cầu, công việc và tài liệu để theo dõi tình hình trong workspace.
+
+![Dashboard với thống kê yêu cầu, công việc và biểu đồ theo ngày](frontend/public/dashboard.png)
+
+### Quản lý ticket theo bảng công việc
+
+Theo dõi yêu cầu từ tiếp nhận và chờ duyệt đến đã giao, đang làm và đang chờ.
+
+![Bảng ticket với các cột trạng thái, mức ưu tiên và người xử lý](frontend/public/process.png)
+
+### Hỏi đáp tài liệu
+
+Không gian hội thoại để tra cứu tài liệu, với lịch sử hội thoại và lựa chọn phạm vi tài liệu. Chức năng AI được bật theo cấu hình triển khai.
+
+![Giao diện hỏi đáp tài liệu và danh sách hội thoại](frontend/public/chatRAG.png)
 
 ## Tính năng
 
