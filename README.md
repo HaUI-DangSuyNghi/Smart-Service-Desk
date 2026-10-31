@@ -5,6 +5,8 @@
 
 **Từ yêu cầu hỗ trợ đến kết quả xử lý, trên một nền tảng chung.**
 
+Sản phẩm dự thi **Olympic Tin học Sinh viên Việt Nam 2026 — nội dung Phần mềm Nguồn mở (OLP PMNM 2026)**, chủ đề DX-OS Open-Core.
+
 Nền tảng nguồn mở cho vận hành CNTT trong khoa, phòng máy và đơn vị đào tạo.
 Tiếp nhận sự cố, điều phối kỹ thuật viên, quản lý đặt phòng và tra cứu tài liệu theo từng không gian làm việc.
 
@@ -76,15 +78,9 @@ Không gian hội thoại để tra cứu tài liệu, với lịch sử hội t
 
 ### Luồng trải nghiệm
 
-```mermaid
-flowchart LR
-    A[Người dùng gửi yêu cầu] --> B[Điều phối viên tiếp nhận]
-    B --> C[Duyệt và giao việc]
-    C --> D[Kỹ thuật viên xử lý]
-    D --> E[Người gửi xác nhận]
-    E --> F[Hoàn tất]
-    E -->|Cần xử lý thêm| C
-```
+![Luồng xử lý: gửi yêu cầu, tiếp nhận, duyệt và giao việc, xử lý, xác nhận và hoàn tất](docs/images/request-lifecycle.svg)
+
+Người yêu cầu, điều phối viên và kỹ thuật viên phối hợp trong một vòng xử lý có xác nhận. Khi kết quả chưa đáp ứng, yêu cầu được chuyển lại để tiếp tục xử lý.
 
 | Vai trò | Công việc thường dùng |
 | --- | --- |
@@ -95,24 +91,20 @@ flowchart LR
 
 ## Kiến trúc
 
-```mermaid
-flowchart TB
-    User[Người dùng] --> Web[React Web App]
-    Web <-->|Đăng nhập OIDC| Identity[Keycloak]
-    Web --> Gateway[Apache APISIX]
-    Gateway --> Apps[Tầng 3: Service Desk / Đặt phòng]
-    Apps --> HPDI[Tầng 2: Human / Process / Data / Intelligence]
-    HPDI --> Core[Tầng 1: Định danh / Workflow / Tệp / Audit]
-    HPDI --> AI[Python Intelligence Runtime]
-    Core --> DB[(PostgreSQL)]
-    Core --> Files[Kho tệp]
-```
 
-- **Tầng 1 — Core:** cơ chế kỹ thuật và API dùng chung cho định danh, quy trình, dữ liệu, tệp và nhật ký.
-- **Tầng 2 — H-P-D-I:** năng lực Human, Process, Data và Intelligence để ứng dụng sử dụng lại.
-- **Tầng 3 — Ứng dụng:** nghiệp vụ Service Desk, Đặt phòng và các thành phần mở rộng theo miền.
+![Kiến trúc Smart Service Desk: gateway và định danh, ứng dụng, H-P-D-I, Core và hạ tầng](docs/images/platform-architecture.svg)
 
-Xem [bản đồ ranh giới kiến trúc](docs/architecture/tier-boundary-map.md) và [kiến trúc Core](docs/core-architecture.md).
+Smart Service Desk tổ chức theo ba tầng, phân biệt **cơ chế kỹ thuật**, **năng lực dùng chung** và **nghiệp vụ ứng dụng**. Người dùng đăng nhập qua Keycloak; giao diện web gọi API qua APISIX.
+
+| Tầng | Trách nhiệm | Thành phần của dự án |
+| --- | --- | --- |
+| **Tầng 3 — Ứng dụng** | Thể hiện bài toán, giao diện và quy tắc nghiệp vụ theo miền. | Service Desk, Đặt phòng; các module ứng dụng React và backend. |
+| **Tầng 2 — H-P-D-I** | Cung cấp năng lực Human, Process, Data, Intelligence để các ứng dụng sử dụng lại. | Con người và quyền theo workspace, công việc và quy trình, tài liệu, tích hợp Intelligence. |
+| **Tầng 1 — Core** | Cung cấp cơ chế kỹ thuật và API nền tảng. | Định danh, workflow, lưu tệp và nhật ký; tích hợp Keycloak, Flowable và PostgreSQL. |
+
+**AI là một lựa chọn triển khai:** Python Intelligence kết nối qua năng lực Intelligence; luồng tiếp nhận, duyệt và phân công thủ công không yêu cầu GPU hoặc API key. Sơ đồ thể hiện ranh giới logic, không đồng nghĩa mỗi khối là một dịch vụ triển khai độc lập.
+
+Xem [bản đồ ranh giới kiến trúc](docs/architecture/tier-boundary-map.md) và [kiến trúc Core](docs/core-architecture.md) để đối chiếu với mã nguồn và hợp đồng API.
 
 ### Công nghệ
 
