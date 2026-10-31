@@ -11,8 +11,9 @@ was published on 2026-10-31 at 12:31 UTC+07; source commit
 See the [six-criterion PoF evidence index](docs/publication/POF_EVIDENCE.md),
 [release notes](RELEASE_NOTES_v0.1.0.md), [license scope](LICENSING.md) and
 [asset manifest](docs/publication/release-distribution-status.csv). The team
-leader confirmed reviewed distribution rights; four external document/photo
-permission terms still need supporting provenance/attribution recorded.
+leader provided four asset-specific confirmations in merged PR #74: two direct
+author permissions and two reported HaUI permissions. School written/email/link
+evidence and any required attribution/conditions still need archiving.
 Publication does not transfer third-party ownership or clear missing evidence.
 
 Release baseline: the frozen v0.1.0 source, including Core / H-P-D-I,
@@ -21,6 +22,14 @@ No unreviewed local changes or OCR experiments are included. Supported startup
 baseline is no-AI/manual workflow; Qwen/GPU and external-provider operation are
 optional integrations, not requirements or certified runtime modes for v0.1.0.
 Existing merged code is retained. Do not claim all AI modes have passed.
+
+### Verified installation boundary (2026-10-31)
+
+The [final verification](docs/publication/pof/FINAL_VERIFICATION.md) records clean
+FE/BE source-build PASS and isolated direct-backend smoke/restart-persistence PASS
+with an explicit PostgreSQL 16.6 override. The released pinned PostgreSQL image
+failed startup in that harness; unmodified full Compose and browser login were
+NOT TESTED in this run. Historical CI is separate evidence, not a waiver.
 
 ### Minimal clean-source startup
 

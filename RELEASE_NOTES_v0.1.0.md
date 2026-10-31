@@ -56,10 +56,19 @@ and docs/publication/release-distribution-status.csv (82 exact paths/hashes).
 Reviewed fixture distribution approval does not change evaluation/runtime rights
 gates or relicense external content. Existing third-party licenses/notices remain.
 
-Four external document/photo entries still require permission terms/attribution
-to be recorded; publication itself is not evidence of their license or ownership. No files
+Merged PR #74 records two direct author permissions for DX-Lab documents and two
+HaUI permissions reported by the leader. School written/email/link evidence and
+applicable attribution/conditions still need archiving; HaUI rights are not Apache. No files
 or history were removed. GitHub-generated source ZIP/tar archives include these
 tracked assets and are NOT sanitized by omitting optional release attachments.
 No model weights, private credentials, local logs, databases or Docker volumes
 are prepared as release attachments. Automatic ZIP/tar.gz source archives at the
 existing v0.1.0 tag were verified; no custom binary asset was uploaded.
+
+## Post-release verification (2026-10-31; tag unchanged)
+
+See docs/publication/pof/FINAL_VERIFICATION.md for clean FE/BE source-build PASS,
+isolated direct-backend smoke/persistence PASS under an explicit PostgreSQL 16.6
+override, and the observed released PostgreSQL image startup FAIL. Unmodified full
+Compose and browser login were NOT TESTED in that run. Do not interpret the
+fallback or earlier CI as a new unconditional default-install/security certificate.
