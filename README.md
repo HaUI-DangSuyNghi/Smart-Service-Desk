@@ -39,7 +39,9 @@ Dự án đồng thời là một hiện thực kiến trúc **DX-OS 3 tầng**:
 
 AI (nếu bật) có thể gợi ý phân loại, bổ sung ngữ cảnh hoặc nhận diện tín hiệu trùng lặp; quyết định review, phân công, hoàn thành và xác nhận vẫn chịu ràng buộc quyền, trạng thái và quy trình. Không tự đóng/gộp ticket chỉ vì model dự đoán trùng.
 
-[Sơ đồ luồng ticket — minh họa khái niệm, không phải screenshot runtime](docs/assets/ticket-flow-engineering.svg) · [Đặc tả E2E](docs/LUONG_E2E_CHINH.md) · [AI D2 admission](docs/implementation/AI_D2_DELIVERY.md)
+[![Sơ đồ vòng đời ticket Smart Service Desk: tạo yêu cầu, intake tùy chọn, review, xử lý, xác nhận](docs/assets/ticket-flow-engineering.svg)](docs/assets/ticket-flow-engineering.svg)
+
+*Hình mô tả luồng nghiệp vụ (không phải ảnh chụp runtime).* · [Đặc tả E2E](docs/LUONG_E2E_CHINH.md) · [AI D2 admission](docs/implementation/AI_D2_DELIVERY.md)
 
 **Product preview:** chưa có bộ ảnh screenshot dashboard/ticket/workflow chụp từ runtime đã xác minh và được phân phối trong repository. README không dùng ảnh UI tạo giả làm ảnh sản phẩm.
 
@@ -47,15 +49,9 @@ AI (nếu bật) có thể gợi ý phân loại, bổ sung ngữ cảnh hoặc 
 
 Một sơ đồ logic duy nhất, theo đúng **chiều phụ thuộc Tier 3 → Tier 2 → Tier 1**. Đây không phải sơ đồ Frontend–Backend–Database; runtime hạ tầng không phải tầng thứ tư.
 
-```mermaid
-flowchart TB
-    T3["TIER 3 — DOMAIN APPLICATIONS<br/>Smart Service Desk · Room Request<br/>Business APIs · BPMN · policies · app-owned data"]
-    T2["TIER 2 — H-P-D-I SHARED CAPABILITIES<br/>Human · Process · Data · Intelligence<br/>Reusable Java APIs · generic Python hdpi"]
-    T1["TIER 1 — HEADLESS CORE<br/>Identity & authorization · Workflow Engine<br/>Metadata & Files · Transactional Audit"]
+[![Kiến trúc DX-OS: Tier 3 Domain Applications, Tier 2 H-P-D-I, Tier 1 Headless Core](docs/assets/dxos-system-map.svg)](docs/assets/dxos-system-map.svg)
 
-    T3 -->|"H-P-D-I public APIs"| T2
-    T2 -->|"Core public contracts"| T1
-```
+*Sơ đồ vector: ba tầng có cùng chiều rộng, chỉ hai hướng dependency T3 → T2 → T1; chi tiết module và quan hệ mở rộng có trong [boundary map](docs/architecture/tier-boundary-map.md).*
 
 - **Tier 3 — Applications:** Smart Service Desk và Room Request sở hữu entity, rule, priority, BPMN, application API, giao diện và persistence của từng nghiệp vụ. Room Request chứng minh khả năng tái sử dụng, không đồng nghĩa mọi luồng đã được xác nhận E2E.
 - **Tier 2 — H-P-D-I:** Human, Process, Data, Intelligence cung cấp capability tái sử dụng. `intelligence/src/hdpi` là Python runtime generic T2; policy và AI profile cụ thể do app T3 sở hữu.
