@@ -40,6 +40,7 @@
       <testResource><directory>../contracts/apps/servicedesk/intelligence</directory><targetPath>servicedesk-contract</targetPath><includes><include>ticket-*.schema.json</include><include>examples/ticket-assessment-v0.2.fixture.json</include></includes></testResource>
     </testResources>
     <plugins><plugin><groupId>org.springframework.boot</groupId><artifactId>spring-boot-maven-plugin</artifactId><configuration><mainClass>vn.haui.dx.assembly.DxOsApplication</mainClass></configuration></plugin></plugins>
+    <pluginManagement><plugins><plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-surefire-plugin</artifactId><version>3.2.5</version><dependencies><dependency><groupId>org.apache.maven.surefire</groupId><artifactId>surefire-junit-platform</artifactId><version>3.2.5</version></dependency></dependencies></plugin></plugins></pluginManagement>
   </build>
   <profiles>
     <profile>
