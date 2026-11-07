@@ -112,7 +112,7 @@ try {
     Get-Content scripts/check-db.sql -Raw | & docker compose -p $restore exec -T postgres psql -U core -d core -v ON_ERROR_STOP=1
     if ($LASTEXITCODE -ne 0) { throw 'Restored DB consistency failed' }
     $results.backupRestore = 'PASS'
-    $images = foreach ($image in @('dx-platform:0.1.0', 'postgres:16.15-bookworm@sha256:0ea6700a3b4f0ae6ce746519073558aed4d88a79d8d07622a9a644946c7319c4', 'quay.io/keycloak/keycloak:26.0.8@sha256:09a381c715ab0b111835b70f2905955274843a219c6f27efb348e4d9f4086858', 'dx-apisix:3.11.0-sec01')) {
+    $images = foreach ($image in @('dx-platform:0.1.0', 'postgres:16.15-bookworm@sha256:e8a07d2c7579b038938cdba6c539e580e5001caf9ea203d397b5cc83e76bd938', 'quay.io/keycloak/keycloak:26.0.8@sha256:09a381c715ab0b111835b70f2905955274843a219c6f27efb348e4d9f4086858', 'dx-apisix:3.11.0-sec01')) {
         $inspection = (Run-Docker image inspect $image | ConvertFrom-Json)[0]
         if (!$inspection.Id) { throw "Missing image identity: $image" }
         $inspection | Select-Object Id,RepoTags,RepoDigests

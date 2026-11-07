@@ -41,7 +41,7 @@ class WorkSettingsIntegrationTest {
     @MockBean FreshAdminAuthorization authorization;
     private ObjectNode current() throws Exception {
         return (ObjectNode) json.readTree(mvc.perform(get(PATH).with(jwt().jwt(token -> token.subject("admin"))))
-            .andExpect(status().isOk()).andReturn().getResponse().getContentAsString());
+            .andExpect(status().isOk()).andReturn().getResponse().getContentAsByteArray());
     }
     private ObjectNode request() throws Exception {
         ObjectNode result = current(); result.remove(List.of("updatedAt", "updatedBy")); return result;

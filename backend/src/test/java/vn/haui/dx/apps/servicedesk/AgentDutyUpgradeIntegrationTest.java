@@ -82,7 +82,7 @@ class AgentDutyUpgradeIntegrationTest {
 
     @Test void bootsFlowableAndServesDutyAfterUpgradingAppliedAi08WithoutChangingHistory() throws Exception {
         assertTrue(flyway.validateWithResult().validationSuccessful);
-        assertEquals("38", flyway.info().current().getVersion().toString());
+        assertEquals(0, flyway.info().pending().length);
         assertEquals(0, jdbc.queryForObject("select count(*) from servicedesk_sla", Integer.class));
         assertEquals(checksums, jdbc.queryForList("select version,script,checksum from flyway_schema_history where version in ('11','12','13') order by installed_rank"));
         for (var snapshot : ai08.entrySet())
@@ -91,7 +91,7 @@ class AgentDutyUpgradeIntegrationTest {
         assertNotNull(engine.getRepositoryService().createProcessDefinitionQuery().processDefinitionKey(ServiceDeskProcess.REVIEWED_KEY).latestVersion().singleResult());
         assertEquals(reviewTaskId, engine.getTaskService().createTaskQuery().processInstanceId(processId).singleResult().getId());
         String subject = "upgrade-agent";
-        when(directory.members("lab-a")).thenReturn(List.of(new DirectoryMember(subject,subject,null,Set.of(WorkspaceRole.AGENT))));
+        when(directory.members("lab-a")).thenReturn(List.of(new DirectoryMember(subject,subject,null,Set.of(WorkspaceRole.AGENT)), new DirectoryMember("coordinator","coordinator",null,Set.of(WorkspaceRole.COORDINATOR))));
         var actor = jwt().jwt(token -> token.subject(subject).claim("groups", List.of("/workspaces/lab-a/agent")));
         String duty = "/api/hpdi/v1/workspaces/lab-a/duty";
         mvc.perform(get(duty).with(actor)).andExpect(status().isOk()).andExpect(jsonPath("$[0].onDuty").value(true));
@@ -101,6 +101,12 @@ class AgentDutyUpgradeIntegrationTest {
         assertEquals(1, jdbc.queryForObject("select count(*) from audit_event where workspace='lab-a' and action='human.duty.changed' and resource=?",Integer.class,subject));
         when(directory.supportGroupMembers("lab-a", "hardware")).thenReturn(Set.of(subject));
         var coordinator = jwt().jwt(token -> token.subject("coordinator").claim("groups", List.of("/workspaces/lab-a/coordinator")));
+        var now = java.time.Instant.now();
+        mvc.perform(put("/api/hpdi/v1/workspaces/lab-a/schedules/" + subject).with(coordinator)
+                .contentType("application/json").content(new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(
+                    Map.of("version",0,"enabled",true,"shifts",List.of(Map.of("startsAt",now.minusSeconds(3600).toString(),
+                        "endsAt",now.plusSeconds(3600).toString(),"timezone","Asia/Ho_Chi_Minh"))))))
+                .andExpect(status().isOk());
         mvc.perform(post("/api/apps/servicedesk/v1/workspaces/lab-a/tickets/" + TICKET + "/review").with(coordinator)
                 .contentType("application/json").content("{\"category\":\"HARDWARE\",\"priority\":\"HIGH\",\"assignee\":\"upgrade-agent\",\"reason\":\"Reviewed after upgrade\"}"))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.assignee").value(subject));

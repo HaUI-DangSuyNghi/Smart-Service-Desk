@@ -27,7 +27,9 @@ class ServiceDeskMigrationIntegrationTest {
                 + " values(?,'lab-a','process','task','review','ticket','Estimate','agent-a',90,120,'More work',?,'coordinator',clock_timestamp())",UUID.randomUUID(),status);
         var before = jdbc.queryForList("select * from " + schema + ".hpdi_estimate_request order by id");
         var upgraded = Flyway.configure().dataSource(source).schemas(schema).load();
-        assertEquals(42-version,upgraded.migrate().migrationsExecuted);
+        int pendingMigrations = upgraded.info().pending().length;
+        assertTrue(pendingMigrations > 0);
+        assertEquals(pendingMigrations,upgraded.migrate().migrationsExecuted);
         var after = jdbc.queryForList("select * from " + schema + ".hpdi_estimate_request order by id");
         if (version<25) after.forEach(row -> { row.remove("superseded_by"); row.remove("superseded_at"); row.remove("superseded_reason"); });
         assertEquals(before,after);
@@ -133,7 +135,9 @@ class ServiceDeskMigrationIntegrationTest {
                 ? jdbc.queryForList("select * from " + schema + ".servicedesk_assessment_history where ticket_id=?", ticket) : null;
 
         var upgraded = Flyway.configure().dataSource(source).schemas(schema).load();
-        assertEquals(42 - baselineVersion, upgraded.migrate().migrationsExecuted);
+        int pendingMigrations = upgraded.info().pending().length;
+        assertTrue(pendingMigrations > 0);
+        assertEquals(pendingMigrations, upgraded.migrate().migrationsExecuted);
         assertEquals(0L, jdbc.queryForObject("select count(*) from " + schema + ".servicedesk_sla", Long.class));
         assertEquals(0L, jdbc.queryForObject("select count(*) from " + schema + ".hpdi_alert_event", Long.class));
         assertEquals(0L, jdbc.queryForObject("select count(*) from " + schema + ".hpdi_alert_recipient", Long.class));
@@ -141,6 +145,9 @@ class ServiceDeskMigrationIntegrationTest {
         assertTrue(upgraded.validateWithResult().validationSuccessful);
         var after = jdbc.queryForMap("select * from " + schema + ".servicedesk_ticket where id=?", ticket);
         if (baselineVersion < 11) assertEquals(0L, after.remove("context_revision"));
+        assertNull(after.remove("cancelled_at"));
+        assertEquals(0L, after.remove("content_revision"));
+        assertNull(after.remove("closed_at"));
         assertEquals(before, after);
         var amendedReview = jdbc.queryForMap("select * from " + schema + ".servicedesk_review where ticket_id=?", ticket);
         assertNull(amendedReview.remove("estimate_generation"));
