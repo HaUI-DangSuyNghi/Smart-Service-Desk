@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { User } from "oidc-client-ts";
+import { useQueryClient } from "@tanstack/react-query";
+import { invalidateHttpSession } from "@/platform/shared/api";
 import { LOADING_MIN_MS, wait } from "@/platform/shared/lib/minDuration";
 import { AuthContext, type AuthContextValue, type AuthStatus } from "./AuthContext";
 import { CALLBACK_PATH, DEFAULT_RETURN_TO, safeReturnTo } from "./config";
@@ -10,19 +12,34 @@ interface Props {
 }
 
 export const AuthProvider = ({ children }: Props) => {
+  const queryClient = useQueryClient();
+  const subject = useRef<string | null>(null);
+  const sessionRevision = useRef(0);
   const [user, setUser] = useState<User | null>(null);
   const [status, setStatus] = useState<AuthStatus>("loading");
   const signingOut = useRef(false);
 
   useEffect(() => {
+    let active = true;
     const handleLoaded = (loaded: User) => {
+      if (!active || signingOut.current) return;
+      sessionRevision.current++;
+      if (subject.current !== loaded.profile.sub) {
+        invalidateHttpSession();
+        queryClient.clear();
+      }
+      subject.current = loaded.profile.sub;
       setUser(loaded);
       setStatus("authenticated");
     };
     const handleSignedOut = () => {
       // Đang đăng xuất: thư viện xóa user trước khi chuyển sang Keycloak.
       // Bỏ qua để RequireAuth không gọi đăng nhập lại chen ngang.
-      if (signingOut.current) return;
+      if (!active || signingOut.current) return;
+      sessionRevision.current++;
+      subject.current = null;
+      invalidateHttpSession();
+      queryClient.clear();
       setUser(null);
       setStatus("anonymous");
     };
@@ -35,18 +52,27 @@ export const AuthProvider = ({ children }: Props) => {
 
     // Trang callback tự hoàn tất đăng nhập; sự kiện userLoaded sẽ cập nhật trạng thái
     if (window.location.pathname !== CALLBACK_PATH) {
-      void restoreSession().then((restored) =>
-        restored ? handleLoaded(restored) : handleSignedOut(),
+      const revision = sessionRevision.current;
+      void restoreSession().then(
+        (restored) => {
+          if (revision !== sessionRevision.current) return;
+          if (restored) handleLoaded(restored);
+          else handleSignedOut();
+        },
+        () => {
+          if (revision === sessionRevision.current) handleSignedOut();
+        },
       );
     }
 
     return () => {
+      active = false;
       events.removeUserLoaded(handleLoaded);
       events.removeUserUnloaded(handleSignedOut);
       events.removeAccessTokenExpired(handleSignedOut);
       events.removeSilentRenewError(handleSignedOut);
     };
-  }, []);
+  }, [queryClient]);
 
   const login = useCallback(
     (returnTo = DEFAULT_RETURN_TO) => getUserManager().signinRedirect({ state: { returnTo } }),
@@ -55,6 +81,10 @@ export const AuthProvider = ({ children }: Props) => {
 
   const logout = useCallback(async () => {
     signingOut.current = true;
+    sessionRevision.current++;
+    subject.current = null;
+    invalidateHttpSession();
+    queryClient.clear();
     setStatus("signingOut");
     // Cho lớp phủ "đang đăng xuất" hiện đủ thời gian trước khi rời trang sang Keycloak
     await wait(LOADING_MIN_MS);
@@ -66,7 +96,7 @@ export const AuthProvider = ({ children }: Props) => {
       setUser(null);
       setStatus("anonymous");
     }
-  }, []);
+  }, [queryClient]);
 
   const completeLogin = useCallback(async () => {
     const signedIn = await getUserManager().signinRedirectCallback();

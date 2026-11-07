@@ -1,4 +1,4 @@
-import axios, { type InternalAxiosRequestConfig } from "axios";
+import axios, { CanceledError, isCancel, type InternalAxiosRequestConfig } from "axios";
 import { ApiError } from "./ApiError";
 
 /** Cách client lấy token. Khối auth cung cấp lúc khởi động app, shared/api không phụ thuộc auth. */
@@ -12,11 +12,20 @@ export interface HttpAuth {
 
 interface RetryableConfig extends InternalAxiosRequestConfig {
   retriedAfterRenew?: boolean;
+  sessionRevision?: number;
 }
 
 let auth: HttpAuth | null = null;
+let renewal: Promise<string | null> | null = null;
+let sessionRevision = 0;
+
+export const invalidateHttpSession = () => {
+  sessionRevision++;
+  renewal = null;
+};
 
 export const configureHttpAuth = (value: HttpAuth) => {
+  invalidateHttpSession();
   auth = value;
 };
 
@@ -30,21 +39,45 @@ export const apiClient = axios.create({
 });
 
 apiClient.interceptors.request.use(async (config) => {
+  const scoped = config as RetryableConfig;
+  scoped.sessionRevision ??= sessionRevision;
   const token = await auth?.getAccessToken();
+  if (scoped.sessionRevision !== sessionRevision)
+    throw new CanceledError("Authentication session changed", config);
   if (token) config.headers.set("Authorization", `Bearer ${token}`);
+  else config.headers.delete("Authorization");
   return config;
 });
 
 apiClient.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    if ((response.config as RetryableConfig).sessionRevision !== sessionRevision)
+      throw new CanceledError("Authentication session changed", response.config);
+    return response;
+  },
   async (error: unknown) => {
+    if (isCancel(error)) throw error;
     const apiError = ApiError.from(error);
-    const config = (error as { config?: RetryableConfig }).config;
+    const config = (error as { config?: RetryableConfig } | null)?.config;
+    const revision = sessionRevision;
+    if (config && config.sessionRevision !== revision) throw apiError;
 
     // Token có thể vừa hết hạn: gia hạn 1 lần rồi gọi lại
     if (apiError.status === 401 && auth && config && !config.retriedAfterRenew) {
       config.retriedAfterRenew = true;
-      if (await auth.renewAccessToken()) return apiClient(config);
+      const token = await auth.getAccessToken();
+      if (revision !== sessionRevision) throw apiError;
+      if (token && config.headers.get("Authorization") !== `Bearer ${token}`)
+        return apiClient(config);
+      renewal ??= auth
+        .renewAccessToken()
+        .catch(() => null)
+        .finally(() => {
+          if (revision === sessionRevision) renewal = null;
+        });
+      const renewed = await renewal;
+      if (revision !== sessionRevision) throw apiError;
+      if (renewed) return apiClient(config);
     }
     if (apiError.status === 401) auth?.onUnauthorized();
     throw apiError;
