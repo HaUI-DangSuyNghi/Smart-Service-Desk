@@ -103,8 +103,7 @@ for (const width of [360, 1440]) {
     await page.getByRole("button", { name: "Hôm nay", exact: true }).click();
     await page.getByLabel("Tìm công việc", { exact: true }).fill("may tinh phong A201");
     await expect(table(page).getByRole("row")).toHaveCount(3);
-    await page.getByRole("button", { name: "Bước công việc", exact: true }).click();
-    await page.getByRole("menuitem", { name: "Tiếp nhận thông tin", exact: true }).click();
+    await page.getByLabel("Tìm công việc", { exact: true }).fill("tiep nhan thong tin");
     await expect(table(page).getByRole("row")).toHaveCount(2);
     expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)).toBe(
       false,

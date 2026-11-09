@@ -48,6 +48,9 @@ class RealtimeAuthInterceptor implements ChannelInterceptor {
         if (header == null || !header.startsWith("Bearer ")) throw new MessageDeliveryException("Authentication required");
         try {
             var jwt = decoder.decode(header.substring(7));
+            if (jwt.getSubject() == null || jwt.getSubject().isBlank() || jwt.getExpiresAt() == null
+                    || !jwt.getExpiresAt().isAfter(java.time.Instant.now()))
+                throw new MessageDeliveryException("Authentication required");
             if (!sessions.register(accessor.getSessionId(), jwt.getSubject(), jwt.getExpiresAt()))
                 throw new MessageDeliveryException("Too many realtime connections");
             accessor.setUser(new JwtAuthenticationToken(jwt));

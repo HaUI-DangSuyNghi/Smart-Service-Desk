@@ -1443,7 +1443,7 @@ class TicketIntegrationTest {
         var ticket = create(owner, "Comment " + UUID.randomUUID(), "requester");
         String path = BASE + "/" + ticket.path("id").asText() + "/comments";
         mvc.perform(post(path).with(as(owner, "lab-a", "requester")).contentType("application/json")
-            .content("{\"body\":\"  Máy vẫn lỗi\nsau khi khởi động lại  \"}"))
+            .content(json.writeValueAsString(Map.of("body", "  Máy vẫn lỗi\nsau khi khởi động lại  "))))
             .andExpect(status().isCreated()).andExpect(jsonPath("$.author").value(owner))
             .andExpect(jsonPath("$.body").value("Máy vẫn lỗi\nsau khi khởi động lại"));
 
@@ -1481,13 +1481,21 @@ class TicketIntegrationTest {
 
     @Test void dutyIsRecheckedAtReviewClaimAndAssignmentWithoutInterruptingActiveWork() throws Exception {
         doCallRealMethod().when(duty).onDuty(anyString(), anyString());
+        doCallRealMethod().when(duty).manualDuty(anyString(), anyString());
         String worker = "duty-worker-" + UUID.randomUUID();
+        when(directory.members("lab-a")).thenReturn(List.of(new vn.haui.dx.core.identity.api.DirectoryMember(
+            worker,worker,null,java.util.Set.of(vn.haui.dx.core.identity.api.WorkspaceRole.AGENT))));
         var ticket = create("duty-owner-" + UUID.randomUUID(), "Duty assignment", "requester");
         String dutyRoute = "/api/hpdi/v1/workspaces/lab-a/duty/me";
         // Mặc định đang trực nên tự tắt trước để kiểm tra giao cho người nghỉ bị từ chối
         mvc.perform(put(dutyRoute).with(as(worker,"lab-a","agent")).contentType("application/json").content("{\"onDuty\":false}"))
             .andExpect(status().isOk());
         review(ticket, "duty-reviewer", worker, null).andExpect(status().isConflict());
+        var now = java.time.Instant.now();
+        mvc.perform(put("/api/hpdi/v1/workspaces/lab-a/schedules/"+worker).with(as("duty-reviewer","lab-a","coordinator"))
+            .contentType("application/json").content(json.writeValueAsString(Map.of("version",0,"enabled",true,"shifts",List.of(
+                Map.of("startsAt",now.minusSeconds(3600),"endsAt",now.plusSeconds(3600),"timezone","Asia/Ho_Chi_Minh"))))))
+            .andExpect(status().isOk());
         mvc.perform(put(dutyRoute).with(as(worker,"lab-a","agent")).contentType("application/json").content("{\"onDuty\":true}"))
             .andExpect(status().isOk());
         String task = body(review(ticket, "duty-reviewer", worker, null).andExpect(status().isOk())).path("taskId").asText();

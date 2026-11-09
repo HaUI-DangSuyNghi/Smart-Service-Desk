@@ -1,6 +1,7 @@
 """Real Keycloak/APISIX triage acceptance, only on a disposable int01 Compose project."""
 
 import argparse
+from datetime import datetime, timedelta, timezone
 import json
 from pathlib import Path
 import re
@@ -153,6 +154,15 @@ def main():
         assert http('GET', route, token=owner) == ticket, 'Triage outage changed the settled ticket'
         http('PUT', args.core_url + '/api/hpdi/v1/workspaces/lab-a/duty/me',
              token=identities['agent1'], payload={'onDuty': True})
+        agent = http('GET', args.core_url + '/api/core/v1/me', token=identities['agent1'])
+        schedule_route = args.core_url + '/api/hpdi/v1/workspaces/lab-a/schedules/' + agent['sub']
+        schedule = http('GET', schedule_route, token=identities['coordinator1'])
+        now = datetime.now(timezone.utc)
+        http('PUT', schedule_route, token=identities['coordinator1'],
+             payload={'version': schedule['version'], 'enabled': True,
+                      'shifts': [{'startsAt': (now - timedelta(minutes=5)).isoformat(),
+                                  'endsAt': (now + timedelta(hours=2)).isoformat(),
+                                  'timezone': 'Asia/Ho_Chi_Minh'}]})
         http('POST', route + '/review', token=identities['requester1'], expected=403,
              payload={'category': 'OTHER', 'priority': 'MEDIUM', 'assignee': None, 'reason': 'Synthetic outage review'})
         http('POST', route + '/review', token=identities['coordinator1'],

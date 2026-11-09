@@ -54,7 +54,7 @@ class TicketRealtimeIntegrationTest {
 
     @LocalServerPort int port;
     @Autowired ObjectMapper json;
-    // Token giả "subject:role" → JWT có group /workspaces/lab-a/role
+    // Token giả "subject.role" → JWT có group /workspaces/lab-a/role
     @MockBean JwtDecoder decoder;
 
     private final RestTemplate http = new RestTemplate();
@@ -62,8 +62,8 @@ class TicketRealtimeIntegrationTest {
     private void tokens() {
         when(decoder.decode(anyString())).thenAnswer(call -> {
             String token = call.getArgument(0);
-            if (!token.contains(":")) throw new org.springframework.security.oauth2.jwt.BadJwtException("Invalid token");
-            String[] parts = token.split(":", 2);
+            if (!token.contains(".")) throw new org.springframework.security.oauth2.jwt.BadJwtException("Invalid token");
+            String[] parts = token.split("\\.", 2);
             return Jwt.withTokenValue(token).header("alg", "none").subject(parts[0])
                 .claim("groups", List.of("/workspaces/" + WORKSPACE + "/" + parts[1]))
                 .issuedAt(Instant.now()).expiresAt(Instant.now().plusSeconds(300)).build();
@@ -101,7 +101,7 @@ class TicketRealtimeIntegrationTest {
     }
 
     private JsonNode createTicket(String owner) throws Exception {
-        return post(owner + ":requester", "/api/apps/servicedesk/v1/workspaces/" + WORKSPACE + "/tickets",
+        return post(owner + ".requester", "/api/apps/servicedesk/v1/workspaces/" + WORKSPACE + "/tickets",
             Map.of("clientRequestId", UUID.randomUUID(), "title", "Realtime " + UUID.randomUUID(),
                 "description", "Synthetic support request"));
     }
@@ -125,9 +125,9 @@ class TicketRealtimeIntegrationTest {
     @Test void ticketEventsReachOnlyAllowedChannelsAfterCommit() throws Exception {
         tokens();
         String owner = "rt-owner-" + UUID.randomUUID(), other = "rt-other-" + UUID.randomUUID();
-        var coordinator = connect("rt-coordinator:coordinator");
-        var requester = connect(owner + ":requester");
-        var stranger = connect(other + ":requester");
+        var coordinator = connect("rt-coordinator.coordinator");
+        var requester = connect(owner + ".requester");
+        var stranger = connect(other + ".requester");
         var workspaceFeed = listen(coordinator, "/topic/workspaces/" + WORKSPACE + "/tickets");
         var ownerFeed = listen(requester, "/user/queue/events");
         // Người gửi không được nghe kênh tổng: đăng ký bị bỏ lặng lẽ, kết nối vẫn sống
@@ -145,13 +145,13 @@ class TicketRealtimeIntegrationTest {
         // Kênh của ticket: chủ ticket nghe được, người gửi khác thì không
         var detailFeed = listen(requester, "/topic/workspaces/" + WORKSPACE + "/tickets/" + id);
         var strangerDetail = listen(stranger, "/topic/workspaces/" + WORKSPACE + "/tickets/" + id);
-        post("rt-coordinator:coordinator", "/api/apps/servicedesk/v1/workspaces/" + WORKSPACE + "/tickets/" + id + "/comments",
+        post("rt-coordinator.coordinator", "/api/apps/servicedesk/v1/workspaces/" + WORKSPACE + "/tickets/" + id + "/comments",
             Map.of("body", "Đã nhận"));
         assertNotNull(next(detailFeed, "TICKET_COMMENTED"));
         assertNull(strangerDetail.poll(1, TimeUnit.SECONDS));
 
         // Bình luận rỗng bị từ chối (rollback): không có sự kiện
-        assertThrows(Exception.class, () -> post(owner + ":requester",
+        assertThrows(Exception.class, () -> post(owner + ".requester",
             "/api/apps/servicedesk/v1/workspaces/" + WORKSPACE + "/tickets/" + id + "/comments", Map.of("body", " ")));
         assertNull(next(detailFeed, "TICKET_COMMENTED"));
     }
@@ -159,8 +159,8 @@ class TicketRealtimeIntegrationTest {
     @Test void connectionsPerUserAreLimited() throws Exception {
         tokens();
         String subject = "rt-limit-" + UUID.randomUUID();
-        connect(subject + ":agent");
-        connect(subject + ":agent");
-        assertThrows(Exception.class, () -> connect(subject + ":agent"));
+        connect(subject + ".agent");
+        connect(subject + ".agent");
+        assertThrows(Exception.class, () -> connect(subject + ".agent"));
     }
 }

@@ -1,4 +1,5 @@
 import concurrent.futures
+from datetime import datetime, timedelta, timezone
 import json
 from pathlib import Path
 import sys
@@ -53,7 +54,7 @@ def statistics(marker, user, handling, confirming, completed, workspace="lab-a",
                           awaitingConfirmation=confirming, completed=completed, unclassified=0)
     assert {key: result[key] for key in expected} == expected, result
     partition = ("intake", "following", "awaitingReview", "assigned", "inProgress", "pending",
-                 "reopened", "awaitingConfirmation", "closed", "unclassified")
+                 "reopened", "awaitingConfirmation", "closed", "cancelled", "unclassified")
     assert set(result) == set(expected) | set(partition) | {"overdue"}, result
     assert all(type(result[key]) is int and result[key] >= 0 for key in (*partition, "overdue")), result
     assert sum(result[key] for key in partition) == result["total"], result
@@ -133,6 +134,13 @@ try:
     call("GET", base + "/" + other["id"] + "/progress", "requester1", 404)
     instance = "/workspaces/lab-a/instances/" + ticket["process"]["processInstanceId"]
     call("PUT", "/workspaces/lab-a/duty/me", "agent1", 200, {"onDuty": True}, hpdi=True)
+    schedule_path = "/workspaces/lab-a/schedules/" + subjects["agent1"]
+    schedule = call("GET", schedule_path, "coordinator1", 200, hpdi=True)
+    now = datetime.now(timezone.utc)
+    call("PUT", schedule_path, "coordinator1", 200,
+         dict(version=schedule["version"], enabled=True,
+              shifts=[dict(startsAt=(now - timedelta(minutes=5)).isoformat(),
+                           endsAt=(now + timedelta(hours=2)).isoformat(), timezone="Asia/Ho_Chi_Minh")]), hpdi=True)
     decision = dict(category="OTHER", priority="MEDIUM", assignee=None, reason="Synthetic acceptance review")
     call("POST", path + "/review", "requester1", 403, decision)
     for outcome in ("rework", "accepted"):
