@@ -81,4 +81,4 @@ foreach ($client in $realm.clients) {
 New-Item -ItemType Directory -Path .local -Force | Out-Null
 $utf8 = New-Object System.Text.UTF8Encoding $false
 [IO.File]::WriteAllText((Join-Path $PWD '.local/dx-lab-realm.json'), ($realm | ConvertTo-Json -Depth 20), $utf8)
-Write-Host 'Local secrets and realm prepared. Existing Keycloak realms are not overwritten by import (use scripts/start.ps1 -Reset).'
+Write-Host 'Local secrets and realm prepared. Existing Keycloak realms are not overwritten; assign kc-admin-api as an optional scope to dx-directory before upgrading. Do not reset data just to update the realm.'

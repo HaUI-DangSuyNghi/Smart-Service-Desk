@@ -48,7 +48,7 @@ try {
         @networkArguments `
         --mount "type=bind,source=$import,target=/opt/keycloak/data/import/realm.json,readonly" `
         -e KC_BOOTSTRAP_ADMIN_USERNAME=admin -e "KC_BOOTSTRAP_ADMIN_PASSWORD=$password" `
-        'quay.io/keycloak/keycloak:26.0.8@sha256:09a381c715ab0b111835b70f2905955274843a219c6f27efb348e4d9f4086858' `
+        'quay.io/keycloak/keycloak:26.8.2@sha256:723b1d6e254c0fc96d5cffec860c7e0744d6a3277822b865bb538cf891575e41' `
         start-dev --import-realm | Out-Null
     if ($LASTEXITCODE -ne 0) { throw 'Cannot start isolated Keycloak' }
     $created = $true
@@ -87,7 +87,7 @@ try {
         docker run -d --name "$name-pg" --network "$name-network" --network-alias database `
             --tmpfs /var/lib/postgresql/data -e POSTGRES_DB=file_storage -e POSTGRES_USER=workflow `
             -e "POSTGRES_PASSWORD=$password" `
-            'postgres:16.6-bookworm@sha256:557fea37a744d5f4c8faab304b0a90858b53ab119735a88c131fd19dab802f36' | Out-Null
+            'postgres:16.15-trixie@sha256:f9a7b9ebf6f56201f949db745e47bc423c0f0f8294bafe991cc10bf74b029657' | Out-Null
         if ($LASTEXITCODE -ne 0) { throw 'Cannot start PostgreSQL' }
         $databaseCreated = $true
         for ($attempt = 0; $attempt -lt 40; $attempt++) {
@@ -137,7 +137,7 @@ try {
     if ($summary.tests -eq 0 -or $summary.failures -or $summary.errors -or $summary.skipped) {
         throw 'Fresh admin proof requires zero failures/errors/skips'
     }
-    Write-Output "PASS real Keycloak 26.0.8; $($summary.tests) tests. Evidence: $evidence"
+    Write-Output "PASS real Keycloak 26.8.2; $($summary.tests) tests. Evidence: $evidence"
 } finally {
     foreach ($key in $saved.Keys) { [Environment]::SetEnvironmentVariable($key, $saved[$key], 'Process') }
     if ($created) { docker rm -f $name | Out-Null }

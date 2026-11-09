@@ -55,6 +55,7 @@ class KeycloakWorkspaceDirectoryTest {
         server.expect(requestTo(KC + "/realms/dx-lab/protocol/openid-connect/token"))
             .andExpect(method(HttpMethod.POST))
             .andExpect(content().string(org.hamcrest.Matchers.containsString("grant_type=client_credentials")))
+            .andExpect(content().string(org.hamcrest.Matchers.containsString("scope=kc-admin-api")))
             .andRespond(withSuccess("{\"access_token\":\"t\",\"expires_in\":300}", MediaType.APPLICATION_JSON));
     }
 

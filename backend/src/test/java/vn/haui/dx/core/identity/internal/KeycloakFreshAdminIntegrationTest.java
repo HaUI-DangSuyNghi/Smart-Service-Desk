@@ -110,6 +110,23 @@ class KeycloakFreshAdminIntegrationTest {
         assertDenied();
     }
 
+    @Test void directoryReadsWorkspacePermissionsWithoutWriteAccess() throws Exception {
+        useJwt(token(realm, "core-probe", "username=agent1&password=" + encode(password) + "&grant_type=password"));
+        var directory = new KeycloakWorkspaceDirectory(new WorkspaceAccessImpl(),
+            org.springframework.web.client.RestClient.builder(), base, realm, "dx-directory", secret);
+        var permissions = directory.rolePermissions("lab-a");
+        assertTrue(permissions.get("agent").stream().anyMatch(permission -> permission.name().equals("document:upload")));
+        assertTrue(permissions.get("coordinator").stream().anyMatch(permission -> permission.name().equals("task:assign")));
+        assertFalse(permissions.get("requester").stream().anyMatch(permission -> permission.name().equals("document:upload")));
+        String serviceToken = token(realm, "dx-directory", "grant_type=client_credentials&scope=kc-admin-api&client_secret=" + encode(secret));
+        String groupId = api("GET", "/group-by-path/workspaces/lab-a/agent", null, 200).path("id").asText();
+        assertEquals(403, send("POST", "/admin/realms/" + realm + "/groups/" + groupId + "/role-mappings/realm",
+            serviceToken, array(platformRole), "application/json").statusCode());
+        String clientId = api("GET", "/clients?clientId=dx-permissions", null, 200).get(0).path("id").asText();
+        assertEquals(403, send("PUT", "/admin/realms/" + realm + "/clients/" + clientId,
+            serviceToken, "{\"enabled\":false}", "application/json").statusCode());
+    }
+
     @Test void disabledAndDeletedAccountsDenyOldSignedJwt() throws Exception {
         api("POST", "/users/" + subject + "/role-mappings/realm", array(platformRole), 204);
         assertEquals(subject, guard.requirePlatformAdmin());
@@ -124,9 +141,14 @@ class KeycloakFreshAdminIntegrationTest {
 
     @Test void actualDirectoryPermissionsAreReadOnlyAndRevocationFailsClosed() throws Exception {
         api("POST", "/users/" + subject + "/role-mappings/realm", array(platformRole), 204);
-        assertEquals(subject, guard.requirePlatformAdmin());
-        String serviceToken = token(realm, "dx-directory", "grant_type=client_credentials&client_secret=" + encode(secret));
+        String unscoped = token(realm, "dx-directory", "grant_type=client_credentials&client_secret=" + encode(secret));
+        assertEquals(401, send("GET", "/admin/realms/" + realm + "/users/" + subject, unscoped, null, null).statusCode());
+        String serviceToken = token(realm, "dx-directory", "grant_type=client_credentials&scope=kc-admin-api&client_secret=" + encode(secret));
         assertEquals(200, send("GET", "/admin/realms/" + realm + "/users/" + subject, serviceToken, null, null).statusCode());
+        var roles = send("GET", "/admin/realms/" + realm + "/users/" + subject
+            + "/role-mappings/realm/composite?briefRepresentation=true", serviceToken, null, null);
+        assertEquals(200, roles.statusCode(), roles.body());
+        assertEquals(subject, guard.requirePlatformAdmin());
         assertEquals(403, send("PUT", "/admin/realms/" + realm + "/users/" + subject, serviceToken,
             "{\"enabled\":false}", "application/json").statusCode());
         assertEquals(403, send("POST", "/admin/realms/" + realm + "/users/" + subject + "/role-mappings/realm",
@@ -172,7 +194,7 @@ class KeycloakFreshAdminIntegrationTest {
                         && !effectiveRole.path("clientRole").asBoolean()) effectiveAdmin = true;
             }
             assertTrue(effectiveAdmin, "Service account must have the effective realm admin role");
-            String directoryToken = token(realm, "dx-directory", "grant_type=client_credentials&client_secret=" + encode(secret));
+            String directoryToken = token(realm, "dx-directory", "grant_type=client_credentials&scope=kc-admin-api&client_secret=" + encode(secret));
             var representation = send("GET", "/admin/realms/" + realm + "/users/" + serviceSubject,
                 directoryToken, null, null);
             assertEquals(200, representation.statusCode());

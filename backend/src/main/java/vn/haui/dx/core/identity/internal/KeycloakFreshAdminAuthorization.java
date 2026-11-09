@@ -63,7 +63,7 @@ final class KeycloakFreshAdminAuthorization implements FreshAdminAuthorization {
             var tokenRequest = HttpRequest.newBuilder(uri("realms", realm, "protocol", "openid-connect", "token"))
                 .header("Content-Type", "application/x-www-form-urlencoded")
                 .POST(HttpRequest.BodyPublishers.ofString("grant_type=client_credentials&client_id="
-                    + form(clientId) + "&client_secret=" + form(secret)));
+                    + form(clientId) + "&client_secret=" + form(secret) + "&scope=kc-admin-api"));
             var tokenResponse = send(tokenRequest, deadline);
             if (tokenResponse.statusCode() != 200) throw unavailable();
             JsonNode token = read(tokenResponse.body());

@@ -80,6 +80,7 @@
     {
       "clientId": "dx-directory",
       "description": "Backend reads workspace members via Admin API (service account, read-only). Secret set by scripts/setup.ps1",
+      "optionalClientScopes": ["kc-admin-api"],
       "publicClient": false,
       "protocol": "openid-connect",
       "serviceAccountsEnabled": true,
@@ -134,7 +135,7 @@
     },
     {
       "username": "service-account-dx-directory", "enabled": true, "serviceAccountClientId": "dx-directory",
-      "clientRoles": {"realm-management": ["view-users", "query-users", "query-groups"]}
+      "clientRoles": {"realm-management": ["view-users", "query-users", "query-groups", "view-clients"]}
     },
     {
       "id": "a8a0f1d2-0b11-4d40-9fda-4b836968d5e1", "username": "requester1", "enabled": true, "email": "requester1@example.com", "emailVerified": true,

@@ -1,0 +1,5 @@
+dx:
+  realtime:
+    allowed-origins: ${APP_BASE_URL}
+  storage:
+    allow-unscanned-upload: false

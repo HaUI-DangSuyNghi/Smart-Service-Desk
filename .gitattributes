@@ -33,3 +33,4 @@ scripts/acceptance/core/*.sql text eol=lf
 # Shell script cho Git Bash/Linux phai giu LF; file .cmd giu CRLF cho cmd.exe
 /dx text eol=lf
 /dx.cmd text eol=crlf
+infra/postgres/*.sh text eol=lf

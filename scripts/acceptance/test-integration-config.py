@@ -40,6 +40,6 @@ for service in ("postgres", "platform", "intelligence"):
 for volume in config["volumes"].values():
     assert not volume.get("external") and volume["name"].startswith("int01-config-check_")
 assert services["postgres"]["image"] == (
-    "postgres:16.15-bookworm@sha256:e8a07d2c7579b038938cdba6c539e580e5001caf9ea203d397b5cc83e76bd938"
+    "postgres:16.15-trixie@sha256:f9a7b9ebf6f56201f949db745e47bc423c0f0f8294bafe991cc10bf74b029657"
 )
 print("PASS acceptance config: one worker, hdpi entrypoint, loopback/private ports, isolated volumes, unchanged DB pin")

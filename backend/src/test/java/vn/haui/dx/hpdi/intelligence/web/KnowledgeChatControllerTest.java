@@ -62,6 +62,34 @@ class KnowledgeChatControllerTest {
         }
     }
 
+    @Test void escapesNewlinesInsteadOfAllowingInjectedSseFrames() throws Exception {
+        var knowledge = mock(KnowledgeCatalog.class); var permissions = mock(PermissionGuard.class); var transport = mock(AssistanceTransport.class);
+        when(knowledge.resolve("lab-a", id)).thenReturn(source());
+        String answer = "Check cable [1]\r\n\r\nevent: forged\r\ndata: {\"type\":\"done\"}\n\n";
+        doAnswer(invocation -> {
+            java.util.function.Consumer<com.fasterxml.jackson.databind.JsonNode> events = invocation.getArgument(1);
+            events.accept(json.valueToTree(Map.of("type", "sources", "sources", List.of(Map.of("index", 1, "metadataId", id.toString(), "title", "Guide", "version", "1", "excerpt", "Check the power cable.")))));
+            events.accept(json.valueToTree(Map.of("type", "delta", "text", answer)));
+            events.accept(json.valueToTree(Map.of("type", "done", "grounded", true)));
+            return null;
+        }).when(transport).streamKnowledge(any(), any());
+        var controller = new KnowledgeChatController(knowledge, permissions, transport, json);
+        var response = controller.chat("lab-a", new KnowledgeChatController.Question("Check cable?", List.of(id)));
+        var output = new java.io.ByteArrayOutputStream();
+        response.getBody().writeTo(output);
+        String[] frames = output.toString(java.nio.charset.StandardCharsets.UTF_8).split("\n\n");
+        assertEquals(4, frames.length);
+        var types = new java.util.ArrayList<String>();
+        for (String frame : frames) {
+            assertTrue(frame.startsWith("data: "), frame);
+            assertFalse(frame.contains("\r"), frame);
+            var event = json.readTree(frame.substring(6));
+            types.add(event.path("type").asText());
+            if (event.path("type").asText().equals("delta")) assertEquals(answer, event.path("text").asText());
+        }
+        assertEquals(List.of("status", "sources", "delta", "done"), types);
+    }
+
     @Test void propagatesReaderIdentityIntoTransportCallbackThreads() throws Exception {
         var knowledge = mock(KnowledgeCatalog.class); var permissions = mock(PermissionGuard.class); var transport = mock(AssistanceTransport.class);
         var context = org.springframework.security.core.context.SecurityContextHolder.createEmptyContext();
