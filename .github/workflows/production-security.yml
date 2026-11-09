@@ -1,0 +1,68 @@
+name: Production security gate
+on:
+  workflow_dispatch:
+    inputs:
+      identity_url:
+        description: HTTPS identity origin baked into the frontend candidate
+        required: true
+        type: string
+permissions:
+  contents: read
+jobs:
+  security:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Validate identity origin
+        env:
+          IDENTITY_URL: ${{ inputs.identity_url }}
+        run: |
+          python3 - <<'PY'
+          import os
+          from urllib.parse import urlsplit
+          url = urlsplit(os.environ['IDENTITY_URL'])
+          assert url.scheme == 'https' and url.hostname and not url.username and not url.password
+          assert not url.query and not url.fragment and not url.path
+          PY
+      - name: Prepare disposable build interpolation values
+        shell: pwsh
+        run: ./scripts/setup.ps1
+      - name: Verify production guard regressions
+        run: python3 scripts/check-production-config.py --self-test
+      - name: Build the release candidates and pull pinned vendor images
+        env:
+          VITE_OIDC_AUTHORITY: ${{ inputs.identity_url }}/realms/dx-lab
+          VITE_OIDC_CLIENT_ID: dx-web
+        run: |
+          docker compose -f compose.yaml -f infra/compose/compose.triage.yaml -f infra/compose/compose.release-build.yaml --profile intelligence build
+          docker compose -f compose.yaml pull keycloak
+      - name: Record candidate source and local image identities
+        run: |
+          mkdir -p .local/production-images
+          git rev-parse HEAD > .local/production-images/source-sha.txt
+          docker image inspect $(docker compose -f compose.yaml -f infra/compose/compose.triage.yaml -f infra/compose/compose.release-build.yaml --profile intelligence config --images | sort -u) > .local/production-images/images.json
+      - name: Require clean vulnerability results for every runtime image, including frontend
+        shell: pwsh
+        run: ./scripts/scan-core.ps1 -FromCompose -ComposeFiles @('compose.yaml', 'infra/compose/compose.triage.yaml', 'infra/compose/compose.release-build.yaml') -Profiles intelligence
+      - name: Require clean frontend dependency inventory
+        if: always()
+        run: |
+          mkdir -p .local/production-frontend
+          docker run --rm -v "$PWD/frontend:/source:ro" -v "$PWD/.local/production-frontend:/evidence" aquasec/trivy@sha256:2416d1f74045b57274df1a340eee6b510cacd73c66a6ccb8da092b117eb7d222 fs --scanners vuln --severity HIGH,CRITICAL --exit-code 1 --format json --output /evidence/dependencies.json /source/package-lock.json
+      - name: Preserve inventories even when security rejects the release
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: production-security-evidence
+          include-hidden-files: true
+          retention-days: 14
+          path: |
+            .local/scan-*/summary.json
+            .local/scan-*/image-*.json
+            .local/scan-*/scanner-version.txt
+            .local/production-frontend/dependencies.json
+            .local/production-images/*.json
+            .local/production-images/source-sha.txt

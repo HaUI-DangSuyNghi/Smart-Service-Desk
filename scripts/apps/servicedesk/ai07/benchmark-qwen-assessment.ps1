@@ -4,7 +4,7 @@ param(
     [ValidateRange(20,2000)][int]$Samples = 100,
     [ValidateRange(1,5)][int]$ColdCycles = 2,
     [string]$BuildImage = 'ai07-v19-maven:local',
-    [string]$DatabaseImage = 'postgres:16.15-bookworm@sha256:e8a07d2c7579b038938cdba6c539e580e5001caf9ea203d397b5cc83e76bd938'
+    [string]$DatabaseImage = 'postgres:16.15-trixie@sha256:f9a7b9ebf6f56201f949db745e47bc423c0f0f8294bafe991cc10bf74b029657'
 )
 $ErrorActionPreference = 'Stop'
 $repoRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../../../..'))

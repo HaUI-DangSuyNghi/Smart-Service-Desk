@@ -232,6 +232,7 @@ class KeycloakWorkspaceDirectory implements WorkspaceDirectory {
 
         var form = new LinkedMultiValueMap<String, String>();
         form.add("grant_type", "client_credentials");
+        form.add("scope", "kc-admin-api");
         form.add("client_id", clientId);
         form.add("client_secret", clientSecret);
         JsonNode body = http.post().uri("/realms/{realm}/protocol/openid-connect/token", realm)

@@ -1,6 +1,6 @@
 param(
     [ValidatePattern('^scan-[a-z0-9-]{1,45}$')][string]$Run = "scan-$([guid]::NewGuid().ToString('N').Substring(0,12))",
-    [ValidateNotNullOrEmpty()][string[]]$Images = @('dx-platform:0.1.0', 'postgres:16.15-bookworm@sha256:e8a07d2c7579b038938cdba6c539e580e5001caf9ea203d397b5cc83e76bd938', 'quay.io/keycloak/keycloak:26.0.8@sha256:09a381c715ab0b111835b70f2905955274843a219c6f27efb348e4d9f4086858', 'dx-apisix:3.11.0-sec01', 'dx-platform-build:0.1.0'),
+    [ValidateNotNullOrEmpty()][string[]]$Images = @('dx-platform:0.1.0', 'postgres:16.15-trixie@sha256:f9a7b9ebf6f56201f949db745e47bc423c0f0f8294bafe991cc10bf74b029657', 'quay.io/keycloak/keycloak:26.8.2@sha256:723b1d6e254c0fc96d5cffec860c7e0744d6a3277822b865bb538cf891575e41', 'dx-apisix:3.19.0-sec02', 'dx-platform-build:0.1.0'),
     [switch]$ReportOnly,
     [switch]$FromCompose,
     [string[]]$ComposeFiles = @('compose.yaml'),
@@ -31,13 +31,17 @@ foreach ($image in $Images) {
         $entry['digests'] = $inspection.RepoDigests
         docker image save -o (Join-Path $directory "image-$index.tar") $image
         if ($LASTEXITCODE -ne 0) { throw "Cannot export $image" }
-        docker run --rm --mount "type=bind,source=$directory,target=/scan" --mount "type=volume,source=$CacheVolume,target=/root/.cache/trivy" $scanner image --input "/scan/image-$index.tar" --scanners vuln --list-all-pkgs --no-progress --timeout 15m --format json --output "/scan/image-$index.json" --exit-code 0
-        if ($LASTEXITCODE -ne 0) { throw "Scanner failed for $image; this is not a clean scan" }
+        try {
+            $ErrorActionPreference = 'Continue'
+            docker run --rm --mount "type=bind,source=$directory,target=/scan" --mount "type=volume,source=$CacheVolume,target=/root/.cache/trivy" $scanner image --input "/scan/image-$index.tar" --scanners vuln --list-all-pkgs --no-progress --timeout 15m --format json --output "/scan/image-$index.json" --exit-code 0
+            $scanExitCode = $LASTEXITCODE
+        } finally { $ErrorActionPreference = 'Stop' }
+        if ($scanExitCode -ne 0) { throw "Scanner failed for $image; this is not a clean scan" }
         $report = Get-Content -LiteralPath (Join-Path $directory "image-$index.json") -Raw | ConvertFrom-Json
         if (!$report.Metadata -or !$report.SchemaVersion) { throw 'Invalid scanner report' }
         if (!$report.Metadata.OS -or !@($report.Results | Where-Object Class -eq os-pkgs).Count) { throw 'Missing OS package scan' }
         if ($image -match '^(dx-platform(?:-build)?:|int01-[a-z0-9-]+-platform:|quay.io/keycloak/)' -and !@($report.Results | Where-Object Type -eq jar).Count) { throw 'Missing packaged Java dependency scan' }
-        if ($image -match '-intelligence:' -and !@($report.Results | Where-Object Type -eq 'python-pkg').Count) { throw 'Missing installed Python dependency scan' }
+        if ($image -match '(?:^|[-/])intelligence(?::|@|$)' -and !@($report.Results | Where-Object Type -eq 'python-pkg').Count) { throw 'Missing installed Python dependency scan' }
         $entry['targets'] = @($report.Results | Select-Object Target,Class,Type)
         $vulnerabilities = @($report.Results | ForEach-Object { $_.Vulnerabilities } | Where-Object { $null -ne $_ })
         $entry.high = @($vulnerabilities | Where-Object Severity -eq HIGH).Count

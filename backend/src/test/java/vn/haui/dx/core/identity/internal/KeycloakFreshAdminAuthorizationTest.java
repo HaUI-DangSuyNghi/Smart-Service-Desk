@@ -75,6 +75,7 @@ class KeycloakFreshAdminAuthorizationTest {
         granted();
         assertEquals("caller", guard(Duration.ofSeconds(5)).requirePlatformAdmin());
         assertTrue(requests.get(0).contains("client_id=dx-directory&client_secret=secret%26%3Dvalue"));
+        assertTrue(requests.get(0).contains("&scope=kc-admin-api"));
         assertTrue(requests.get(1).contains("GET /admin/realms/dx-lab/users/caller Bearer directory-token"));
         assertTrue(requests.get(2).contains("/role-mappings/realm/composite?briefRepresentation=true"));
         assertTrue(requests.get(3).contains("/users?search=%22caller%22&max=2&briefRepresentation=true"));

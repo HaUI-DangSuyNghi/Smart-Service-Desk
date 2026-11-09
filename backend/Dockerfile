@@ -9,7 +9,10 @@ COPY docs/architecture/boundary-debt.json /build/docs/architecture/boundary-debt
 # Mặc định chạy đủ test; build dev nhanh: --build-arg MVN_GOAL="package -DskipTests"
 ARG MVN_GOAL=verify
 RUN mvn -B ${MVN_GOAL}
-FROM eclipse-temurin:17.0.20.1_1-jre-jammy@sha256:b3054a20e1a851574cdb1692dd0db5310c647e62214a2a7abecbec1b9e3ae8f1
+FROM eclipse-temurin:17.0.21_9-jre-noble@sha256:8ee89ca3f9eb6a931a2b2e8b2901a4af3554383f8077558e3631d49bb58cff1d
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends --only-upgrade apt=2.8.4ubuntu0.1 libapt-pkg6.0t64=2.8.4ubuntu0.1 \
+    && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY --from=build /build/backend/target/dx-platform-0.1.0-SNAPSHOT.jar app.jar
 RUN mkdir -p /var/lib/dx/files && chown 10001:10001 /var/lib/dx/files && chmod 700 /var/lib/dx/files
