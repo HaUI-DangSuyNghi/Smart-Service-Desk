@@ -2,10 +2,10 @@
 
 ## Current v0.1.0 evidence (2026-10-31)
 
-v0.1.0 is published. Use the [released-manifest inventories and production SBOM](publication/pof/README.md)
+v0.1.0 is published. Use the [released-manifest inventories and production SBOM](../publication/pof/README.md)
 for current npm/Java/Python/image-reference versions and provenance. The scoped
 Apache-2.0 grant and four unresolved external permission terms are in
-[LICENSING](../LICENSING.md). One MODERATE fast-uri finding remains documented.
+[LICENSING](../../LICENSING.md). One MODERATE fast-uri finding remains documented.
 The dated tables and FAIL/pending-source-license statements below are historical
 checkpoints, not current version/security/license verdicts or a replacement audit.
 
@@ -20,13 +20,13 @@ provenance update is not a full transitive/image/model license audit or grant;
 the older version tables below remain historical, not current build evidence.
 
 Cập nhật Intelligence AI-03 (17/10/2026): dependency TF-IDF và closure được pin,
-kèm nguồn license và notices trong [danh mục AI-03](../intelligence/docs/governance/ai03-dependencies.md)
-và [resolution thực tế](../intelligence/docs/governance/ai03-dependency-resolution.json).
+kèm nguồn license và notices trong [danh mục AI-03](../../intelligence/docs/governance/ai03-dependencies.md)
+và [resolution thực tế](../../intelligence/docs/governance/ai03-dependency-resolution.json).
 Không thay đổi quyết định source license hoặc quyền dữ liệu của repository.
 
 Acceptance scan update (2026-10-15): actual HIGH/CRITICAL package findings make the
 production security gate FAIL, not merely unverified. Counts, tool/database identity
-and remediation ownership are in [Core acceptance](core-acceptance.md). The historical
+and remediation ownership are in [Core acceptance](../core-acceptance.md). The historical
 inventory below is not a security waiver or a complete transitive license audit.
 
 Reviewed 2026-10-07. Versions are compatibility pins, not claims of latest releases or absence of CVEs. Do not publish this development stack as a production service. Project source license is pending team approval: no blanket license is applied to supplied PDFs/XLSX or other third-party material.

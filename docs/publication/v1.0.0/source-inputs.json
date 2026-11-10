@@ -1,0 +1,19 @@
+{
+    "release_tag":  "v1.0.0",
+    "source_commit":  "f845ff3dd0e2e49cb2a94608daaf365777f58877",
+    "generated_at_utc":  "2026-10-31T21:00:00.7633531Z",
+    "scope":  "frontend production dependency graph only",
+    "command":  "npm sbom --package-lock-only --omit=dev --sbom-format=cyclonedx",
+    "node_version":  "v24.14.0",
+    "npm_version":  "11.9.0",
+    "inputs":  [
+                   {
+                       "path":  "frontend/package.json",
+                       "sha256":  "7251292f683a6468bffb6f9c1dda62b6230289c5d1e8fbcf2ead9a3de1efa231"
+                   },
+                   {
+                       "path":  "frontend/package-lock.json",
+                       "sha256":  "5d355987af679336ba45e501426bfe8b57d30af780ec41ebec5bc45ba56f97b9"
+                   }
+               ]
+}
