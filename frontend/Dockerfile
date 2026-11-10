@@ -16,7 +16,12 @@ ENV VITE_OIDC_AUTHORITY=$VITE_OIDC_AUTHORITY \
 RUN npx vite build
 
 # Bước 2: chỉ giữ file tĩnh, phục vụ bằng nginx chạy không cần root
-FROM nginxinc/nginx-unprivileged:1.27.4-alpine
+FROM nginxinc/nginx-unprivileged:1.30-alpine@sha256:f5116ed4606f3eb015dd4a8e28cb9b351476dc0ad4bc6e9f93b19cec130cdf03
+USER root
+RUN apk add --upgrade --no-cache \
+    brotli-libs=1.2.1-r0 curl=8.23.0-r0 libcurl=8.23.0-r0 libexpat=2.10.0-r0 \
+    musl=1.2.6-r3 musl-utils=1.2.6-r3 zlib=1.4-r0
+USER nginx
 COPY nginx.conf /etc/nginx/conf.d/default.conf
 COPY --from=build /app/dist /usr/share/nginx/html
 EXPOSE 8080

@@ -1,0 +1,69 @@
+services:
+  postgres:
+    image: ${PRODUCTION_POSTGRES_IMAGE:?Supply an immutable hardened PostgreSQL registry image digest}
+    build: !reset null
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: bootstrap
+      POSTGRES_PASSWORD: ${PRODUCTION_DATABASE_ADMIN_PASSWORD:?Supply a dedicated database admin secret}
+      APP_DATABASE_PASSWORD: ${PRODUCTION_APP_DATABASE_PASSWORD:?Supply an application database secret}
+      IDENTITY_DATABASE_PASSWORD: ${PRODUCTION_IDENTITY_DATABASE_PASSWORD:?Supply an identity database secret}
+    volumes: !override
+      - postgres-data:/var/lib/postgresql/data
+      - ./infra/postgres/production-init.sh:/docker-entrypoint-initdb.d/init.sh:ro
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U bootstrap -d postgres"]
+    mem_limit: 1g
+    pids_limit: 256
+  keycloak:
+    command: [start, --import-realm]
+    environment:
+      KC_DB_USERNAME: identity
+      KC_DB_PASSWORD: ${PRODUCTION_IDENTITY_DATABASE_PASSWORD:?Supply an identity database secret}
+      KC_HOSTNAME: ${PRODUCTION_IDENTITY_URL:?Supply the public HTTPS identity URL}
+      KC_HTTP_ENABLED: 'true'
+      KC_PROXY_HEADERS: xforwarded
+      KC_PROXY_TRUSTED_ADDRESSES: ${PRODUCTION_TRUSTED_PROXY_ADDRESSES:?Supply only the TLS proxy addresses}
+      KC_BOOTSTRAP_ADMIN_PASSWORD: ${PRODUCTION_IDENTITY_ADMIN_PASSWORD:?Supply a dedicated bootstrap admin secret}
+    volumes: !override
+      - ${PRODUCTION_REALM_FILE:?Supply a reviewed production realm}:/opt/keycloak/data/import/realm.json:ro
+    mem_limit: 1g
+    pids_limit: 256
+  platform:
+    image: ${PRODUCTION_PLATFORM_IMAGE:?Supply an immutable registry image digest}
+    build: !reset null
+    environment:
+      SPRING_PROFILES_ACTIVE: production
+      POSTGRES_PASSWORD: ${PRODUCTION_APP_DATABASE_PASSWORD:?Supply an application database secret}
+      JWT_ISSUER: ${PRODUCTION_IDENTITY_URL:?Supply the public HTTPS identity URL}/realms/dx-lab
+      APP_BASE_URL: ${PRODUCTION_APP_URL:?Supply the public HTTPS application URL}
+      REALTIME_ALLOWED_ORIGINS: ${PRODUCTION_APP_URL:?Supply the public HTTPS application URL}
+      DX_ALLOW_UNSCANNED_UPLOAD: 'false'
+      INTELLIGENCE_TRIAGE_BASE_URL: http://intelligence:8000
+      INTELLIGENCE_TRIAGE_TOKEN: ${PRODUCTION_INTELLIGENCE_TOKEN:?Supply a dedicated intelligence service secret}
+      JAVA_TOOL_OPTIONS: -XX:MaxRAMPercentage=70 -XX:+ExitOnOutOfMemoryError
+    read_only: true
+    tmpfs: [/tmp:rw,noexec,nosuid,size=128m]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 1g
+    pids_limit: 256
+  gateway:
+    image: ${PRODUCTION_GATEWAY_IMAGE:?Supply an immutable registry image digest}
+    build: !reset null
+    mem_limit: 512m
+    pids_limit: 256
+  frontend:
+    image: ${PRODUCTION_FRONTEND_IMAGE:?Supply an immutable registry image digest built for the production identity URL}
+    build: !reset null
+    read_only: true
+    tmpfs: [/tmp:rw,noexec,nosuid,size=32m]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 256m
+    pids_limit: 64
+  intelligence:
+    image: ${PRODUCTION_INTELLIGENCE_IMAGE:?Supply an immutable registry image digest}
+    build: !reset null
+    environment:
+      INTELLIGENCE_TRIAGE_TOKEN: ${PRODUCTION_INTELLIGENCE_TOKEN:?Supply a dedicated intelligence service secret}

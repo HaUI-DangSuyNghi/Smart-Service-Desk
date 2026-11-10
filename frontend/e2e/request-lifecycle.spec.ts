@@ -1,4 +1,4 @@
-import { expect, test } from "@playwright/test";
+import { expect, test, type Page } from "@playwright/test";
 import { mockHome } from "./homeFixture";
 
 const initial = () => ({
@@ -21,8 +21,48 @@ const initial = () => ({
   }[],
 });
 
+const openRoomRequest = async (page: Page, view: ReturnType<typeof initial>) => {
+  await page.route(/\/instances\/[^/]+\/timeline$/, (route) =>
+    route.fulfill({
+      json: {
+        id: view.processId,
+        processKey: "room-request",
+        businessKey: "lab-a-request",
+        workspace: "lab-a",
+        initiator: "home-user",
+        startedAt: "2026-10-31T01:00:00Z",
+        endedAt: null,
+        currentTasks: [],
+        steps: [],
+        variables: { room: view.fields[0].value },
+        cancelled: view.cancelled,
+      },
+    }),
+  );
+  await page.route("**/api/apps/roomrequest/v1/workspaces/lab-a/requests/lab-a-request", (route) =>
+    route.fulfill({
+      json: {
+        id: "lab-a-request",
+        workspace: "lab-a",
+        creator: "home-user",
+        room: view.fields[0].value,
+        knowledgeId: null,
+        process: {
+          processInstanceId: view.processId,
+          processKey: "room-request",
+          businessKey: "lab-a-request",
+          workspace: "lab-a",
+        },
+      },
+    }),
+  );
+  await page.goto("/requests");
+  await page.getByRole("link", { name: "lab-a-re", exact: true }).click();
+  await page.getByRole("button", { name: "Sửa", exact: true }).click();
+};
+
 for (const width of [360, 1440]) {
-  test(`sửa và hủy dùng chung từ danh sách yêu cầu ở ${width}px`, async ({ page }) => {
+  test(`mở từ danh sách rồi sửa và hủy đặt phòng ở ${width}px`, async ({ page }) => {
     await page.setViewportSize({ width, height: 960 });
     await mockHome(page, ["request:create"]);
     const view = initial();
@@ -52,30 +92,29 @@ for (const width of [360, 1440]) {
       writes.push(cancelled ? "cancel" : "update");
       return route.fulfill({ json: view });
     });
-    await page.goto("/requests");
-    await page.getByRole("button", { name: "Quản lý yêu cầu" }).first().click();
+    await openRoomRequest(page, view);
     const dialog = page.getByRole("dialog");
-    await dialog.getByRole("button", { name: "Sửa yêu cầu", exact: true }).click();
-    await dialog.getByLabel("Phòng", { exact: true }).fill("B202");
-    await dialog.getByLabel("Lý do", { exact: true }).fill("Đổi sang phòng có máy chiếu");
-    await dialog.getByRole("button", { name: "Lưu thay đổi" }).click();
-    await expect(dialog.getByRole("region", { name: "Lịch sử thay đổi" })).toContainText(
-      "Sau: B202",
-    );
-    await expect(dialog).toContainText("Trước: A101");
-    await expect(page).toHaveURL(/\/requests$/);
-    await dialog.getByRole("button", { name: "Hủy yêu cầu", exact: true }).click();
-    await dialog.getByLabel("Lý do", { exact: true }).fill("Không còn nhu cầu sử dụng phòng");
-    await dialog.getByRole("button", { name: "Xác nhận hủy" }).click();
-    await expect(dialog.getByRole("region", { name: "Lịch sử thay đổi" })).toContainText(
-      "Đã hủy yêu cầu",
-    );
-    await expect(dialog.getByRole("button", { name: "Sửa yêu cầu", exact: true })).toHaveCount(0);
-    await expect(dialog.getByRole("button", { name: "Hủy yêu cầu", exact: true })).toHaveCount(0);
-    expect(writes).toEqual(["update", "cancel"]);
     const box = await dialog.boundingBox();
     expect(box!.x).toBeGreaterThanOrEqual(0);
     expect(box!.x + box!.width).toBeLessThanOrEqual(width);
+    await dialog.getByLabel("Phòng", { exact: true }).fill("B202");
+    await dialog.getByLabel("Lý do", { exact: true }).fill("Đổi sang phòng có máy chiếu");
+    await dialog.getByRole("button", { name: "Lưu thay đổi" }).click();
+    await expect(page.getByRole("region", { name: "Lịch sử thay đổi" })).toContainText("Sau: B202");
+    await expect(page.getByRole("region", { name: "Lịch sử thay đổi" })).toContainText(
+      "Trước: A101",
+    );
+    await expect(page).toHaveURL(/\/roomrequest\/requests\/lab-a-request$/);
+    await page.getByRole("button", { name: "Hủy", exact: true }).click();
+    await dialog.getByLabel("Lý do", { exact: true }).fill("Không còn nhu cầu sử dụng phòng");
+    await dialog.getByRole("button", { name: "Xác nhận hủy" }).click();
+    await expect(page.getByRole("region", { name: "Lịch sử thay đổi" })).toContainText(
+      "Đã hủy yêu cầu",
+    );
+    await expect(page.getByRole("button", { name: "Sửa", exact: true })).toHaveCount(0);
+    await expect(page.getByRole("button", { name: "Hủy", exact: true })).toHaveCount(0);
+    expect(writes).toEqual(["update", "cancel"]);
+    await expect(dialog).toHaveCount(0);
   });
 }
 
@@ -92,15 +131,14 @@ test("xung đột giữ nội dung đang nhập và cho tải lại phiên bản
       json: { title: "Conflict", detail: "Request changed", requestId: "request-version-conflict" },
     });
   });
-  await page.goto("/requests");
-  await page.getByRole("button", { name: "Quản lý yêu cầu" }).first().click();
+  await openRoomRequest(page, view);
   const dialog = page.getByRole("dialog");
-  await dialog.getByRole("button", { name: "Sửa yêu cầu", exact: true }).click();
   await dialog.getByLabel("Phòng", { exact: true }).fill("C303");
   await dialog.getByLabel("Lý do", { exact: true }).fill("Cập nhật phòng");
   await dialog.getByRole("button", { name: "Lưu thay đổi" }).click();
   await expect(dialog.getByRole("alert")).toContainText("request-version-conflict");
   await expect(dialog.getByLabel("Phòng", { exact: true })).toHaveValue("C303");
   await dialog.getByRole("button", { name: "Tải lại yêu cầu" }).click();
-  await expect(dialog.getByRole("button", { name: "Sửa yêu cầu", exact: true })).toHaveCount(0);
+  await expect(dialog).toHaveCount(0);
+  await expect(page.getByRole("button", { name: "Sửa", exact: true })).toHaveCount(0);
 });

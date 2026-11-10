@@ -6,7 +6,7 @@ services:
     profiles:
     - remote-model
     # Cùng bản Nginx unprivileged với frontend/Dockerfile
-    image: nginxinc/nginx-unprivileged:1.27.4-alpine
+    image: nginxinc/nginx-unprivileged:1.30-alpine@sha256:f5116ed4606f3eb015dd4a8e28cb9b351476dc0ad4bc6e9f93b19cec130cdf03
     volumes:
     - ./.local/gpu-worker/relay.conf:/etc/nginx/conf.d/default.conf:ro
     - ./.local/gpu-worker/cloudflare-headers.conf:/run/secrets/cloudflare-headers.conf:ro

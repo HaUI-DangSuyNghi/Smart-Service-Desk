@@ -33,6 +33,7 @@ class KeycloakFreshAdminIntegrationTest {
     private final String realm = "fresh-admin-proof";
     private final String password = System.getenv("FRESH_ADMIN_TEST_PASSWORD");
     private final String secret = System.getenv("FRESH_ADMIN_TEST_DIRECTORY_SECRET");
+    private final boolean requestAdminScope = !"false".equals(System.getenv("FRESH_ADMIN_TEST_REQUEST_ADMIN_SCOPE"));
     private String admin;
     private String subject;
     private String username;
@@ -49,7 +50,7 @@ class KeycloakFreshAdminIntegrationTest {
                 "credentials", new Object[]{Map.of("type", "password", "value", password, "temporary", false)})), "application/json");
         assertEquals(201, response.statusCode());
         subject = response.headers().firstValue("Location").orElseThrow().replaceAll(".*/", "");
-        guard = new KeycloakFreshAdminAuthorization(new WorkspaceAccessImpl(), json, base, realm, "dx-directory", secret);
+        guard = new KeycloakFreshAdminAuthorization(new WorkspaceAccessImpl(), json, base, realm, "dx-directory", secret, requestAdminScope);
         authenticate();
     }
 
@@ -110,6 +111,31 @@ class KeycloakFreshAdminIntegrationTest {
         assertDenied();
     }
 
+    @Test void incompatibleScopeModeFailsClosedInsteadOfDowngradingAutomatically() throws Exception {
+        api("POST", "/users/" + subject + "/role-mappings/realm", array(platformRole), 204);
+        var incompatible = new KeycloakFreshAdminAuthorization(new WorkspaceAccessImpl(), json,
+            base, realm, "dx-directory", secret, !requestAdminScope);
+        assertEquals(ErrorCode.SERVICE_UNAVAILABLE,
+            assertThrows(CoreException.class, incompatible::requirePlatformAdmin).code());
+    }
+
+    @Test void directoryReadsWorkspacePermissionsWithoutWriteAccess() throws Exception {
+        useJwt(token(realm, "core-probe", "username=agent1&password=" + encode(password) + "&grant_type=password"));
+        var directory = new KeycloakWorkspaceDirectory(new WorkspaceAccessImpl(),
+            org.springframework.web.client.RestClient.builder(), base, realm, "dx-directory", secret, requestAdminScope);
+        var permissions = directory.rolePermissions("lab-a");
+        assertTrue(permissions.get("agent").stream().anyMatch(permission -> permission.name().equals("document:upload")));
+        assertTrue(permissions.get("coordinator").stream().anyMatch(permission -> permission.name().equals("task:assign")));
+        assertFalse(permissions.get("requester").stream().anyMatch(permission -> permission.name().equals("document:upload")));
+        String serviceToken = directoryToken();
+        String groupId = api("GET", "/group-by-path/workspaces/lab-a/agent", null, 200).path("id").asText();
+        assertEquals(403, send("POST", "/admin/realms/" + realm + "/groups/" + groupId + "/role-mappings/realm",
+            serviceToken, array(platformRole), "application/json").statusCode());
+        String clientId = api("GET", "/clients?clientId=dx-permissions", null, 200).get(0).path("id").asText();
+        assertEquals(403, send("PUT", "/admin/realms/" + realm + "/clients/" + clientId,
+            serviceToken, "{\"enabled\":false}", "application/json").statusCode());
+    }
+
     @Test void disabledAndDeletedAccountsDenyOldSignedJwt() throws Exception {
         api("POST", "/users/" + subject + "/role-mappings/realm", array(platformRole), 204);
         assertEquals(subject, guard.requirePlatformAdmin());
@@ -124,9 +150,15 @@ class KeycloakFreshAdminIntegrationTest {
 
     @Test void actualDirectoryPermissionsAreReadOnlyAndRevocationFailsClosed() throws Exception {
         api("POST", "/users/" + subject + "/role-mappings/realm", array(platformRole), 204);
-        assertEquals(subject, guard.requirePlatformAdmin());
-        String serviceToken = token(realm, "dx-directory", "grant_type=client_credentials&client_secret=" + encode(secret));
+        String unscoped = token(realm, "dx-directory", "grant_type=client_credentials&client_secret=" + encode(secret));
+        assertEquals(requestAdminScope ? 401 : 200,
+            send("GET", "/admin/realms/" + realm + "/users/" + subject, unscoped, null, null).statusCode());
+        String serviceToken = directoryToken();
         assertEquals(200, send("GET", "/admin/realms/" + realm + "/users/" + subject, serviceToken, null, null).statusCode());
+        var roles = send("GET", "/admin/realms/" + realm + "/users/" + subject
+            + "/role-mappings/realm/composite?briefRepresentation=true", serviceToken, null, null);
+        assertEquals(200, roles.statusCode(), roles.body());
+        assertEquals(subject, guard.requirePlatformAdmin());
         assertEquals(403, send("PUT", "/admin/realms/" + realm + "/users/" + subject, serviceToken,
             "{\"enabled\":false}", "application/json").statusCode());
         assertEquals(403, send("POST", "/admin/realms/" + realm + "/users/" + subject + "/role-mappings/realm",
@@ -172,7 +204,7 @@ class KeycloakFreshAdminIntegrationTest {
                         && !effectiveRole.path("clientRole").asBoolean()) effectiveAdmin = true;
             }
             assertTrue(effectiveAdmin, "Service account must have the effective realm admin role");
-            String directoryToken = token(realm, "dx-directory", "grant_type=client_credentials&client_secret=" + encode(secret));
+            String directoryToken = directoryToken();
             var representation = send("GET", "/admin/realms/" + realm + "/users/" + serviceSubject,
                 directoryToken, null, null);
             assertEquals(200, representation.statusCode());
@@ -210,6 +242,11 @@ class KeycloakFreshAdminIntegrationTest {
         assertEquals(200, response.statusCode(), "Token request failed: "
             + (response.statusCode() == 200 ? "" : json.readTree(response.body()).path("error_description").asText()));
         return json.readTree(response.body()).path("access_token").asText();
+    }
+
+    private String directoryToken() throws Exception {
+        return token(realm, "dx-directory", "grant_type=client_credentials&client_secret=" + encode(secret)
+            + (requestAdminScope ? "&scope=kc-admin-api" : ""));
     }
     private HttpResponse<String> send(String method, String path, String bearer, String body, String type) throws Exception {
         var request = HttpRequest.newBuilder(URI.create(base + path)).timeout(Duration.ofSeconds(10));

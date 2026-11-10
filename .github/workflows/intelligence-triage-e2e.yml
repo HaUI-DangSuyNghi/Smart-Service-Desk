@@ -1,7 +1,7 @@
 name: Integrated current HEAD acceptance
 on:
   pull_request:
-    branches: [develop]
+    branches: [develop, main]
     paths: ['backend/**', 'intelligence/**', 'contracts/**', 'fixtures/intelligence/**', 'scripts/**', 'infra/**', 'compose*.yaml', '.dockerignore', '.env.example', 'docs/INT01*', '.github/workflows/**']
   workflow_dispatch:
 permissions:
@@ -47,7 +47,7 @@ jobs:
           echo "::add-mask::$password"
           export FILE_TEST_DB_PASSWORD="$password" WORKFLOW_TEST_DB_PASSWORD="$password" POSTGRES_PASSWORD="$password"
           printf 'FILE_TEST_DB_PASSWORD=%s\nWORKFLOW_TEST_DB_PASSWORD=%s\n' "$password" "$password" >> "$GITHUB_ENV"
-          docker run -d --name "$INT01_PROJECT-regression" -e POSTGRES_USER=workflow -e POSTGRES_DB=file_storage -e POSTGRES_PASSWORD -p 127.0.0.1:15432:5432 postgres:16.15-bookworm@sha256:0ea6700a3b4f0ae6ce746519073558aed4d88a79d8d07622a9a644946c7319c4
+          docker run -d --name "$INT01_PROJECT-regression" -e POSTGRES_USER=workflow -e POSTGRES_DB=file_storage -e POSTGRES_PASSWORD -p 127.0.0.1:15432:5432 postgres:16.15-trixie@sha256:f9a7b9ebf6f56201f949db745e47bc423c0f0f8294bafe991cc10bf74b029657
           for attempt in $(seq 1 30); do
             if docker exec "$INT01_PROJECT-regression" pg_isready -h 127.0.0.1 -U workflow -d file_storage; then break; fi
             sleep 1
@@ -163,7 +163,7 @@ jobs:
       - name: G9 image inventory and vulnerability assessment (not release approval)
         shell: pwsh
         run: |
-          ./scripts/scan-core.ps1 -Run "scan-$env:INT01_PROJECT" -CacheVolume "$env:INT01_PROJECT-trivy-cache" -Images @("$env:INT01_PROJECT-platform:ci", "$env:INT01_PROJECT-intelligence:ci", 'postgres:16.15-bookworm@sha256:0ea6700a3b4f0ae6ce746519073558aed4d88a79d8d07622a9a644946c7319c4', 'quay.io/keycloak/keycloak:26.0.8@sha256:09a381c715ab0b111835b70f2905955274843a219c6f27efb348e4d9f4086858', "$env:INT01_PROJECT-gateway:ci") -ReportOnly
+          ./scripts/scan-core.ps1 -Run "scan-$env:INT01_PROJECT" -CacheVolume "$env:INT01_PROJECT-trivy-cache" -Images @("$env:INT01_PROJECT-platform:ci", "$env:INT01_PROJECT-intelligence:ci", 'postgres:16.15-trixie@sha256:f9a7b9ebf6f56201f949db745e47bc423c0f0f8294bafe991cc10bf74b029657', 'quay.io/keycloak/keycloak:26.8.2@sha256:723b1d6e254c0fc96d5cffec860c7e0744d6a3277822b865bb538cf891575e41', "$env:INT01_PROJECT-gateway:ci") -ReportOnly
       - name: Record exact tested commit and release gates
         if: always()
         run: python scripts/intelligence/summarize-integration.py

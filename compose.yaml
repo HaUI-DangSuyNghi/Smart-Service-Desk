@@ -1,7 +1,7 @@
 name: dx-platform
 services:
   postgres:
-    image: postgres:16.15-bookworm@sha256:0ea6700a3b4f0ae6ce746519073558aed4d88a79d8d07622a9a644946c7319c4
+    image: postgres:16.15-trixie@sha256:f9a7b9ebf6f56201f949db745e47bc423c0f0f8294bafe991cc10bf74b029657
     environment:
       POSTGRES_DB: core
       POSTGRES_USER: core
@@ -14,7 +14,7 @@ services:
       interval: 5s
       retries: 20
   keycloak:
-    image: quay.io/keycloak/keycloak:26.0.8@sha256:09a381c715ab0b111835b70f2905955274843a219c6f27efb348e4d9f4086858
+    image: quay.io/keycloak/keycloak:26.8.2@sha256:723b1d6e254c0fc96d5cffec860c7e0744d6a3277822b865bb538cf891575e41
     command: [start-dev, --import-realm]
     environment:
       KC_DB: postgres
@@ -79,6 +79,7 @@ services:
       JWT_JWKS: http://keycloak:8080/realms/dx-lab/protocol/openid-connect/certs
       DX_DIRECTORY_URL: http://keycloak:8080
       DX_DIRECTORY_CLIENT_SECRET: ${DIRECTORY_CLIENT_SECRET:?Run scripts/setup.ps1}
+      DX_DIRECTORY_REQUEST_ADMIN_SCOPE: ${DX_DIRECTORY_REQUEST_ADMIN_SCOPE:-true}
       DX_BACKGROUND_TOKEN_URL: http://keycloak:8080/realms/dx-lab/protocol/openid-connect/token
       DX_BACKGROUND_CLIENT_SECRET: ${BACKGROUND_CLIENT_SECRET:?Run scripts/setup.ps1}
       SERVICE_DESK_BACKGROUND_WORKSPACES: ${SERVICE_DESK_BACKGROUND_WORKSPACES:-lab-a}
@@ -92,7 +93,7 @@ services:
       timeout: 5s
       retries: 30
   gateway:
-    image: dx-apisix:3.11.0-sec01
+    image: dx-apisix:3.19.0-sec02
     build:
       context: .
       dockerfile: infra/apisix/Dockerfile

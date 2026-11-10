@@ -12,6 +12,25 @@ The historical v0.1.0 tag/source archives and its evidence are preserved.
 - Keep external document/photo permission evidence and the MODERATE fast-uri
   finding explicit; no dependency/code change or new release.
 
+## [2.0.0] - Unreleased Candidate
+
+### Fixed
+- Harden browser authentication/session handling and live authorization checks.
+- Support existing Keycloak 26.0.8 deployments with the explicit backend setting
+  `DX_DIRECTORY_REQUEST_ADMIN_SCOPE=false`; retain scoped requests by default.
+
+### Changed
+- Run pull-request acceptance and boundary checks for main as well as develop.
+- Prepare release/2.0.0 from develop commit 8dbf7d6. The VM candidate uses backend
+  image de73126e1cf7 and frontend image e7c72d786ebe; image names are not release tags.
+
+### Release Gates
+- This candidate is not published. Create v2.0.0 only after release review/merge.
+- HIGH/CRITICAL runtime dependency findings documented in PRODUCTION_HARDENING.md
+  remain unresolved; functional CI and reported VM smoke success do not clear them.
+- Preserve VM backups and rollback images; do not upgrade the existing identity
+  database or recreate its realm as part of this application-only release.
+
 ## [1.0.0] - 2026-11-01
 
 Published at 02:22:52 UTC+07 (2026-10-31 19:22:52 UTC).

@@ -4,7 +4,7 @@ on:
     branches: [feature/ai07-ticket-intelligence, feature/ai07-hierarchical-assessment]
     paths: ['backend/**', 'contracts/**', '.github/workflows/servicedesk-triage.yml']
   pull_request:
-    branches: [develop]
+    branches: [develop, main]
     paths: ['backend/**', 'contracts/**', 'compose.yaml', '.dockerignore', 'scripts/test-*.ps1', '.github/workflows/servicedesk-triage.yml']
   workflow_dispatch:
 permissions:
@@ -31,7 +31,7 @@ jobs:
     timeout-minutes: 20
     services:
       postgres:
-        image: postgres:16.15-bookworm@sha256:0ea6700a3b4f0ae6ce746519073558aed4d88a79d8d07622a9a644946c7319c4
+        image: postgres:16.15-trixie@sha256:f9a7b9ebf6f56201f949db745e47bc423c0f0f8294bafe991cc10bf74b029657
         env:
           POSTGRES_USER: workflow
           POSTGRES_PASSWORD: isolated-ci-only

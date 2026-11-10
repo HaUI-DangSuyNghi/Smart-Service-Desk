@@ -15,7 +15,7 @@ suffix = uuid.uuid4().hex[:10]
 network = 'r2-e2e-' + suffix
 password = uuid.uuid4().hex
 containers = []
-report = {'stack': 'PostgreSQL 16.6 / Flowable 7.1 / Keycloak 26.0.7 / signed JWT / direct HTTP, no gateway', 'checks': []}
+report = {'stack': 'PostgreSQL 16.6 / Flowable 7.1 / Keycloak 26.8.2 / signed JWT / direct HTTP, no gateway', 'checks': []}
 
 def docker(*arguments):
     return subprocess.run(['docker', *map(str, arguments)], capture_output=True, text=True, check=True).stdout.strip()
@@ -70,7 +70,7 @@ try:
         keycloak = run('r2-kc-' + suffix, '--network-alias', 'keycloak', '-p', '127.0.0.1::8080',
             '-e', 'KC_BOOTSTRAP_ADMIN_USERNAME=admin', '-e', 'KC_BOOTSTRAP_ADMIN_PASSWORD=' + password,
             '--mount', f'type=bind,source={seed},target=/opt/keycloak/data/import/realm.json,readonly',
-            'quay.io/keycloak/keycloak:26.0.7', 'start-dev', '--import-realm')
+            'quay.io/keycloak/keycloak:26.8.2@sha256:723b1d6e254c0fc96d5cffec860c7e0744d6a3277822b865bb538cf891575e41', 'start-dev', '--import-realm')
         wait(keycloak + '/realms/dx-lab/.well-known/openid-configuration')
         backend = run('r2-backend-' + suffix, '-p', '127.0.0.1::8080', '--mount',
             f'type=bind,source={root / "backend/target/dx-platform-0.1.0-SNAPSHOT.jar"},target=/app.jar,readonly',

@@ -1,7 +1,7 @@
 param([string]$BuildImage = 'dx-platform-build:0.1.0',
       [ValidateSet('', 'core-only', 'second-domain')][string]$MavenProfile = '',
       [string]$Tests = '*Test',
-      [ValidateNotNullOrEmpty()][string]$DatabaseImage = 'postgres:16.15-bookworm@sha256:0ea6700a3b4f0ae6ce746519073558aed4d88a79d8d07622a9a644946c7319c4')
+      [ValidateNotNullOrEmpty()][string]$DatabaseImage = 'postgres:16.15-trixie@sha256:f9a7b9ebf6f56201f949db745e47bc423c0f0f8294bafe991cc10bf74b029657')
 $ErrorActionPreference = 'Stop'
 $root = Split-Path $PSScriptRoot -Parent
 $suffix = [guid]::NewGuid().ToString('N').Substring(0, 12)

@@ -1,0 +1,6 @@
+services:
+  postgres:
+    image: dx-postgres:16.15-sec01
+    build:
+      context: .
+      dockerfile: infra/postgres/Dockerfile

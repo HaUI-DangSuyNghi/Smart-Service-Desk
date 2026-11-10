@@ -1,11 +1,11 @@
-﻿param([string]$ComposeProject)
+﻿param([string]$ComposeProject, [string]$EnvFile = '.env')
 $ErrorActionPreference = 'Stop'
 Set-Location (Split-Path $PSScriptRoot -Parent)
 Add-Type -AssemblyName System.Net.Http
 $client = New-Object System.Net.Http.HttpClient
 $client.Timeout = [TimeSpan]::FromSeconds(30)
 $contractResponses = New-Object 'System.Collections.Generic.List[object]'
-$password = (Get-Content .env | Where-Object { $_ -match '^DEMO_PASSWORD=' }) -replace '^DEMO_PASSWORD=', ''
+$password = (Get-Content -LiteralPath $EnvFile | Where-Object { $_ -match '^DEMO_PASSWORD=' }) -replace '^DEMO_PASSWORD=', ''
 function Token($user) {
     $body = @{grant_type='password'; client_id='core-probe'; username=$user; password=$password}
     (Invoke-RestMethod -Method Post -Uri 'http://localhost:8081/realms/dx-lab/protocol/openid-connect/token' -Body $body).access_token

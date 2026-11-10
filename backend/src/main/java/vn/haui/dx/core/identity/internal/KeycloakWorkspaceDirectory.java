@@ -53,6 +53,7 @@ class KeycloakWorkspaceDirectory implements WorkspaceDirectory {
     private final String clientId;
     private final String clientSecret;
     private final Clock clock;
+    private final boolean requestAdminScope;
     private final Map<String, Snapshot> cache = new ConcurrentHashMap<>();
     private volatile Token token;
 
@@ -61,19 +62,27 @@ class KeycloakWorkspaceDirectory implements WorkspaceDirectory {
                                @Value("${dx.directory.url:}") String url,
                                @Value("${dx.directory.realm:dx-lab}") String realm,
                                @Value("${dx.directory.client-id:dx-directory}") String clientId,
-                               @Value("${dx.directory.client-secret:}") String clientSecret) {
-        this(access, url.isBlank() ? null : builder.baseUrl(url).build(), realm, clientId, clientSecret, Clock.systemUTC());
+                               @Value("${dx.directory.client-secret:}") String clientSecret,
+                               @Value("${dx.directory.request-admin-scope:true}") boolean requestAdminScope) {
+        this(access, url.isBlank() ? null : builder.baseUrl(url).build(), realm, clientId, clientSecret,
+            Clock.systemUTC(), requestAdminScope);
     }
 
     /** Cho test: truyền RestClient (có thể gắn MockRestServiceServer) và đồng hồ giả. */
     KeycloakWorkspaceDirectory(WorkspaceAccess access, RestClient http, String realm, String clientId,
                                String clientSecret, Clock clock) {
+        this(access, http, realm, clientId, clientSecret, clock, true);
+    }
+
+    KeycloakWorkspaceDirectory(WorkspaceAccess access, RestClient http, String realm, String clientId,
+                               String clientSecret, Clock clock, boolean requestAdminScope) {
         this.access = access;
         this.http = http;
         this.realm = realm;
         this.clientId = clientId;
         this.clientSecret = clientSecret;
         this.clock = clock;
+        this.requestAdminScope = requestAdminScope;
     }
 
     @Override
@@ -232,6 +241,7 @@ class KeycloakWorkspaceDirectory implements WorkspaceDirectory {
 
         var form = new LinkedMultiValueMap<String, String>();
         form.add("grant_type", "client_credentials");
+        if (requestAdminScope) form.add("scope", "kc-admin-api");
         form.add("client_id", clientId);
         form.add("client_secret", clientSecret);
         JsonNode body = http.post().uri("/realms/{realm}/protocol/openid-connect/token", realm)

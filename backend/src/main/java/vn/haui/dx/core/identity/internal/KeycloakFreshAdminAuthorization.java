@@ -33,21 +33,35 @@ final class KeycloakFreshAdminAuthorization implements FreshAdminAuthorization {
     private final String clientId;
     private final String secret;
     private final Duration budget;
+    private final boolean requestAdminScope;
 
     @Autowired
     KeycloakFreshAdminAuthorization(WorkspaceAccess access, ObjectMapper json,
             @Value("${dx.directory.url:}") String url,
             @Value("${dx.directory.realm:dx-lab}") String realm,
             @Value("${dx.directory.client-id:dx-directory}") String clientId,
-            @Value("${dx.directory.client-secret:}") String secret) {
+            @Value("${dx.directory.client-secret:}") String secret,
+            @Value("${dx.directory.request-admin-scope:true}") boolean requestAdminScope) {
         this(access, json, HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(2))
-            .followRedirects(HttpClient.Redirect.NEVER).build(), url, realm, clientId, secret, Duration.ofSeconds(5));
+            .followRedirects(HttpClient.Redirect.NEVER).build(), url, realm, clientId, secret,
+            Duration.ofSeconds(5), requestAdminScope);
+    }
+
+    KeycloakFreshAdminAuthorization(WorkspaceAccess access, ObjectMapper json,
+            String url, String realm, String clientId, String secret) {
+        this(access, json, url, realm, clientId, secret, true);
     }
 
     KeycloakFreshAdminAuthorization(WorkspaceAccess access, ObjectMapper json, HttpClient http,
             String url, String realm, String clientId, String secret, Duration budget) {
+        this(access, json, http, url, realm, clientId, secret, budget, true);
+    }
+
+    KeycloakFreshAdminAuthorization(WorkspaceAccess access, ObjectMapper json, HttpClient http,
+            String url, String realm, String clientId, String secret, Duration budget, boolean requestAdminScope) {
         this.access = access; this.json = json; this.http = http; this.url = url;
         this.realm = realm; this.clientId = clientId; this.secret = secret; this.budget = budget;
+        this.requestAdminScope = requestAdminScope;
     }
 
     @Override
@@ -63,7 +77,8 @@ final class KeycloakFreshAdminAuthorization implements FreshAdminAuthorization {
             var tokenRequest = HttpRequest.newBuilder(uri("realms", realm, "protocol", "openid-connect", "token"))
                 .header("Content-Type", "application/x-www-form-urlencoded")
                 .POST(HttpRequest.BodyPublishers.ofString("grant_type=client_credentials&client_id="
-                    + form(clientId) + "&client_secret=" + form(secret)));
+                    + form(clientId) + "&client_secret=" + form(secret)
+                    + (requestAdminScope ? "&scope=kc-admin-api" : "")));
             var tokenResponse = send(tokenRequest, deadline);
             if (tokenResponse.statusCode() != 200) throw unavailable();
             JsonNode token = read(tokenResponse.body());

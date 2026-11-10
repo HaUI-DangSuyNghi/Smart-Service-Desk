@@ -58,7 +58,7 @@ def main():
     parser.add_argument('--build-image', default='maven:3.9.9-eclipse-temurin-17')
     parser.add_argument('--runtime-image', default='eclipse-temurin:17.0.20.1_1-jre-jammy')
     parser.add_argument('--intelligence-image', default='dx-intelligence:0.1.0')
-    parser.add_argument('--gateway-image', default='dx-apisix:3.11.0-sec01')
+    parser.add_argument('--gateway-image', default='dx-apisix:3.19.0-sec02')
     parser.add_argument('--postgres-image', help='Optional verified PostgreSQL image override for disposable acceptance')
     parser.add_argument('--jar', type=Path, help='Previously built current-source jar; hash recorded in evidence')
     args = parser.parse_args()
