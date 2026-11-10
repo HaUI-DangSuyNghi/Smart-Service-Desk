@@ -59,6 +59,34 @@ class KeycloakWorkspaceDirectoryTest {
             .andRespond(withSuccess("{\"access_token\":\"t\",\"expires_in\":300}", MediaType.APPLICATION_JSON));
     }
 
+    @Test void legacyModeReadsPermissionsAndStillFailsClosedOnDirectoryOutage() {
+        var builder = RestClient.builder().baseUrl(KC);
+        server = MockRestServiceServer.bindTo(builder).build();
+        directory = new KeycloakWorkspaceDirectory(access, builder.build(), "dx-lab", "dx-directory", "secret", clock, false);
+        server.expect(requestTo(KC + "/realms/dx-lab/protocol/openid-connect/token"))
+            .andExpect(method(HttpMethod.POST))
+            .andExpect(content().string(org.hamcrest.Matchers.not(org.hamcrest.Matchers.containsString("scope="))))
+            .andExpect(content().string(org.hamcrest.Matchers.containsString("client_secret=secret")))
+            .andRespond(withSuccess("{\"access_token\":\"t\",\"expires_in\":300}", MediaType.APPLICATION_JSON));
+        expectPermissionSnapshot("{\"name\":\"task:handle\"}");
+        server.expect(requestTo(KC + "/admin/realms/dx-lab/group-by-path/workspaces/lab-a"))
+            .andRespond(withServerError());
+        assertEquals("task:handle", directory.rolePermissions("lab-a").get("agent").get(0).name());
+        assertEquals(ErrorCode.SERVICE_UNAVAILABLE,
+            assertThrows(CoreException.class, () -> directory.refresh("lab-a")).code());
+        verify(access, atLeastOnce()).requireMember("lab-a");
+        server.verify();
+    }
+
+    @Test void invalidScopeDoesNotAutomaticallyRetryWithoutScope() {
+        server.expect(requestTo(KC + "/realms/dx-lab/protocol/openid-connect/token"))
+            .andExpect(content().string(org.hamcrest.Matchers.containsString("scope=kc-admin-api")))
+            .andRespond(withBadRequest().body("{\"error\":\"invalid_scope\"}"));
+        assertEquals(ErrorCode.SERVICE_UNAVAILABLE,
+            assertThrows(CoreException.class, () -> directory.rolePermissions("lab-a")).code());
+        server.verify();
+    }
+
     private void expectGet(String path, String json) {
         server.expect(requestTo(KC + path)).andExpect(method(HttpMethod.GET))
             .andExpect(header("Authorization", "Bearer t"))

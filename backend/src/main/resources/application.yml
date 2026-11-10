@@ -53,6 +53,7 @@ dx:
     realm: dx-lab
     client-id: dx-directory
     client-secret: ${DX_DIRECTORY_CLIENT_SECRET:}
+    request-admin-scope: ${DX_DIRECTORY_REQUEST_ADMIN_SCOPE:true}
   intelligence:
     triage:
       base-url: ${INTELLIGENCE_TRIAGE_BASE_URL:}

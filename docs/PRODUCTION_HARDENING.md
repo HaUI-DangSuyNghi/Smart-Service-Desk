@@ -139,6 +139,30 @@ or a separately tested migration before claiming the dependency issues fixed.
 
 ### Keycloak compatibility fix
 
+Existing Keycloak 26.0.8 deployments do not provide `kc-admin-api`. When keeping
+that identity server during an application-only upgrade, explicitly set the
+backend container environment `DX_DIRECTORY_REQUEST_ADMIN_SCOPE=false`. Both
+directory reads and fresh administrator checks then use the existing
+client-credentials flow without requesting the unavailable scope. JWT validation,
+workspace membership, live account/role checks and read-only service-account
+permissions remain required. There is no automatic retry without scope on errors.
+The default is `true`; keep it for newer Keycloak deployments requiring the scope.
+Do not create an empty scope, grant write/admin roles, or expose the Admin Console
+publicly to work around `invalid_scope`.
+
+Run the isolated legacy identity regression before deploying to 26.0.8:
+
+```powershell
+./scripts/test-fresh-admin.ps1 -LegacyKeycloak -Tests 'KeycloakFreshAdminAuthorizationTest,KeycloakWorkspaceDirectoryTest,KeycloakFreshAdminIntegrationTest'
+```
+
+This requires Maven on PATH (or an explicit `-Maven` path) and Docker. Repeat without
+`-LegacyKeycloak` to check the default scoped path against Keycloak 26.8.2. These
+checks do not update the VM, certify all application workflows, or resolve the
+security findings in the older identity server. Existing VM Compose overrides
+must explicitly pass the environment variable to the backend; setting it only in
+an unrelated host shell does not change an existing container.
+
 Real-service regression found that the upgraded identity server rejects directory
 tokens without its Admin API scope/audience, causing administrator checks and
 settings requests to return 503. Both directory token callers now explicitly

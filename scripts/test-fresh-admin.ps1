@@ -3,9 +3,17 @@ param(
     [string]$BuildImage,
     [string]$Tests,
     [switch]$PackagedProof,
+    [switch]$LegacyKeycloak,
     [ValidateSet('focused','core-only','full','second-domain')][string]$Profile = 'focused'
 )
 $ErrorActionPreference = 'Stop'
+if ($LegacyKeycloak -and ($Profile -ne 'focused' -or $PackagedProof)) {
+    throw 'Legacy Keycloak proof supports focused identity tests only'
+}
+$keycloakImage = 'quay.io/keycloak/keycloak:26.8.2@sha256:723b1d6e254c0fc96d5cffec860c7e0744d6a3277822b865bb538cf891575e41'
+if ($LegacyKeycloak) {
+    $keycloakImage = 'quay.io/keycloak/keycloak:26.0.8@sha256:09a381c715ab0b111835b70f2905955274843a219c6f27efb348e4d9f4086858'
+}
 if ($PackagedProof -and !$BuildImage) { throw 'Packaged proof requires BuildImage' }
 $root = Split-Path $PSScriptRoot -Parent
 $name = 'fresh-admin-' + [guid]::NewGuid().ToString('N').Substring(0, 12)
@@ -13,7 +21,8 @@ $evidence = Join-Path $root ".local/$name"
 New-Item -ItemType Directory -Path $evidence | Out-Null
 @{ sha=(git -C $root rev-parse HEAD); branch=(git -C $root branch --show-current);
     worktree=@(git -C $root status --porcelain); profile=$Profile; tests=$Tests;
-    packaged=[bool]$PackagedProof } | ConvertTo-Json -Depth 4 | Set-Content (Join-Path $evidence 'source.json') -Encoding UTF8
+    packaged=[bool]$PackagedProof; keycloakImage=$keycloakImage;
+    requestAdminScope=(!$LegacyKeycloak) } | ConvertTo-Json -Depth 4 | Set-Content (Join-Path $evidence 'source.json') -Encoding UTF8
 $password = [guid]::NewGuid().ToString('N')
 $secret = [guid]::NewGuid().ToString('N')
 $realm = Get-Content -LiteralPath (Join-Path $root 'infra/keycloak/realm-template.json') -Raw -Encoding UTF8 | ConvertFrom-Json
@@ -24,12 +33,15 @@ foreach ($user in $realm.users) {
     }
 }
 foreach ($client in $realm.clients) {
-    if ($client.clientId -eq 'dx-directory') { $client.secret = $secret }
+    if ($client.clientId -eq 'dx-directory') {
+        $client.secret = $secret
+        if ($LegacyKeycloak) { $client.optionalClientScopes = @($client.optionalClientScopes | Where-Object { $_ -ne 'kc-admin-api' }) }
+    }
 }
 $import = Join-Path $evidence 'realm.json'
 [IO.File]::WriteAllText($import, ($realm | ConvertTo-Json -Depth 40), (New-Object Text.UTF8Encoding $false))
 $saved = @{}
-foreach ($key in @('FRESH_ADMIN_TEST_URL','FRESH_ADMIN_TEST_PASSWORD','FRESH_ADMIN_TEST_DIRECTORY_SECRET',
+foreach ($key in @('FRESH_ADMIN_TEST_URL','FRESH_ADMIN_TEST_PASSWORD','FRESH_ADMIN_TEST_DIRECTORY_SECRET','FRESH_ADMIN_TEST_REQUEST_ADMIN_SCOPE',
     'FILE_TEST_JDBC_URL','WORKFLOW_TEST_JDBC_URL','BACKGROUND_TEST_JDBC_URL','FILE_TEST_DB_PASSWORD','WORKFLOW_TEST_DB_PASSWORD')) {
     $saved[$key] = [Environment]::GetEnvironmentVariable($key, 'Process')
 }
@@ -48,7 +60,7 @@ try {
         @networkArguments `
         --mount "type=bind,source=$import,target=/opt/keycloak/data/import/realm.json,readonly" `
         -e KC_BOOTSTRAP_ADMIN_USERNAME=admin -e "KC_BOOTSTRAP_ADMIN_PASSWORD=$password" `
-        'quay.io/keycloak/keycloak:26.8.2@sha256:723b1d6e254c0fc96d5cffec860c7e0744d6a3277822b865bb538cf891575e41' `
+        $keycloakImage `
         start-dev --import-realm | Out-Null
     if ($LASTEXITCODE -ne 0) { throw 'Cannot start isolated Keycloak' }
     $created = $true
@@ -59,6 +71,7 @@ try {
     }
     $env:FRESH_ADMIN_TEST_PASSWORD = $password
     $env:FRESH_ADMIN_TEST_DIRECTORY_SECRET = $secret
+    $env:FRESH_ADMIN_TEST_REQUEST_ADMIN_SCOPE = if ($LegacyKeycloak) { 'false' } else { 'true' }
     $ready = $false
     for ($attempt = 0; $attempt -lt 90; $attempt++) {
         try {
@@ -118,7 +131,7 @@ try {
         docker run --rm --network "$name-network" -w /work/backend `
             --mount "type=bind,source=$root,target=/source,readonly" `
             --mount "type=bind,source=$evidence,target=/evidence" `
-            -e FRESH_ADMIN_TEST_URL -e FRESH_ADMIN_TEST_PASSWORD -e FRESH_ADMIN_TEST_DIRECTORY_SECRET `
+            -e FRESH_ADMIN_TEST_URL -e FRESH_ADMIN_TEST_PASSWORD -e FRESH_ADMIN_TEST_DIRECTORY_SECRET -e FRESH_ADMIN_TEST_REQUEST_ADMIN_SCOPE `
             -e FILE_TEST_JDBC_URL -e WORKFLOW_TEST_JDBC_URL -e BACKGROUND_TEST_JDBC_URL `
             -e FILE_TEST_DB_PASSWORD -e WORKFLOW_TEST_DB_PASSWORD `
             --entrypoint sh $BuildImage -c $command runner @arguments *> (Join-Path $evidence 'maven.log')
@@ -137,7 +150,7 @@ try {
     if ($summary.tests -eq 0 -or $summary.failures -or $summary.errors -or $summary.skipped) {
         throw 'Fresh admin proof requires zero failures/errors/skips'
     }
-    Write-Output "PASS real Keycloak 26.8.2; $($summary.tests) tests. Evidence: $evidence"
+    Write-Output "PASS real Keycloak ${keycloakImage}; $($summary.tests) tests. Evidence: $evidence"
 } finally {
     foreach ($key in $saved.Keys) { [Environment]::SetEnvironmentVariable($key, $saved[$key], 'Process') }
     if ($created) { docker rm -f $name | Out-Null }

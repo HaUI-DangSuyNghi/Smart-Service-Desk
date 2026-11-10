@@ -61,9 +61,32 @@ class KeycloakFreshAdminAuthorizationTest {
     @AfterEach void stop() { server.stop(0); SecurityContextHolder.clearContext(); }
 
     private KeycloakFreshAdminAuthorization guard(Duration budget) {
+        return guard(budget, true);
+    }
+
+    private KeycloakFreshAdminAuthorization guard(Duration budget, boolean requestAdminScope) {
         return new KeycloakFreshAdminAuthorization(access, new ObjectMapper(),
             HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(2)).build(),
-            base, "dx-lab", "dx-directory", "secret&=value", budget);
+            base, "dx-lab", "dx-directory", "secret&=value", budget, requestAdminScope);
+    }
+
+    @Test void legacyModeStillChecksFreshRolesAndRejectsDisabledAccounts() {
+        var legacy = guard(Duration.ofSeconds(5), false);
+        granted();
+        assertEquals("caller", legacy.requirePlatformAdmin());
+        assertFalse(requests.get(0).contains("scope="));
+        token(); account(); replies.add(new Reply(200, "[]"));
+        assertEquals(ErrorCode.FORBIDDEN, assertThrows(CoreException.class, legacy::requirePlatformAdmin).code());
+        token(); replies.add(new Reply(200, "{\"id\":\"caller\",\"enabled\":false}"));
+        assertEquals(ErrorCode.FORBIDDEN, assertThrows(CoreException.class, legacy::requirePlatformAdmin).code());
+    }
+
+    @Test void invalidScopeDoesNotAutomaticallyRetryWithoutScope() {
+        replies.add(new Reply(400, "{\"error\":\"invalid_scope\"}"));
+        assertEquals(ErrorCode.SERVICE_UNAVAILABLE, assertThrows(CoreException.class,
+            () -> guard(Duration.ofSeconds(5)).requirePlatformAdmin()).code());
+        assertEquals(1, requests.size());
+        assertTrue(requests.get(0).contains("&scope=kc-admin-api"));
     }
 
     private void token() { replies.add(new Reply(200, "{\"access_token\":\"directory-token\"}")); }

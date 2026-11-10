@@ -108,6 +108,10 @@ jobs:
               suite = ET.parse(path).getroot()
               assert all(int(suite.get(key, 0)) == 0 for key in ('failures', 'errors', 'skipped')), path
           PY
+      - name: Existing Keycloak 26.0.8 identity compatibility
+        if: matrix.profile == 'core-only'
+        shell: pwsh
+        run: ./scripts/test-fresh-admin.ps1 -LegacyKeycloak -Tests 'KeycloakFreshAdminAuthorizationTest,KeycloakWorkspaceDirectoryTest,KeycloakFreshAdminIntegrationTest'
   second-domain-python:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
