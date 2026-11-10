@@ -2,7 +2,7 @@
 
 ### Sản phẩm dự thi **Olympic Tin học Sinh viên Việt Nam 2026 — nội dung Phần mềm Nguồn mở (OLP PMNM 2026)**, chủ đề DX-OS Open-Core.
 
-# Smart Service Desk
+# 🛠️ Smart Service Desk
 
 **Từ yêu cầu hỗ trợ đến kết quả xử lý, trên một nền tảng chung.**
 
@@ -11,24 +11,32 @@ Tiếp nhận sự cố, điều phối kỹ thuật viên, quản lý đặt ph
 
 [![Release](https://img.shields.io/github/v/release/HaUI-DangSuyNghi/Smart-Service-Desk)](https://github.com/HaUI-DangSuyNghi/Smart-Service-Desk/releases)
 [![License](https://img.shields.io/badge/License-Apache--2.0-blue.svg)](LICENSE)
-![Java](https://img.shields.io/badge/Java-17-007396)
-![React](https://img.shields.io/badge/React-19-149ECA)
-![Python](https://img.shields.io/badge/Python-3.12-3776AB)
-![Docker](https://img.shields.io/badge/Docker-Compose-2496ED)
+![Java](https://img.shields.io/badge/Java-17-007396?logo=openjdk&logoColor=white)
+![React](https://img.shields.io/badge/React-19-149ECA?logo=react&logoColor=white)
+![Python](https://img.shields.io/badge/Python-3.12-3776AB?logo=python&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)
 
-[Dùng thử trực tuyến](https://haui.smartdeskapp.me/) · [Giao diện](#giao-diện) · [Tính năng](#tính-năng) · [Kiến trúc](#kiến-trúc) · [Cài đặt](#cài-đặt) · [Tài liệu](#tài-liệu)
+[🌐 Dùng thử trực tuyến](https://haui.smartdeskapp.me/) · [🖼️ Giao diện](#giao-diện) · [✨ Tính năng](#tính-năng) · [🏗️ Kiến trúc](#kiến-trúc) · [🚀 Cài đặt](#cài-đặt) · [📚 Tài liệu](#tài-liệu)
 
 </div>
 
 ![Smart Service Desk - Hỗ trợ CNTT tập trung, theo dõi đến khi hoàn tất](frontend/public/readme-banner.png)
 
-## Bản phát hành v1.0.0
+## 🚀 Bản phát hành v2.0.0
 
-Phát hành ngày **01/11/2026 (UTC+07)**, tag [`v1.0.0`](https://github.com/HaUI-DangSuyNghi/Smart-Service-Desk/releases/tag/v1.0.0), commit `f845ff3dd0e2e49cb2a94608daaf365777f58877`.
-Xem [Changelog](CHANGELOG.md) và [minh chứng v1.0.0, SBOM frontend, SHA-256](docs/publication/v1.0.0/README.md).
-SBOM chỉ bao phủ dependencies production của frontend. Hồ sơ kiểm thử/PoF v0.1.0 được giữ nguyên như minh chứng lịch sử, không phải xác nhận kiểm thử cho v1.0.0.
+Phát hành ngày **10/11/2026 (UTC+07)**, tag [`v2.0.0`](https://github.com/HaUI-DangSuyNghi/Smart-Service-Desk/releases/tag/v2.0.0), commit `e60854beee7d0afcf3981d24aa8415fb6269728d`.
 
-## Giới thiệu
+- 🔐 Củng cố phiên đăng nhập và kiểm tra quyền hiện tại của tài khoản.
+- 🔄 Tương thích hệ thống đang dùng Keycloak 26.0.8 qua cấu hình tường minh; giữ yêu cầu Admin API scope làm mặc định cho phiên bản mới.
+- ✅ 25 kiểm tra CI trên nhánh release đã đạt; bộ 63 kiểm tra định danh đạt riêng trên cả Keycloak 26.0.8 và 26.8.2.
+
+Xem [ghi chú phát hành](https://github.com/HaUI-DangSuyNghi/Smart-Service-Desk/releases/tag/v2.0.0), [Changelog](CHANGELOG.md) và [hướng dẫn bảo mật/vận hành](docs/PRODUCTION_HARDENING.md).
+
+> ⚠️ Bản phát hành vẫn còn các phát hiện bảo mật runtime HIGH/CRITICAL đã ghi nhận. CI chức năng xanh không phải chứng nhận production-ready. SBOM frontend [v1.0.0](docs/publication/v1.0.0/README.md) và hồ sơ PoF v0.1.0 là minh chứng lịch sử, không bao phủ toàn bộ runtime v2.0.0.
+
+<a id="giới-thiệu"></a>
+
+## 👋 Giới thiệu
 
 Một máy tính không lên nguồn, đường truyền gặp sự cố hay một yêu cầu đặt phòng đều cần được tiếp nhận đúng nơi và theo dõi đến khi có kết quả. Khi thông tin nằm rải rác trong tin nhắn và bảng tính, người gửi khó biết yêu cầu đang ở đâu, còn người điều phối khó nắm được ai đang xử lý việc gì.
 
@@ -36,7 +44,9 @@ Một máy tính không lên nguồn, đường truyền gặp sự cố hay m�
 
 Dự án tổ chức theo kiến trúc **Core → Human / Process / Data / Intelligence → Ứng dụng**. Service Desk và Đặt phòng cùng sử dụng các năng lực nền tảng, thay vì xây riêng phần định danh, quy trình và dữ liệu cho từng ứng dụng.
 
-## Điểm nổi bật
+<a id="điểm-nổi-bật"></a>
+
+## ✨ Điểm nổi bật
 
 - **Theo dõi trọn vòng đời yêu cầu:** từ tiếp nhận, duyệt và giao việc đến xử lý, xác nhận kết quả hoặc yêu cầu làm lại.
 - **Điều phối theo vai trò:** phân công người xử lý, xem lịch công việc, ca trực, mức ưu tiên và hạn xử lý.
@@ -46,7 +56,9 @@ Dự án tổ chức theo kiến trúc **Core → Human / Process / Data / Intel
 - **Thông tin cập nhật trong ứng dụng:** thông báo, bình luận và cập nhật thời gian thực giúp theo dõi thay đổi khi đang làm việc.
 - **Tự triển khai bằng Docker Compose:** mã nguồn, cấu hình hạ tầng, hợp đồng API và hướng dẫn vận hành nằm trong cùng repository.
 
-## Giao diện
+<a id="giao-diện"></a>
+
+## 🖼️ Giao diện
 
 Các ảnh dưới đây minh họa giao diện và dữ liệu mẫu. Bố cục có thể khác giữa các phiên bản.
 
@@ -68,7 +80,9 @@ Không gian hội thoại để tra cứu tài liệu, với lịch sử hội t
 
 ![Giao diện hỏi đáp tài liệu và danh sách hội thoại](frontend/public/chatRAG.png)
 
-## Tính năng
+<a id="tính-năng"></a>
+
+## 🧩 Tính năng
 
 | Phân hệ | Khả năng chính |
 | --- | --- |
@@ -94,7 +108,9 @@ Người yêu cầu, điều phối viên và kỹ thuật viên phối hợp tr
 | **Điều phối viên** | Tiếp nhận, duyệt và giao việc; theo dõi hàng đợi, ca trực và hạn xử lý. |
 | **Quản trị viên** | Quản lý định danh, quyền và cấu hình nền tảng theo phạm vi được cấp. |
 
-## Kiến trúc
+<a id="kiến-trúc"></a>
+
+## 🏗️ Kiến trúc
 
 
 ![Kiến trúc Smart Service Desk: gateway và định danh, ứng dụng, H-P-D-I, Core và hạ tầng](docs/images/platform-architecture.svg)
@@ -123,7 +139,9 @@ Xem [bản đồ ranh giới kiến trúc](docs/architecture/tier-boundary-map.m
 | Intelligence | Python 3.12; tích hợp model hoặc API theo chế độ triển khai |
 | Triển khai | Docker, Docker Compose v2 |
 
-## Cài đặt
+<a id="cài-đặt"></a>
+
+## 🚀 Cài đặt
 
 ### Chuẩn bị
 
@@ -139,7 +157,7 @@ Thực hiện trong **thư mục cài đặt mới**:
 ```powershell
 git clone https://github.com/HaUI-DangSuyNghi/Smart-Service-Desk.git
 cd Smart-Service-Desk
-git switch main
+git switch --detach v2.0.0
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/setup.ps1
 powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start.ps1 -NoAi
 ```
@@ -147,6 +165,8 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts/start.ps1 -NoAi
 Để chạy một bản phát hành cụ thể, chọn tag tương ứng trong [Releases](https://github.com/HaUI-DangSuyNghi/Smart-Service-Desk/releases) trước bước setup. Lần khởi động đầu tiên cần thời gian build các dịch vụ.
 
 Setup tạo `.env` và cấu hình realm riêng cho máy. **Không commit hoặc chia sẻ `.env`, API key, mật khẩu và thư mục `.local`.** Với hệ thống đã có dữ liệu, không reset realm hay xóa volume để cài lại.
+
+> 🔐 **Nâng cấp hệ thống có sẵn:** nếu giữ Keycloak **26.0.8**, truyền `DX_DIRECTORY_REQUEST_ADMIN_SCOPE=false` vào container Backend. Mặc định là `true` cho hệ thống mới yêu cầu scope `kc-admin-api`. Xem [hướng dẫn tương thích](docs/PRODUCTION_HARDENING.md#keycloak-compatibility-fix); không tạo lại realm hoặc tự mở trang quản trị ra Internet.
 
 > Cấu hình image và môi trường Docker ảnh hưởng đến khả năng khởi động. Xem [hồ sơ xác minh cài đặt](docs/publication/pof/FINAL_VERIFICATION.md) để biết cấu hình và phạm vi đã được kiểm chứng; không mặc định mọi chế độ AI hoặc mọi môi trường đều có cùng kết quả.
 
@@ -198,7 +218,9 @@ Mật khẩu tài khoản demo là giá trị **`DEMO_PASSWORD` trong `.env` tr�
 
 AI là tùy chọn tích hợp, không phải điều kiện để chạy luồng hỗ trợ thủ công. Điền provider, model và key trong `.env` nếu dùng API; không đưa key vào các biến `VITE_*`. Xem [hỏi đáp tài liệu](docs/KNOWLEDGE_CHAT.md) và [hướng dẫn GPU từ xa](docs/remote-model.md) trước khi cấu hình.
 
-## Dành cho nhà phát triển
+<a id="dành-cho-nhà-phát-triển"></a>
+
+## 💻 Dành cho nhà phát triển
 
 ```text
 frontend/src/
@@ -228,12 +250,16 @@ npm run build
 
 Browser test: cài Chromium bằng `npx playwright install chromium`, sau đó chạy `npm run test:e2e`. Các browser contract test sử dụng API giả lập; kiểm chứng tích hợp hệ thống thật được ghi riêng trong tài liệu nghiệm thu.
 
-## Dành cho người đánh giá
+<a id="dành-cho-người-đánh-giá"></a>
+
+## 🔎 Dành cho người đánh giá
 
 - [Bản đồ tiêu chí, tính năng và minh chứng](docs/EVALUATION_GUIDE.md): đối chiếu kiến trúc, source, hợp đồng và phạm vi kiểm chứng.
 - [Kịch bản demo 5–10 phút](docs/DEMO_EVALUATION.md): chuẩn bị ba vai trò, trình diễn vòng xử lý và ghi nhận kết quả thực tế.
 
-## Tài liệu
+<a id="tài-liệu"></a>
+
+## 📚 Tài liệu
 
 | Nội dung | Tài liệu |
 | --- | --- |
@@ -245,7 +271,9 @@ Browser test: cài Chromium bằng `npx playwright install chromium`, sau đó c
 | Nguồn mở và kiểm chứng | [PoF Evidence](docs/publication/POF_EVIDENCE.md) · [Final Verification](docs/publication/pof/FINAL_VERIFICATION.md) · [Dependency Licenses](docs/legal/dependency-inventory.md) |
 | Phát hành | [Releases](https://github.com/HaUI-DangSuyNghi/Smart-Service-Desk/releases) · [Changelog](CHANGELOG.md) |
 
-## Nhóm phát triển
+<a id="nhóm-phát-triển"></a>
+
+## 👥 Nhóm phát triển
 
 **Đội: HaUI** · **Trường: Đại học Công nghiệp Hà Nội**
 
@@ -257,7 +285,9 @@ Browser test: cài Chromium bằng `npx playwright install chromium`, sau đó c
 
 **Trải nghiệm sản phẩm:** [haui.smartdeskapp.me](https://haui.smartdeskapp.me/). Tài khoản trong mục cài đặt dành cho môi trường demo tự triển khai; không mặc định áp dụng cho bản trực tuyến. Liên hệ nhóm phát triển để được hướng dẫn truy cập.
 
-## Đóng góp và liên hệ
+<a id="đóng-góp-và-liên-hệ"></a>
+
+## 🤝 Đóng góp và liên hệ
 
 Phát triển tính năng từ nhánh `develop`, tạo Pull Request để review trước khi tích hợp. Nhánh `main` dành cho các bản phát hành của dự án. Quy trình chi tiết nằm trong [CONTRIBUTING.md](CONTRIBUTING.md).
 
@@ -265,7 +295,9 @@ Góp ý, báo lỗi hoặc đề xuất tính năng tại [GitHub Issues](https:
 
 Người tham gia tuân thủ [quy tắc ứng xử](CODE_OF_CONDUCT.md). Nếu phát hiện lỗ hổng bảo mật, báo riêng theo [chính sách bảo mật](SECURITY.md), không đăng chi tiết khai thác hoặc thông tin xác thực lên Issues công khai.
 
-## Giấy phép
+<a id="giấy-phép"></a>
+
+## 📄 Giấy phép
 
 Mã nguồn và tài liệu gốc do nhóm sở hữu, có quyền cấp phép, được phát hành theo **Apache License 2.0**. Xem [LICENSE](LICENSE) và [phạm vi cấp phép](LICENSING.md).
 

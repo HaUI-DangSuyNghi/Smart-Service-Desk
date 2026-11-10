@@ -12,7 +12,10 @@ The historical v0.1.0 tag/source archives and its evidence are preserved.
 - Keep external document/photo permission evidence and the MODERATE fast-uri
   finding explicit; no dependency/code change or new release.
 
-## [2.0.0] - Unreleased Candidate
+## [2.0.0] - 2026-11-10
+
+Published from main commit `e60854beee7d0afcf3981d24aa8415fb6269728d`, tag `v2.0.0`.
+This entry and the README are post-release documentation updates; the tag remains immutable.
 
 ### Fixed
 - Harden browser authentication/session handling and live authorization checks.
@@ -24,8 +27,7 @@ The historical v0.1.0 tag/source archives and its evidence are preserved.
 - Prepare release/2.0.0 from develop commit 8dbf7d6. The VM candidate uses backend
   image de73126e1cf7 and frontend image e7c72d786ebe; image names are not release tags.
 
-### Release Gates
-- This candidate is not published. Create v2.0.0 only after release review/merge.
+### Known Limitations
 - HIGH/CRITICAL runtime dependency findings documented in PRODUCTION_HARDENING.md
   remain unresolved; functional CI and reported VM smoke success do not clear them.
 - Preserve VM backups and rollback images; do not upgrade the existing identity
