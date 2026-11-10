@@ -2,7 +2,7 @@ name: Service Desk context intelligence
 
 on:
   pull_request:
-    branches: [develop]
+    branches: [develop, main]
     paths:
       - 'backend/**'
       - 'contracts/apps/servicedesk/**'

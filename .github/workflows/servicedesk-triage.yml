@@ -4,7 +4,7 @@ on:
     branches: [feature/ai07-ticket-intelligence, feature/ai07-hierarchical-assessment]
     paths: ['backend/**', 'contracts/**', '.github/workflows/servicedesk-triage.yml']
   pull_request:
-    branches: [develop]
+    branches: [develop, main]
     paths: ['backend/**', 'contracts/**', 'compose.yaml', '.dockerignore', 'scripts/test-*.ps1', '.github/workflows/servicedesk-triage.yml']
   workflow_dispatch:
 permissions:

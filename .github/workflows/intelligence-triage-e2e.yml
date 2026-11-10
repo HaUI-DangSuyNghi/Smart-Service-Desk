@@ -1,7 +1,7 @@
 name: Integrated current HEAD acceptance
 on:
   pull_request:
-    branches: [develop]
+    branches: [develop, main]
     paths: ['backend/**', 'intelligence/**', 'contracts/**', 'fixtures/intelligence/**', 'scripts/**', 'infra/**', 'compose*.yaml', '.dockerignore', '.env.example', 'docs/INT01*', '.github/workflows/**']
   workflow_dispatch:
 permissions:
