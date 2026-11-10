@@ -60,7 +60,7 @@ replacements or explicit limitations and final public-source retesting required.
 - [ ] Preserve required upstream notices; prepare artifact-specific attributions.
   NOTICE not universally mandatory: include where applicable, no invented names.
   No root NOTICE/full release-wide bundle established here.
-- [ ] Refresh docs/dependency-licenses.md (older tables marked historical). Current
+- [ ] Refresh docs/legal/dependency-inventory.md (older tables marked historical). Current
   Boot 3.3.13/Keycloak 26.0.8/PostgreSQL 16.15 and frontend/Python locks prevail.
   docs/security/release-readiness-20261026-dependencies.txt and Intelligence
   governance inventories are inputs, not complete legal clearance.

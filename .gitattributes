@@ -34,3 +34,6 @@ scripts/acceptance/core/*.sql text eol=lf
 /dx text eol=lf
 /dx.cmd text eol=crlf
 infra/postgres/*.sh text eol=lf
+
+# Keep release supplement bytes stable for published SHA-256 checksums.
+docs/publication/v1.0.0/** -text whitespace=cr-at-eol

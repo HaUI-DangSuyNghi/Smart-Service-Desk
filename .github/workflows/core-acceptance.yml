@@ -3,7 +3,7 @@ on:
   push:
     branches: [develop]
   pull_request:
-    branches: [develop]
+    branches: [develop, main]
     paths: ['backend/**', 'infra/**', 'compose.yaml', '.dockerignore', 'contracts/openapi/**', 'contracts/intelligence/**', 'scripts/**', '.github/workflows/core-acceptance.yml']
   workflow_dispatch:
 permissions:

@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1120" height="580" viewBox="0 0 1120 580" role="img" aria-labelledby="title desc"><title id="title">Luồng xử lý yêu cầu Smart Service Desk</title><desc id="desc">Người yêu cầu tạo ticket, điều phối viên tiếp nhận và duyệt giao, kỹ thuật viên xử lý, người yêu cầu xác nhận để hoàn tất hoặc yêu cầu xử lý thêm.</desc><defs><marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto"><path d="M1 1 L7 4 L1 7" fill="none" stroke="#637857" stroke-width="1.5"/></marker><pattern id="grid" width="24" height="24" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="1" fill="#dce5d6"/></pattern></defs><rect width="1120" height="580" rx="24" fill="#f6f8f3"/><rect width="1120" height="580" rx="24" fill="url(#grid)" opacity="0.4"/><g font-family="Segoe UI, DejaVu Sans, sans-serif">
+<text x="40" y="38" font-size="12" fill="#60754d" font-weight="700">SMART SERVICE DESK / QUY TRÌNH NGHIỆP VỤ</text>
+<text x="40" y="78" font-size="30" fill="#192b22" font-weight="700">Một yêu cầu. Rõ người. Rõ tiến độ.</text>
+<text x="40" y="108" font-size="15" fill="#607063" font-weight="400">Mỗi bước gắn với vai trò; người gửi xác nhận kết quả sau khi xử lý.</text>
+<rect x="40" y="150" width="296" height="126" rx="16" fill="#ffffff" stroke="#dce5d6"/>
+<rect x="56" y="166" width="36" height="30" rx="8" fill="#edf4e3" stroke="#edf4e3"/>
+<text x="65" y="187" font-size="13" fill="#466b17" font-weight="700">01</text>
+<text x="104" y="186" font-size="11" fill="#60754d" font-weight="700">NGƯỜI YÊU CẦU</text>
+<text x="58" y="224" font-size="21" fill="#192b22" font-weight="650">Gửi yêu cầu</text>
+<text x="58" y="252" font-size="13" fill="#607063" font-weight="400">Mô tả sự cố và thông tin hỗ trợ.</text>
+<rect x="412" y="150" width="296" height="126" rx="16" fill="#ffffff" stroke="#dce5d6"/>
+<rect x="428" y="166" width="36" height="30" rx="8" fill="#edf4e3" stroke="#edf4e3"/>
+<text x="437" y="187" font-size="13" fill="#466b17" font-weight="700">02</text>
+<text x="476" y="186" font-size="11" fill="#60754d" font-weight="700">ĐIỀU PHỐI VIÊN</text>
+<text x="430" y="224" font-size="21" fill="#192b22" font-weight="650">Tiếp nhận</text>
+<text x="430" y="252" font-size="13" fill="#607063" font-weight="400">Kiểm tra, bổ sung thông tin.</text>
+<rect x="784" y="150" width="296" height="126" rx="16" fill="#ffffff" stroke="#dce5d6"/>
+<rect x="800" y="166" width="36" height="30" rx="8" fill="#edf4e3" stroke="#edf4e3"/>
+<text x="809" y="187" font-size="13" fill="#466b17" font-weight="700">03</text>
+<text x="848" y="186" font-size="11" fill="#60754d" font-weight="700">ĐIỀU PHỐI VIÊN</text>
+<text x="802" y="224" font-size="21" fill="#192b22" font-weight="650">Duyệt và giao việc</text>
+<text x="802" y="252" font-size="13" fill="#607063" font-weight="400">Chọn người xử lý, ưu tiên và ước tính.</text>
+<rect x="784" y="348" width="296" height="126" rx="16" fill="#ffffff" stroke="#dce5d6"/>
+<rect x="800" y="364" width="36" height="30" rx="8" fill="#eaf2f5" stroke="#eaf2f5"/>
+<text x="809" y="385" font-size="13" fill="#466b17" font-weight="700">04</text>
+<text x="848" y="384" font-size="11" fill="#60754d" font-weight="700">KỸ THUẬT VIÊN</text>
+<text x="802" y="422" font-size="21" fill="#192b22" font-weight="650">Xử lý công việc</text>
+<text x="802" y="450" font-size="13" fill="#607063" font-weight="400">Cập nhật tiến độ, báo hoàn thành.</text>
+<rect x="412" y="348" width="296" height="126" rx="16" fill="#ffffff" stroke="#dce5d6"/>
+<rect x="428" y="364" width="36" height="30" rx="8" fill="#edf4e3" stroke="#edf4e3"/>
+<text x="437" y="385" font-size="13" fill="#466b17" font-weight="700">05</text>
+<text x="476" y="384" font-size="11" fill="#60754d" font-weight="700">NGƯỜI YÊU CẦU</text>
+<text x="430" y="422" font-size="21" fill="#192b22" font-weight="650">Xác nhận kết quả</text>
+<text x="430" y="450" font-size="13" fill="#607063" font-weight="400">Kiểm tra kết quả được bàn giao.</text>
+<rect x="40" y="348" width="296" height="126" rx="16" fill="#ffffff" stroke="#dce5d6"/>
+<rect x="56" y="364" width="36" height="30" rx="8" fill="#dfedc9" stroke="#dfedc9"/>
+<text x="65" y="385" font-size="13" fill="#466b17" font-weight="700">06</text>
+<text x="104" y="384" font-size="11" fill="#60754d" font-weight="700">HOÀN TẤT</text>
+<text x="58" y="422" font-size="21" fill="#192b22" font-weight="650">Khép vòng hỗ trợ</text>
+<text x="58" y="450" font-size="13" fill="#607063" font-weight="400">Lưu kết quả và lịch sử xử lý.</text>
+<path d="M336 213 H398" fill="none" stroke="#637857" stroke-width="2" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path d="M708 213 H770" fill="none" stroke="#637857" stroke-width="2" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path d="M932 276 V334" fill="none" stroke="#637857" stroke-width="2" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path d="M784 411 H722" fill="none" stroke="#637857" stroke-width="2" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path d="M412 411 H350" fill="none" stroke="#637857" stroke-width="2" stroke-linejoin="round" marker-end="url(#arrow)"/>
+<path d="M560 474 V518 H1100 V213 H1080" fill="none" stroke="#637857" stroke-width="2" stroke-linejoin="round" stroke-dasharray="6 5" marker-end="url(#arrow)"/>
+<text x="666" y="509" font-size="13" fill="#60754d" font-weight="600">Yêu cầu làm lại → duyệt và giao</text>
+<text x="42" y="554" font-size="13" fill="#607063" font-weight="400">AI hỗ trợ phân loại khi được bật; quyết định duyệt và phân công thuộc về điều phối viên.</text>
+</g></svg>

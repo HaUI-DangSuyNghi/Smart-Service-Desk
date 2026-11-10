@@ -3,7 +3,7 @@ on:
   push:
     branches: [develop, feature/ai07-ticket-intelligence, feature/ai07-qwen-lora-provider, feature/ai07-hierarchical-assessment]
   pull_request:
-    branches: [develop]
+    branches: [develop, main]
     paths:
       - 'intelligence/**'
       - 'licenses/**'
